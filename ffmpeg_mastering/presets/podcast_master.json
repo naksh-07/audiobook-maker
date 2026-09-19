@@ -1,0 +1,25 @@
+{
+  "name": "Podcast Standard Master",
+  "target_standard": "AES TD1004 / Apple Podcasts",
+  "highpass_hz": 70,
+  "denoise": {
+    "filter": "afftdn",
+    "noise_reduction_db": 10,
+    "noise_floor_db": -35
+  },
+  "deesser": {
+    "intensity": 0.40,
+    "max_reduction": 0.55,
+    "frequency": 0.5
+  },
+  "lowpass_hz": 12000,
+  "resampler": "soxr",
+  "output_sample_rate": 48000,
+  "loudnorm": {
+    "integrated_lufs": -16.0,
+    "true_peak_db": -1.5,
+    "loudness_range_lu": 9.0
+  },
+  "codec": "libmp3lame",
+  "bitrate": "320k"
+}

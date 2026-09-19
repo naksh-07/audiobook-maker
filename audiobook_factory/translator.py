@@ -159,8 +159,9 @@ def translate_chapter(
 
 def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Path:
     """Batch translates all extracted chapters in a project into Hindi."""
-    project_dir = Path(project_dir).resolve()
     extracted_dir = project_dir / "extracted"
+    if not extracted_dir.exists() and (project_dir / "chapters").exists():
+        extracted_dir = project_dir / "chapters"
     meta_file = project_dir / "metadata.json"
 
     if not extracted_dir.exists() or not meta_file.exists():

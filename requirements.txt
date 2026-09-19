@@ -1,0 +1,9 @@
+# Audiobook Maker Core Requirements
+# ---------------------------------
+# 100% Pure Python Standard Library on Mobile ARM64 (Termux) & Desktop.
+# Zero required external pip dependencies.
+#
+# System Requirements:
+# - python >= 3.10
+# - ffmpeg >= 6.0 (with SOXR resampler & libmp3lame/aac)
+# - poppler-utils (for pdftotext on Linux / Termux)

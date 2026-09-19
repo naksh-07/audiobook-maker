@@ -1,0 +1,77 @@
+{
+  "name": "audio-master",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) server & tools for professional audio mastering, vocal cleanup, and sidechain ducking.",
+  "tools": [
+    {
+      "name": "master_audio",
+      "description": "Applies the 5-stage studio vocal chain (rumble cut, de-esser, lowpass, SOXR 48kHz resampler, EBU R128 loudnorm) to any audio file.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "input_file": {
+            "type": "string",
+            "description": "Absolute path to the input audio file."
+          },
+          "output_file": {
+            "type": "string",
+            "description": "Destination file path (.mp3, .m4a, .wav)."
+          },
+          "target_lufs": {
+            "type": "number",
+            "description": "Target integrated loudness in LUFS (-19 for audiobooks, -16 for podcasts). Default: -19.",
+            "default": -19.0
+          },
+          "format": {
+            "type": "string",
+            "enum": ["mp3", "m4a", "wav"],
+            "description": "Output audio format. Default: m4a.",
+            "default": "m4a"
+          }
+        },
+        "required": ["input_file", "output_file"]
+      }
+    },
+    {
+      "name": "sidechain_duck_audio",
+      "description": "Dynamically ducks background music under spoken dialogue using FFmpeg sidechain compression.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "vocal_file": {
+            "type": "string",
+            "description": "Spoken dialogue or narration audio track."
+          },
+          "bgm_file": {
+            "type": "string",
+            "description": "Background score or ambient music track."
+          },
+          "output_file": {
+            "type": "string",
+            "description": "Path to the final mastered output file."
+          },
+          "duck_attenuation_db": {
+            "type": "number",
+            "description": "Volume attenuation in dB applied to BGM during speech. Default: -16.0.",
+            "default": -16.0
+          }
+        },
+        "required": ["vocal_file", "bgm_file", "output_file"]
+      }
+    },
+    {
+      "name": "audit_audio_levels",
+      "description": "Runs FFmpeg astats filter to extract RMS level, True Peak, dynamic range, and DC offset.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "audio_file": {
+            "type": "string",
+            "description": "Path to the audio file to inspect."
+          }
+        },
+        "required": ["audio_file"]
+      }
+    }
+  ]
+}

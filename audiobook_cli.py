@@ -20,6 +20,13 @@ from audiobook_factory.extractor import process_book_file
 from audiobook_factory.translator import translate_book_project
 from audiobook_factory.script_builder import generate_project_scripts
 from audiobook_factory.tts_dispatcher import TTSDispatcher
+from audiobook_factory.soundscape import (
+    detect_chapter_mood,
+    generate_procedural_ambient_bed,
+    fetch_remote_musicgen,
+    apply_dynamic_sidechain_ducking,
+    get_audio_duration,
+)
 from audiobook_factory.mastering import concatenate_and_master_chapter
 from audiobook_factory.packager import package_m4b_audiobook
 
@@ -89,6 +96,49 @@ def cmd_master(args):
         concatenate_and_master_chapter(segments, out_file)
 
     print(f"\n[OK] All chapters mastered at: {mastered_dir}")
+
+
+def cmd_bgm(args):
+    """Generate ambient score / background music and apply dynamic sidechain ducking."""
+    project_dir = PROJECTS_DIR / args.book
+    mastered_dir = project_dir / "mastered"
+    bgm_dir = project_dir / "soundscapes"
+    bgm_dir.mkdir(parents=True, exist_ok=True)
+
+    mastered_chapters = sorted(mastered_dir.glob("chapter_*_mastered.m4a"))
+    if not mastered_chapters:
+        print(f"[!] No mastered chapters found in {mastered_dir}. Run 'master' first.")
+        return
+
+    print(f"[*] Applying cinematic background score & sidechain ducking ({len(mastered_chapters)} chapters)...")
+    for ch in mastered_chapters:
+        chap_stem = ch.stem.replace("_mastered", "")
+        script_file = project_dir / "scripts" / f"{chap_stem}_script.json"
+        text_sample = ""
+        if script_file.exists():
+            with open(script_file, "r", encoding="utf-8") as f:
+                import json
+                script = json.load(f)
+                text_sample = " ".join([seg.get("text", "") for seg in script[:10]])
+
+        mood_data = detect_chapter_mood(text_sample)
+        primary_mood = mood_data.get("primary_mood", "default")
+        print(f"  Chapter {chap_stem}: Mood = '{primary_mood}'")
+
+        dur = get_audio_duration(ch)
+        bgm_raw = bgm_dir / f"{chap_stem}_bgm.wav"
+
+        if args.engine == "musicgen":
+            prompt = mood_data.get("musicgen_prompt", "")
+            fetch_remote_musicgen(prompt, dur, bgm_raw)
+        else:
+            generate_procedural_ambient_bed(primary_mood, dur, bgm_raw)
+
+        # Apply ducking
+        cinematic_out = mastered_dir / f"{chap_stem}_cinematic.m4a"
+        apply_dynamic_sidechain_ducking(ch, bgm_raw, cinematic_out, duck_attenuation_db=args.duck_db)
+
+    print(f"\n[OK] Cinematic scoring and sidechain ducking complete at: {mastered_dir}")
 
 
 def cmd_package(args):
@@ -179,6 +229,12 @@ def main():
     p_master = subparsers.add_parser("master", help="Concatenate segments and master audio with EBU R128")
     p_master.add_argument("book", help="Project book slug")
 
+    # bgm
+    p_bgm = subparsers.add_parser("bgm", help="Generate ambient score and apply dynamic sidechain ducking")
+    p_bgm.add_argument("book", help="Project book slug")
+    p_bgm.add_argument("--engine", default="ambient_bed", choices=["ambient_bed", "musicgen"], help="Music generation engine")
+    p_bgm.add_argument("--duck-db", default=-16.0, type=float, help="Sidechain attenuation in dB (default: -16)")
+
     # package
     p_pack = subparsers.add_parser("package", help="Assemble final M4B container with chapters")
     p_pack.add_argument("book", help="Project book slug")
@@ -205,6 +261,7 @@ def main():
         "script": cmd_script,
         "synthesize": cmd_synthesize,
         "master": cmd_master,
+        "bgm": cmd_bgm,
         "package": cmd_package,
         "auto": cmd_auto,
     }

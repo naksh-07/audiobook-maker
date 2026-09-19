@@ -24,20 +24,44 @@ except ImportError:
     KOKORO_URL = "http://10.236.21.128:8880"
 
 
+# Default Configuration from Environment
+DEFAULT_BACKEND = os.environ.get("TTS_PRIMARY_BACKEND", "gemini_tts")
+DEFAULT_VOICE = os.environ.get("GEMINI_DEFAULT_VOICE", "Aoede")
+DEFAULT_MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
+ENABLE_EMERGENCY_FALLBACK = os.environ.get("ENABLE_EMERGENCY_FALLBACK", "true").lower() in ("true", "1", "yes")
+
+# Voice Persona Mapping: Gemini -> Kokoro Emergency Fallback
+GEMINI_TO_KOKORO_MAP = {
+    "Aoede": "hi_meera",     # Expressive female narrative
+    "Charon": "hi_atul",     # Deep, resonant male narrative
+    "Kore": "hi_shivani",    # Warm, friendly female
+    "Puck": "hi_ravi",       # Energetic male
+    "Fenrir": "hi_atul",     # Commanding, authoritative male
+    "Zephyr": "hi_meera",    # Calm, gentle female
+    "Leda": "hi_shivani",    # Crisp professional female
+    "Orus": "hi_ravi",       # Balanced warm male
+}
+
+
 def get_gemini_api_key() -> str:
     key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not key:
-        raise ValueError("GEMINI_API_KEY is required for Gemini 3.1 TTS.")
+        raise ValueError("GEMINI_API_KEY is required for Gemini TTS.")
     return key
 
 
 def synthesize_gemini_tts(
     text: str,
     output_file: Path,
-    voice: str = "Aoede",
-    model: str = "gemini-3.1-flash-tts-preview",
+    voice: str = DEFAULT_VOICE,
+    model: str = DEFAULT_MODEL,
+    max_retries: int = 4,
 ) -> Path:
-    """Synthesize speech using Google Gemini 3.1 Flash TTS."""
+    """Synthesize speech using Google Gemini Flash TTS API with 429 rate-limit backoff."""
+    import base64
+    import wave
+    import re
+
     api_key = get_gemini_api_key()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
@@ -55,35 +79,41 @@ def synthesize_gemini_tts(
         }
     }
 
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", "User-Agent": "AudiobookFactory/1.0"},
-        method="POST"
-    )
+    data = json.dumps(payload).encode("utf-8")
 
-    import base64
-    try:
-        with urllib.request.urlopen(req, timeout=45.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            part = data["candidates"][0]["content"]["parts"][0]
-            inline_data = part.get("inlineData", {})
-            b64_audio = inline_data.get("data", "")
-            raw_pcm = base64.b64decode(b64_audio)
+    for attempt in range(max_retries):
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Content-Type": "application/json", "User-Agent": "AudiobookFactory/1.0"},
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=45.0) as resp:
+                resp_json = json.loads(resp.read().decode("utf-8"))
+                part = resp_json["candidates"][0]["content"]["parts"][0]
+                inline_data = part.get("inlineData", {})
+                b64_audio = inline_data.get("data", "")
+                raw_pcm = base64.b64decode(b64_audio)
 
-            # Convert 24kHz raw PCM to WAV
-            import wave
-            output_file.parent.mkdir(parents=True, exist_ok=True)
-            with wave.open(str(output_file), "wb") as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)
-                wf.setframerate(24000)
-                wf.writeframes(raw_pcm)
+                # Convert 24kHz raw PCM to WAV
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+                with wave.open(str(output_file), "wb") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)
+                    wf.setframerate(24000)
+                    wf.writeframes(raw_pcm)
 
-            return output_file
-    except urllib.error.HTTPError as e:
-        err = e.read().decode("utf-8", errors="ignore")
-        raise RuntimeError(f"Gemini TTS HTTP {e.code}: {err}")
+                return output_file
+        except urllib.error.HTTPError as e:
+            err = e.read().decode("utf-8", errors="ignore")
+            if e.code == 429 and attempt < max_retries - 1:
+                delay_match = re.search(r"retry in (\d+\.?\d*)s", err)
+                wait_sec = float(delay_match.group(1)) + 2.0 if delay_match else (25.0 * (attempt + 1))
+                print(f"  [WAIT] Gemini TTS free tier quota pacing. Pausing {wait_sec:.1f}s before retry (Attempt {attempt+1}/{max_retries})...")
+                time.sleep(wait_sec)
+                continue
+            raise RuntimeError(f"Gemini TTS HTTP {e.code}: {err}")
 
 
 def synthesize_kokoro_remote(
@@ -162,15 +192,22 @@ def synthesize_kokoro_remote(
 
 
 class TTSDispatcher:
-    """Orchestrates speech synthesis with continuity memory and resume checkpoints."""
+    """Orchestrates speech synthesis with Gemini API primary, Kokoro emergency fallback, and continuity checkpoints."""
 
-    def __init__(self, project_dir: Path, default_backend: str = "gemini_tts", default_voice: str = "Aoede"):
+    def __init__(
+        self,
+        project_dir: Path,
+        default_backend: str = DEFAULT_BACKEND,
+        default_voice: str = DEFAULT_VOICE,
+        enable_emergency_fallback: bool = ENABLE_EMERGENCY_FALLBACK,
+    ):
         self.project_dir = Path(project_dir).resolve()
         self.audio_dir = self.project_dir / "audio_chunks"
         self.audio_dir.mkdir(parents=True, exist_ok=True)
         self.registry_file = self.project_dir / "voice_registry.json"
         self.default_backend = default_backend
         self.default_voice = default_voice
+        self.enable_emergency_fallback = enable_emergency_fallback
         self.voice_map = self._load_voice_registry()
 
     def _load_voice_registry(self) -> Dict[str, Any]:
@@ -197,7 +234,7 @@ class TTSDispatcher:
             json.dump(self.voice_map, f, indent=2)
 
     def synthesize_segment(self, segment: Dict[str, Any], chapter_num: int, seg_num: int) -> Path:
-        """Synthesize a single speech segment with resume checkpointing."""
+        """Synthesize a single speech segment with resume checkpointing and emergency fallback."""
         text = segment.get("text", "").strip()
         if not text:
             raise ValueError("Empty segment text")
@@ -217,11 +254,24 @@ class TTSDispatcher:
         if out_file.exists() and out_file.stat().st_size > 1000:
             return out_file
 
-        # Dispatch
+        # Dispatch with automatic emergency fallback
         if backend == "gemini_tts":
-            synthesize_gemini_tts(text, out_file, voice=voice)
-            # 4.5s pacing for free tier 15 RPM
-            time.sleep(4.5)
+            try:
+                synthesize_gemini_tts(text, out_file, voice=voice)
+                # 6.0s pacing
+                time.sleep(6.0)
+            except Exception as e:
+                if self.enable_emergency_fallback:
+                    print(f"  [WARN] Gemini TTS failed ({e}). Checking emergency fallback to Kokoro...")
+                    fallback_voice = GEMINI_TO_KOKORO_MAP.get(voice, "hi_meera")
+                    try:
+                        synthesize_kokoro_remote(text, out_file, voice=fallback_voice, speed=speed)
+                    except Exception as kokoro_err:
+                        print(f"  [WARN] Kokoro fallback offline ({kokoro_err}). Cooling off 30s and retrying Gemini TTS...")
+                        time.sleep(30.0)
+                        synthesize_gemini_tts(text, out_file, voice=voice)
+                else:
+                    raise e
         elif backend == "kokoro":
             synthesize_kokoro_remote(text, out_file, voice=voice, speed=speed)
         else:

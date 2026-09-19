@@ -1,0 +1,25 @@
+{
+  "name": "Audiobook Broadcast Master",
+  "target_standard": "EBU R128 / Audible ACX",
+  "highpass_hz": 60,
+  "denoise": {
+    "filter": "afftdn",
+    "noise_reduction_db": 8,
+    "noise_floor_db": -35
+  },
+  "deesser": {
+    "intensity": 0.35,
+    "max_reduction": 0.5,
+    "frequency": 0.5
+  },
+  "lowpass_hz": 10500,
+  "resampler": "soxr",
+  "output_sample_rate": 48000,
+  "loudnorm": {
+    "integrated_lufs": -19.0,
+    "true_peak_db": -1.5,
+    "loudness_range_lu": 11.0
+  },
+  "codec": "aac",
+  "bitrate": "192k"
+}

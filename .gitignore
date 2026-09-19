@@ -1,15 +1,59 @@
-# Environment variables
+# Environment & Credentials (NEVER COMMIT)
 .env
+.env.*
 !.env.example
+*.key
+*.pem
+*.token
+*credentials*.json
 
-# Python caches
+# Python & Build
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
 
-# Local test outputs
+# Audio & Media Output Artifacts
 *.wav
 *.mp3
 *.m4a
 *.m4b
+*.aac
+*.flac
+*.ogg
+
+# Audiobooks Project Caches & Raw Books
 audiobooks/projects/
-test_output/
+audiobooks/inputs/
+audiobooks/output/
+*.pdf
+*.epub
+*.mobi
+
+# OS & Editor Artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.log
+scratch/

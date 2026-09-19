@@ -1,0 +1,17 @@
+{
+  "name": "Cinematic Audiobook Sidechain Ducking",
+  "ducking_threshold": 0.06,
+  "compression_ratio": 8,
+  "attack_ms": 150,
+  "release_ms": 850,
+  "knee_db": 2.5,
+  "bgm_attenuation_db": -16.0,
+  "fade_in_sec": 2.0,
+  "fade_out_sec": 3.0,
+  "output_sample_rate": 48000,
+  "master_loudnorm": {
+    "integrated_lufs": -19.0,
+    "true_peak_db": -1.5,
+    "loudness_range_lu": 11.0
+  }
+}

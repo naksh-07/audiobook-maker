@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "audiobook-maker"
+version = "1.2.0"
+description = "Studio-grade Audiobook Production Engine with Literary Hindi Translation, Multi-Voice Synthesis, Dynamic BGM Scoring & M4B Packaging."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Suraj (naksh-07)" }]
+keywords = ["audiobook", "tts", "gemini", "kokoro", "ffmpeg", "m4b", "speech-synthesis", "audio-mastering"]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+audiobook-maker = "audiobook_cli:main"
+audiobook-factory = "audiobook_cli:main"
+audio-master = "ffmpeg_mastering.audio_master:main"
+
+[project.urls]
+Homepage = "https://github.com/naksh-07/audiobook-maker"
+Repository = "https://github.com/naksh-07/audiobook-maker"
