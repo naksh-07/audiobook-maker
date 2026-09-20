@@ -224,7 +224,7 @@ def synthesize_gemini_tts(
                     # Stutter Guard tuned for dramatic audiobook whisper/pause delivery
                     word_count = max(len(text.split()), 1)
                     ratio = dur_sec / word_count
-                    is_stutter = (word_count > 3 and ratio > 2.2 and dur_sec > 10.0)
+                    is_stutter = (word_count > 3 and ratio > 2.2 and dur_sec >= 10.0)
                     is_empty = (dur_sec < 0.20 and word_count >= 3)
 
                     if (is_stutter or is_empty) and network_attempt < 2:

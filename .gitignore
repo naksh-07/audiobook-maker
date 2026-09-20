@@ -6,13 +6,13 @@
 *.pem
 *.token
 *credentials*.json
-*batch*keys*
+# Local Staged Candidate Keys & Temporary Key Lists (NEVER COMMIT)
+*keys_staging*
+*candidate_keys*
 *candidate*keys*
+*batch*keys*
+*.keys.txt
 valid_batch3_keys.json
-scripts/test_new_keys.py
-scripts/test_batch_3.py
-scripts/ingest_all_keys.py
-scripts/ingest_batch_3.py
 
 # Python & Build
 .venv/
