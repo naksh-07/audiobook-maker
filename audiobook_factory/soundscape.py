@@ -350,20 +350,9 @@ def fetch_musicgen(
     output_file: Path,
 ) -> Path:
     """
-    Synthesize high-fidelity instrumental music using local RTX 4050 GPU (MusicGen-small)
-    or fallback to procedural ambient bed.
+    Synthesize ambient background bed (procedural / stem fallback).
     """
-    enable_gpu = os.environ.get("ENABLE_LOCAL_MUSICGEN", "false").lower() in ("true", "1", "yes")
-    if not enable_gpu:
-        print("  [-] Local MusicGen GPU inference is on standby. Using ambient stem / procedural synthesis...")
-        return resolve_ambient_score("default", duration_sec, output_file)
-
-    try:
-        from .local_musicgen import generate_musicgen_audio
-        return generate_musicgen_audio(prompt, output_file, duration_sec=duration_sec)
-    except Exception as e:
-        print(f"[!] Local MusicGen GPU inference failed ({e}), falling back to procedural synthesis...")
-        return generate_procedural_ambient_bed("default", duration_sec, output_file)
+    return resolve_ambient_score("default", duration_sec, output_file)
 
 
 def apply_dynamic_sidechain_ducking(
