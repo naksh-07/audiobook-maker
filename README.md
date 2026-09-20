@@ -153,8 +153,15 @@ ENABLE_EMERGENCY_FALLBACK=true
 
 ## 🛠️ CLI Usage
 
-The unified CLI supports modular, step-by-step production or full pipeline execution:
+The unified CLI supports modular, step-by-step production or one-click autonomous execution.
 
+### 🚀 The "1-Click" Autonomous Mode
+For zero-touch end-to-end production (Extract ➔ Translate ➔ Script ➔ Synth ➔ BGM ➔ Master ➔ Package):
+```bash
+python3 audiobook_cli.py auto path/to/book.epub --hindi --dramatized --cover path/to/cover.jpg
+```
+
+### 🧱 Modular Step-by-Step Execution
 ```bash
 # 1. Extract raw book into chapters:
 python3 audiobook_cli.py extract path/to/book.epub
@@ -165,17 +172,33 @@ python3 audiobook_cli.py translate book_slug
 # 3. Generate Screenplay Script with speaker tags:
 python3 audiobook_cli.py script book_slug --hindi --dramatized
 
-# 4. Synthesize speech segments (with resume checkpointing):
+# 4. Generate Director Soundscape JSON Plans (Moods & SFX):
+python3 audiobook_cli.py soundscape book_slug
+
+# 5. Synthesize speech segments (with resume checkpointing):
 python3 audiobook_cli.py synthesize book_slug --backend gemini_tts --voice Aoede
 
-# 5. Master vocal track (48kHz SOXR + EBU R128):
+# 6. Master vocal track (48kHz SOXR + EBU R128):
 python3 audiobook_cli.py master book_slug
 
-# 6. Apply Cinematic BGM & Sidechain Ducking:
+# 7. Apply Cinematic BGM & Sidechain Ducking:
 python3 audiobook_cli.py bgm book_slug --duck-db -16.0
 
-# 7. Package final M4B audiobook with chapters and cover art:
+# 8. Package final M4B audiobook with chapters and cover art:
 python3 audiobook_cli.py package book_slug --cover path/to/cover.jpg
+```
+
+### 🎹 Sound Bank Management (FTS5 SQLite)
+Manage your local soundscapes, SFX, and ambient beds:
+```bash
+# Scan and index new audio files into the Sound Bank
+python3 audiobook_cli.py bank scan
+
+# Search for specific moods or sounds
+python3 audiobook_cli.py bank search "dark fantasy"
+
+# View Sound Bank statistics
+python3 audiobook_cli.py bank stats
 ```
 
 ---
@@ -185,6 +208,22 @@ python3 audiobook_cli.py package book_slug --cover path/to/cover.jpg
 - **Zero Credentials Policy:** `.gitignore` strictly rejects `.env`, `*.key`, `*.pem`, `*.token`, and credentials JSON.
 - **Media Binary Isolation:** Generated audio chunks (`.wav`, `.mp3`, `.m4a`, `.m4b`) and raw copyrighted book files are strictly excluded from git tracking.
 - **Git Memory Bank:** `.agents/memory/` tracks architectural decisions and active sprints without leaking sensitive tokens.
+
+---
+
+## 🩺 Troubleshooting
+
+- **FFmpeg Not Found:** Ensure `ffmpeg` is in your system `$PATH` and supports the `soxr` resampler. Check via `ffmpeg -filters | grep soxr`.
+- **API Quota Exceeded:** The synthesis will automatically attempt to use the remote Kokoro PC fallback if configured in `.env`.
+- **Missing Audiobooks Directory:** The `audiobooks/projects/` directory is automatically generated on your first extraction.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Whether it's adding new TTS engines, refining DSP mastering presets, or squashing bugs.
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on setting up the local environment, testing, and submitting Pull Requests.
 
 ---
 

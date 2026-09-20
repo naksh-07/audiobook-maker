@@ -11,6 +11,7 @@ import subprocess
 import argparse
 import json
 import re
+import shutil
 
 RNNOISE_DEFAULT_MODEL = "/root/.local/share/rnnoise/cb.rnnn"
 DEFAULT_AUDIO_DIR = "/storage/emulated/0/Documents/Termux/Audio"
@@ -34,7 +35,7 @@ def master_vocal(
     2. Neural Denoise (RNNoise or FFT afftdn)
     3. De-esser (sibilance tamer at 6-8.5kHz)
     4. Lowpass (10.5kHz vocoder fizz cutoff)
-    5. Loudnorm (EBU R128 -16 LUFS, -1.5dB True Peak)
+    5. Loudnorm (EBU R128 -19 LUFS, -1.5dB True Peak, Audible/ACX standard)
     Output is automatically 48,000 Hz for bit-perfect Android AudioFlinger playback.
     """
     if not os.path.exists(input_path):
@@ -54,8 +55,8 @@ def master_vocal(
     filters.extend([
         "deesser=i=0.35:m=0.5:f=0.5",
         "lowpass=f=10500",
-        "aresample=resampler=soxr:osr=48000",
-        "loudnorm=I=-16:TP=-1.5:LRA=11"
+        "aresample=osr=48000",
+        "loudnorm=I=-19:TP=-1.5:LRA=11"
     ])
     filter_chain = ",".join(filters)
 
@@ -92,7 +93,7 @@ def convert_audio(
     ext = os.path.splitext(output_path)[1].lower()
     cmd = [
         "ffmpeg", "-y", "-i", input_path,
-        "-af", f"aresample=resampler=soxr:osr={sample_rate}"
+        "-af", f"aresample=osr={sample_rate}"
     ]
 
     if ext == ".mp3":
@@ -159,11 +160,12 @@ def probe_audio(input_path: str) -> dict:
     }
 
 def play_audio(file_path: str) -> dict:
-    """Plays audio via Android termux-media-player."""
-    player_bin = "/data/data/com.termux/files/usr/bin/termux-media-player"
+    """Plays audio via ffplay or OS player, with fallback to termux-media-player."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Audio file not found: {file_path}")
 
+    # 1. Termux Android
+    player_bin = "/data/data/com.termux/files/usr/bin/termux-media-player"
     if os.path.exists(player_bin):
         subprocess.Popen(
             [player_bin, "play", file_path],
@@ -172,8 +174,23 @@ def play_audio(file_path: str) -> dict:
             start_new_session=True
         )
         return {"status": "playing", "player": "termux-media-player", "file": file_path}
-    else:
-        return {"status": "player_not_found", "file": file_path}
+
+    # 2. ffplay (cross-platform desktop)
+    ffplay = shutil.which("ffplay")
+    if ffplay:
+        subprocess.Popen(
+            [ffplay, "-nodisp", "-autoexit", "-loglevel", "quiet", file_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return {"status": "playing", "player": "ffplay", "file": file_path}
+
+    # 3. Windows default media player
+    if sys.platform == "win32":
+        os.startfile(file_path)
+        return {"status": "playing", "player": "os.startfile", "file": file_path}
+
+    return {"status": "player_not_found", "file": file_path}
 
 def main():
     parser = argparse.ArgumentParser(description="Antigravity Audio Mastering & DSP Tool")

@@ -10,6 +10,7 @@ import re
 import json
 import base64
 import zipfile
+import unicodedata
 import urllib.request
 import urllib.error
 import xml.etree.ElementTree as ET
@@ -89,9 +90,14 @@ class TextHTMLParser(HTMLParser):
 
 
 def clean_book_text(text: str) -> str:
-    """Sanitize raw book text: fix broken hyphens, strip footnotes, normalize quotes."""
+    """Sanitize raw book text: NFC normalization, zero-width stripping, hyphen fixes, footnotes."""
     if not text:
         return ""
+
+    # 0. Unicode NFC normalization & invisible zero-width character hygiene
+    text = unicodedata.normalize("NFC", text)
+    for zw in ("\u200b", "\u200c", "\u200d", "\ufeff", "\u2060"):
+        text = text.replace(zw, "")
 
     # 1. Fix broken hyphenated linebreaks: e.g. "impor-\ntant" -> "important"
     text = re.sub(r"(\b\w+)-\n+(\w+\b)", r"\1\2", text)
@@ -123,14 +129,14 @@ def clean_book_text(text: str) -> str:
     return text.strip()
 
 
-def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[str]]:
-    """Extract chapters and metadata from an EPUB file using zipfile and xml parsing."""
+def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[Any]]:
+    """Extract chapters and metadata from an EPUB file using zipfile and xml parsing with TOC.ncx support."""
     metadata = {
         "title": file_path.stem.replace("_", " ").title(),
         "author": "Unknown Author",
         "format": "EPUB",
     }
-    chapter_texts = []
+    chapter_items = []
 
     with zipfile.ZipFile(file_path, "r") as zf:
         # Find container.xml to locate rootfile (.opf)
@@ -171,16 +177,17 @@ def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[str]]:
 
         # Parse Manifest
         manifest = {}
+        toc_href = None
         for elem in opf_root.iter():
             if elem.tag.endswith("item"):
                 item_id = elem.attrib.get("id")
                 href = elem.attrib.get("href")
+                media_type = elem.attrib.get("media-type", "")
                 if item_id and href:
-                    if opf_dir:
-                        full_href = f"{opf_dir}/{href}".replace("\\", "/")
-                    else:
-                        full_href = href
+                    full_href = f"{opf_dir}/{href}".replace("\\", "/").lstrip("/") if opf_dir else href
                     manifest[item_id] = full_href
+                    if "ncx" in media_type.lower() or item_id.lower() in ("ncx", "toc"):
+                        toc_href = full_href
 
         # Parse Spine reading order
         spine = []
@@ -190,19 +197,104 @@ def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[str]]:
                 if idref in manifest:
                     spine.append(manifest[idref])
 
-        # Read XHTML documents in spine order
-        for item_path in spine:
-            try:
-                content = zf.read(item_path).decode("utf-8", errors="ignore")
-                parser = TextHTMLParser()
-                parser.feed(content)
-                text = clean_book_text(parser.get_clean_text())
-                if len(text.split()) >= 30:  # Skip empty covers / copyright pages
-                    chapter_texts.append(text)
-            except Exception:
-                continue
+        # 2. Try TOC.ncx parsing for canonical navigation points
+        nav_points = []
+        if not toc_href:
+            for name in zf.namelist():
+                if name.endswith(".ncx"):
+                    toc_href = name
+                    break
 
-    return metadata, chapter_texts
+        if toc_href and toc_href in zf.namelist():
+            try:
+                toc_xml = zf.read(toc_href).decode("utf-8", errors="ignore")
+                toc_root = ET.fromstring(toc_xml)
+                for nav in toc_root.iter():
+                    if nav.tag.endswith("navPoint"):
+                        lbl_elem = None
+                        src_attr = None
+                        for child in nav.iter():
+                            if child.tag.endswith("text") and child.text and not lbl_elem:
+                                lbl_elem = child.text.strip()
+                            elif child.tag.endswith("content") and "src" in child.attrib and not src_attr:
+                                src_attr = child.attrib.get("src", "").strip()
+                        if lbl_elem and src_attr:
+                            if opf_dir and not src_attr.startswith(opf_dir):
+                                full_src = f"{opf_dir}/{src_attr}".replace("\\", "/").lstrip("/")
+                            else:
+                                full_src = src_attr
+                            nav_points.append((lbl_elem, full_src))
+            except Exception:
+                nav_points = []
+
+        # Check if navPoints have internal anchors
+        has_anchors = any("#" in src for _, src in nav_points)
+
+        if nav_points and has_anchors:
+            # Map spine files and stitch continuous stream
+            file_offsets = {}
+            spine_contents = []
+            current_pos = 0
+            for sf in spine:
+                try:
+                    c = zf.read(sf).decode("utf-8", errors="ignore")
+                except Exception:
+                    c = ""
+                file_offsets[sf] = current_pos
+                spine_contents.append(c)
+                current_pos += len(c)
+            full_html = "".join(spine_contents)
+
+            all_nav_positions = []
+            for lbl, src in nav_points:
+                parts = src.split("#")
+                sf = parts[0]
+                anchor = parts[1] if len(parts) > 1 else ""
+                if sf in file_offsets:
+                    base_offset = file_offsets[sf]
+                    file_slice = full_html[base_offset : base_offset + len(spine_contents[spine.index(sf)])]
+                    if anchor:
+                        m = re.search(r'(?:id|name)=["\']' + re.escape(anchor) + r'["\']', file_slice)
+                        if m:
+                            all_nav_positions.append((lbl, base_offset + m.start()))
+                        else:
+                            all_nav_positions.append((lbl, base_offset))
+                    else:
+                        all_nav_positions.append((lbl, base_offset))
+
+            skip_keywords = ["extras", "meet the author", "preview", "copyright", "about the author", "cover", "toc"]
+            for i, (title, pos) in enumerate(all_nav_positions):
+                if any(sk in title.lower() for sk in skip_keywords):
+                    continue
+                end_pos = all_nav_positions[i + 1][1] if i + 1 < len(all_nav_positions) else len(full_html)
+                chunk = full_html[pos:end_pos]
+                parser = TextHTMLParser()
+                parser.feed(chunk)
+                clean = clean_book_text(parser.get_clean_text())
+                clean = re.sub(r'^(?:id|name)=["\'][^"\']+["\']>\s*', '', clean).strip()
+                clean = re.sub(r'^' + re.escape(title) + r'\s*', '', clean, flags=re.IGNORECASE).strip()
+                words = len(clean.split())
+                if words >= 30:
+                    chapter_items.append({
+                        "title": title,
+                        "content": clean,
+                        "words": words,
+                    })
+
+        # Fallback to standard spine document traversal if no anchor nav points found or extraction empty
+        if not chapter_items:
+            for item_path in spine:
+                try:
+                    content = zf.read(item_path).decode("utf-8", errors="ignore")
+                    parser = TextHTMLParser()
+                    parser.feed(content)
+                    text = clean_book_text(parser.get_clean_text())
+                    if len(text.split()) >= 30:  # Skip empty covers / copyright pages
+                        chapter_items.append(text)
+                except Exception:
+                    continue
+
+    return metadata, chapter_items
 
 
 def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
@@ -212,11 +304,19 @@ def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable is required for PDF extraction.")
 
+    file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+    if file_size_mb > 18.0:
+        raise ValueError(
+            f"PDF file '{file_path.name}' is {file_size_mb:.1f} MB, which exceeds Gemini inline data limit (20 MB base64). "
+            f"Please convert the PDF to EPUB/TXT or split into smaller volumes before processing."
+        )
+
     with open(file_path, "rb") as f:
         pdf_bytes = f.read()
 
     b64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
     prompt = (
         "You are an expert literary book digitizer. Extract all prose content from this PDF book into clean, "
@@ -247,7 +347,11 @@ def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "X-goog-api-key": api_key,
+            "User-Agent": "AudiobookFactory/1.0",
+        },
         method="POST",
     )
 
@@ -263,10 +367,16 @@ def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
 
 def segment_chapters_from_text(raw_text: str) -> List[Dict[str, str]]:
     """Segment a continuous text into structured chapters."""
-    # Common chapter heading regexes
+    # Common chapter heading regexes supporting named chapters, Markdown H1/H2, Roman numerals, and Hindi markers
     chapter_patterns = [
-        r"^(?:\s*#+\s*)?(?:chapter\s+\d+|chapter\s+[a-z]+|act\s+\d+|prologue|epilogue|introduction)\b.*$",
-        r"^(?:\s*#+\s*)?(?:अध्याय\s+\d+|भाग\s+\d+|प्रस्तावना)\b.*$",
+        # Explicit Markdown H1/H2 headings (e.g. "# The Boy Who Lived", "## The Council of Elrond")
+        r"^#{1,2}\s+[A-Z0-9\u0900-\u097F][^\n]{2,80}$",
+        # English chapter/act/book/part/scene variants (including Roman numerals: Chapter IV, Book 1)
+        r"^(?:\s*#+\s*)?(?:chapter|act|book|part|scene)\s+(?:\d+|[ivxlcdm]+|[a-z]+)\b.*$",
+        # Prologue, Epilogue, Interlude, Introduction
+        r"^(?:\s*#+\s*)?(?:prologue|epilogue|interlude|introduction|preface|afterword)\b.*$",
+        # Hindi / Devanagari chapter markers
+        r"^(?:\s*#+\s*)?(?:अध्याय|भाग|खंड|काण्ड|प्रस्तावना|उपसंहार)\s*(?:\d+|[०-९]+|[a-z]+)?\b.*$",
     ]
 
     combined_pattern = "|".join(f"(?:{p})" for p in chapter_patterns)
@@ -314,7 +424,7 @@ def segment_chapters_from_text(raw_text: str) -> List[Dict[str, str]]:
         end = splits[idx + 1].start() if idx + 1 < len(splits) else len(raw_text)
         content = raw_text[start:end].strip()
 
-        if len(content.split()) > 20:  # Avoid empty stubs
+        if len(content.split()) >= 5:  # Avoid empty stubs
             chapters.append({
                 "title": title,
                 "content": content,
@@ -361,16 +471,19 @@ def process_book_file(input_file: Path, output_base_dir: Path) -> Dict[str, Any]
     if ext == ".epub":
         meta, raw_chapters = extract_epub(input_file)
         metadata.update(meta)
-        for idx, chap_text in enumerate(raw_chapters, 1):
-            sub_chaps = segment_chapters_from_text(chap_text)
-            if sub_chaps:
-                chapters.extend(sub_chaps)
+        for idx, item in enumerate(raw_chapters, 1):
+            if isinstance(item, dict):
+                chapters.append(item)
             else:
-                chapters.append({
-                    "title": f"Chapter {idx}",
-                    "content": chap_text,
-                    "words": len(chap_text.split()),
-                })
+                sub_chaps = segment_chapters_from_text(item)
+                if sub_chaps:
+                    chapters.extend(sub_chaps)
+                else:
+                    chapters.append({
+                        "title": f"Chapter {idx}",
+                        "content": item,
+                        "words": len(item.split()),
+                    })
     elif ext in (".txt", ".md"):
         with open(input_file, "r", encoding="utf-8", errors="ignore") as f:
             raw_text = clean_book_text(f.read())

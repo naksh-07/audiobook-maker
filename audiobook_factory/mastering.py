@@ -40,7 +40,7 @@ def concatenate_and_master_chapter(
     concat_list = output_chapter_file.parent / f"concat_{output_chapter_file.stem}.txt"
     with open(concat_list, "w", encoding="utf-8") as f:
         for seg in audio_segments:
-            safe_path = str(seg.resolve()).replace("'", "'\\''")
+            safe_path = str(seg.resolve()).replace("\\", "/").replace("'", "'\\''")
             f.write(f"file '{safe_path}'\n")
 
     # 2. Studio Mastering Filter Chain:
@@ -52,7 +52,7 @@ def concatenate_and_master_chapter(
     # - loudnorm: EBU R128 international broadcast loudness (-19 LUFS)
     filter_chain = (
         "highpass=f=60,afftdn=nr=8:nf=-35,deesser=i=0.35:m=0.5:f=0.5,"
-        "lowpass=f=10500,aresample=resampler=soxr:osr=48000"
+        "lowpass=f=10500,aresample=osr=48000"
     )
     if loudnorm:
         filter_chain += ",loudnorm=I=-19:TP=-1.5:LRA=11"

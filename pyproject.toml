@@ -9,7 +9,7 @@ description = "Studio-grade Audiobook Production Engine with Literary Hindi Tran
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Suraj (naksh-07)" }]
-keywords = ["audiobook", "tts", "gemini", "kokoro", "ffmpeg", "m4b", "speech-synthesis", "audio-mastering"]
+keywords = ["audiobook", "tts", "gemini", "ffmpeg", "m4b", "speech-synthesis", "audio-mastering"]
 requires-python = ">=3.10"
 dependencies = []
 
@@ -26,3 +26,10 @@ audio-master = "ffmpeg_mastering.audio_master:main"
 [project.urls]
 Homepage = "https://github.com/naksh-07/audiobook-maker"
 Repository = "https://github.com/naksh-07/audiobook-maker"
+
+[tool.setuptools.packages.find]
+include = ["audiobook_factory*", "ffmpeg_mastering*"]
+exclude = ["audiobooks*"]
+
+[tool.setuptools]
+py-modules = ["audiobook_cli", "kokoro_client"]

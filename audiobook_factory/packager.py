@@ -98,8 +98,14 @@ def package_m4b_audiobook(
     final_m4b = output_dir / output_filename
     ffmpeg = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
 
-    # Find mastered audio files
-    chapter_audio_files = sorted(mastered_dir.glob("*.m4a")) or sorted(mastered_dir.glob("*.mp3"))
+    # Find mastered audio files: prefer *_cinematic.m4a if BGM was added, else *_mastered.m4a
+    cinematic_files = sorted(mastered_dir.glob("*_cinematic.m4a"))
+    if cinematic_files:
+        chapter_audio_files = cinematic_files
+    else:
+        mastered_files = sorted(mastered_dir.glob("*_mastered.m4a"))
+        chapter_audio_files = mastered_files if mastered_files else (sorted(mastered_dir.glob("*.m4a")) or sorted(mastered_dir.glob("*.mp3")))
+
     if not chapter_audio_files:
         raise FileNotFoundError(f"No mastered chapter files found in {mastered_dir}")
 
@@ -112,7 +118,7 @@ def package_m4b_audiobook(
     with open(concat_list, "w", encoding="utf-8") as f:
         for idx, cf in enumerate(chapter_audio_files, 1):
             dur_ms = get_audio_duration_ms(cf)
-            safe_path = str(cf.resolve()).replace("'", "'\\''")
+            safe_path = str(cf.resolve()).replace("\\", "/").replace("'", "'\\''")
             f.write(f"file '{safe_path}'\n")
 
             # Match title from metadata if available
@@ -131,28 +137,17 @@ def package_m4b_audiobook(
     meta_txt = output_dir / "chapters.txt"
     generate_ffmetadata(metadata, chapter_durations, meta_txt)
 
-    # Temporary concatenated audio
-    temp_concat = output_dir / "temp_full.m4a"
-    concat_cmd = [
+    # Assemble M4B directly from concat demuxer in a single stream-copy pass
+    has_cover = cover_image and Path(cover_image).exists()
+    pack_cmd = [
         ffmpeg,
         "-y",
         "-f", "concat",
         "-safe", "0",
         "-i", str(concat_list),
-        "-c", "copy",
-        str(temp_concat),
-    ]
-    subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Assemble M4B with chapters and cover
-    pack_cmd = [
-        ffmpeg,
-        "-y",
-        "-i", str(temp_concat),
         "-i", str(meta_txt),
     ]
 
-    has_cover = cover_image and Path(cover_image).exists()
     if has_cover:
         pack_cmd.extend(["-i", str(cover_image)])
         pack_cmd.extend(["-map", "0:a", "-map", "2:v", "-map_metadata", "1"])
@@ -165,18 +160,36 @@ def package_m4b_audiobook(
 
     try:
         subprocess.run(pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError:
+        # Fallback to two-step intermediate concatenation if single-pass demuxer metadata mapping fails
+        temp_concat = output_dir / "temp_full.m4a"
+        concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c", "copy", str(temp_concat)]
+        subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        fb_pack_cmd = [ffmpeg, "-y", "-i", str(temp_concat), "-i", str(meta_txt)]
+        if has_cover:
+            fb_pack_cmd.extend(["-i", str(cover_image), "-map", "0:a", "-map", "2:v", "-map_metadata", "1", "-c:a", "copy", "-c:v", "mjpeg", "-disposition:v", "attached_pic"])
+        else:
+            fb_pack_cmd.extend(["-map", "0:a", "-map_metadata", "1", "-c:a", "copy"])
+        fb_pack_cmd.append(str(final_m4b))
+        try:
+            subprocess.run(fb_pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        finally:
+            if temp_concat.exists():
+                temp_concat.unlink()
     finally:
         if concat_list.exists():
             concat_list.unlink()
-        if temp_concat.exists():
-            temp_concat.unlink()
 
-    # Sync to Android shared storage
-    shared_out = Path("/storage/emulated/0/Documents/Termux/Audiobooks/output")
-    if shared_out.exists() and os.access(shared_out, os.W_OK):
-        dest = shared_out / final_m4b.name
-        shutil.copy2(final_m4b, dest)
-        print(f"[+] Synced to mobile shared storage: {dest}")
+    # Sync to configured output directory or shared storage
+    configured_out = os.environ.get("AUDIO_OUTPUT_DIR")
+    if configured_out:
+        out_target = Path(configured_out).resolve()
+        out_target.mkdir(parents=True, exist_ok=True)
+        if out_target != final_m4b.parent:
+            dest = out_target / final_m4b.name
+            shutil.copy2(final_m4b, dest)
+            print(f"[+] Synced to output directory: {dest}")
 
     size_mb = round(final_m4b.stat().st_size / (1024 * 1024), 2)
     duration_min = round(total_ms / (1000 * 60), 1)

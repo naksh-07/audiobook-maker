@@ -6,8 +6,16 @@
 *.pem
 *.token
 *credentials*.json
+*batch*keys*
+*candidate*keys*
+valid_batch3_keys.json
+scripts/test_new_keys.py
+scripts/test_batch_3.py
+scripts/ingest_all_keys.py
+scripts/ingest_batch_3.py
 
 # Python & Build
+.venv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -38,6 +46,14 @@ wheels/
 *.aac
 *.flac
 *.ogg
+
+# Database & Index Files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
 
 # Audiobooks Project Caches & Raw Books
 audiobooks/projects/
