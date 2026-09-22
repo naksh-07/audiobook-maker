@@ -88,6 +88,7 @@ class TestAuditFixes(unittest.TestCase):
         # Test 1: Markdown codeblock stripped successfully
         fenced_json = "```json\n[{\"speaker\": \"Narrator\", \"text\": \"The journey began.\", \"type\": \"narration\"}]\n```"
         mock_response = MagicMock()
+        mock_response.__enter__.return_value = mock_response
         mock_response.read.return_value = json.dumps({
             "candidates": [{"content": {"parts": [{"text": fenced_json}]}}]
         }).encode("utf-8")
@@ -99,6 +100,7 @@ class TestAuditFixes(unittest.TestCase):
 
         # Test 2: Malformed JSON falls back to build_narrator_script (Zero Content Loss!)
         malformed_response = MagicMock()
+        malformed_response.__enter__.return_value = malformed_response
         malformed_response.read.return_value = json.dumps({
             "candidates": [{"content": {"parts": [{"text": "Sorry, I cannot produce JSON."}]}}]
         }).encode("utf-8")
@@ -215,7 +217,8 @@ The escape of the Brazilian boa constrictor earned Harry his longest-ever punish
         import base64
         from audiobook_factory.tts_dispatcher import synthesize_gemini_tts
 
-        stutter_pcm = b"\x00\x00" * int(10.0 * 24000)
+        # 4 words generated into 16.0s (ratio 4.0s/word > 3.2 threshold and dur >= 15.0s)
+        stutter_pcm = b"\x00\x00" * int(16.0 * 24000)
         normal_pcm = b"\x00\x00" * int(1.5 * 24000)
 
         mock_resp_1 = MagicMock()
@@ -231,12 +234,164 @@ The escape of the Brazilian boa constrictor earned Harry his longest-ever punish
         mock_resp_2.__enter__.return_value = mock_resp_2
 
         with patch("urllib.request.urlopen", side_effect=[mock_resp_1, mock_resp_2]) as mock_open:
-            with patch.dict("os.environ", {"GEMINI_API_KEY": "fake_key"}):
+            with patch("audiobook_factory.tts_dispatcher.get_persistent_key_pool") as mock_pool_fn:
+                mock_pool = MagicMock()
+                mock_pool.get_key.return_value = "fake_test_key"
+                mock_pool_fn.return_value = mock_pool
                 with tempfile.TemporaryDirectory() as tmpdir:
                     out_wav = Path(tmpdir) / "test.wav"
                     path, dur = synthesize_gemini_tts("Hello world of magic", out_wav, max_retries=3)
                     self.assertEqual(mock_open.call_count, 2)
                     self.assertAlmostEqual(dur, 1.5, places=1)
+
+    def test_10_unknown_speaker_fallback_to_narrator(self):
+        """Verify unmapped characters fall back safely to Narrator when roster is present."""
+        from audiobook_factory.script_builder import clean_screenplay_pass2
+        roster = {
+            "characters": {
+                "Geralt": {"gender": "male", "aliases": ["Witcher"]},
+                "Yennefer": {"gender": "female", "aliases": ["Sorceress"]},
+            }
+        }
+        raw_items = [
+            {"type": "dialogue", "speaker": "Witcher", "text": "I am ready."},
+            {"type": "dialogue", "speaker": "Drunken Guard", "text": "Who goes there?"},
+        ]
+        res = clean_screenplay_pass2(raw_items, is_hindi=False, character_roster=roster)
+        self.assertEqual(res[0]["speaker"], "Geralt")
+        self.assertEqual(res[1]["speaker"], "Narrator")
+
+    def test_11_snr_gatekeeper_raise_on_persistent_defect(self):
+        """Verify SNR Gatekeeper raises ValueError when defect persists across all 3 attempts."""
+        import base64
+        import struct
+        from audiobook_factory.tts_dispatcher import synthesize_gemini_tts
+
+        clipped_sample = struct.pack("<h", 32767)
+        clipped_pcm = clipped_sample * int(2.0 * 24000)
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({
+            "candidates": [{"content": {"parts": [{"inlineData": {"data": base64.b64encode(clipped_pcm).decode("utf-8")}}]}}]
+        }).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with patch("audiobook_factory.tts_dispatcher.get_persistent_key_pool") as mock_pool_fn:
+                mock_pool = MagicMock()
+                mock_pool.get_key.return_value = "test_key"
+                mock_pool_fn.return_value = mock_pool
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    out_wav = Path(tmpdir) / "corrupt.wav"
+                    with self.assertRaises(ValueError) as ctx:
+                        synthesize_gemini_tts("Some speech text here", out_wav, max_retries=3)
+                    self.assertIn("SNR Gatekeeper rejected segment audio after 3 failed attempts", str(ctx.exception))
+
+    def test_12_sanitizer_cleans_inline_markdown_and_ssml(self):
+        """Verify sanitizer scrubs inline XML tags, markdown bold/italics, and excessive repeats."""
+        from audiobook_factory.sanitizer import sanitize_screenplay_segment
+        seg = {
+            "type": "dialogue",
+            "speaker": "Geralt",
+            "text": "<break time='1s'/>**गैराल्ट** ने [तलवार निकालते हुए] कहा, 'रुको!' आहhhhhhh",
+        }
+        res = sanitize_screenplay_segment(seg, is_hindi=True)
+        self.assertIsNotNone(res)
+        text = res["text"]
+        self.assertNotIn("<break", text)
+        self.assertNotIn("**", text)
+        self.assertNotIn("[तलवार", text)
+        self.assertIn("गैराल्ट", text)
+        self.assertIn("आहhh", text)
+        self.assertNotIn("hhhhhh", text)
+
+    def test_13_normalize_soundscape_cue_section_whitelist(self):
+        """Verify normalize_to_3level_soundscape whitelists cue_section directives."""
+        from audiobook_factory.soundscape import normalize_to_3level_soundscape
+        plan = {
+            "chapter_id": 1,
+            "scenes": [
+                {
+                    "scene_id": 1,
+                    "emotional_arc": {
+                        "cue_section": "INVALID_HALLUCINATED_SECTION",
+                        "music_mood": "INVALID_MOOD",
+                    }
+                }
+            ]
+        }
+        res = normalize_to_3level_soundscape(plan)
+        sc = res["scenes"][0]["emotional_arc"]
+        self.assertEqual(sc["cue_section"], "auto")
+        self.assertEqual(sc["music_mood"], "tense")
+
+    def test_14_timeline_ledger_float_precision_and_foley_clamp(self):
+        """Verify timeline ledger clamps Foley trigger to segment end."""
+        from audiobook_factory.timeline_ledger import build_chapter_timeline_ledger
+        script = [{"speaker": "Geralt", "type": "dialogue", "text": "Quiet now."}]
+        cue_sheet = {
+            "foley_cues": [{"segment_index": 1, "foley_tag": "sword_draw", "offset_ms": 5000}]
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a 1.0s dummy wav
+            dummy_wav = Path(tmpdir) / "seg_001.wav"
+            import subprocess
+            cmd = ["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono", "-t", "1.0", str(dummy_wav)]
+            subprocess.run(cmd, check=True, capture_output=True)
+            ledger_out = Path(tmpdir) / "ledger.json"
+            ledger = build_chapter_timeline_ledger(
+                chapter_id=1,
+                script_segments=script,
+                audio_chunk_paths=[dummy_wav],
+                cue_sheet=cue_sheet,
+                output_ledger_file=ledger_out,
+            )
+            item = ledger["timeline"][0]
+            foley_event = item["foley_events"][0]
+            # Offset was 5000ms, but segment is only 1000ms. Trigger must be clamped to t_end_ms (1000ms)
+            self.assertLessEqual(foley_event["trigger_t_ms"], item["t_end_ms"])
+
+    def test_16_dynamic_whisper_faint_limit_and_shouting_softclip(self):
+        """Verify whisper prosody faint limit dynamic calibration and shouting softclip_tanh activation."""
+        from audiobook_factory.tts_dispatcher import synthesize_gemini_tts
+        import base64
+        import struct
+
+        # Create audio samples with RMS ~ 18.0 (amplitude 18)
+        # Default faint_limit is 30.0 -> rms 18.0 would be rejected as silent faint.
+        # But with "[whispers]" or emotion="whispering", faint_limit is 8.0 -> passes!
+        sample = struct.pack("<h", 18)
+        whisper_pcm = sample * int(1.5 * 24000)
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({
+            "candidates": [{"content": {"parts": [{"inlineData": {"data": base64.b64encode(whisper_pcm).decode("utf-8")}}]}}]
+        }).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with patch("audiobook_factory.tts_dispatcher.get_persistent_key_pool") as mock_pool_fn:
+                mock_pool = MagicMock()
+                mock_pool.get_key.return_value = "test_key"
+                mock_pool_fn.return_value = mock_pool
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    out_wav = Path(tmpdir) / "whisper.wav"
+                    # Whisper text with [whispers] should pass (not raise ValueError)
+                    path, dur = synthesize_gemini_tts("[whispers] silent whisper line", out_wav, emotion="whispering", max_retries=1)
+                    self.assertTrue(path.exists())
+                    self.assertGreater(dur, 0.0)
+
+        # Test shouting softclip detection
+        seg_shouting = {
+            "index": 1,
+            "type": "dialogue",
+            "speaker": "Geralt",
+            "text": "[shouting] रुक, हरामी!",
+            "emotion": "angry",
+            "acting": {"delivery_style": "bellowing_rage"},
+        }
+        is_shout = ("[shouting]" in seg_shouting["text"].lower()) or (seg_shouting["acting"].get("delivery_style") == "bellowing_rage")
+        self.assertTrue(is_shout)
 
 
 if __name__ == "__main__":

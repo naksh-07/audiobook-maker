@@ -1,0 +1,208 @@
+{
+  "characters": {
+    "Narrator": {
+      "gender": "female",
+      "voice_persona": "Aoede",
+      "voice_style": "Classic expressive storytelling, warm, articulate, melodious narration",
+      "aliases": ["सूत्रधार", "विवरण"]
+    },
+    "Geralt": {
+      "gender": "male",
+      "voice_persona": "Charon",
+      "voice_style": "Gruff, calm, authoritative, deep resonant baritone, quiet gravitas, raspy",
+      "aliases": ["Geralt of Rivia", "विचर", "गेराल्ट", "रिविया का गेराल्ट", "Witcher"]
+    },
+    "Dandelion": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Energetic, theatrical, witty, conversational bard",
+      "aliases": ["Jaskier", "डैंडेलियन", "कवि", "भाट", "Troubadour"]
+    },
+    "Yennefer": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Aloof, razor-sharp, aristocratic, commanding, magnetic sorceress",
+      "aliases": ["Yennefer of Vengerberg", "येनेफ़र", "वेंगरबर्ग की येनेफ़र"]
+    },
+    "King_Foltest": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Regal, conflicted, commanding, weary monarch",
+      "aliases": ["Foltest", "राजा फ़ोल्टेस्ट", "फ़ोल्टेस्ट"]
+    },
+    "Dennis_Cranmer": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Gruff, cold, pragmatic dwarf guard captain",
+      "aliases": ["Dennis", "Cranmer", "डेनिस क्रैनमर", "डेनिस", "क्रैनमर", "बौना"]
+    },
+    "Falwick": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Arrogant, vicious noble knight, condescending",
+      "aliases": ["Count Falwick", "फ़ाल्विक", "काउंट फ़ाल्विक"]
+    },
+    "Tailles": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Cocky, haughty young knight",
+      "aliases": ["तैलिस", "टेल्स"]
+    },
+    "Velerad": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Blunt, pragmatic castellan, bureaucratic",
+      "aliases": ["वेलेराड"]
+    },
+    "Renfri": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Fierce, cynical, tragic bandit princess, razor sharp",
+      "aliases": ["रेनफ़्री"]
+    },
+    "Nenneke": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Matronly, wise, scolding yet deeply protective priestess",
+      "aliases": ["नेनेके", "पुजारिन"]
+    },
+    "Iola": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Gentle, silent maiden, tender",
+      "aliases": ["इओला"]
+    },
+    "Ostrit": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Arrogant noble, desperate, haughty",
+      "aliases": ["ओस्ट्रिट"]
+    },
+    "Stregobor": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Condescending, cold, intellectual wizard",
+      "aliases": ["स्ट्रेगोबोर"]
+    },
+    "Tavern_Keeper": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Rough, nervous, hospitable innkeeper",
+      "aliases": ["Innkeeper", "दुकानदार", "दरबान", "मालिक"]
+    },
+    "Nivellen": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Deep, guttural, beastly yet cultured nobleman, boisterous, raspy warmth",
+      "aliases": ["निवेलेन", "निवेलिन", "दानव", "दरिंदा", "Nivellen", "Beast"]
+    },
+    "Vereena": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Eerie, ethereal, hypnotic, predatory vampire, whispered menace, seductive",
+      "aliases": ["वेरीना", "वेरेना", "ब्रूक्सा", "रूसलका", "Vereena", "Bruxa"]
+    },
+    "Caldemeyn": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Warm, practical alderman, hospitable yet weary municipal authority",
+      "aliases": ["काल्डेमेन", "कैल्डेमेन", "मुखिया", "Caldemen"]
+    },
+    "Marilka": {
+      "gender": "female",
+      "voice_persona": "Puck",
+      "voice_style": "Quick, youthful, street-smart daughter of alderman",
+      "aliases": ["मारिल्का"]
+    },
+    "Nohorn": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Gritty, sinister mercenary, Renfri's right-hand thug",
+      "aliases": ["नोहॉर्न"]
+    },
+    "Civril": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Cruel, professional killer with crossbow, vicious half-elf",
+      "aliases": ["सिव्रिल"]
+    },
+    "Libushe": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Nagging, sharp-tongued alderman's wife",
+      "aliases": ["लिबुशे"]
+    },
+    "Calanthe": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Commanding, aristocratic, razor-sharp queen, sarcastic, royal authority",
+      "aliases": ["कैलेंथे", "रानी", "रानी कैलेंथे", "द लायनेस ऑफ सिंट्रा", "Lioness of Cintra", "Queen Calanthe"]
+    },
+    "Duny": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Formal, earnest, tragic knight, resonant baritone, dignified despite curse",
+      "aliases": ["डनी", "ड्यूनी", "अर्चियन", "Urcheon", "Urcheon of Erlenwald", "एर्लेनवाल्ड का अर्चियन", "काँटेदार जीव"]
+    },
+    "Pavetta": {
+      "gender": "female",
+      "voice_persona": "Kore",
+      "voice_style": "Quiet, timid, youthful princess, emotional depth, sudden otherworldly power",
+      "aliases": ["पावेता", "राजकुमारी", "राजकुमारी पावेता", "Princess Pavetta"]
+    },
+    "Mousesack": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Wise, deep, mystical, measured druid elder",
+      "aliases": ["माउससैक", "ड्रुइड", "माउस सैक"]
+    },
+    "Eist_Tuirseach": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Hearty, bold, chivalrous Skellige jarl, warm baritone warrior",
+      "aliases": ["ईस्ट", "ईस्ट ट्यूर्शेक", "ट्यूर्शेक", "ईस्ट टुरसेक", "टुरसेक", "जार्ल ईस्ट", "Eist", "Eist Tuirseach"]
+    },
+    "Crach_an_Craite": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Hot-headed, boisterous, brash young red-haired Skellige warrior",
+      "aliases": ["क्रैच", "क्रैच एन क्रेट", "क्रैच एन क्रैट", "Crach", "Crach an Craite"]
+    },
+    "Haxo": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Efficient, polite, formal castellan of Cintra",
+      "aliases": ["हाक्सो", "किलेदार", "किलेदार हाक्सo", "Castellan Haxo"]
+    },
+    "Coodcoodak": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Eccentric, witty nobleman who mimics animal sounds, jovial",
+      "aliases": ["कूडकूडाक", "बैरन कूडकूडाक", "Coodcoodak", "Baron Coodcoodak"]
+    },
+    "Rainfarn": {
+      "gender": "male",
+      "voice_persona": "Fenrir",
+      "voice_style": "Haughty, aggressive, arrogant knight of Attre",
+      "aliases": ["रेनफ़ार्न", "बैरन रेनफ़ार्न", "Rainfarn", "Rainfarn of Attre"]
+    },
+    "Windhalm": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Young, quiet, timid noble suitor",
+      "aliases": ["विंडहाम", "विंडहाल्म", "Windhalm", "Windhalm of Attre"]
+    },
+    "Herald": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Loud, booming, formal royal herald / announcer",
+      "aliases": ["उद्घोषक", "चोबदार", "Announcer"]
+    },
+    "Servant": {
+      "gender": "male",
+      "voice_persona": "Puck",
+      "voice_style": "Humble, subservient bath servant",
+      "aliases": ["सेवक", "हजाम", "नाई"]
+    }
+  }
+}

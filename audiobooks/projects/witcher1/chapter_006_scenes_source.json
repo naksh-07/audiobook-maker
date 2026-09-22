@@ -1,0 +1,96 @@
+{
+  "chapter_id": "chapter_006",
+  "chapter_title": "The Lesser Evil (कमतर बुराई)",
+  "total_acts": 6,
+  "total_segments": 494,
+  "primary_environment": "blaviken_town",
+  "acts": [
+    {
+      "act_id": 1,
+      "act_name": "The Kikimora & The Alderman's Hearth",
+      "segment_start": 1,
+      "segment_end": 62,
+      "narrative_summary": "Geralt arrives in the port town of Blaviken with a slain kikimora strapped to his donkey. He visits Alderman Caldemeyn seeking a bounty, but learns none exists. Caldemeyn offers his guest room and suggests consulting Master Irion, the local sorcerer.",
+      "primary_environment": "alderman_house",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Caldemeyn",
+        "Libushe"
+      ]
+    },
+    {
+      "act_id": 2,
+      "act_name": "The Tower of Stregobor & The Curse of the Black Sun",
+      "segment_start": 63,
+      "segment_end": 196,
+      "narrative_summary": "Geralt enters the granite illusion-filled tower of Master Irion, who reveals himself to be Stregobor, a sorcerer hunted by Princess Renfri. Stregobor recounts the Curse of the Black Sun and pleads with Geralt to murder Renfri under the doctrine of the Lesser Evil. Geralt flatly refuses.",
+      "primary_environment": "wizard_tower_garden",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Stregobor",
+        "Marilka"
+      ]
+    },
+    {
+      "act_id": 3,
+      "act_name": "The Golden Court Tavern & The Shrike's Parley",
+      "segment_start": 197,
+      "segment_end": 259,
+      "narrative_summary": "At the Golden Court inn, Geralt encounters Renfri and her lethal band of mercenaries. Caldemeyn attempts to expel them using Audoen's safe conduct letter, but Renfri displays King Audoen's royal seal. Renfri and Geralt parley in the tavern corner, exchanging bitter philosophical warnings.",
+      "primary_environment": "tavern_interior",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Caldemeyn",
+        "Renfri",
+        "Nohorn",
+        "Civril"
+      ]
+    },
+    {
+      "act_id": 4,
+      "act_name": "The Midnight Attic Visit & The Lesser Evil",
+      "segment_start": 260,
+      "segment_end": 292,
+      "narrative_summary": "Renfri slips into Geralt's dark attic room through the skylight. In an intimate, tragic midnight encounter, she reveals her brutal past and gives Geralt an ultimatum: help her slay Stregobor or stay out of the way. Geralt urges her to forgive and leave. They share an emotionally charged truce.",
+      "primary_environment": "attic_room_night",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Renfri"
+      ]
+    },
+    {
+      "act_id": 5,
+      "act_name": "Morning at the Alderman's & The Tridam Ultimatum",
+      "segment_start": 293,
+      "segment_end": 398,
+      "narrative_summary": "Over morning breakfast with Caldemeyn's family, Geralt hears about the historical massacre of Tridam where bandits slaughtered hostages in public until the baron yielded. Horrified, Geralt realizes Renfri plans to butcher the crowded Blaviken market to force Stregobor out of his tower. Geralt sprints to the market square to intervene.",
+      "primary_environment": "alderman_dining_hall",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Caldemeyn"
+      ]
+    },
+    {
+      "act_id": 6,
+      "act_name": "The Bloodbath of Blaviken & The Butcher's Exile",
+      "segment_start": 399,
+      "segment_end": 494,
+      "narrative_summary": "At the empty market square, Geralt confronts Renfri's mercenaries. In a lightning-fast bloody sword fight, Geralt slaughters Nohorn, Civril, and the entire band. Renfri arrives with Stregobor's rejection and duels Geralt to the death, falling on his blade. Stregobor arrives to perform an autopsy on Renfri's corpse; Geralt threatens to kill him. Horrified townspeople stone Geralt, and Caldemeyn banishes him forever, giving birth to the legend of the Butcher of Blaviken.",
+      "primary_environment": "blaviken_market_square",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Renfri",
+        "Stregobor",
+        "Caldemeyn",
+        "Nohorn",
+        "Civril"
+      ]
+    }
+  ]
+}

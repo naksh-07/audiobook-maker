@@ -56,9 +56,20 @@ wheels/
 *.sqlite3
 
 # Audiobooks Project Caches & Raw Books
-audiobooks/projects/
+audiobooks/projects/*/audio_chunks/
+audiobooks/projects/*/audio_chunks_*/
+audiobooks/projects/*/mastered/
+audiobooks/projects/*/soundscapes/
+audiobooks/projects/sample_story/
 audiobooks/inputs/
 audiobooks/output/
+audiobooks/sound_bank/
+audiobooks/soundscapes/
+*.sfk
+*.zip
+*.bak
+*.bak_*
+*.cache
 *.pdf
 *.epub
 *.mobi

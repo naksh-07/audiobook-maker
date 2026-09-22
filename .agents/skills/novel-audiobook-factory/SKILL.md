@@ -40,10 +40,11 @@ python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voic
 flowchart TD
     A["Input File (.epub / .pdf)"] --> B["Stage 1: Document Extractor<br/>(audiobook_factory.extractor)"]
     B --> C["Stage 2: Literary Hindi Translation<br/>(audiobook_factory.translator)"]
-    C --> D["Stage 3: Sliding-Window Attribution<br/>(audiobook_factory.script_builder)"]
-    D --> E["Stage 4: Token-Bucket TTS Pool<br/>(audiobook_factory.tts_dispatcher)"]
-    E --> F["Stage 5: FTS5 Sound Bank & Ducking<br/>(audiobook_factory.soundscape)"]
-    F --> G["Stage 6: Broadcast Mastering & M4B<br/>(audiobook_factory.packager)"]
+    C --> D["Stage 3: Sliding-Window Screenplay Attribution<br/>(audiobook_factory.script_builder)"]
+    D --> E["Stage 4: Deep Foley & Acoustic Miner<br/>(audiobook_factory.foley_miner)"]
+    D --> F["Stage 5: Multi-Cast TTS Dispatcher<br/>(audiobook_factory.tts_dispatcher)"]
+    E & F --> G["Stage 6: 5-Track FFmpeg Timeline Compositor<br/>(audiobook_factory.soundscape)"]
+    G --> H["Stage 7: Broadcast Mastering & M4B Container<br/>(audiobook_factory.packager)"]
 ```
 
 ### Stage 1: Document Ingestion ([`extractor.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/extractor.py))
@@ -56,21 +57,27 @@ flowchart TD
 
 ### Stage 3: Screenplay Attribution ([`script_builder.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))
 - **Sliding-Window Parsing**: Chunks chapters into 1,200-word blocks with rolling context. Eliminates text truncation for long chapters.
-- **Speaker Aliasing**: Resolves character nicknames and pronoun tags (*"the professor"* $\rightarrow$ *"Severus Snape"*).
+- **Multi-Cast Speaker Attribution**: Attributes character dialogue vs narrator, removes redundant speech tags, tags acting emotions (`whispering`, `growl`, `calm_raspy`, `angry`).
 
-### Stage 4: Concurrent Voice Synthesis ([`tts_dispatcher.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))
+### Stage 4: Deep Foley & Acoustic Director ([`foley_miner.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/foley_miner.py))
+- **Verb/Object Extraction**: Mines physical interactions (weapons, tankards, footsteps, door creaks, armor rustle, magic signs).
+- **Micro-Timing & Stereo Panning**: Generates master cue sheet (`.cue.json`) with millisecond offsets (`offset_ms`) and spatial stereo staging (`pan`).
+- **Room Acoustic Presets**: Configures impulse reverb and room EQ profiles (`tavern_interior`, `stone_crypt`, `royal_hall`, `dense_forest_night`).
+
+### Stage 5: Concurrent Multi-Cast TTS ([`tts_dispatcher.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))
 - **Engine**: Google Gemini 3.1 Flash TTS (`gemini-3.1-flash-tts-preview`) generating 24kHz raw PCM.
-- **Rate-Limiter**: `TokenBucketRateLimiter` pacing requests across 3 workers to respect 15 RPM free tier limits without hard sleep.
-- **Ledger**: Transaction-safe SQLite state (`project_state.db`) tracks every segment status.
+- **Multi-Cast Persona Routing**: Dynamically maps characters to distinct voices (`Charon` for Geralt, `Aoede` for Narrator, `Puck` for Dandelion/Guards, `Fenrir` for Kings/Nobles, `Kore` for Sorceresses).
+- **Rate-Limiter & Key Pool**: Rotates across 80+ keys with `TokenBucketRateLimiter` and single-worker human cadence.
 
-### Stage 5: Soundscape & FTS5 Sound Bank ([`soundscape.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape.py))
-- **Mood Detection**: Scene tone classified into mood profiles (`peaceful`, `mysterious`, `tense`, `emotional`, `epic`).
-- **SQLite FTS5 Sound Bank**: Instant keyword search for ambient beds and CC0 Foley sounds.
-- **Sidechain Ducking**: FFmpeg dynamically compresses BGM by `-16dB` during vocal narration.
+### Stage 6: 5-Track FFmpeg Timeline Compositor ([`soundscape.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape.py))
+- **Track 1 (Voice Bus)**: Multi-speaker dialogue with subtle room impulse reverberation (`aecho`).
+- **Track 2 (Foley Bus)**: Micro-timed physical object audio placed via FFmpeg `adelay`.
+- **Track 3 (Ambience Bus)**: Environmental room tone and weather from CC0 Sound Bank.
+- **Track 4 (Music Bus)**: Cinematic score with 1.2kHz–3.2kHz spectral carving (`equalizer=f=2200:t=q:w=1.5:g=-5.5`) and -16dB dynamic lookahead sidechain ducking.
+- **Master Bus**: EBU R128 (-19 LUFS) broadcast loudness normalization at 48kHz.
 
-### Stage 6: Broadcast Mastering & Packaging ([`mastering.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering.py), [`packager.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/packager.py))
-- **5-Stage Studio Vocal Chain**: Highpass 60Hz $\rightarrow$ Neural Denoiser $\rightarrow$ De-esser (6-8.5kHz) $\rightarrow$ Lowpass 10.5kHz $\rightarrow$ EBU R128 (-19 LUFS).
-- **Single-Pass Stream Copy**: Concat demuxer streams directly to `.m4b` container with embedded chapter timestamps.
+### Stage 7: Broadcast Packaging ([`packager.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/packager.py))
+- **Single-Pass Stream Copy**: Concat demuxer streams directly to `.m4b` container with embedded chapter metadata and cover art.
 
 ---
 

@@ -6,11 +6,20 @@ embeds cover art, and writes industry-standard .m4b audiobooks.
 """
 
 import os
+import re
 import shutil
 import subprocess
 import json
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from audiobook_factory.contracts import BookMasterManifest
+from audiobook_factory.gate_auditor import (
+    audit_gate6a_voice_continuity,
+    audit_gate6b_loudness_continuity,
+    audit_gate6c_toc_integrity,
+    audit_gate6d_packaging_specs,
+    GateAuditError,
+)
 
 
 def get_audio_duration_ms(file_path: Path) -> int:
@@ -74,14 +83,26 @@ def package_m4b_audiobook(
     project_dir: Path,
     output_filename: str | None = None,
     cover_image: Path | None = None,
+    manifest: Optional[BookMasterManifest] = None,
+    enforce_gate6: bool = False,
 ) -> Path:
     """
     Packages all mastered chapters of a project into a single, chapterized .m4b audiobook.
+    Accepts optional BookMasterManifest, runs Gate 6 pre-flight audit, embeds chapters with +faststart.
     """
     project_dir = Path(project_dir).resolve()
     mastered_dir = project_dir / "mastered"
     output_dir = project_dir / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Resolve manifest if not passed
+    if manifest is None:
+        m_file = project_dir / "book_master_manifest.json"
+        if m_file.exists():
+            try:
+                manifest = BookMasterManifest.from_file(m_file)
+            except Exception as e:
+                print(f"[!] Warning: Could not load book_master_manifest.json: {e}")
 
     meta_file = project_dir / "metadata.json"
     metadata = {}
@@ -89,8 +110,11 @@ def package_m4b_audiobook(
         with open(meta_file, "r", encoding="utf-8") as f:
             metadata = json.load(f)
 
-    title = metadata.get("title", project_dir.name.replace("_", " ").title())
-    author = metadata.get("author", "Unknown Author")
+    title = (manifest.title if manifest else None) or metadata.get("title", project_dir.name.replace("_", " ").title())
+    author = (manifest.author if manifest else None) or metadata.get("author", "Unknown Author")
+    if not cover_image and manifest and manifest.packaging_specs and manifest.packaging_specs.cover_art_path:
+        cover_image = manifest.packaging_specs.cover_art_path
+
     if not output_filename:
         safe_name = "".join(c for c in title if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
         output_filename = f"{safe_name}.m4b"
@@ -98,16 +122,50 @@ def package_m4b_audiobook(
     final_m4b = output_dir / output_filename
     ffmpeg = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
 
-    # Find mastered audio files: prefer *_cinematic.m4a if BGM was added, else *_mastered.m4a
-    cinematic_files = sorted(mastered_dir.glob("*_cinematic.m4a"))
-    if cinematic_files:
-        chapter_audio_files = cinematic_files
+    # Robust per-chapter resolution: for each chapter, prefer cinematic if available, else mastered
+    all_audio = list(mastered_dir.glob("*.m4a")) + list(mastered_dir.glob("*.mp3")) + list(mastered_dir.glob("*.wav"))
+    chap_nums = set()
+    for f in all_audio:
+        m = re.search(r"chapter[_-]?(\d+)", f.name, re.IGNORECASE)
+        if m:
+            chap_nums.add(int(m.group(1)))
+
+    chapter_audio_files = []
+    if chap_nums:
+        for c_num in sorted(chap_nums):
+            # 1. Prefer cinematic
+            candidates = sorted(mastered_dir.glob(f"*chapter_{c_num:03d}*_cinematic.*")) or sorted(mastered_dir.glob(f"*chapter_{c_num}*_cinematic.*"))
+            if not candidates:
+                # 2. Fall back to mastered
+                candidates = sorted(mastered_dir.glob(f"*chapter_{c_num:03d}*_mastered.*")) or sorted(mastered_dir.glob(f"*chapter_{c_num}*_mastered.*"))
+            if not candidates:
+                # 3. Fall back to any file with chapter number
+                candidates = sorted(mastered_dir.glob(f"*chapter_{c_num:03d}.*")) or sorted(mastered_dir.glob(f"*chapter_{c_num}.*"))
+            if candidates:
+                chapter_audio_files.append(candidates[0])
     else:
-        mastered_files = sorted(mastered_dir.glob("*_mastered.m4a"))
-        chapter_audio_files = mastered_files if mastered_files else (sorted(mastered_dir.glob("*.m4a")) or sorted(mastered_dir.glob("*.mp3")))
+        # Fallback to general sorting if no chapter numbers detected
+        chapter_audio_files = sorted(mastered_dir.glob("*_cinematic.m4a")) or sorted(mastered_dir.glob("*_mastered.m4a")) or sorted(all_audio)
 
     if not chapter_audio_files:
         raise FileNotFoundError(f"No mastered chapter files found in {mastered_dir}")
+
+    # Invoke Gate 6 Pre-Flight Audit Suite
+    print(f"[*] Macro-Tier Gate 6 Pre-flight Verification Suite...")
+    r_6a = audit_gate6a_voice_continuity(project_dir, manifest=manifest)
+    r_6b = audit_gate6b_loudness_continuity(chapter_audio_files)
+    r_6c = audit_gate6c_toc_integrity(chapter_audio_files, toc=manifest.toc if manifest else None)
+    r_6d = audit_gate6d_packaging_specs(cover_image=cover_image, specs=manifest.packaging_specs if manifest else None)
+
+    print(f"  Gate 6A (Voice Continuity)  : {r_6a.status}")
+    print(f"  Gate 6B (Loudness Continuity): {r_6b.status}")
+    print(f"  Gate 6C (TOC Integrity)      : {r_6c.status}")
+    print(f"  Gate 6D (Packaging Specs)    : {r_6d.status}")
+
+    all_passed = all([r_6a.passed, r_6b.passed, r_6c.passed, r_6d.passed])
+    if enforce_gate6 and not all_passed:
+        all_errs = r_6a.errors + r_6b.errors + r_6c.errors + r_6d.errors
+        raise GateAuditError(f"Gate 6 Pre-Flight Audit Failed: {'; '.join(all_errs)}")
 
     print(f"[*] Packaging {len(chapter_audio_files)} mastered chapters into M4B audiobook...")
 
@@ -115,6 +173,8 @@ def package_m4b_audiobook(
     chapter_durations = []
     total_ms = 0
     concat_list = output_dir / "m4b_concat.txt"
+    has_mp3 = any(f.suffix.lower() == ".mp3" for f in chapter_audio_files)
+
     with open(concat_list, "w", encoding="utf-8") as f:
         for idx, cf in enumerate(chapter_audio_files, 1):
             dur_ms = get_audio_duration_ms(cf)
@@ -137,8 +197,10 @@ def package_m4b_audiobook(
     meta_txt = output_dir / "chapters.txt"
     generate_ffmetadata(metadata, chapter_durations, meta_txt)
 
-    # Assemble M4B directly from concat demuxer in a single stream-copy pass
+    # Assemble M4B directly from concat demuxer with +faststart
     has_cover = cover_image and Path(cover_image).exists()
+    audio_codec_args = ["-c:a", "aac", "-b:a", "192k"] if has_mp3 else ["-c:a", "copy"]
+
     pack_cmd = [
         ffmpeg,
         "-y",
@@ -151,11 +213,12 @@ def package_m4b_audiobook(
     if has_cover:
         pack_cmd.extend(["-i", str(cover_image)])
         pack_cmd.extend(["-map", "0:a", "-map", "2:v", "-map_metadata", "1"])
-        pack_cmd.extend(["-c:a", "copy", "-c:v", "mjpeg", "-disposition:v", "attached_pic"])
+        pack_cmd.extend(audio_codec_args + ["-c:v", "mjpeg", "-disposition:v", "attached_pic"])
     else:
         pack_cmd.extend(["-map", "0:a", "-map_metadata", "1"])
-        pack_cmd.extend(["-c:a", "copy"])
+        pack_cmd.extend(audio_codec_args)
 
+    pack_cmd.extend(["-movflags", "+faststart"])
     pack_cmd.append(str(final_m4b))
 
     try:
@@ -163,7 +226,7 @@ def package_m4b_audiobook(
     except subprocess.CalledProcessError:
         # Fallback to two-step intermediate concatenation if single-pass demuxer metadata mapping fails
         temp_concat = output_dir / "temp_full.m4a"
-        concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c", "copy", str(temp_concat)]
+        concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list)] + audio_codec_args + [str(temp_concat)]
         subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         fb_pack_cmd = [ffmpeg, "-y", "-i", str(temp_concat), "-i", str(meta_txt)]
@@ -171,6 +234,7 @@ def package_m4b_audiobook(
             fb_pack_cmd.extend(["-i", str(cover_image), "-map", "0:a", "-map", "2:v", "-map_metadata", "1", "-c:a", "copy", "-c:v", "mjpeg", "-disposition:v", "attached_pic"])
         else:
             fb_pack_cmd.extend(["-map", "0:a", "-map_metadata", "1", "-c:a", "copy"])
+        fb_pack_cmd.extend(["-movflags", "+faststart"])
         fb_pack_cmd.append(str(final_m4b))
         try:
             subprocess.run(fb_pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

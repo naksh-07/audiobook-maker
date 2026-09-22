@@ -32,18 +32,31 @@ def _load_env_file():
 
 _load_env_file()
 
-from .extractor import process_book_file
-from .translator import translate_book_project
-from .script_builder import generate_project_scripts
-from .tts_dispatcher import TTSDispatcher
+from .extractor import (
+    process_book_file,
+    extract_chapters,
+    split_large_chapter_on_semantic_boundary,
+)
+from .translator import (
+    translate_book_project,
+    normalize_translated_lexicon,
+)
+from .script_builder import (
+    generate_project_scripts,
+    build_dramatized_script_llm,
+    build_narrator_script,
+)
+from .tts_dispatcher import TTSDispatcher, probe_key_health
 from .soundscape import (
     detect_chapter_mood,
-    generate_procedural_ambient_bed,
     resolve_ambient_score,
     generate_chapter_soundscape_plan,
     render_chapter_soundscape,
     generate_project_soundscapes,
     apply_dynamic_sidechain_ducking,
+    render_multitrack_chapter_audio,
+    get_sound_bank,
+    attenuate_foley_whisper_collisions,
 )
 from .mastering import concatenate_and_master_chapter
 from .packager import package_m4b_audiobook
@@ -51,5 +64,36 @@ from .sound_bank import SoundBank
 from .logger import logger
 from .state import ProjectStateLedger
 from .orchestrator import PipelineOrchestrator
+from .contracts import (
+    ProjectConfig,
+    CharacterProfile,
+    CharacterRoster,
+    SceneSource,
+    MusicCue,
+    FoleyCue,
+    AmbienceScene,
+    MasteringConfig,
+    CreativeManifest,
+    ManifestValidationError,
+    BookPackagingSpecs,
+    BookChapterMarker,
+    BookTableOfContents,
+    BookVoiceRoster,
+    GlobalLoreBible,
+    BookMasterManifest,
+)
+from .sound_bank_ingest import UniversalSoundBankIngester
+from .gate_auditor import (
+    AuditResult,
+    GateAuditError,
+    audit_chapter_gates,
+    audit_gate6a_voice_continuity,
+    audit_gate6b_loudness_continuity,
+    audit_gate6c_toc_integrity,
+    audit_gate6d_packaging_specs,
+    audit_book_master,
+)
 
-__version__ = "2.0.0"
+__version__ = "2.2.0"
+
+

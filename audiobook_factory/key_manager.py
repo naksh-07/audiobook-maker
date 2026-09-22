@@ -348,7 +348,7 @@ class PersistentKeyPool:
                 f"Active keys remaining: {active_rem}"
             )
 
-    def mark_temporary_backoff(self, api_key: str, backoff_seconds: float, error_msg: str):
+    def mark_temporary_backoff(self, api_key: str, backoff_seconds: float, error_msg: str = ""):
         """
         Marks key for temporary backoff (e.g. 503 spike or 15 RPM burst).
         Does NOT burn the key for the entire day.

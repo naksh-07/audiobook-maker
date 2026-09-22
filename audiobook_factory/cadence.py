@@ -16,7 +16,7 @@ import time
 import math
 import random
 import threading
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Callable
 
 from audiobook_factory.logger import logger
 
@@ -48,8 +48,8 @@ class HumanCadenceController:
         self,
         min_reading_wpm: float = 220.0,
         audio_review_ratio_range: tuple = (0.15, 0.35),
-        scene_break_interval: int = 5,
-        scene_break_duration_range: tuple = (35.0, 65.0),
+        scene_break_interval: int = 15,
+        scene_break_duration_range: tuple = (15.0, 30.0),
         key_switch_cooldown_range: tuple = (18.0, 32.0),
     ):
         self.min_reading_wpm = min_reading_wpm
@@ -98,7 +98,9 @@ class HumanCadenceController:
         Enforces human pacing prior to firing an API request.
         Includes periodic scene review breaks every N segments.
         Thread-safe via internal lock on mutable state.
+        Sleep operations are performed OUTSIDE the lock to prevent thread starvation.
         """
+        sleeps = []
         with self._lock:
             now = time.time()
             self.segment_counter += 1
@@ -110,11 +112,9 @@ class HumanCadenceController:
                     f"  [STUDIO CADENCE] Scene batch complete ({self.segment_counter}/{total_segs}). "
                     f"Simulating director listening & script review (cooling off {break_sec:.1f}s)..."
                 )
-                time.sleep(break_sec)
-                # Fall through to also apply regular human delay (prevents post-break burst)
+                sleeps.append(break_sec)
 
             # Regular inter-request human delay
-            now = time.time()  # Refresh after potential scene break sleep
             if self.last_request_time > 0:
                 elapsed = now - self.last_request_time
                 target_delay = self.calculate_human_delay(upcoming_text, self.last_audio_duration)
@@ -123,8 +123,15 @@ class HumanCadenceController:
                     logger.info(
                         f"  [STUDIO CADENCE] Human pacing: reading & listening delay ({remaining:.1f}s)..."
                     )
-                    time.sleep(remaining)
+                    sleeps.append(remaining)
 
+            # Pre-reserve timestamp to prevent other threads from storming
+            self.last_request_time = now + sum(sleeps)
+
+        for s in sleeps:
+            time.sleep(s)
+
+        with self._lock:
             self.last_request_time = time.time()
 
     def record_completed_segment(self, audio_duration: float):
@@ -160,3 +167,51 @@ def get_human_cadence_controller() -> HumanCadenceController:
             if _cadence_instance is None:
                 _cadence_instance = HumanCadenceController()
     return _cadence_instance
+
+
+def probe_key_health(
+    keys: List[str],
+    ping_fn: Optional[Callable[[str], bool]] = None,
+) -> List[str]:
+    """
+    Meso-Tier Verification Guard:
+    Performs pre-flight health probe across candidate API keys and evicts invalid,
+    rate-limited, or exhausted keys before initiating batch synthesis.
+    """
+    if not keys:
+        return []
+
+    healthy_keys: List[str] = []
+
+    def _default_ping(key: str) -> bool:
+        if not key or not isinstance(key, str) or len(key.strip()) < 8:
+            return False
+        import urllib.request
+        import urllib.error
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key.strip()}&pageSize=1"
+        try:
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=10.0) as resp:
+                return resp.status == 200
+        except urllib.error.HTTPError:
+            return False
+        except Exception:
+            return False
+
+    tester = ping_fn if ping_fn is not None else _default_ping
+
+    for k in keys:
+        k_clean = k.strip() if isinstance(k, str) else ""
+        if not k_clean:
+            continue
+        try:
+            if tester(k_clean):
+                healthy_keys.append(k_clean)
+            else:
+                logger.warning(f"  [KEY PROBE] Evicted unhealthy/exhausted key: {k_clean[:6]}...{k_clean[-4:] if len(k_clean)>=10 else ''}")
+        except Exception as e:
+            logger.warning(f"  [KEY PROBE] Evicted failing key ({e}): {k_clean[:6]}...{k_clean[-4:] if len(k_clean)>=10 else ''}")
+            continue
+
+    return healthy_keys
+

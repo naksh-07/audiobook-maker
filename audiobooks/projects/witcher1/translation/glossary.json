@@ -1,0 +1,148 @@
+{
+  "characters": [
+    {
+      "english_name": "Geralt of Rivia",
+      "hindi_name": "रिविया का गेराल्ट",
+      "gender": "male",
+      "voice_style": "gruff, calm, authoritative, deep resonant baritone, quiet gravitas",
+      "recommended_pronoun_level": "tum"
+    },
+    {
+      "english_name": "Yennefer of Vengerberg",
+      "hindi_name": "वेंगरबर्ग की येनेफ़र",
+      "gender": "female",
+      "voice_style": "aloof, razor-sharp, aristocratic, commanding, magnetic",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Dandelion",
+      "hindi_name": "डैंडेलियन",
+      "gender": "male",
+      "voice_style": "energetic, theatrical, poetic, witty, conversational",
+      "recommended_pronoun_level": "tum"
+    },
+    {
+      "english_name": "King Foltest",
+      "hindi_name": "राजा फ़ोल्टेस्ट",
+      "gender": "male",
+      "voice_style": "regal, conflicted, commanding, weary monarch",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Princess Adda",
+      "hindi_name": "राजकुमारी अद्दा",
+      "gender": "female",
+      "voice_style": "wild, feral, cursed",
+      "recommended_pronoun_level": "tu"
+    },
+    {
+      "english_name": "Ostrit",
+      "hindi_name": "ओस्ट्रिट",
+      "gender": "male",
+      "voice_style": "arrogant noble, desperate, haughty",
+      "recommended_pronoun_level": "tum"
+    },
+    {
+      "english_name": "Velerad",
+      "hindi_name": "वेलेराड",
+      "gender": "male",
+      "voice_style": "blunt, pragmatic castellan, bureaucratic",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Renfri",
+      "hindi_name": "रेनफ़्री",
+      "gender": "female",
+      "voice_style": "fierce, cynical, tragic bandit princess, sharp",
+      "recommended_pronoun_level": "tu"
+    },
+    {
+      "english_name": "Stregobor",
+      "hindi_name": "स्ट्रेगोबोर",
+      "gender": "male",
+      "voice_style": "condescending, cold, intellectual wizard",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Nivellen",
+      "hindi_name": "निवेलेन",
+      "gender": "male",
+      "voice_style": "booming beastly voice, cultured nobleman beneath a monstrous roar",
+      "recommended_pronoun_level": "tum"
+    },
+    {
+      "english_name": "Queen Calanthe",
+      "hindi_name": "रानी कैलेंथे",
+      "gender": "female",
+      "voice_style": "fierce, lion-hearted, imperious, iron-willed monarch",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Duny",
+      "hindi_name": "डनी",
+      "gender": "male",
+      "voice_style": "formal knightly tone, honorable, humble",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Princess Pavetta",
+      "hindi_name": "राजकुमारी पावेता",
+      "gender": "female",
+      "voice_style": "quiet, ethereal, hidden primal power",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Nenneke",
+      "hindi_name": "नेनेके",
+      "gender": "female",
+      "voice_style": "matronly, wise, scolding yet deeply protective priestess",
+      "recommended_pronoun_level": "aap"
+    },
+    {
+      "english_name": "Iola",
+      "hindi_name": "इओला",
+      "gender": "female",
+      "voice_style": "gentle, silent maiden, tender",
+      "recommended_pronoun_level": "tu"
+    }
+  ],
+  "relationships": [
+    {"from": "Foltest", "to": "Geralt", "level": "tum"},
+    {"from": "Geralt", "to": "Foltest", "level": "aap"},
+    {"from": "Geralt", "to": "Dandelion", "level": "tum"},
+    {"from": "Dandelion", "to": "Geralt", "level": "tum"},
+    {"from": "Geralt", "to": "Yennefer", "level": "tum"},
+    {"from": "Yennefer", "to": "Geralt", "level": "tum"},
+    {"from": "Geralt", "to": "Nenneke", "level": "aap"},
+    {"from": "Nenneke", "to": "Geralt", "level": "tum"},
+    {"from": "Geralt", "to": "Renfri", "level": "tum"},
+    {"from": "Renfri", "to": "Geralt", "level": "tum"},
+    {"from": "Calanthe", "to": "Geralt", "level": "tum"},
+    {"from": "Geralt", "to": "Calanthe", "level": "aap"}
+  ],
+  "locations_and_terms": {
+    "Witcher": "विचर",
+    "Rivia": "रिविया",
+    "Wyzim": "विज़िम",
+    "Temeria": "तेमेरिया",
+    "Cintra": "सिंट्रा",
+    "Ellander": "एलांडर",
+    "Temple of Melitele": "मेलीतेले का मंदिर",
+    "Striga": "स्ट्रिगा",
+    "Bruxa": "ब्रूक्सा",
+    "Djinn": "जिन्न",
+    "Law of Surprise": "आश्चर्य का नियम",
+    "The Lesser Evil": "कमतर बुराई",
+    "A Grain of Truth": "सच्चाई का एक कण",
+    "A Question of Price": "कीमत का सवाल",
+    "The Edge of the World": "दुनिया का छोर",
+    "The Last Wish": "आखिरी इच्छा",
+    "The Voice of Reason": "तर्क की आवाज़",
+    "Silver sword": "चाँदी की तलवार",
+    "Steel sword": "फ़ौलादी तलवार",
+    "Elixir / Potion": "जादुई काढ़ा / रस",
+    "Medallion": "विचर का पदक (मेडलियन)",
+    "Sign (Aard/Igni/Yrden/Quen/Axii)": "विचर का चिन्ह (आर्द/इग्नि/यर्देन/क्वेन/आक्सी)"
+  },
+  "general_tone": "Dark fantasy, cinematic dramatic Hindustani with rich evocative prose and emotional depth."
+}

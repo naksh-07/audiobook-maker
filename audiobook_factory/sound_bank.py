@@ -11,12 +11,21 @@ import re
 import json
 import shutil
 import sqlite3
+import contextlib
 import subprocess
+import urllib.request
+import urllib.error
+import threading
+import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Generator, Union
+
+from audiobook_factory.logger import logger
 
 DEFAULT_BANK_DIR = Path(__file__).resolve().parent.parent / "audiobooks" / "sound_bank"
 DEFAULT_DB_PATH = DEFAULT_BANK_DIR / "sound_bank.db"
+
 
 
 class SoundBank:
@@ -29,15 +38,26 @@ class SoundBank:
     ):
         self.bank_root = Path(bank_root or DEFAULT_BANK_DIR).resolve()
         self.bank_root.mkdir(parents=True, exist_ok=True)
+        self.cache_dir = self.bank_root / "cache"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = Path(db_path or (self.bank_root / "sound_bank.db")).resolve()
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
-    def _get_conn(self) -> sqlite3.Connection:
+    @contextlib.contextmanager
+    def _get_conn(self) -> Generator[sqlite3.Connection, None, None]:
         conn = sqlite3.connect(str(self.db_path), timeout=20.0)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.execute("PRAGMA busy_timeout=5000;")
-        return conn
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def _init_db(self):
         """Initialize relational metadata table and SQLite FTS5 index."""
@@ -54,9 +74,17 @@ class SoundBank:
                     duration_sec REAL DEFAULT 0.0,
                     size_bytes INTEGER DEFAULT 0,
                     format TEXT,
+                    source_url TEXT,
+                    is_downloaded INTEGER DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
+            # Auto-migrate if older schema exists
+            cols = [c[1] for c in conn.execute("PRAGMA table_info(sound_catalog)").fetchall()]
+            if "source_url" not in cols:
+                conn.execute("ALTER TABLE sound_catalog ADD COLUMN source_url TEXT;")
+            if "is_downloaded" not in cols:
+                conn.execute("ALTER TABLE sound_catalog ADD COLUMN is_downloaded INTEGER DEFAULT 1;")
             conn.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS sound_catalog_fts USING fts5(
                     filename,
@@ -90,6 +118,65 @@ class SoundBank:
                 END;
             """)
             conn.commit()
+
+            # Sound Track Sections table for intelligent cue-slicing & energy zones
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS sound_track_sections (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    track_id INTEGER NOT NULL,
+                    section_name TEXT NOT NULL,      -- INTRO_BED, RISING_TENSION, CLIMAX_DROP, AFTERMATH_FADE
+                    start_sec REAL NOT NULL,
+                    end_sec REAL NOT NULL,
+                    energy_level INTEGER NOT NULL,   -- 1 to 10
+                    tempo_bpm INTEGER DEFAULT 0,
+                    tags TEXT,
+                    FOREIGN KEY (track_id) REFERENCES sound_catalog(id) ON DELETE CASCADE
+                );
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_track_sections ON sound_track_sections(track_id, section_name);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_section_energy ON sound_track_sections(energy_level);")
+            conn.commit()
+
+            # Auto-seed sections if empty
+            sec_row = conn.execute("SELECT COUNT(*) FROM sound_track_sections").fetchone()
+            if sec_row and sec_row[0] == 0:
+                self._seed_track_sections(conn)
+
+    def _seed_track_sections(self, conn: sqlite3.Connection):
+        """Seed 100% proportional and novel-agnostic energy landmarks for musical tracks."""
+        # Fetch all music tracks
+        music_tracks = conn.execute("""
+            SELECT id, filename, duration_sec FROM sound_catalog
+            WHERE category IN ('MUS', 'LEITMOTIF', 'CHAPTER_BED', 'DYNAMIC_STEM')
+        """).fetchall()
+
+        for track in music_tracks:
+            t_id = track["id"]
+            dur = float(track["duration_sec"] or 0.0)
+            if dur <= 0.0:
+                continue
+
+            # Proportional landmarks based on track duration percentages:
+            # INTRO_BED 0-25%, RISING_TENSION 25-60%, CLIMAX_DROP 60-85%, AFTERMATH_FADE 85-100%
+            if dur >= 15.0:
+                sections = [
+                    ("INTRO_BED", 0.0, round(dur * 0.25, 2), 3, "intro ambient bed exposition quiet"),
+                    ("RISING_TENSION", round(dur * 0.25, 2), round(dur * 0.60, 2), 6, "rising tension suspense progression"),
+                    ("CLIMAX_DROP", round(dur * 0.60, 2), round(dur * 0.85, 2), 9, "climax drop peak battle dramatic"),
+                    ("AFTERMATH_FADE", round(dur * 0.85, 2), round(dur, 2), 3, "aftermath decay resolution outro fade"),
+                ]
+            else:
+                sections = [
+                    ("INTRO_BED", 0.0, round(dur, 2), 5, "short stem full cue"),
+                ]
+
+            for s_name, s_start, s_end, s_energy, s_tags in sections:
+                conn.execute("""
+                    INSERT INTO sound_track_sections (track_id, section_name, start_sec, end_sec, energy_level, tags)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (t_id, s_name, s_start, s_end, s_energy, s_tags))
+
+        conn.commit()
 
     @staticmethod
     def _extract_duration(file_path: Path) -> float:
@@ -130,7 +217,15 @@ class SoundBank:
 
         # 1. Category
         category = "SFX"
-        if any(k in parts for k in ("ambience", "amb", "atmospheres", "environments")):
+        if any(k in parts for k in ("leitmotif", "leitmotifs", "character_theme", "character_themes")):
+            category = "LEITMOTIF"
+        elif any(k in parts for k in ("chapter_bed", "chapter_beds", "world_bed", "world_beds")):
+            category = "CHAPTER_BED"
+        elif any(k in parts for k in ("dynamic_stem", "dynamic_stems", "intensity_stems")):
+            category = "DYNAMIC_STEM"
+        elif any(k in parts for k in ("stinger", "stingers", "accents", "hits")):
+            category = "STINGER"
+        elif any(k in parts for k in ("ambience", "amb", "atmospheres", "environments")):
             category = "AMB"
         elif any(k in parts for k in ("foley", "fol", "footsteps", "movement")):
             category = "FOL"
@@ -191,55 +286,132 @@ class SoundBank:
         stats = {"indexed": 0, "updated": 0, "skipped": 0, "total_files": 0}
         valid_exts = {".wav", ".mp3", ".ogg", ".flac", ".m4a", ".aif", ".aiff"}
 
+        candidate_files = []
+        for t_dir in target_dirs:
+            if not t_dir.exists():
+                continue
+            for root, _, files in os.walk(t_dir):
+                for f in files:
+                    p = Path(root) / f
+                    if p.suffix.lower() in valid_exts and not p.name.startswith("."):
+                        candidate_files.append(p)
+
+        stats["total_files"] = len(candidate_files)
+
+        # Quick read of existing records to minimize lock time
+        existing_records = {}
         with self._get_conn() as conn:
-            for t_dir in target_dirs:
-                if not t_dir.exists():
-                    continue
-                for root, _, files in os.walk(t_dir):
-                    for f in files:
-                        p = Path(root) / f
-                        if p.suffix.lower() not in valid_exts or p.name.startswith("."):
-                            continue
+            cur = conn.execute("SELECT id, filepath, size_bytes FROM sound_catalog")
+            for row in cur.fetchall():
+                existing_records[row["filepath"]] = (row["id"], row["size_bytes"])
 
-                        stats["total_files"] += 1
-                        filepath_str = str(p.resolve()).replace("\\", "/")
-                        size_bytes = p.stat().st_size
+        to_update = []
+        to_insert = []
 
-                        # Check if already indexed with same size
-                        cur = conn.execute("SELECT id, size_bytes FROM sound_catalog WHERE filepath = ?", (filepath_str,))
-                        row = cur.fetchone()
-                        if row and row["size_bytes"] == size_bytes:
-                            stats["skipped"] += 1
-                            continue
+        for p in candidate_files:
+            filepath_str = str(p.resolve()).replace("\\", "/")
+            try:
+                size_bytes = p.stat().st_size
+            except OSError:
+                continue
 
-                        meta = self._derive_metadata(p)
-                        dur = self._extract_duration(p)
+            existing = existing_records.get(filepath_str)
+            if existing and existing[1] == size_bytes:
+                stats["skipped"] += 1
+                continue
 
-                        if row:
-                            conn.execute("""
-                                UPDATE sound_catalog
-                                SET filename = ?, category = ?, subcategory = ?, mood = ?, tags = ?,
-                                    duration_sec = ?, size_bytes = ?, format = ?
-                                WHERE id = ?
-                            """, (
-                                p.name, meta["category"], meta["subcategory"], meta["mood"], meta["tags"],
-                                dur, size_bytes, p.suffix.lower(), row["id"]
-                            ))
-                            stats["updated"] += 1
-                        else:
-                            conn.execute("""
-                                INSERT INTO sound_catalog
-                                (filename, filepath, category, subcategory, mood, tags, duration_sec, size_bytes, format)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            """, (
-                                p.name, filepath_str, meta["category"], meta["subcategory"], meta["mood"],
-                                meta["tags"], dur, size_bytes, p.suffix.lower()
-                            ))
-                            stats["indexed"] += 1
+            meta = self._derive_metadata(p)
+            dur = self._extract_duration(p)
+
+            if existing:
+                to_update.append((
+                    p.name, meta["category"], meta["subcategory"], meta["mood"], meta["tags"],
+                    dur, size_bytes, p.suffix.lower(), existing[0]
+                ))
+            else:
+                to_insert.append((
+                    p.name, filepath_str, meta["category"], meta["subcategory"], meta["mood"],
+                    meta["tags"], dur, size_bytes, p.suffix.lower()
+                ))
+
+        # Commit batch inserts and updates in a single rapid transaction
+        with self._get_conn() as conn:
+            if to_update:
+                conn.executemany("""
+                    UPDATE sound_catalog
+                    SET filename = ?, category = ?, subcategory = ?, mood = ?, tags = ?,
+                        duration_sec = ?, size_bytes = ?, format = ?
+                    WHERE id = ?
+                """, to_update)
+                stats["updated"] += len(to_update)
+
+            if to_insert:
+                conn.executemany("""
+                    INSERT INTO sound_catalog
+                    (filename, filepath, category, subcategory, mood, tags, duration_sec, size_bytes, format)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, to_insert)
+                stats["indexed"] += len(to_insert)
 
             conn.commit()
 
         return stats
+
+    _download_lock = threading.Lock()
+
+    def download_virtual_asset(
+        self,
+        sound_id: int,
+        source_url: str,
+        filename: str,
+        category: str = "SFX",
+    ) -> Optional[Path]:
+        """
+        JIT downloads a virtual sound asset from remote URL directly to local cache.
+        Thread-safe and atomic with unique temporary files.
+        Updates sound_catalog so future lookups are local.
+        """
+        if not source_url:
+            return None
+
+        target_dir = self.cache_dir / category
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_path = target_dir / filename
+
+        with SoundBank._download_lock:
+            if target_path.exists() and target_path.stat().st_size > 0:
+                return target_path
+
+            temp_path = target_path.with_suffix(target_path.suffix + f".{uuid.uuid4().hex[:8]}.part")
+            try:
+                req = urllib.request.Request(
+                    source_url,
+                    headers={"User-Agent": "AudiobookFactory/2.0 (https://github.com/naksh-07/audiobook-maker)"}
+                )
+                with urllib.request.urlopen(req, timeout=15.0) as resp:
+                    with open(temp_path, "wb") as out_f:
+                        shutil.copyfileobj(resp, out_f)
+
+                temp_path.replace(target_path)
+                size_bytes = target_path.stat().st_size
+                dur = self._extract_duration(target_path)
+                norm_path = str(target_path.resolve()).replace("\\", "/")
+
+                with self._get_conn() as conn:
+                    conn.execute("""
+                        UPDATE sound_catalog
+                        SET filepath = ?, is_downloaded = 1, size_bytes = ?, duration_sec = ?
+                        WHERE id = ?
+                    """, (norm_path, size_bytes, dur, sound_id))
+                return target_path
+            except Exception as e:
+                logger.warning(f"  [!] Failed to download virtual asset '{filename}' from {source_url}: {e}")
+                if temp_path.exists():
+                    try:
+                        temp_path.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+                return None
 
     def search(
         self,
@@ -249,39 +421,56 @@ class SoundBank:
         limit: int = 5,
     ) -> List[Dict[str, Any]]:
         """
-        Executes sub-millisecond FTS5 search against local sound bank.
-        Query words are combined with prefix matching for high recall.
+        Executes sub-millisecond FTS5 search against sound bank (local + virtual).
+        First tries high-precision AND matching across terms; falls back to OR matching.
         """
         raw_words = re.findall(r"[a-zA-Z0-9]+", query.strip())
         if not raw_words:
             return []
 
-        # Construct FTS5 query: word1* OR word2* OR "word1 word2"
-        fts_query = " OR ".join(f"{w}*" for w in raw_words)
+        fts_query_and = " AND ".join(f"{w}*" for w in raw_words)
+        fts_query_or = " OR ".join(f"{w}*" for w in raw_words)
 
-        sql = """
-            SELECT c.id, c.filename, c.filepath, c.category, c.subcategory, c.mood, c.tags,
-                   c.duration_sec, c.size_bytes, rank
-            FROM sound_catalog_fts f
-            JOIN sound_catalog c ON f.rowid = c.id
-            WHERE sound_catalog_fts MATCH ?
-        """
-        params = [fts_query]
+        def _execute_fts(fts_term: str) -> List[Dict[str, Any]]:
+            sql = """
+                SELECT c.id, c.filename, c.filepath, c.category, c.subcategory, c.mood, c.tags,
+                       c.duration_sec, c.size_bytes, c.source_url, c.is_downloaded, rank
+                FROM sound_catalog_fts f
+                JOIN sound_catalog c ON f.rowid = c.id
+                WHERE sound_catalog_fts MATCH ?
+            """
+            params = [fts_term]
 
-        if category:
-            sql += " AND c.category = ?"
-            params.append(category.upper())
+            if category:
+                cat_norm = category.upper()
+                if cat_norm in ("FOLEY", "FOL", "SFX"):
+                    sql += " AND c.category IN ('FOL', 'SFX')"
+                elif cat_norm in ("MUSIC", "MUS"):
+                    sql += " AND c.category IN ('MUS', 'LEITMOTIF', 'CHAPTER_BED', 'DYNAMIC_STEM')"
+                elif cat_norm in ("AMBIENCE", "AMB"):
+                    sql += " AND c.category IN ('AMB', 'CHAPTER_BED')"
+                elif cat_norm in ("STINGER",):
+                    sql += " AND c.category IN ('SFX', 'DYNAMIC_STEM', 'MUS')"
+                else:
+                    sql += " AND c.category = ?"
+                    params.append(cat_norm)
 
-        if mood:
-            sql += " AND c.mood = ?"
-            params.append(mood.lower())
+            if mood:
+                sql += " AND c.mood = ?"
+                params.append(mood.lower())
 
-        sql += " ORDER BY rank LIMIT ?"
-        params.append(limit)
+            sql += " ORDER BY c.is_downloaded DESC, rank LIMIT ?"
+            params.append(limit)
 
-        with self._get_conn() as conn:
-            cur = conn.execute(sql, params)
-            results = [dict(row) for row in cur.fetchall()]
+            with self._get_conn() as conn:
+                cur = conn.execute(sql, params)
+                return [dict(row) for row in cur.fetchall()]
+
+        # High-precision AND search first
+        results = _execute_fts(fts_query_and)
+        if not results and len(raw_words) > 1:
+            # Broad-recall OR fallback
+            results = _execute_fts(fts_query_or)
 
         return results
 
@@ -292,20 +481,350 @@ class SoundBank:
         prefer_mood: Optional[str] = None,
     ) -> Optional[Path]:
         """
-        Resolves the single best matching audio file for a given cue or scene mood.
-        Returns absolute Path if found and file exists, else None.
+        Resolves the single best matching audio file for a given cue or scene mood
+        using pure SQLite FTS5 queries with zero static map fallbacks.
+        If the best match is a virtual cloud entry, JIT downloads it on demand.
+        Returns absolute Path if found/downloaded, else None.
         """
-        # Try exact category & mood first
-        results = self.search(query, category=category, mood=prefer_mood, limit=3)
-        if not results and (category or prefer_mood):
-            # Relax filters if no direct match
-            results = self.search(query, limit=3)
+        # 1. Direct filename or exact path check first
+        direct_p = Path(query)
+        if direct_p.is_file() and direct_p.exists():
+            return direct_p
 
-        if results:
-            cand = Path(results[0]["filepath"])
-            if cand.exists():
-                return cand
+        q_clean = query.lower().strip()
+
+        # 2. Try exact category & mood match
+        results = self.search(q_clean, category=category, mood=prefer_mood, limit=4)
+        if not results and prefer_mood:
+            # Relax mood filter if no match, but strictly preserve category
+            results = self.search(q_clean, category=category, limit=4)
+
+        for cand in results:
+            cand_path = Path(cand["filepath"])
+            if cand.get("is_downloaded", 1) and cand_path.exists() and cand_path.is_file():
+                return cand_path
+
+            # Virtual entry with remote source_url -> JIT download
+            if cand.get("source_url"):
+                downloaded = self.download_virtual_asset(
+                    sound_id=cand["id"],
+                    source_url=cand["source_url"],
+                    filename=cand["filename"],
+                    category=cand.get("category", "SFX") or "SFX",
+                )
+                if downloaded and downloaded.exists():
+                    return downloaded
+
         return None
+
+    def resolve_leitmotif(self, theme_name: str) -> Optional[Path]:
+        """Resolve Level 1 recurring character or world leitmotif track via pure FTS5."""
+        res = self.resolve_sound(theme_name, category="LEITMOTIF")
+        if not res:
+            res = self.resolve_sound(theme_name, category="MUS")
+        return res
+
+    def resolve_chapter_bed(self, bed_name: str, prefer_mood: Optional[str] = None) -> Optional[Path]:
+        """Resolve Level 2 continuous setting atmosphere bed via pure FTS5."""
+        res = self.resolve_sound(bed_name, category="CHAPTER_BED", prefer_mood=prefer_mood)
+        if not res:
+            res = self.resolve_sound(bed_name, category="AMB", prefer_mood=prefer_mood)
+        if not res:
+            res = self.resolve_sound(bed_name, category="MUS", prefer_mood=prefer_mood)
+        return res
+
+    def resolve_dynamic_stem(self, stem_name: str, intensity: Optional[str] = None) -> Optional[Path]:
+        """Resolve Level 3 dynamic scene intensity stem via pure FTS5."""
+        res = self.resolve_sound(stem_name, category="DYNAMIC_STEM")
+        if not res:
+            res = self.resolve_sound(stem_name, category="MUS")
+        return res
+
+    def resolve_stinger(self, stinger_cue: str) -> Optional[Path]:
+        """Resolve Level 3 micro dramatic action/revelation stinger hit via pure FTS5."""
+        res = self.resolve_sound(stinger_cue, category="STINGER")
+        if not res:
+            res = self.resolve_sound(stinger_cue, category="SFX")
+        return res
+
+    def resolve_track_section(
+        self,
+        query: str,
+        section_type: str = "INTRO_BED",
+        min_energy: int = 1,
+        max_energy: int = 10,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Resolves an exact acoustic energy section within a soundtrack track.
+        Guarantees original source track file remains untouched on disk.
+        Returns:
+            Dict containing track metadata, section name, start/end timestamps, and energy level.
+        """
+        sec_name = section_type.upper().strip()
+        # 1. Resolve candidate track file (direct track/cue match first, then specialized resolvers)
+        cand = (
+            self.resolve_sound(query)
+            or self.resolve_dynamic_stem(query)
+            or self.resolve_leitmotif(query)
+            or self.resolve_chapter_bed(query)
+        )
+
+        with self._get_conn() as conn:
+            row = None
+            if cand and cand.exists():
+                cand_resolved_fwd = str(cand.resolve()).replace("\\", "/")
+                cand_resolved_win = str(cand.resolve()).replace("/", "\\")
+                # Try exact section_name and energy range on resolved track
+                row = conn.execute("""
+                    SELECT s.*, c.filename, c.filepath, c.duration_sec
+                    FROM sound_track_sections s
+                    JOIN sound_catalog c ON s.track_id = c.id
+                    WHERE (c.filepath = ? OR c.filepath = ? OR c.filename = ?)
+                      AND s.section_name = ?
+                      AND s.energy_level BETWEEN ? AND ?
+                    ORDER BY s.energy_level DESC
+                    LIMIT 1
+                """, (cand_resolved_fwd, cand_resolved_win, cand.name, sec_name, min_energy, max_energy)).fetchone()
+
+                if not row:
+                    # Relax energy filter
+                    row = conn.execute("""
+                        SELECT s.*, c.filename, c.filepath, c.duration_sec
+                        FROM sound_track_sections s
+                        JOIN sound_catalog c ON s.track_id = c.id
+                        WHERE (c.filepath = ? OR c.filepath = ? OR c.filename = ?)
+                          AND s.section_name = ?
+                        LIMIT 1
+                    """, (cand_resolved_fwd, cand_resolved_win, cand.name, sec_name)).fetchone()
+
+                if not row:
+                    # Fallback to any section of that track
+                    row = conn.execute("""
+                        SELECT s.*, c.filename, c.filepath, c.duration_sec
+                        FROM sound_track_sections s
+                        JOIN sound_catalog c ON s.track_id = c.id
+                        WHERE (c.filepath = ? OR c.filepath = ? OR c.filename = ?)
+                        LIMIT 1
+                    """, (cand_resolved_fwd, cand_resolved_win, cand.name)).fetchone()
+
+            if not row:
+                # 2. Try searching by section_name / tags in catalog if track wasn't directly resolved
+                q_clean = query.lower().strip()
+                row = conn.execute("""
+                    SELECT s.*, c.filename, c.filepath, c.duration_sec
+                    FROM sound_track_sections s
+                    JOIN sound_catalog c ON s.track_id = c.id
+                    WHERE s.section_name = ?
+                      AND (s.tags LIKE ? OR c.tags LIKE ? OR c.filename LIKE ?)
+                      AND s.energy_level BETWEEN ? AND ?
+                    ORDER BY RANDOM()
+                    LIMIT 1
+                """, (sec_name, f"%{q_clean}%", f"%{q_clean}%", f"%{q_clean}%", min_energy, max_energy)).fetchone()
+
+            if row:
+                return {
+                    "track_id": row["track_id"],
+                    "track_name": row["filename"],
+                    "track_path": Path(row["filepath"]),
+                    "section_name": row["section_name"],
+                    "start_sec": float(row["start_sec"]),
+                    "end_sec": float(row["end_sec"]),
+                    "duration": round(float(row["end_sec"]) - float(row["start_sec"]), 2),
+                    "energy_level": int(row["energy_level"]),
+                    "tags": row["tags"] or "",
+                }
+
+            # Dynamic fallback if audio file exists on disk but wasn't indexed in sections
+            if cand and cand.exists():
+                dur = self._extract_duration(cand)
+                return {
+                    "track_id": 0,
+                    "track_name": cand.name,
+                    "track_path": cand,
+                    "section_name": sec_name,
+                    "start_sec": 0.0,
+                    "end_sec": dur,
+                    "duration": round(dur, 2),
+                    "energy_level": 5,
+                    "tags": "dynamic_fallback",
+                }
+
+        return None
+
+    @staticmethod
+    def slice_track_section(
+        track_path: Path,
+        start_sec: float,
+        target_duration: float,
+        output_file: Path,
+        fade_in_sec: float = 2.0,
+        fade_out_sec: float = 2.0,
+    ) -> Path:
+        """
+        Non-destructively carves a precise sub-slice from a source audio track.
+        Guarantees source track is NEVER modified, deleted, or overwritten.
+        Applies smooth micro-fades and 48kHz broadcast resampling.
+        """
+        track_path = Path(track_path).resolve()
+        output_file = Path(output_file).resolve()
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+
+        if os.path.normcase(str(track_path.resolve())) == os.path.normcase(str(output_file.resolve())):
+            raise ValueError(f"Safety Violation: Cannot overwrite original source track file: {track_path}")
+
+        if not track_path.exists():
+            raise FileNotFoundError(f"Source soundtrack file not found: {track_path}")
+
+        ffmpeg = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
+        target_dur = max(float(target_duration), 1.0)
+        s_start = max(0.0, float(start_sec))
+
+        fade_in = min(float(fade_in_sec), target_dur / 3.0)
+        fade_out = min(float(fade_out_sec), target_dur / 3.0)
+        fade_out_start = max(0.0, target_dur - fade_out)
+
+        af_expr = f"afade=t=in:ss=0:d={fade_in:.2f},afade=t=out:st={fade_out_start:.2f}:d={fade_out:.2f},aresample=osr=48000"
+
+        track_dur = SoundBank._extract_duration(track_path)
+        available_slice = max(0.1, track_dur - s_start) if track_dur > 0 else target_dur
+
+        if target_dur <= available_slice:
+            # Sliced section is sufficiently long; no looping required
+            cmd = [
+                ffmpeg, "-y",
+                "-ss", f"{s_start:.2f}",
+                "-i", str(track_path),
+                "-t", f"{target_dur:.2f}",
+                "-af", af_expr,
+                "-c:a", "pcm_s16le",
+                str(output_file)
+            ]
+        else:
+            # Sliced section requires looping; use aloop filter to loop only from s_start onward
+            af_loop = (
+                f"asetpts=PTS-STARTPTS,aloop=loop=-1:size=2e+09,atrim=0:{target_dur:.2f},"
+                f"afade=t=in:ss=0:d={fade_in:.2f},afade=t=out:st={fade_out_start:.2f}:d={fade_out:.2f},"
+                f"aresample=osr=48000"
+            )
+            cmd = [
+                ffmpeg, "-y",
+                "-ss", f"{s_start:.2f}",
+                "-i", str(track_path),
+                "-af", af_loop,
+                "-c:a", "pcm_s16le",
+                str(output_file)
+            ]
+
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            raise RuntimeError(f"FFmpeg slice failed for {track_path.name}: {res.stderr[:200]}")
+
+        return output_file
+
+    def preload_cues(self, cues: List[str], max_workers: int = 4) -> List[Path]:
+        """
+        Pre-downloads all virtual sound assets needed for a list of cues in parallel.
+        Useful to run during TTS speech synthesis so all sound assets are hot in cache.
+        """
+        unique_cues = list(dict.fromkeys(c for c in cues if c))
+        resolved_paths: List[Path] = []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_cue = {executor.submit(self.resolve_sound, cue): cue for cue in unique_cues}
+            for future in future_to_cue:
+                try:
+                    p = future.result()
+                    if p and p.exists():
+                        resolved_paths.append(p)
+                except Exception:
+                    pass
+
+        return resolved_paths
+
+    def search_music_catalog(
+        self,
+        query: str,
+        section_type: Optional[str] = None,
+        max_energy: Optional[int] = None,
+        limit: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """
+        Dynamically searches the full music soundtrack catalog and energy sections.
+        Returns candidate tracks with energy levels, start/end seconds, and tags.
+        Zero hardcoded track lists, 100% dynamic FTS5 search across all 230 tracks.
+        """
+        raw_words = re.findall(r"[a-zA-Z0-9]+", query.strip())
+        if not raw_words:
+            return []
+        fts_query = " OR ".join(f"{w}*" for w in raw_words)
+
+        sql = """
+            SELECT c.id, c.filename, c.filepath, c.mood, c.tags, c.duration_sec,
+                   s.id as section_id, s.section_name, s.start_sec, s.end_sec, s.energy_level, s.tags as section_tags,
+                   rank
+            FROM sound_catalog_fts f
+            JOIN sound_catalog c ON f.rowid = c.id
+            LEFT JOIN sound_track_sections s ON s.track_id = c.id
+            WHERE sound_catalog_fts MATCH ?
+              AND c.category IN ('MUS', 'CHAPTER_BED', 'LEITMOTIF', 'DYNAMIC_STEM')
+        """
+        params: List[Any] = [fts_query]
+
+        if section_type and section_type != "ANY":
+            sql += " AND s.section_name = ?"
+            params.append(section_type)
+
+        if max_energy is not None:
+            sql += " AND (s.energy_level IS NULL OR s.energy_level <= ?)"
+            params.append(max_energy)
+
+        sql += " ORDER BY rank LIMIT ?"
+        params.append(limit)
+
+        with self._get_conn() as conn:
+            cur = conn.execute(sql, params)
+            return [dict(row) for row in cur.fetchall()]
+
+    def resolve_asset_path(self, identifier: Union[str, int]) -> Path:
+        """
+        Deterministic asset resolver. Resolves an exact ID or filename/filepath.
+        Raises FileNotFoundError if the file cannot be located on disk.
+        ZERO heuristics, ZERO fallbacks to default tracks.
+        """
+        # 1. If integer ID
+        if isinstance(identifier, int) or (isinstance(identifier, str) and identifier.isdigit()):
+            with self._get_conn() as conn:
+                row = conn.execute("SELECT filepath FROM sound_catalog WHERE id = ?", (int(identifier),)).fetchone()
+                if row and row["filepath"]:
+                    p = Path(row["filepath"])
+                    if p.exists():
+                        return p
+            raise FileNotFoundError(f"Sound bank asset ID {identifier} not found on disk.")
+
+        # 2. If direct path
+        p = Path(identifier)
+        if p.is_file() and p.exists():
+            return p
+
+        # 3. Check relative to sound bank root
+        p_root = self.bank_root / identifier
+        if p_root.is_file() and p_root.exists():
+            return p_root
+
+        # 4. Try exact filename lookup in catalog
+        with self._get_conn() as conn:
+            row = conn.execute("SELECT filepath FROM sound_catalog WHERE filename = ?", (p.name,)).fetchone()
+            if row and row["filepath"]:
+                fp = Path(row["filepath"])
+                if fp.exists():
+                    return fp
+
+        # 5. Try resolve_sound exact match
+        found = self.resolve_sound(str(identifier))
+        if found and found.exists():
+            return found
+
+        raise FileNotFoundError(f"Sound asset '{identifier}' could not be resolved in sound bank.")
 
     def stats(self) -> Dict[str, Any]:
         """Returns storage and catalog statistics for the local sound bank."""
@@ -313,6 +832,11 @@ class SoundBank:
             total_sounds = conn.execute("SELECT COUNT(*) FROM sound_catalog").fetchone()[0]
             total_dur = conn.execute("SELECT COALESCE(SUM(duration_sec), 0.0) FROM sound_catalog").fetchone()[0]
             total_bytes = conn.execute("SELECT COALESCE(SUM(size_bytes), 0) FROM sound_catalog").fetchone()[0]
+
+            total_sections = 0
+            has_sections_table = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sound_track_sections'").fetchone()[0]
+            if has_sections_table:
+                total_sections = conn.execute("SELECT COUNT(*) FROM sound_track_sections").fetchone()[0]
 
             cat_counts = {}
             for r in conn.execute("SELECT category, COUNT(*) as cnt FROM sound_catalog GROUP BY category"):
@@ -324,9 +848,22 @@ class SoundBank:
 
         return {
             "total_sounds": total_sounds,
+            "total_sections": total_sections,
             "total_duration_min": round(total_dur / 60.0, 1),
             "total_size_mb": round(total_bytes / (1024 * 1024), 2),
             "categories": cat_counts,
             "moods": mood_counts,
             "database_path": str(self.db_path),
         }
+
+
+_GLOBAL_SOUND_BANK: Optional[SoundBank] = None
+
+
+def get_sound_bank(bank_dir: Optional[Path] = None) -> SoundBank:
+    """Returns singleton instance of SoundBank."""
+    global _GLOBAL_SOUND_BANK
+    if _GLOBAL_SOUND_BANK is None:
+        _GLOBAL_SOUND_BANK = SoundBank(bank_root=bank_dir or DEFAULT_BANK_DIR)
+    return _GLOBAL_SOUND_BANK
+

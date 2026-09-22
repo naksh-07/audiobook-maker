@@ -1,0 +1,557 @@
+{
+  "Narrator": {
+    "backend": "gemini_tts",
+    "voice": "Aoede",
+    "speed": 1.0
+  },
+  "Geralt": {
+    "backend": "gemini_tts",
+    "voice": "Charon",
+    "speed": 0.98,
+    "pitch": 1.0,
+    "highpass_hz": 80,
+    "bass_boost_db": -3.5,
+    "presence_boost_db": 3.2,
+    "volume_gain_db": 2.5,
+    "clarity_reduction_db": 0.0,
+    "lowpass_hz": 0,
+    "denoise": false,
+    "softclip_tanh": false
+  },
+  "Geralt of Rivia": {
+    "backend": "gemini_tts",
+    "voice": "Charon",
+    "speed": 0.98,
+    "pitch": 1.0,
+    "highpass_hz": 80,
+    "bass_boost_db": -3.5,
+    "presence_boost_db": 3.2,
+    "volume_gain_db": 2.5,
+    "clarity_reduction_db": 0.0,
+    "lowpass_hz": 0,
+    "denoise": false,
+    "softclip_tanh": false
+  },
+  "गेराल्ट": {
+    "backend": "gemini_tts",
+    "voice": "Charon",
+    "speed": 0.98,
+    "pitch": 1.0,
+    "highpass_hz": 80,
+    "bass_boost_db": -3.5,
+    "presence_boost_db": 3.2,
+    "volume_gain_db": 2.5,
+    "clarity_reduction_db": 0.0,
+    "lowpass_hz": 0,
+    "denoise": false,
+    "softclip_tanh": false
+  },
+  "रिविया का गेराल्ट": {
+    "backend": "gemini_tts",
+    "voice": "Charon",
+    "speed": 0.98,
+    "pitch": 1.0,
+    "highpass_hz": 80,
+    "bass_boost_db": -3.5,
+    "presence_boost_db": 3.2,
+    "volume_gain_db": 2.5,
+    "clarity_reduction_db": 0.0,
+    "lowpass_hz": 0,
+    "denoise": false,
+    "softclip_tanh": false
+  },
+  "विचर": {
+    "backend": "gemini_tts",
+    "voice": "Charon",
+    "speed": 0.98,
+    "pitch": 1.0,
+    "highpass_hz": 80,
+    "bass_boost_db": -3.5,
+    "presence_boost_db": 3.2,
+    "volume_gain_db": 2.5,
+    "clarity_reduction_db": 0.0,
+    "lowpass_hz": 0,
+    "denoise": false,
+    "softclip_tanh": false
+  },
+  "Dandelion": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "Jaskier": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "डैंडेलियन": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "कवि": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "भाट": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "Yennefer": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "Yennefer of Vengerberg": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "येनेफ़र": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "Foltest": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "King_Foltest": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "राजा फ़ोल्टेस्ट": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "फ़ोल्टेस्ट": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Dennis": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Dennis_Cranmer": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "डेनिस क्रैनमर": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "डेनिस": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "बौना": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Falwick": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "फ़ाल्विक": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Tailles": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "तैलिस": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "टेल्स": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "Velerad": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "वेलेराड": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Renfri": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "रेनफ़्री": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "Nenneke": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.96,
+    "pitch": 0.94,
+    "bass_boost_db": 2.5
+  },
+  "नेनेके": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.96,
+    "pitch": 0.94,
+    "bass_boost_db": 2.5
+  },
+  "Iola": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "इओला": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "Ostrit": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Stregobor": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Tavern_Keeper": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "दरबान": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "Nivellen": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.94,
+    "pitch": 0.88,
+    "bass_boost_db": 5.5,
+    "clarity_reduction_db": 3.0,
+    "lowpass_hz": 7800,
+    "softclip_tanh": true
+  },
+  "निवेलेन": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.94,
+    "pitch": 0.88,
+    "bass_boost_db": 5.5,
+    "clarity_reduction_db": 3.0,
+    "lowpass_hz": 7800,
+    "softclip_tanh": true
+  },
+  "निवेलिन": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.94,
+    "pitch": 0.88,
+    "bass_boost_db": 5.5,
+    "clarity_reduction_db": 3.0,
+    "lowpass_hz": 7800,
+    "softclip_tanh": true
+  },
+  "दानव": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.94,
+    "pitch": 0.88,
+    "bass_boost_db": 5.5,
+    "clarity_reduction_db": 3.0,
+    "lowpass_hz": 7800,
+    "softclip_tanh": true
+  },
+  "दरिंदा": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.94,
+    "pitch": 0.88,
+    "bass_boost_db": 5.5,
+    "clarity_reduction_db": 3.0,
+    "lowpass_hz": 7800,
+    "softclip_tanh": true
+  },
+  "Vereena": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.98,
+    "pitch": 1.02,
+    "denoise": true
+  },
+  "वेरीना": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.98,
+    "pitch": 1.02,
+    "denoise": true
+  },
+  "वेरेना": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.98,
+    "pitch": 1.02,
+    "denoise": true
+  },
+  "ब्रूक्सा": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.98,
+    "pitch": 1.02,
+    "denoise": true
+  },
+  "Caldemeyn": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 0.98,
+    "pitch": 0.96
+  },
+  "Caldemen": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 0.98,
+    "pitch": 0.96
+  },
+  "काल्डेमेन": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 0.98,
+    "pitch": 0.96
+  },
+  "कैल्डेमेन": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 0.98,
+    "pitch": 0.96
+  },
+  "मुखिया": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 0.98,
+    "pitch": 0.96
+  },
+  "Marilka": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.08,
+    "pitch": 1.08
+  },
+  "मारिल्का": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.08,
+    "pitch": 1.08
+  },
+  "Nohorn": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.96,
+    "pitch": 0.95
+  },
+  "नोहॉर्न": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.96,
+    "pitch": 0.95
+  },
+  "Civril": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.02,
+    "pitch": 1.02
+  },
+  "सिव्रिल": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.02,
+    "pitch": 1.02
+  },
+  "Libushe": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.02,
+    "pitch": 1.05
+  },
+  "लिबुशे": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.02,
+    "pitch": 1.05
+  },
+  "Calanthe": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "कैलेंथे": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Duny": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "डनी": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Urcheon": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Pavetta": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.02,
+    "pitch": 1.05
+  },
+  "पावेता": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.02,
+    "pitch": 1.05
+  },
+  "Mousesack": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.95,
+    "pitch": 0.98
+  },
+  "माउससैक": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.95,
+    "pitch": 0.98
+  },
+  "Eist_Tuirseach": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "ईस्ट ट्यूर्शेक": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Crach_an_Craite": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.04,
+    "pitch": 1.02
+  },
+  "क्रैच": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.04,
+    "pitch": 1.02
+  },
+  "Haxo": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "हाक्सो": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Coodcoodak": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.02,
+    "pitch": 1.02
+  },
+  "कूडकूडाक": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.02,
+    "pitch": 1.02
+  },
+  "Rainfarn": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "रेनफ़ार्न": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Windhalm": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "विंडहाम": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Herald": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.05,
+    "pitch": 1.0
+  },
+  "उद्घोषक": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.05,
+    "pitch": 1.0
+  },
+  "Servant": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "सेवक": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0,
+    "pitch": 1.0
+  }
+}

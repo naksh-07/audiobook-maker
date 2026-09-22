@@ -6,6 +6,7 @@ Features Two-Pass Glossary Memory for character names, tone, and honorific consi
 """
 
 import os
+import re
 import time
 import json
 import urllib.request
@@ -14,20 +15,28 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 
-DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3-flash-preview")
+DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
 
 
-from audiobook_factory.tts_dispatcher import global_key_pool
+from audiobook_factory.key_manager import get_persistent_key_pool
+from audiobook_factory.cadence import get_stealth_sdk_headers
+
+pool = get_persistent_key_pool()
+
+
+class GeminiPayloadError(RuntimeError):
+    """Non-transient error indicating prompt payload issue (e.g. MAX_TOKENS or Safety Block)."""
+    pass
 
 
 def get_api_key() -> str:
-    return global_key_pool.get_key()
+    return pool.get_key(service="text")
 
 
 def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_MODEL, json_mode: bool = False, max_retries: int = 4) -> str:
     """Send request to Gemini API with automatic key rotation, retry and model fallback."""
     candidate_models = [model]
-    for m in ("gemini-3-flash-preview", "gemini-3.1-flash-lite-preview", "gemini-flash-latest"):
+    for m in ("gemini-flash-latest", "gemini-3.6-flash", "gemini-flash-lite-latest"):
         if m not in candidate_models:
             candidate_models.append(m)
 
@@ -61,15 +70,12 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
         for attempt in range(max_retries):
             api_key = get_api_key()
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent?key={api_key}"
+            headers = get_stealth_sdk_headers(api_key)
 
             req = urllib.request.Request(
                 url,
                 data=data,
-                headers={
-                    "Content-Type": "application/json",
-                    "X-goog-api-key": api_key,
-                    "User-Agent": "AudiobookFactory/1.0",
-                },
+                headers=headers,
                 method="POST",
             )
             try:
@@ -78,19 +84,26 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
                     candidates = res_data.get("candidates", [])
                     if not candidates:
                         prompt_fb = res_data.get("promptFeedback", {})
-                        raise RuntimeError(f"Gemini API returned no candidates: {prompt_fb}")
+                        raise GeminiPayloadError(f"Gemini API returned no candidates (blocked): {prompt_fb}")
                     candidate = candidates[0]
                     if candidate.get("finishReason") == "MAX_TOKENS":
-                        raise RuntimeError("Gemini API output truncated: finishReason is MAX_TOKENS.")
+                        raise GeminiPayloadError("Gemini API output truncated: finishReason is MAX_TOKENS.")
                     parts = candidate.get("content", {}).get("parts", [])
                     if not parts or "text" not in parts[0]:
-                        raise RuntimeError(f"Candidate has no text parts (finishReason: {candidate.get('finishReason')})")
+                        raise GeminiPayloadError(f"Candidate has no text parts (finishReason: {candidate.get('finishReason')})")
                     return parts[0]["text"]
+            except GeminiPayloadError as gpe:
+                # Deterministic payload problem: do NOT retry on identical payload
+                last_error = str(gpe)
+                print(f"    [FAIL-FAST] {gpe}. Breaking model retry immediately.", flush=True)
+                raise gpe
             except urllib.error.HTTPError as e:
                 err_msg = e.read().decode("utf-8", errors="ignore")
                 last_error = f"HTTP {e.code}: {err_msg}"
+                if e.code == 429:
+                    pool.mark_temporary_backoff(api_key, 15.0, "RPM rate limit in translator")
                 if e.code in (503, 500, 429) and attempt < max_retries - 1:
-                    wait_sec = 4.0 * (attempt + 1)
+                    wait_sec = 2.0 * (attempt + 1)
                     print(f"    [WAIT] Gemini API HTTP {e.code}. Cooling off {wait_sec:.1f}s before retry...", flush=True)
                     time.sleep(wait_sec)
                     continue
@@ -98,13 +111,59 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
             except Exception as e:
                 last_error = str(e)
                 if attempt < max_retries - 1:
-                    wait_sec = 5.0 * (attempt + 1)
+                    wait_sec = 2.0 * (attempt + 1)
                     print(f"    [WAIT] Network hiccup ({e}). Retrying in {wait_sec:.1f}s (Attempt {attempt+1}/{max_retries})...", flush=True)
                     time.sleep(wait_sec)
                     continue
                 break
 
     raise RuntimeError(f"Gemini API request failed on {candidate_models}: {last_error}")
+
+
+def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str, Any]) -> str:
+    """
+    Meso-Tier Verification Guard:
+    Enforces canonical Devanagari spellings via deterministic word-boundary regex substitutions.
+    Accepts either a flat mapping {token: canonical_spelling} or a nested glossary dict.
+    """
+    if not text or not glossary:
+        return text
+
+    lexicon_map: Dict[str, str] = {}
+    if isinstance(glossary, dict):
+        if "characters" in glossary or "locations_and_terms" in glossary or "lexicon" in glossary:
+            if "lexicon" in glossary and isinstance(glossary["lexicon"], dict):
+                lexicon_map.update(glossary["lexicon"])
+            if "locations_and_terms" in glossary and isinstance(glossary["locations_and_terms"], dict):
+                lexicon_map.update(glossary["locations_and_terms"])
+            if "characters" in glossary and isinstance(glossary["characters"], list):
+                for char_entry in glossary["characters"]:
+                    if isinstance(char_entry, dict):
+                        eng = char_entry.get("english_name")
+                        hi = char_entry.get("hindi_name")
+                        if eng and hi:
+                            lexicon_map[eng] = hi
+        else:
+            for k, v in glossary.items():
+                if isinstance(k, str) and isinstance(v, str):
+                    lexicon_map[k] = v
+
+    if not lexicon_map:
+        return text
+
+    # Sort keys by length descending to prevent sub-string prefix collisions
+    sorted_keys = sorted(lexicon_map.keys(), key=len, reverse=True)
+
+    result = text
+    for key in sorted_keys:
+        canonical = lexicon_map[key]
+        if not key or not canonical or key == canonical:
+            continue
+        # Use regex word boundaries supporting both ASCII and Unicode word chars
+        pattern = rf"(?<![\w\u0900-\u097F]){re.escape(key)}(?![\w\u0900-\u097F])"
+        result = re.sub(pattern, canonical, result, flags=re.UNICODE)
+
+    return result
 
 
 def generate_book_glossary(sample_chapter_text: str, book_metadata: Dict[str, Any]) -> Dict[str, Any]:
@@ -155,14 +214,25 @@ def _translate_single_block(
     model: str = DEFAULT_MODEL,
 ) -> str:
     system_prompt = (
-        "You are a master literary translator and audiobook director. "
-        "Translate the following English novel passage into high-quality, dramatic, natural spoken Hindustani (Hindi in Devanagari script). "
+        "You are a master literary translator and audio drama director adapting mature, grimdark fantasy "
+        "and adult literature (in the unapologetic tradition of Andrzej Sapkowski, George R.R. Martin, and Saadat Hasan Manto) "
+        "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
         "Strict Translation Invariants:\n"
-        "1. Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, subtext, humor, and emotional depth.\n"
-        "2. The text will be read aloud by professional voice actors. Use flowing, cinematic Hindustani rather than overly stiff, textbook Sanskritized Hindi.\n"
-        "3. Strictly adhere to the provided Character Glossary for proper noun spellings and honorific dynamics ('Aap' vs 'Tum' vs 'Tu').\n"
-        "4. Preserve Markdown formatting: Keep headings and dialogue quotation marks intact.\n"
-        "5. Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, or introductions."
+        "1. LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat, "
+        "dark tavern banter, gritty curses, or mature sensual/romantic intimacy. The source material is gritty adult literature, "
+        "not a sanitized children's broadcast. Bowdlerization destroys dramatic truth.\n"
+        "2. PERIOD TAVERN GRIT & PROFANITY: Translate medieval insults and raw curses into authentic, earthy Hindustani equivalents "
+        "(e.g., 'हरामी', 'कमीने', 'रंडी की औलाद', 'दल्ले', 'सूअर', 'जहन्नुम में जा'). NEVER replace them with polite TV-serial substitutions "
+        "(do NOT turn 'bastard' into 'दुष्ट' or 'whore' into 'बुरी स्त्री').\n"
+        "3. VISCERAL COMBAT & GORE: Depict blade strikes, bone fractures, blood spray, and wounds with visceral literary realism "
+        "('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा').\n"
+        "4. SENSUAL & EMOTIONAL INTIMACY: Render passionate and intimate scenes with deep poetic tension, sensory immersion, "
+        "and somatic resonance ('तपती हुई कमर', 'बेकाबू सांसें', 'कांपती उंगलियां', 'गर्म सांसें') rather than prudish understatement.\n"
+        "5. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
+        "subtext, humor, and emotional depth for professional voice actors. Use flowing, cinematic Hindustani rather than overly stiff, textbook Sanskritized Hindi.\n"
+        "6. ADHERE TO GLOSSARY & PRONOUNS: Strictly adhere to the provided Character Glossary for proper noun spellings and honorific dynamics ('Aap' vs 'Tum' vs 'Tu').\n"
+        "7. PRESERVE FORMATTING & ZERO CHATTER: Keep headings and dialogue quotation marks intact. Output ONLY the translated passage in Devanagari Markdown "
+        "without any meta-commentary, notes, disclaimers, or conversational introductions."
     )
 
     glossary_str = json.dumps(glossary, ensure_ascii=False, indent=2)

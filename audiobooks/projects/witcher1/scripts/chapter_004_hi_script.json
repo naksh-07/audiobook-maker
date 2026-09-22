@@ -1,0 +1,6819 @@
+[
+  {
+    "index": 1,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "कोहरे की लकीरों से लिपटे उजले आसमान में कुछ काले बिंदु हरकत करते दिखे, जिन्होंने विचर का ध्यान खींच लिया। वे परिंदे थे। पहले तो वे बड़े इत्मीनान से गोल-गोल मंडराते रहे, फिर यकायक नीचे की ओर झपट्टा मारकर अपने पंख फड़फड़ाते हुए दोबारा ऊपर उठ गए।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 2,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर देर तक उन परिंदों को देखता रहा। फिर—ज़मीन के ढलवान, जंगल के घनेपन और उस गहरी खाई के फैलाव और रुख का अंदाज़ा लगाकर, जो उसे यकीन था कि उसके रास्ते में आने वाली थी—उसने उनकी दूरी और वहाँ तक पहुँचने में लगने वाले समय का हिसाब लगाया। आखिरकार उसने अपना लबादा एक तरफ फेंका और छाती के आर-पार कसी पेटी को दो छेद और कस लिया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "cloak_rustle",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.35,
+        "description": "Leather belts tightening and cloak movement"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 3,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसकी पीठ पर बंधी तलवार की मूठ और दस्ता उसके कंधे के ऊपर झांकने लगा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 4,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "रोच, हमें अपने रास्ते से थोड़ा हटना पड़ेगा। हम आम रास्ते से हटकर चक्कर काटकर चलेंगे। मुझे नहीं लगता कि वो परिंदे वहाँ यूँ ही बेवजह चक्कर काट रहे हैं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "horse_gallop",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Horse hooves on soft ground"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 5,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट की आवाज़ सुनते ही घोड़ी आज्ञाकारी भाव से आगे बढ़ चली।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 6,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "हो सकता है बस कोई मरा हुआ बारहसिंगा हो... लेकिन शायद कुछ और भी हो। कौन जाने?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 7,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "जैसा कि उसने सोचा था, आगे एक गहरी खाई आ गई; विचर ने उस खाई को पूरी तरह ढके हुए पेड़ों की फुनगियों को गौर से परखा। मगर खाई की ढलानें पथरीली नहीं, बल्कि ढालू थीं। सूखी नदी का तल भी कांटेदार झाड़ियों और सड़े-गले तनों से खाली था, इसलिए वह आसानी से पार उतर गया। दूसरी ओर भोजपत्र के पेड़ों का एक छोटा-सा झुरमुट था, और उसके ठीक पीछे झाड़ियों व जंगली खरपतवार से भरा एक खुला मैदान फैला हुआ था, जिसकी उलझी हुई टहनियों और जड़ों ने टेंटेकल्स की तरह अपने हाथ ऊपर उठा रखे थे।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 8,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "किसी घुड़सवार की आहट पाकर वे परिंदे बिदक गए और अपनी तीखी, फटी-फटी आवाज़ में कांव-कांव करते हुए और ऊँचाई पर उड़ गए।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 9,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट को पहली लाश फ़ौरन दिख गई—पीली पड़ती घास के झुरमुट के बीच भेड़ की खाल की सफ़ेद जैकेट और फीके नीले रंग का लिबास साफ़ अलग ही चमक रहा था। दूसरी लाश उसे नज़र नहीं आई, मगर उसका ठिकाना उन तीन भेड़ियों ने ज़ाहिर कर दिया, जो अपनी पिछली टांगों पर इत्मीनान से बैठे विचर को घूर रहे थे। उसकी घोड़ी ने हिनहिनाकर फूंकार मारी, और वे भेड़...",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 10,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "फव्वारे के पास, जहाँ बहुत अरसा पहले कभी फूलों की क्यारी हुआ करती थी, गुलाब की एक झाड़ी उगी थी। उस झाड़ी की खासियत सिर्फ उसके फूलों का रंग था—बेहद नायाब। गहरे नीले रंग के वे फूल, जिनकी पंखुड़ियों के सिरों पर बैंगनी रंग की एक हल्की सी झलक थी। विचर ने एक फूल को छुआ, अपना चेहरा करीब लाया और सूंघा। उनमें गुलाबों वाली वही जानी-पहचानी महक थी, बस थोड़ी और गहरी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 11,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "तभी अचानक एक तेज़ धमाके के साथ हवेली के दरवाज़े और खिड़कियों के सभी पल्ले एक साथ खुल गए। गेराल्ट ने झटके से अपना सिर ऊपर उठाया। रास्ते पर, बजरी को कुचलते हुए, एक दानव सीधा उसी की तरफ़ दौड़ रहा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.15
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "door_creak",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.5,
+        "description": "Massive doors bursting open"
+      },
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.45,
+        "description": "Heavy creature charging over gravel"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 12,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर का दाहिना हाथ बिजली की फुर्ती से उसके कंधे के ऊपर गया, जबकि बाएँ हाथ ने सीने पर बंधी बेल्ट को झटका दिया, जिससे तलवार की मूठ सीधे उसकी हथेली में आ गई। म्यान से सनसनाती हुई बाहर निकली तलवार ने हवा में एक छोटा, चमकदार अर्धवृत्त बनाया और स्थिर हो गई। उसकी नोक सीधे उस दौड़ते हुए दरिंदे की ओर थी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "sword_draw",
+        "timing": "under",
+        "offset_ms": 150,
+        "volume": 0.5,
+        "description": "Steel sword flashing out of its scabbard"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 13,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "तलवार को देखते ही वह दानव ठिठक गया और चारों तरफ बजरी उड़ाता रुक गया। विचर टस से मस नहीं हुआ।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.4,
+        "description": "Boots sliding to a sudden stop on gravel"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 14,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह जीव इंसानी शक्ल का था, जिसने कपड़े तो फटे-पुराने पहन रखे थे, लेकिन वे उम्दा किस्म के थे, जिनमें फ़िज़ूल की मगर स्टाइलिश नक्काशी की गई थी। हालाँकि, उसकी इंसानी शक्ल सिर्फ उसकी अंगरखी के गंदे कॉलर तक ही सीमित थी, क्योंकि उसके ऊपर एक विशाल, बालों वाली, भालू जैसी खोपड़ी थी—बड़े-बड़े कान, जंगली आँखें और डरावने जबड़े, जिनमें टेढ़े-मेढ़े दाँत थे और उनके बीच एक लाल जीभ आग की लपटों की तरह लपलपा रही थी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 15,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "भाग जा, फ़ानी इंसान! मैं तुझे कच्चा चबा जाऊँगा! टुकड़े-टुकड़े कर दूँगा!",
+    "emotion": "growl",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 16,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर नहीं हिला, न ही उसने अपनी तलवार नीचे की।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 17,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "क्या बहरे हो? यहाँ से दफ़ा हो जाओ!",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 18,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह जीव चिल्लाया, और फिर उसने एक ऐसी आवाज़ निकाली जो सुअर की चीख और बारहसिंघे की दहाड़ का मिला-जुला रूप थी। उस आवाज़ से खिड़कियों के पल्ले खड़खड़ा उठे और छज्जों से प्लास्टर और मलबा झड़ने लगा। विचर और दानव, दोनों अपनी जगह जमे रहे।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 19,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "निकल ले यहाँ से, वरना अपनी हड्डियाँ सलामत नहीं ले जा पाएगा! क्योंकि अगर तू नहीं गया, तो फिर—",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 20,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तो फिर क्या?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 21,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दानव अचानक हाँफने लगा और अपना डरावना सिर झुकाया।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 22,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "देखो इसे, बड़ा बहादुर बन रहा है? वह लोहा नीचे करो, मेहरबानी करके। शायद तुम्हें एहसास नहीं है कि तुम मेरे आँगन में खड़े हो? या जहाँ से तुम आए हो, वहाँ लोगों का अपने ही आँगन में तलवारों से डराना रिवाज़ है?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 23,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "जी हाँ, रिवाज़ है... खासकर उन लोगों के साथ जो मेहमानों का स्वागत दहाड़कर और उन्हें टुकड़े-टुकड़े करने की धमकी देकर करते हैं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 24,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "भाड़ में जाए! और ये फालतू का बंदा मुझे ही ताने दे रहा है। मेहमान? आँगन में घुस आता है, दूसरों के फूल बर्बाद करता है, ज़मींदार बना फिरता है और सोचता है कि उसे यहाँ रोटी और नमक पेश किया जाएगा। धत्!",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 25,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उस जीव ने थूका, हाँफा और अपना जबड़ा बंद कर लिया। नीचे के दाँत बाहर निकल आए, जिससे वह बिल्कुल जंगली सूअर जैसा लग रहा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 26,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तो? क्या हम ऐसे ही खड़े रहेंगे?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 27,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "और तुम क्या चाहते हो? लेट जाऊँ?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 28,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैंने कहा, वह लोहा अंदर करो।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 29,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर ने फुर्ती से हथियार को म्यान में डाला और अपना हाथ नीचे किए बिना, कंधे के ऊपर उभरी मूठ को सहलाया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "sword_draw",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.4,
+        "description": "Sword sliding back into scabbard"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 30,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं चाहूँगा कि तुम... कोई अचानक हरकत न करो। यह तलवार जितनी जल्दी अंदर गई है, उतनी ही तेज़ी से बाहर भी आ सकती है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 31,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैंने देख लिया। अगर ऐसा न होता, तो अब तक मेरे बूटों के निशान तुम्हारी पीठ पर होते और तुम यहाँ से कब के बाहर हो चुके होते। यहाँ क्या चाहिए तुम्हें? यहाँ आए कैसे?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 32,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं रास्ता भटक गया था।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 33,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "रास्ता भटक गए थे... खैर, अब अपना रास्ता ठीक कर लो। गेट से बाहर निकलो, सूरज की तरफ अपना बायाँ कान करो और चलते रहो, जल्द ही मुख्य सड़क पर पहुँच जाओगे। क्या हुआ? किसका इंतज़ार कर रहे हो?",
+    "emotion": "growl",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 34,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "क्या यहाँ थोड़ा पानी मिलेगा? घोड़ी प्यासी है। और अगर तुम्हें एतराज़ न हो, तो मैं भी।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 35,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दानव एक पैर से दूसरे पैर पर झूला और अपना कान खुजलाया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "cloak_rustle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Monster shifting weight on feet"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 36,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "सुनो... क्या तुम्हें सच में मुझसे डर नहीं लग रहा?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 37,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "क्या मुझे डरना चाहिए?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 38,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दानव ने इधर-उधर देखा, गला साफ़ किया और अपनी ढीली पतलून ऊपर खींची।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "cloak_rustle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.35,
+        "description": "Adjusting clothing"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 39,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "भाड़ में जाए, घर में मेहमान आने से क्या बुराई है? रोज़-रोज़ कोई ऐसा नहीं मिलता जो मुझे देखकर भाग न जाए या बेहोश न हो जाए। ठीक है, फिर। अगर तुम एक थके हुए मगर शरीफ मुसाफिर हो, तो मैं तुम्हें अंदर बुलाता हूँ। लेकिन अगर तुम कोई डाकू या चोर हो, तो खबरदार: यह घर मेरी बात मानता है। इन दीवारों के अंदर मेरी हुकूमत है!",
+    "emotion": "excited",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 40,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसने अपना बालों वाला पंजा उठाया। सभी खिड़कियों के पल्ले एक बार फिर दीवार से टकराए और पत्थर के बने डॉल्फिन के गले के भीतर से कुछ गूँजने लगा।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "door_creak",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.45,
+        "description": "Windows slamming against walls"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 41,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं तुम्हें अंदर बुलाता हूँ...",
+    "emotion": "growl",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 42,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट नहीं हिला, उसे गौर से देखता रहा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 43,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "क्या तुम यहाँ अकेले रहते हो?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 44,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "इससे तुम्हें क्या लेना-देना? ओह, समझ गया। बेशक तुम जानना चाहते हो कि क्या मेरे पास चालीस नौकर हैं जो मेरी तरह ही खूबसूरत हैं। नहीं हैं। खैर, भाड़ में जाए, क्या तुम मेरे इस निमंत्रण का फायदा उठाओगे या नहीं? अगर नहीं, तो गेट वहाँ है।",
+    "emotion": "angry",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 45,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट ने झुककर औपचारिक अभिवादन किया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 46,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं आपका निमंत्रण स्वीकार करता हूँ... मैं मेहमाननवाज़ी के हक का अपमान नहीं करूँगा।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 47,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मेरा घर, तुम्हारा घर है... इस तरफ आइए, प्रिय मेहमान। और घोड़े को यहाँ कुएँ के पास छोड़ दीजिए।",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 48,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "अंदर का नज़ारा मरम्मत माँग रहा था, हालाँकि जगह साफ़-सुथरी थी। फर्नीचर बहुत पहले किसी कुशल कारीगर ने बनाया था। अंधेरे कमरों में धूल की एक तीखी गंध बसी हुई थी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 49,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "रोशनी!",
+    "emotion": "growl",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "fire_crackle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.4,
+        "description": "Torches instantly igniting"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 50,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "बुरा नहीं है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 51,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "बस इतना ही? मुझे लगा तुम किसी भी पुराने जादू से चकित हो जाओगे। मैंने कहा था न, यह घर मेरे हुक्म का पाबंद है। इस तरफ आइए, मेहरबानी करके। संभलकर, सीढ़ियाँ खड़ी हैं। रोशनी!",
+    "emotion": "excited",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "footsteps_wood",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.35,
+        "description": "Walking up wooden stairs"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 52,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "सीढ़ियों पर दानव मुड़ा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 53,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तुम्हारी गर्दन के पास क्या लटक रहा है, प्रिय मेहमान?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 54,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "खुद ही देख लो।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 55,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उस जीव ने अपने पंजे से मेडलियन को पकड़ा, आँखों के पास उठाया, और गेराल्ट की गर्दन के चारों ओर चेन को थोड़ा कस दिया।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "sign_magic",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.3,
+        "description": "Medallion magic hum"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 56,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "इस जानवर के चेहरे के भाव बड़े अजीब हैं। यह क्या है?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 57,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मेरे गिल्ड का निशान।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 58,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "आह, तो तुम थूथन बनाते हो, है ना? इस तरफ आइए। रोशनी!",
+    "emotion": "excited",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 59,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "बड़ी सी खिड़की-विहीन कमरे के बीचों-बीच एक विशाल ओक की मेज रखी थी, जो एक भारी पीतल के कैंडलस्टिक के अलावा खाली थी। कैंडलस्टिक धीरे-धीरे हरा पड़ रहा था और उस पर जमी मोम की परतें पिघल रही थीं। दानव के हुक्म पर, मोमबत्तियाँ जल उठीं और झिलमिलाने लगीं, जिससे कमरे में थोड़ी रोशनी फैल गई।",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "fire_crackle",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.35,
+        "description": "Candles igniting"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 60,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "एक दीवार पर हथियार टंगे थे—गोल ढालें, बरछियाँ, भाले, भारी तलवारें और कुल्हाड़ियाँ। बगल की आधी दीवार पर एक विशाल चिमनी थी, जिसके ऊपर धूल जमी और उखड़ती हुई तस्वीरें लटकी थीं। प्रवेश द्वार के सामने वाली दीवार शिकार की ट्रॉफियों से भरी थी—एल्क और बारहसिंघे के सींग, जिनकी छाया जंगली सूअर, भालू और लिंक्स के सिरों पर पड़ रही थी। सबसे सम्मानजनक जगह पर एक रॉक ड्रैगन का सिर था, जो भूरा पड़ चुका था और अंदर से रुई निकल रही थी। गेराल्ट ने उसे ध्यान से देखा।",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 61,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मेरे दादाजी ने मारा था इसे... शायद यह इस इलाके का आखिरी ड्रैगन था जब यह मारा गया। बैठो, मेरे प्रिय मेहमान। भूखे हो?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "chair_scrape",
+        "timing": "under",
+        "offset_ms": 300,
+        "volume": 0.4,
+        "description": "Throwing wood log into fireplace"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 62,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं मना नहीं करूँगा, प्रिय मेज़बान।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 63,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दानव मेज पर बैठ गया, अपना सिर झुकाया, अपने बालों वाले पंजों को पेट पर जोड़ा, अपने अंगूठों को घुमाते हुए कुछ बुदबुदाया, और फिर अचानक मेज पर पंजा मारते हुए दहाड़ा। बर्तन और थालियाँ पीतल और चाँदी की तरह खनकीं। भुने हुए मांस, लहसुन, मारजोरम और जायफल की खुशबू फैल गई। गेराल्ट ने कोई हैरानी नहीं दिखाई।",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "coin_clink",
+        "timing": "under",
+        "offset_ms": 300,
+        "volume": 0.5,
+        "description": "Silver and brass cutlery clinking magically"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 64,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "हाँ... यह नौकरों से बेहतर है, है ना? खुद ही लो, प्रिय मेहमान। यहाँ कुछ परिंदे हैं, यहाँ जंगली सूअर का हैम है, यहाँ कुछ... पता नहीं क्या है। कुछ तो है। यहाँ हेज़ल ग्राउस है। धत्, नहीं, यह तीतर है। मैं मंत्रों में उलझ गया। खाओ, खाओ। यह सही, असली खाना है, चिंता मत करो।",
+    "emotion": "excited",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.08
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 65,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं चिंतित नहीं हूँ।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 66,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट ने परिंदे को दो हिस्सों में फाड़ दिया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 67,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं भूल गया था... कि तुम डरपोक नहीं हो। मैं तुम्हें क्या बुलाऊँ?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 68,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "गेराल्ट। और तुम्हारा नाम, प्रिय मेज़बान?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 69,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "निवेलेन। लेकिन यहाँ लोग मुझे डेगन या फैंगर कहते हैं। और वे बच्चों को डराने के लिए मेरा इस्तेमाल करते हैं।",
+    "emotion": "growl",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95,
+      "intensity": 0.4
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 70,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "एक स्वीकार्य कारण, दानव ने कहा, और ज़ोर से हंसा। लेकिन मैं इसे स्वीकार नहीं करता। इसका तुमसे कोई लेना-देना नहीं है और बात खत्म। लेकिन तुम्हारी जिज्ञासा को थोड़ा शांत करने के लिए, मैं तुम्हें दिखाऊँगा कि मैं पहले कैसा दिखता था। उन तस्वीरों को देखो। चिमनी के पास वाली पहली तस्वीर मेरे पिता की है। दूसरी, खुदा जाने किसकी है। और तीसरी मैं हूँ। क्या देख पा रहे हो?",
+    "emotion": "excited",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "fire_crackle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Soft wood crackling from the nearby fireplace"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 71,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "धूल और मकड़ी के जालों के नीचे, एक साधारण सा आदमी, जिसका चेहरा सूजा हुआ, उदास और दागों से भरा था, और आँखें पानी जैसी थीं, पेंटिंग से नीचे देख रहा था। गेराल्ट, जो यह जानता था कि चित्रकार अपने ग्राहकों को खुश करने के लिए कैसी चापलूसी करते हैं, उसने सिर हिलाया।",
+    "emotion": "neutral",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 72,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "क्या तुम देख पा रहे हो?",
+    "emotion": "growl",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 73,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन ने अपने दाँत दिखाते हुए दोहराया।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 74,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं देख पा रहा हूँ।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 75,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तुम कौन हो?",
+    "emotion": "growl",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 76,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मुझे समझ नहीं आया।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 77,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उस दरिंदे ने अपना सिर उठाया; उसकी आँखें बिल्ली की तरह चमक रही थीं।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 78,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "समझ नहीं आया? मेरी तस्वीर मोमबत्ती की रोशनी से दूर टंगी है। मैं उसे देख सकता हूँ, पर मैं इंसान नहीं हूँ। कम से कम, अभी तो नहीं। कोई इंसान अगर मेरी तस्वीर देखना चाहता, तो वो उठकर उसके पास जाता और यकीनन मोमबत्ती भी साथ ले जाता। तुमने ऐसा नहीं किया, तो नतीजा साफ है। पर मैं तुमसे सीधा सवाल पूछ रहा हूँ: क्या तुम इंसान हो?",
+    "emotion": "growl",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.94
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 79,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "रिविया का गेराल्ट ने अपनी नज़रें नहीं झुकाईं। कुछ पल की खामोशी के बाद उसने जवाब दिया,",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 80,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "अगर तुम इसी तरह पूछना चाहते हो, तो... पूरी तरह से नहीं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 81,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "अह। तो फिर ये पूछना बदतमीज़ी तो नहीं होगी कि तुम आखिर हो क्या?",
+    "emotion": "excited",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 82,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "एक विचर।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 83,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "अह... अगर मुझे सही याद है, तो विचर अपनी रोज़ी-रोटी बड़े दिलचस्प तरीके से कमाते हैं—वे पैसों के लिए राक्षसों का शिकार करते हैं।",
+    "emotion": "whispering",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.97
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 84,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम्हें सही याद है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 85,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "फिर से खामोशी छा गई। मोमबत्तियों की लपटें कांप रही थीं, आग की पतली लकीरों की तरह ऊपर उठती हुईं, तराशे हुए कांच के प्यालों में झिलमिला रही थीं। मोम पिघलकर स्टैंड से नीचे गिर रहा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "fire_crackle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.25,
+        "description": "Candle wax drip and fire crackle ambiance"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 86,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन शांत बैठा रहा, बस उसके बड़े-बड़े कान हल्के से फड़क रहे थे।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 87,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मान लेते हैं... कि मेरे झपटने से पहले तुम अपनी तलवार निकाल लेते हो। मान लो तुम मुझे काट भी देते हो। पर मेरे वज़न के सामने वो काफी नहीं होगा; मैं अपनी रफ्तार के दबाव से तुम्हें नीचे गिरा दूँगा। और फिर फैसला दाँतों से होगा। तुम्हें क्या लगता है विचर, अगर बात एक-दूसरे का गला काटने पर आ जाए, तो हममें से किसके बचने की उम्मीद ज़्यादा है?",
+    "emotion": "growl",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.93
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 88,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट ने अपने अंगूठे से सुराही का ढक्कन थामा, अपने लिए थोड़ी शराब उड़ेली, एक घूँट भरा और कुर्सी पर पीछे होकर आराम से बैठ गया। वो एक मुस्कुराहट के साथ उस दरिंदे को देख रहा था। एक बेहद खौफनाक मुस्कुराहट।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "beer_pour",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.35,
+        "description": "Wine pouring into a goblet"
+      },
+      {
+        "tag": "chair_scrape",
+        "timing": "under",
+        "offset_ms": 300,
+        "volume": 0.3,
+        "description": "Chair leaning back on wooden floor"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 89,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "हाँआआ... मानना पड़ेगा कि तुम कम शब्दों में भी सवालों के जवाब देना जानते हो। देखते हैं अगले सवाल का क्या करते हो। मेरा काम तमाम करने के लिए तुम्हें किसने पैसे दिए हैं?",
+    "emotion": "whispering",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 90,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "किसी ने नहीं। मैं यहाँ इत्तेफाक से आया हूँ।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 91,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "कहीं तुम झूठ तो नहीं बोल रहे?",
+    "emotion": "growl",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 92,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मुझे झूठ बोलने की आदत नहीं है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 93,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "और तुम्हें किस चीज़ की आदत है? मैंने विचरों के बारे में सुना है—वे छोटे बच्चों को उठा ले जाते हैं और उन्हें जादुई जड़ी-बूटियाँ खिलाते हैं। जो बच जाते हैं, वे खुद विचर बन जाते हैं, अमानवीय शक्तियों वाले जादूगर। उन्हें सिर्फ मारना सिखाया जाता है, और उनके अंदर से मानवीय भावनाएँ और संवेदनाएँ खत्म कर दी जाती हैं। उन्हें दूसरे राक्षसों को मारने के लिए खुद राक्षस बना दिया जाता है। मैंने तो यहाँ तक सुना है कि अब विचरों का शिकार शुरू करने का वक्त आ गया है, क्योंकि राक्षस कम होते जा रहे हैं और विचर बढ़ते जा रहे हैं। खैर, ये तीतर चखो इससे पहले कि ये बिल्कुल ठंडा हो जाए।",
+    "emotion": "excited",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 94,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन ने थाली से तीतर उठाया, उसे अपने जबड़ों के बीच रखा और उसे टोस्ट की तरह चबा गया, हड्डियाँ उसके दाँतों के नीचे चरचराकर टूट गईं।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "blood_impact",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.4,
+        "description": "Crunching bone and tearing meat sounds"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 95,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तुम कुछ बोलते क्यों नहीं? तुम्हारे बारे में फैली इन अफवाहों में कितनी सच्चाई है?",
+    "emotion": "growl",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 96,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "लगभग कुछ भी नहीं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 97,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "और झूठ क्या है?",
+    "emotion": "whispering",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 98,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "ये, कि राक्षस कम होते जा रहे हैं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 99,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "सच है। उनकी तादाद काफी है। एक तो तुम्हारे सामने ही बैठा है और सोच रहा है कि तुम्हें अंदर बुलाकर उसने सही किया या नहीं। मुझे तुम्हारा ये पदक शुरू से ही पसंद नहीं आया था, मेरे प्यारे मेहमान।",
+    "emotion": "growl",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.94
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 100,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम कोई राक्षस नहीं हो, निवेलेन।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 101,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "लानत है, ये तो कुछ नया सुना। तो फिर मैं हूँ क्या? चेरी का हलवा? या नवंबर की उदास सुबह में दक्षिण की ओर उड़ते जंगली हंसों का झुंड? नहीं? शायद मैं वो नेकदिली हूँ जो किसी चक्कीवाले की जवान बेटी ने बसंत में खो दी थी? बताओ गेराल्ट, मैं क्या हूँ? देख नहीं रहे मैं जिज्ञासा से कांप रहा हूँ?",
+    "emotion": "excited",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 102,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम राक्षस नहीं हो। वरना तुम इस चाँदी की ट्रे को छू तक नहीं पाते। और मेरे पदक को पकड़ना तो तुम्हारे लिए नामुमकिन होता।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 103,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "हा! आज तो बड़े-बड़े और भयानक राज़ खुल रहे हैं! अब शायद तुम ये कहोगे कि मेरे ये कान इसलिए उग आए क्योंकि बचपन में मुझे दूध का दलिया पसंद नहीं था!",
+    "emotion": "excited",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.08
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 104,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन इतनी ज़ोर से दहाड़ा कि मोमबत्ती की लपटें एक पल के लिए झुक गईं。",
+    "emotion": "angry",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 105,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "नहीं, निवेलेन... ये सब एक श्राप की वजह से हुआ है। और मुझे यकीन है कि तुम जानते हो वो श्राप किसने दिया था।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 106,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "और अगर मैं जानता हूँ तो?",
+    "emotion": "growl",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 107,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तो तुम्हें उसका सामना करना होगा, निवेलेन। तभी ये सब खत्म होगा।",
+    "emotion": "serious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "firm",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 108,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "जैसा कि तुमने गौर किया होगा... ये इलाका काफी सुनसान है। यहाँ से सबसे नज़दीकी बस्ती भी बहुत दूर है। इसकी वजह ये है कि मेरे पिता, और उनके ज़माने में मेरे दादा भी, पड़ोसियों या सड़क से गुज़रने वाले व्यापारियों के बीच कुछ खास पसंद नहीं किए जाते थे।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "beer_pour",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.4,
+        "description": "Wine or liquor being poured into a goblet"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 109,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "अगर कोई यहाँ रास्ता भटक जाता और मेरे पिता उसे मीनार से देख लेते, तो समझो उसका सब कुछ लुट गया। और पास की कुछ बस्तियाँ तो इसलिए जला दी गईं क्योंकि पिताजी को लगा कि वे लगान देने में देरी कर रहे हैं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 110,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मेरे पिता को बहुत कम लोग पसंद करते थे। सिवाय मेरे, ज़ाहिर है। मैं बहुत रोया था जब एक दिन एक गाड़ी में मेरे पिता का वो हिस्सा घर लाया गया जो एक बड़ी तलवार के वार के बाद बच गया था।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 111,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "दादाजी अब लूटपाट नहीं करते थे क्योंकि जब से उनके सिर पर गदा लगी थी, वो बुरी तरह हकलाने लगे थे। उनके मुँह से लार टपकती रहती थी और वो वक्त पर शौच तक नहीं कर पाते थे।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 112,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "उनका वारिस होने के नाते, गिरोह की कमान मुझे संभालनी पड़ी।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 113,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं उस वक्त जवान था... बिल्कुल नौसिखिया, तो गिरोह के लड़कों ने मुझे अपनी उंगलियों पर नचाना शुरू कर दिया। उन पर मेरा बस उतना ही चलता था जितना भेड़ियों के झुंड पर किसी मोटे सुअर के बच्चे का।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 114,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "जल्द ही हम वो काम करने लगे जो पिताजी ज़िंदा होते तो कभी नहीं करने देते। मैं तुम्हें बारीकियों में नहीं उलझाऊँगा और सीधे मुद्दे पर आता हूँ। एक दिन हम मिर्ट के पास गेलीबोल तक चले गए और एक मंदिर को लूटा। वहाँ एक युवा पुजारिन भी थी।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 115,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "कौन सा मंदिर, निवेलेन?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 116,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "खुदा जाने, पर वो कोई बुरा मंदिर रहा होगा। मुझे याद है वेदी पर खोपड़ियाँ और हड्डियाँ रखी थीं, और एक हरी आग जल रही थी। वहाँ से बहुत गंदी बदबू आ रही थी।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 117,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "खैर, मुद्दे की बात ये है कि लड़कों ने उस पुजारिन को दबोच लिया, उसके कपड़े उतार दिए और कहा कि अब मुझे 'मर्द' बनना होगा। तो, मैं मर्द बन गया, उस वक्त मैं एक बेवकूफ लड़का ही था, और जब मैं 'मर्दानगी' साबित कर रहा था, उस पुजारिन ने मेरे मुँह पर थूका और कुछ चिल्लाई।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 118,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "क्या?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 119,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "यही कि मैं इंसान की खाल में एक दरिंदा हूँ, और मैं एक दरिंदे की खाल में दरिंदा बनकर रहूँगा... प्यार और खून के बारे में भी कुछ कहा था... मुझे ठीक से याद नहीं। उसके पास शायद कोई छोटा सा खंजर था, जो उसने अपने बालों में छिपा रखा था। उसने खुद को मार लिया और फिर—",
+    "emotion": "sad",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 120,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "हम वहाँ से भाग निकले, गेराल्ट, सच कह रहा हूँ—हमने अपने घोड़ों को बेदम कर दिया था। वो एक मनहूस मंदिर था।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 1.08
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 121,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "आगे बताओ।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 122,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "फिर वही हुआ जो उस पुजारिन ने कहा था। कुछ दिनों बाद, जब मैं सोकर उठा और नौकरों ने मुझे देखा, तो वे चीखते हुए दुम दबाकर भाग गए। मैं आईने के पास गया... देखो गेराल्ट, मैं घबरा गया था, मुझे जैसे दौरा सा पड़ गया था, मुझे सब धुंधला-धुंधला याद है।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 123,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "संक्षेप में कहूँ तो, लाशें गिरीं। कई सारी। मेरे हाथ जो भी लगा मैंने इस्तेमाल किया—और अचानक मुझमें बहुत ताकत आ गई थी। और इस घर ने भी अपनी तरफ से पूरी मदद की: दरवाज़े अपने आप भिड़ने लगे, फर्नीचर हवा में उड़ने लगा, आग लग गई।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "fire_crackle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Fires and magical sparks echoing in memory"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 124,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "जो भाग सकता था वो अपनी जान बचाकर भागा: मेरी बुआ, मेरा भाई, गिरोह के लड़के। यहाँ तक कि कुत्ते भी रोने लगे और दुबक गए। मेरी बिल्ली, ग्लूटन, भाग गई। यहाँ तक कि बुआ का तोता भी डर के मारे मर गया।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 125,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं अकेला था, दहाड़ रहा था, चिल्ला रहा था, पागल हो रहा था, जो भी सामने आता उसे तोड़ देता, खासकर आईनों को।",
+    "emotion": "growl",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 126,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन रुका, एक ठंडी आह भरी और नाक सिकोड़ी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 127,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "जब वो दौरा खत्म हुआ... तब तक बहुत देर हो चुकी थी। मैं अकेला था। मैं किसी को समझा नहीं सकता था कि सिर्फ मेरा रूप बदला है, कि इस खौफनाक शक्ल के बावजूद, मैं वही बेवकूफ लड़का था जो एक खाली हवेली में नौकरों की लाशों पर बैठकर रो रहा था।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 128,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मुझे डर था कि इससे पहले कि मैं कुछ समझा पाता, वे वापस आकर मुझे मार डालेंगे। पर कोई वापस नहीं आया।",
+    "emotion": "sad",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 129,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उस दरिंदे ने एक पल के लिए खामोशी अख्तियार की और अपनी आस्तीन से नाक पोंछी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 130,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं उन शुरुआती महीनों के बारे में बात नहीं करना चाहता, गेराल्ट। उन्हें याद करके आज भी मेरी रूह कांप जाती है। मैं मुद्दे पर आता हूँ। काफी समय तक, बहुत लंबे समय तक, मैं हवेली में चूहे की तरह दुबका रहा, अपनी जगह से हिला तक नहीं।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 131,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "अगर कोई आता भी, जो बहुत कम होता था, तो मैं बाहर नहीं जाता था। मैं घर को इशारा कर देता और वो खिड़कियाँ ज़ोर-ज़ोर से पीटने लगता, या फिर मैं उस पत्थर के चेहरे के ज़रिए ज़ोर से दहाड़ देता, और किसी भी मेहमान को भगाने के लिए इतना काफी होता था।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 132,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तो बस ऐसा ही चल रहा था, जब तक कि एक दिन सुबह-सुबह मैंने खिड़की से बाहर नहीं झाँका और—मैंने क्या देखा? कोई घुसपैठिया मेरी बुआ की झाड़ी से गुलाब चुरा रहा था। और वो कोई मामूली गुलाब नहीं थे: वे नाज़ायर के नीले गुलाब थे। दादाजी उनके पौधे लाए थे।",
+    "emotion": "excited",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 133,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मुझे गुस्सा आ गया और मैं बाहर कूद पड़ा।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 134,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "उस मोटे घुसपैठिये की जब आवाज़ वापस आई—मुझे देखकर तो उसकी बोलती ही बंद हो गई थी—तो वो गिड़गिड़ाने लगा कि उसे बस अपनी बेटी के लिए कुछ फूल चाहिए थे, कि मैं उसे छोड़ दूँ, उसकी जान बख्श दूँ।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 135,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं उसे बस लात मारकर बाहर निकालने ही वाला था कि मुझे कुछ याद आया। कहानियाँ, जो मेरी दाई लेंका—वो बुढ़िया—मुझे सुनाया करती थी। लानत है, मैंने सोचा, अगर खूबसूरत लड़कियाँ मेंढकों को राजकुमार बना सकती हैं, या इसका उल्टा, तो शायद... शायद इन कहानियों में सच्चाई का एक कण हो, एक मौका हो...",
+    "emotion": "excited",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 136,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं चार गज़ दूर तक उछला, इतनी ज़ोर से दहाड़ा कि दीवार से बेलें नीचे गिर गईं, और मैं चिल्लाया, 'अपनी बेटी दो या अपनी जान!' मुझे इससे बेहतर कुछ सूझा ही नहीं।",
+    "emotion": "growl",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.12
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 137,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "वो व्यापारी, क्योंकि वो एक व्यापारी ही था, रोने लगा, फिर उसने कबूल किया कि उसकी बेटी तो अभी सिर्फ आठ साल की है। क्या तुम्हें हँसी आ रही है?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 138,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "नहीं।",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 139,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "सच्चाई का एक कण",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 140,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मुझे समझ नहीं आ रहा था कि अपनी इस ज़लील किस्मत पर हँसूँ या रोऊँ। मुझे उस बूढ़े व्यापारी पर तरस आ गया, उसे इस तरह थर-थर कांपते देख मैं खुद को रोक नहीं पाया। मैंने उसे अंदर बुलाया, उसकी खातिरदारी की और जब वो जाने लगा, तो मैंने उसकी झोली सोने और कीमती जवाहरात से भर दी।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 141,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तहखाने में पिता के ज़माने की काफी दौलत बची हुई थी। मुझे समझ नहीं आ रहा था कि उसका क्या करूँ, तो मैंने सोचा चलो थोड़ा दरियादिल ही बन जाता हूँ। वो व्यापारी इतना खुश हुआ कि शुक्रिया अदा करते-करते उसकी लार टपकने लगी।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 142,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "उसने पक्का कहीं जाकर अपनी इस बहादुरी के किस्से सुनाए होंगे, क्योंकि अभी दो हफ्ते भी नहीं बीते थे कि एक और व्यापारी आ धमका। उसके पास एक बड़ा सा थैला तैयार था। और साथ में एक बेटी भी। वो भी काफी... तगड़ी थी।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 143,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन ने मेज़ के नीचे अपने पैर फैलाए और अंगड़ाई ली, जिससे उसकी आरामकुर्सी चरमराने लगी। \"उस व्यापारी के साथ मेरी बात तुरंत बन गई,\" उसने अपनी बात जारी रखी। \"तय हुआ कि वो अपनी बेटी को एक साल के लिए मेरे पास छोड़ेगा। मुझे उसकी मदद करनी पड़ी उस थैले को खच्चर पर लादने में; अकेला तो वो उसे हिला भी नहीं पाता।\" \"और वो लड़की?\" \"कुछ वक्त तक तो मुझे देखते ही उसे दौरे पड़ने लगते थे। उसे सच में लगा था कि मैं उसे खा जाऊँगा। लेकिन एक महीने बाद हम एक ही मेज़ पर खाना खाने लगे, बातें करने लगे और लंबी सैर पर जाने लगे। वो नेक थी, और गज़ब की समझदार भी, और जब मैं उससे बात करता तो मेरी ज़बान लड़खड़ाने लगती थी। देखो गेराल्ट, मैं लड़कियों के मामले में हमेशा से शर्मीला रहा हूँ, हमेशा अपना मज़ाक बनवा लेता था। यहाँ तक कि उन ग्वालिनों के सामने भी जिनके घुटनों तक गोबर सना रहता था—वही लड़कियाँ जिन्हें मेरे गिरोह के लड़के जैसे चाहते थे वैसे नचाते थे। वो भी मेरा मज़ाक उड़ाती थीं। और अब तो मेरा चेहरा भी ऐसा खूँखार जबड़े जैसा हो गया था। मैं उसे ये तक नहीं बता पाया कि मैंने उसकी ज़िंदगी के एक साल के लिए इतनी बड़ी कीमत क्यों चुकाई थी। वो साल ऐसे रेंगते हुए बीता जैसे किसी लुटेरी फौज के पीछे उसकी बदबू चलती है। और आखिर में, वो व्यापारी आया और उसे ले गया। \"मैं हार मानकर घर में कैद हो गया। कई महीनों तक मैंने उन मेहमानों को कोई घास नहीं डाली जो अपनी बेटियों को लेकर आए थे। लेकिन एक साल किसी के साथ गुज़ारने के बाद मुझे अहसास हुआ कि बिना किसी बात करने वाले के रहना कितना मुश्किल है।\" उस दरिंदे के मुँह से एक आवाज़ निकली जो शायद एक आह थी, लेकिन हिचकी जैसी सुनाई दी।",
+    "emotion": "neutral",
+    "pause_after_ms": 600
+  },
+  {
+    "index": 144,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "\"अगली वाली,\" कुछ देर बाद उसने कहा, \"उसका नाम फेने था। वो छोटी सी थी, फुर्तीली और चहकती हुई, बिल्कुल किसी सुनहरी चिड़िया जैसी। वो मुझसे ज़रा भी नहीं डरती थी। एक बार, जब मैंने पहली बार अपने बाल कटवाए थे—यानी मेरे जवान होने की सालगिरह पर—हम दोनों ने ज़रूरत से ज़्यादा शहद वाली शराब पी ली और... हा, हा! उसके तुरंत बाद, मैं बिस्तर से कूदा और आईने की तरफ भागा। सच कहूँ तो मुझे बड़ी निराशा हुई, मेरा दिल टूट गया। मेरा चेहरा वैसा ही था जैसा पहले था, बस अभिव्यक्ति थोड़ी और बेवकूफाना लग रही थी। और लोग कहते हैं कि सदियों की समझदारी इन परियों की कहानियों में छिपी होती है। सब बकवास है गेराल्ट, ऐसी समझदारी किसी काम की नहीं। \"खैर, फेने ने जल्दी ही मुझे मेरे गम भुलाने में मदद की। वो बड़ी ज़िंदादिल लड़की थी, मैं तुम्हें बता रहा हूँ। जानते हो उसने क्या तरकीब सोची थी? हम दोनों बिन बुलाए मेहमानों को डराया करते थे। ज़रा सोचो: कोई मेहमान अहाते में दाखिल होता है, इधर-उधर देखता है, और तभी मैं दहाड़ते हुए चारों हाथ-पाँव पर उसकी तरफ दौड़ता हूँ और फेने, पूरी तरह नग्न होकर मेरी पीठ पर बैठी मेरे दादाजी का शिकार वाला बिगुल बजा रही होती है!\" निवेलेन हँसी से लोटपोट हो गया, उसके सफेद नुकीले दाँत चमकने लगे। \"फेने,\" उसने आगे कहा, \"एक साल मेरे साथ रही, फिर भारी-भरकम दहेज लेकर अपने परिवार के पास लौट गई। वो एक सराय के मालिक से शादी करने वाली थी, जो एक विधुर था।\" \"जारी रखो, निवेलेन। ये दिलचस्प है।\"",
+    "emotion": "neutral",
+    "pause_after_ms": 600
+  },
+  {
+    "index": 145,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "\"तुम्हें ऐसा लगता है?\" दरिंदे ने अपने कानों के बीच खुजलाते हुए कहा, जिससे रगड़ने की आवाज़ आई। \"ठीक है। अगली वाली, प्रिम्युला, एक गरीब हो चुके शूरवीर की बेटी थी। वो शूरवीर जब यहाँ आया, तो उसके पास एक मरियल घोड़ा, एक ज़ंग लगा सीनाबंद और बेहिसाब कर्ज़ था। वो इतना बदसूरत था जैसे गाय का गोबर, मैं सच कह रहा हूँ गेराल्ट, और वैसी ही बदबू भी मारता था। प्रिम्युला के बारे में मैं शर्त लगा सकता हूँ कि वो तब पैदा हुई होगी जब वो जंग पर रहा होगा, क्योंकि वो काफी खूबसूरत थी। वो भी मुझसे नहीं डरी, जो कि कोई हैरानी की बात नहीं थी, क्योंकि उसके बाप के मुकाबले तो मैं काफी सुंदर लग रहा था। जैसा कि पता चला, वो काफी मिज़ाजी थी और मैंने भी, थोड़ा आत्मविश्वास आने पर, मौके का पूरा फायदा उठाया। दो हफ्तों के बाद प्रिम्युला और मेरे बीच काफी नज़दीकी रिश्ता हो गया था। उसे मेरे कान खींचना पसंद था और वो चिल्लाती थी, 'मुझे काट कर मार डालो, ओ जानवर!' और 'मुझे चीर दो, ओ दरिंदे!' और ऐसी ही दूसरी बेवकूफाना बातें। मैं बीच-बीच में आईने की तरफ भागता, लेकिन गेराल्ट, यकीन मानों, मैं खुद को बड़ी घबराहट के साथ देखता था। मेरा अपने पुराने रूप में लौटने का मन कम होता जा रहा था। देखो गेराल्ट, पहले मैं एक कमज़ोर इंसान था और अब मैं एक हट्टा-कट्टा जवान बन गया था। मैं अक्सर बीमार रहता था, खाँसता था, मेरी नाक बहती रहती थी, लेकिन अब मुझे कुछ नहीं होता। और मेरे दाँत? तुम यकीन नहीं करोगे कि मेरे दाँत कितने सड़े हुए थे! और अब? मैं कुर्सी का पाया चबा सकता हूँ। क्या तुम चाहते हो कि मैं एक कुर्सी का पाया चबाकर दिखाऊँ?\" \"नहीं, रहने दो।\" \"शायद यही बेहतर है।\" दरिंदे ने अपना मुँह पूरा खोला। \"मेरी ये नुमाइश लड़कियों का मनोरंजन करती थी और अब घर में ज़्यादा साबुत कुर्सियाँ बची नहीं हैं।\" निवेलेन ने जम्हाई ली, उसकी विशाल जीभ एक नली की तरह मुड़ गई।",
+    "emotion": "neutral",
+    "pause_after_ms": 600
+  },
+  {
+    "index": 146,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "\"इस बातचीत ने मुझे थका दिया है, गेराल्ट। संक्षेप में कहूँ तो: प्रिम्युला के बाद दो और आईं, इल्का और वेनिमिरा। सब कुछ उसी तरह हुआ, बोरियत की हद तक। पहले, डर और हिचकिचाहट का मिला-जुला भाव, फिर थोड़ी सहानुभूति जो छोटे-मोटे कीमती तोहफों से गहरी हो जाती, फिर वही 'मुझे काटो, मुझे खा जाओ,' फिर डैडी की वापसी, एक भावुक विदाई और खज़ाने में लगातार होती कमी। मैंने फैसला किया कि अब अकेले रहने के लिए लंबे ब्रेक लूँगा। ज़ाहिर है, मैंने बहुत पहले ही ये मानना छोड़ दिया था कि किसी कुँवारी का चुंबन मेरा रूप बदल देगा। और मैंने इस बात को स्वीकार कर लिया था। और तो और, मैं इस नतीजे पर पहुँचा था कि चीज़ें जैसी हैं वैसी ही ठीक हैं और बदलाव की कोई ज़रूरत नहीं है।\" \"वाकई? कोई बदलाव नहीं, निवेलेन?\" \"सच है। पहली बात तो ये कि मेरी सेहत घोड़े जैसी तंदुरुस्त है, जो मुझे इस रूप के साथ मिली है। दूसरी बात, मेरा ये अलग होना लड़कियों पर किसी जादू जैसा असर करता है। हँसो मत! मुझे पूरा यकीन है कि एक इंसान के तौर पर, मुझे वेनिमिरा जैसी लड़की को पाने के लिए एड़ी-चोटी का ज़ोर लगाना पड़ता, जो कि बेहद खूबसूरत थी। मुझे नहीं लगता कि उस तस्वीर वाले आदमी को वो दोबारा मुड़कर देखती भी। और तीसरी बात: सुरक्षा। पिता के दुश्मन थे, और उनमें से कुछ बच गए थे। जिन लोगों को मेरे गिरोह ने मेरी घटिया कप्तानी में मौत के घाट उतारा था, उनके रिश्तेदार भी थे। तहखाने में सोना है। अगर मेरा खौफ न होता, तो कोई भी आकर उसे लूट ले जाता, चाहे वो कुदाल लिए किसान ही क्यों न होते।\"",
+    "emotion": "neutral",
+    "pause_after_ms": 1000
+  },
+  {
+    "index": 147,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट खाली प्याले से खेलते हुए बोला।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "chair_scrape",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Subtle wooden table friction"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 148,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम्हें काफी भरोसा है... कि तुमने अपने इस रूप में किसी का दिल नहीं दुखाया। न किसी पिता का, न किसी बेटी का। न किसी रिश्तेदार का और न ही किसी बेटी के मंगेतर का—",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 149,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन चिढ़ गया।",
+    "emotion": "angry",
+    "pause_after_ms": 250,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 150,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "रहने दो, गेराल्ट! तुम क्या बातें कर रहे हो? उनके पिता तो खुशी के मारे फूले नहीं समाते थे। मैंने बताया न, मैं बहुत दिलदार था। और वो बेटियाँ? तुमने उन्हें नहीं देखा था जब वो टाट के कपड़े पहनकर यहाँ आती थीं, कपड़े धो-धोकर उनके नन्हे हाथ छिल चुके होते थे, बाल्टियाँ ढो-ढोकर उनके कंधे झुक गए थे। मेरे साथ दो हफ्ते रहने के बाद भी प्रिम्युला की पीठ और जाँघों पर उन बेल्टों के निशान थे जिनसे उसके शूरवीर पिता उसे पीटते थे।",
+    "emotion": "growl",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 151,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "यहाँ वो राजकुमारियों की तरह रहती थीं, हाथ में सिर्फ पंखा लिए घूमती थीं और उन्हें ये तक नहीं पता होता था कि रसोई कहाँ है। मैं उन्हें अच्छे कपड़े पहनाता और गहनों से लाद देता था। मेरे एक इशारे पर, उस टिन के टब में गर्म पानी आ जाता था जिसे मेरे पिता ने असनगार्ड में मेरी माँ के लिए लूटा था। तुम सोच सकते हो? टिन का टब! शायद ही किसी जागीरदार के पास, बल्कि किसी बड़े लॉर्ड के पास भी घर में टिन का टब होगा।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 152,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "उनके लिए ये किसी परीकथा वाले घर जैसा था, गेराल्ट। और जहाँ तक बिस्तर का सवाल है, तो... लानत है, आज के ज़माने में शराफत किसी पत्थर के ड्रैगन से भी ज़्यादा दुर्लभ है। मैंने उनमें से किसी के साथ ज़बरदस्ती नहीं की, गेराल्ट!",
+    "emotion": "growl",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 153,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "लेकिन तुम्हें शक था कि किसी ने मुझे तुम्हारी जान लेने के लिए पैसे दिए हैं। ऐसा कौन करेगा?",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 154,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन ने ज़ोर देकर कहा।",
+    "emotion": "neutral",
+    "pause_after_ms": 200,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 155,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "कोई ऐसा नीच जो मेरा खज़ाना चाहता हो लेकिन जिसके पास अब और बेटियाँ न बची हों! इंसानी लालच की कोई सीमा नहीं होती।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 156,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "और कोई नहीं?",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 157,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "और कोई नहीं।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 158,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दोनों खामोश हो गए, मोमबत्ती की लौ की थरथराहट को देखते रहे।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "fire_crackle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.25,
+        "description": "Faint candle wick crackle"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 159,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "निवेलेन... क्या तुम अभी अकेले हो?",
+    "emotion": "whispering",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 160,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दरिंदे ने थोड़ी हिचकिचाहट के बाद जवाब दिया।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 161,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "विचर... मुझे लगता है कि कायदे से मुझे तुम्हारा अपमान करना चाहिए, तुम्हारी गर्दन पकड़कर तुम्हें सीढ़ियों से नीचे फेंक देना चाहिए। जानते हो क्यों? क्योंकि तुम मुझे बेवकूफ समझ रहे हो। मैंने गौर किया है कि कैसे तुम अपने कान खड़े कर रहे हो और दरवाज़े की तरफ देख रहे हो। तुम अच्छी तरह जानते हो कि मैं अकेला नहीं रहता। क्या मैं सही हूँ?",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 162,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम सही हो। मुझे माफ करना।",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 163,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "अपनी माफी अपने पास रखो। क्या तुमने उसे देखा?",
+    "emotion": "growl",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 164,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "हाँ। जंगल में, फाटक के पास। क्या वही वजह है कि पिछले कुछ समय से व्यापारी और उनकी बेटियाँ यहाँ से खाली हाथ लौट रहे हैं?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 165,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तो तुम्हें ये भी पता है? हाँ, वही वजह है।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 166,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "क्या तुम्हें बुरा लगेगा अगर मैं पूछूँ कि क्या वो—",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 167,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "हाँ, मुझे बुरा लगेगा।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 168,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "फिर से खामोशी छा गई।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 169,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर आखिरकार उठ खड़ा हुआ।",
+    "emotion": "neutral",
+    "pause_after_ms": 250,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "chair_scrape",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.4,
+        "description": "Chair scraping against wood floor"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 170,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "खैर, जैसी तुम्हारी मर्ज़ी! तुम्हारी खातिरदारी के लिए शुक्रिया, मेरे मेज़बान। अब मेरे निकलने का वक्त हो गया है।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 171,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन भी उठ खड़ा हुआ।",
+    "emotion": "neutral",
+    "pause_after_ms": 250,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "chair_scrape",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.45,
+        "description": "Heavy chair scraping back"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 172,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "सही कहा। कुछ कारणों से, मैं तुम्हें रात बिताने के लिए हवेली में कमरा नहीं दे सकता, और मैं तुम्हें इन जंगलों में रात बिताने की सलाह भी नहीं दूँगा। जब से ये इलाका वीरान हुआ है, यहाँ रातें बड़ी खतरनाक होती हैं। तुम्हें अंधेरा होने से पहले हाईवे तक पहुँच जाना चाहिए।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 173,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं याद रखूँगा, निवेलेन। क्या तुम्हें यकीन है कि तुम्हें मेरी मदद की ज़रूरत नहीं है?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 174,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दरिंदे ने उसे तिरछी नज़रों से देखा।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 175,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तुम्हें लगता है कि तुम मेरी मदद कर सकते हो? क्या तुम मुझ पर से ये बला हटा पाओगे?",
+    "emotion": "growl",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 176,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं सिर्फ उस तरह की मदद की बात नहीं कर रहा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 177,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "तुमने मेरे सवाल का जवाब नहीं दिया। हालाँकि... शायद तुमने दे दिया। तुम नहीं कर पाओगे।",
+    "emotion": "sad",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 178,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट ने सीधे उसकी आँखों में देखा।",
+    "emotion": "neutral",
+    "pause_after_ms": 250,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 179,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम्हारी किस्मत ही खराब थी! गेलीबोल और निमनार घाटी के तमाम मंदिरों में से तुमने 'कोरम आग तेरा' के चर्च को चुना, यानी शेर के सिर वाली मकड़ी। कोरम आग तेरा की पुजारिन द्वारा दिए गए श्राप को हटाने के लिए जिस ज्ञान और शक्ति की ज़रूरत होती है, वो मेरे पास नहीं है।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 180,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "और किसके पास है?",
+    "emotion": "excited",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 181,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तो आखिर तुम्हारी दिलचस्पी है? तुमने तो कहा था कि चीज़ें जैसी हैं वैसी ही ठीक हैं।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 182,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "जैसी हैं वैसी ठीक हैं, हाँ। लेकिन वैसी नहीं जैसी हो सकती हैं। मुझे डर है कि—",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 183,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम्हें किस बात का डर है?",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 184,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह दरिंदा कमरे के दरवाज़े पर रुका और पलटा।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "footsteps_wood",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.35,
+        "description": "Heavy footsteps on wooden floor"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 185,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "विचर, मैं तुम्हारे इन सवालों से तंग आ चुका हूँ। मेरे जवाब देने के बजाय तुम खुद सवाल पूछे जा रहे हो। ज़ाहिर है, तुमसे बात मनवाने का तरीका कुछ और ही होगा। सुनो! पिछले कुछ समय से मुझे बहुत ही घिनौने सपने आ रहे हैं। शायद 'खौफनाक' कहना ज़्यादा सही होगा। क्या मेरा डरना जायज़ है? ज़रा संक्षेप में बताना।",
+    "emotion": "irritated",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "frustrated",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 186,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "कमोबेश ऐसा ही होता है। विचर ने रोच की जीन की पेटी कसी।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "cloak_rustle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Leather straps tightening sound"
+      }
+    ],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 187,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "बेशक तुम्हें लगता होगा कि अगर तुम फिर से इंसान बन गए, तो वह वापस नहीं आएगी?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 188,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मुझे यकीन है। तुम जानते हो कि रुसाल्का इंसानों से कितना डरती हैं। किसी ने भी आज तक रुसाल्का को इतने करीब से नहीं देखा होगा। लेकिन वेरीना और मैं... छोड़ो इन बातों को! अपना ख्याल रखना, गेराल्ट।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 189,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "अपना ख्याल रखना, निवेलेन।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "horse_gallop",
+        "timing": "after",
+        "offset_ms": 100,
+        "volume": 0.4,
+        "description": "Horse hooves starting to move"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 190,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर ने घोड़ी को एड़ लगाई और फाटक की ओर बढ़ गया। वह दरिंदा भी उसके साथ-साथ धीरे-धीरे चलने लगा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 191,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "गेराल्ट?",
+    "emotion": "whispering",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 192,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "हाँ।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 193,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "मैं उतना बेवकूफ नहीं हूँ जितना तुम समझ रहे हो। तुम यहाँ उन सौदागरों में से किसी एक के निशानों का पीछा करते हुए आए हो जो हाल ही में यहाँ आए थे। क्या उनमें से किसी के साथ कुछ बुरा हुआ है?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 194,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "हाँ।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 195,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "आखिरी सौदागर तीन दिन पहले यहाँ आया था। अपनी बेटी के साथ, जो वैसे उतनी खूबसूरत भी नहीं थी। मैंने घर को आदेश दिया कि सारे दरवाज़े और खिड़कियाँ बंद कर ले और ज़िंदा होने का कोई संकेत न दे। वे आँगन में यहाँ-वहाँ घूमे और फिर चले गए। लड़की ने मेरी बुआ की झाड़ी से एक गुलाब तोड़ा और अपनी पोशाक पर लगा लिया। उन्हें कहीं और ढूँढो। पर संभलकर रहना; यह इलाका बहुत खतरनाक है। मैंने तुम्हें बताया था कि रात में जंगल सुरक्षित नहीं होता। यहाँ अजीबोगरीब चीज़ें सुनाई और दिखाई देती हैं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 196,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "शुक्रिया, निवेलेन। मैं तुम्हारी बात याद रखूँगा। कौन जाने, शायद मुझे कोई ऐसा मिल जाए जो—",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 197,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "शायद हाँ। और शायद नहीं। यह मेरी समस्या है, गेराल्ट, मेरी ज़िंदगी और मेरी सज़ा। मैंने इसके साथ जीना सीख लिया है। मुझे इसकी आदत हो गई है। अगर हालात और बिगड़े, तो मैं उसकी भी आदत डाल लूँगा। और अगर बात हद से ज़्यादा बिगड़ जाए, तो किसी और को मत ढूँढना। तुम खुद यहाँ आना और इसे खत्म कर देना। एक विचर के तौर पर। अपना ख्याल रखना, गेराल्ट।",
+    "emotion": "sad",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 198,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "निवेलेन मुड़ा और तेज़ी से हवेली की ओर चल दिया। उसने दोबारा पीछे मुड़कर नहीं देखा।",
+    "emotion": "neutral",
+    "pause_after_ms": 800,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.4,
+        "description": "Heavy footsteps walking away"
+      }
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 199,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह इलाका वीरान, जंगली और बेहद डरावना था। शाम होने से पहले गेराल्ट मुख्य सड़क पर वापस नहीं लौटा; वह लंबा रास्ता नहीं लेना चाहता था, इसलिए उसने जंगल के बीच से छोटा रास्ता चुना। उसने रात एक ऊँची पहाड़ी की नंगी चोटी पर बिताई। उसकी तलवार उसके घुटनों पर थी और पास ही एक छोटी सी आग जल रही थी, जिसमें वह रुक-रुक कर 'मोंकशुड' की टहनियाँ डाल रहा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "fire_crackle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.35,
+        "description": "Campfire crackling in the night"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 200,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "आधी रात को उसने घाटी में दूर एक आग की रोशनी देखी; उसे पागलों की तरह चीखने और गाने की आवाज़ें सुनाई दीं, और एक ऐसी आवाज़ जो सिर्फ किसी तड़पती हुई औरत की चीख हो सकती थी। जैसे ही भोर हुई, वह वहाँ पहुँचा, लेकिन उसे वहाँ कुचली हुई घास और अभी भी गर्म राख में जली हुई हड्डियों के अलावा कुछ नहीं मिला। एक विशाल ओक के पेड़ की फुनगी पर बैठी किसी चीज़ ने उसे देखकर फुंकार मारी। वह शायद कोई हार्पी थी, या कोई जंगली बिल्ली। विचर उसे जाँचने के लिए नहीं रुका।",
+    "emotion": "neutral",
+    "pause_after_ms": 800,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 201,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "दोपहर के करीब, जब रोच एक झरने पर पानी पी रही थी, वह घोड़ी अचानक ज़ोर से हिनहिनाई और पीछे हट गई। उसने अपने पीले दाँत दिखाए और लगाम चबाने लगी।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "horse_gallop",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.45,
+        "description": "Horse snorting and stepping back"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 202,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट ने विचर के चिन्ह से उसे शांत किया। तभी उसकी नज़र काई के बीच से झाँक रहे लाल रंग के मशरूमों के एक गोल घेरे पर पड़ी।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "sign_magic",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.4,
+        "description": "Witcher sign casting hum"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 203,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "रोच, तुम तो सच में डरपोक होती जा रही हो! यह तो बस एक साधारण 'शैतानी घेरा' है। इतना शोर मचाने की क्या ज़रूरत है?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 204,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "घोड़ी ने फुंकार मारी और अपना सिर उसकी ओर घुमाया। विचर ने अपना माथा रगड़ा, अपनी भौहें सिकोड़ीं और सोच में डूब गया। फिर वह उछलकर जीन पर बैठा, घोड़ी को मोड़ा और अपने ही पदचिन्हों पर वापस चल पड़ा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 205,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "जानवर मुझे पसंद करते हैं... माफ करना, रोच। लगता है तुम्हारे पास मुझसे ज़्यादा दिमाग है!",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 206,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "घोड़ी ने अपने कान पीछे की ओर चिपका लिए और फुंकारते हुए अपने खुरों से ज़मीन खोदने लगी; वह आगे नहीं बढ़ना चाहती थी। गेराल्ट ने उसे विचर के चिन्ह से शांत नहीं किया; वह जीन से नीचे कूदा और लगाम घोड़े के सिर के ऊपर से डाल दी। उसकी पीठ पर अब वह पुरानी छिपकली की खाल के म्यान वाली तलवार नहीं थी; उसकी जगह एक चमकता हुआ, खूबसूरत हथियार था जिसके मूठ पर सफेद धातु का एक गोल सिरा लगा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.35,
+        "description": "Boots landing on ground"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 207,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "इस बार फाटक उसके लिए खुद नहीं खुला। वह पहले से ही खुला था, जैसा वह उसे छोड़ गया था।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 208,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसे गाने की आवाज़ सुनाई दी। वह शब्दों को समझ नहीं पा रहा था; यहाँ तक कि वह भाषा भी नहीं पहचान पा रहा था। उसे ज़रूरत भी नहीं थी—विचर उस शांत लेकिन चुभने वाले गीत की प्रकृति और उसके सार को महसूस कर रहा था, जो उसकी रगों में एक घिनौने और भारी खतरे की लहर की तरह दौड़ रहा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 209,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गाना अचानक रुक गया, और तब उसने उसे देखा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 210,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह सूखे हुए फव्वारे में बने डॉल्फिन की पीठ से चिपकी हुई थी। उसने काई से ढके पत्थर को अपने नन्हे हाथों से थाम रखा था, जो इतने सफेद थे कि पारदर्शी लग रहे थे। उसके उलझे हुए काले बालों के नीचे से उसकी बड़ी-बड़ी, खुली आँखें कोयले की तरह चमक रही थीं।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 211,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट धीरे-धीरे करीब आया। उसके कदम नरम और लचीले थे। वह दीवार और नीले गुलाबों की झाड़ी के पास से एक आधा घेरा बनाते हुए आगे बढ़ा। डॉल्फिन की पीठ से चिपकी वह जीव अपनी आँखों से उसका पीछा कर रही थी। उसने अपना छोटा सा चेहरा उसकी ओर मोड़ा, जिस पर एक अजीब सी तड़प और कशिश थी। गेराल्ट को अभी भी उसका गीत सुनाई दे रहा था, हालाँकि उसके पतले, सफेद होंठ कसकर बंद थे और उनसे ज़रा सी भी आवाज़ नहीं निकल रही थी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.25,
+        "description": "Soft silent footsteps"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 212,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर दस कदम की दूरी पर रुक गया।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "sword_draw",
+        "timing": "after",
+        "offset_ms": 100,
+        "volume": 0.5,
+        "description": "Silver sword sliding out of scabbard"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 213,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसकी तलवार, जो उसने धीरे से अपनी काली म्यान से निकाली थी, उसके सिर के ऊपर चमक रही थी।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 214,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "यह चाँदी की है... इसकी धार चाँदी की है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 215,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह छोटा सा सफेद चेहरा ज़रा भी नहीं डिगा; उन गहरी काली आँखों के भाव नहीं बदले।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 216,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम एक रुसाल्का जैसी दिखती हो... कि तुम किसी को भी धोखा दे सकती हो। खासकर इसलिए क्योंकि तुम एक दुर्लभ जीव हो, काली ज़ुल्फों वाली। लेकिन घोड़े कभी गलती नहीं करते। वे तुम जैसे जीवों को अपनी सहज बुद्धि से पहचान लेते हैं। तुम क्या हो? मुझे लगता है तुम एक 'मूला' हो, या फिर एक 'अल्पोर'। एक साधारण वैम्पायर सूरज की रोशनी में बाहर नहीं निकल सकता।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 800,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 217,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उन सफेद होंठों के कोने थोड़े काँपे और ऊपर की ओर मुड़ गए।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 218,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "निवेलेन ने अपने उस रूप से तुम्हें अपनी ओर खींचा, है ना? तुमने उसे सपने दिखाए। मैं अंदाज़ा लगा सकता हूँ कि वे किस तरह के सपने रहे होंगे, और मुझे उस पर तरस आता है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 219,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह जीव नहीं हिली।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 220,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "तुम्हें परिंदे पसंद हैं... लेकिन यह तुम्हें स्त्री और पुरुष दोनों की गर्दन काटने से नहीं रोकता, है ना? तुम और निवेलेन! क्या जोड़ी बनती तुम्हारी, एक दरिंदा और एक वैम्पायर, इस जंगली हवेली के मालिक। पलक झपकते ही तुम इस पूरे इलाके पर राज करते। तुम, जो हमेशा खून की प्यासी रहती हो, और वह, तुम्हारा रक्षक, तुम्हारी सेवा में लगा एक कातिल, एक अंधा मोहरा। लेकिन उसके लिए पहले उसे एक असली दरिंदा बनना पड़ता, न कि दरिंदे का मुखौटा पहने एक इंसान।",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 221,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वे बड़ी काली आँखें सिकुड़ गईं।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 222,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "वह कहाँ है, काली ज़ुल्फों वाली? तुम गा रही थी, इसका मतलब है कि तुमने खून पिया है। तुमने अपनी आखिरी चाल चल दी है, जिसका मतलब है कि तुम उसके दिमाग को गुलाम बनाने में नाकाम रही हो। क्या मैं सही हूँ?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 223,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "काले बालों वाला वह सिर थोड़ा सा हिला, लगभग न के बराबर, और उसके होंठों के कोने और भी ऊपर मुड़ गए। उस नन्हे से चेहरे पर एक खौफनाक मुस्कान आ गई।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 224,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "बेशक अब तुम खुद को इस हवेली की मालकिन समझती हो?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 225,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह सिर फिर हिला, इस बार ज़्यादा साफ तौर पर।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 226,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "क्या तुम एक 'मूला' हो?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 227,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसने धीरे से अपना सिर ना में हिलाया। एक फुंकार गेराल्ट की हड्डियों तक गूँज गई, जो उन सफेद, डरावने, मुस्कुराते होंठों से ही निकल सकती थी, हालाँकि विचर ने उन्हें हिलते हुए नहीं देखा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 228,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "अल्पोर?",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 229,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "फिर से इनकार। विचर पीछे हटा और अपनी तलवार की मूठ को और ज़ोर से पकड़ लिया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "sword_draw",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.4,
+        "description": "Geralt tightening grip on sword hilt"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 230,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "इसका मतलब है कि तुम—",
+    "emotion": "angry",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 231,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "होंठों के कोने और ऊपर, और ऊपर मुड़ने लगे; होंठ खुल गए...",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 232,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "एक ब्रूक्सा!",
+    "emotion": "angry",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.15
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 233,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर चिल्लाया और फव्वारे की ओर झपटा। उन सफेद होंठों के पीछे से सफेद, नुकीले दाँत चमक उठे। वह वैम्पायर उछली, उसने एक तेंदुए की तरह अपनी पीठ मोड़ी और चीख पड़ी।",
+    "emotion": "excited",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.12
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.5,
+        "description": "Geralt lunging forward"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 234,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "आवाज़ की वह लहर गेराल्ट से एक भारी प्रहार की तरह टकराई। उसकी साँसें थम गईं, उसकी पसलियाँ जैसे दब गईं, और दर्द के काँटों ने उसके कानों और दिमाग को बींध दिया। पीछे की ओर गिरते हुए, वह बस किसी तरह अपनी कलाइयों को जोड़कर 'हेलियोट्रोप का चिन्ह' बना पाया। वह जादू ने दीवार से उसकी टक्कर के असर को थोड़ा कम कर दिया, फिर भी उसकी आँखों के सामने अंधेरा छा गया और उसके फेफड़ों की बची-कुची हवा एक कराह के साथ बाहर निकल गई।",
+    "emotion": "angry",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "sign_magic",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.5,
+        "description": "Heliotrope sign magic casting sound"
+      },
+      {
+        "tag": "body_fall",
+        "timing": "after",
+        "offset_ms": 400,
+        "volume": 0.45,
+        "description": "Geralt crashing against the wall"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 235,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "डॉल्फिन की पीठ पर, फव्वारे के उस पत्थर के घेरे में जहाँ कुछ ही पल पहले सफेद पोशाक में एक मासूम सी लड़की बैठी थी, अब एक विशाल काला चमगादड़ अपने चमकदार शरीर को फैलाए बैठा था। उसने अपना लंबा, संकरा जबड़ा खोला, जिसमें सुई जैसे सफेद दाँतों की कतारें थीं। उसके झिल्लीदार पंख फैले और बिना किसी आवाज़ के फड़फड़ाए, और वह जीव किसी धनुष से छूटे तीर की तरह विचर की ओर झपटा।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.08
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "cloak_rustle",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.35,
+        "description": "Bat wings swooping through the air"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 236,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट ने, जिसके मुँह में खून का धात्विक स्वाद आ रहा था, एक मंत्र चिल्लाया और अपना हाथ आगे बढ़ाया, उसकी उंगलियाँ 'क्वेन के चिन्ह' की मुद्रा में फैली हुई थीं। वह चमगादड़ फुंकारते हुए अचानक मुड़ा, फिर अजीब तरह से हँसा और हवा में ऊपर की ओर गोता लगाकर सीधा विचर की गर्दन के पीछे झपटा। गेराल्ट एक तरफ कूदा, उसने तलवार चलाई, लेकिन वार खाली गया। वह चमगादड़ बड़ी फुर्ती और नज़ाकत से अपना एक पंख समेटकर उसके चारों ओर घूमा और फिर से हमला किया, अपना बिना आँखों वाला, दाँतों से भरा मुँह खोलकर। गेराल्ट ने इंतज़ार किया, तलवार को दोनों हाथों से पकड़े हुए, उसका सिरा हमेशा उस जीव की ओर था। आखिरी पल में, वह कूदा—किनारे की तरफ नहीं बल्कि सीधे आगे की ओर, और एक ऐसा ज़ोरदार वार किया जिससे हवा भी चीख उठी।",
+    "emotion": "excited",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 1.12
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "sign_magic",
+        "timing": "under",
+        "offset_ms": 50,
+        "volume": 0.45,
+        "description": "Quen sign activation hum"
+      },
+      {
+        "tag": "sword_clash",
+        "timing": "under",
+        "offset_ms": 400,
+        "volume": 0.5,
+        "description": "Sword swishing through air"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 237,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसका वार खाली गया। इसकी उम्मीद नहीं थी, और इसी वजह से उसकी लय बिगड़ गई। गेराल्ट ने एक पल की देरी कर दी, और तभी उसे महसूस हुआ कि उस दरिंदे के पंजों ने उसके गाल को चीर दिया है। एक मखमली, गीला पंख उसकी गर्दन से टकराया। वह तुरंत वहीं सिमट गया, अपने शरीर का पूरा भार दाहिने पैर पर डाला और पीछे की ओर तेज़ी से तलवार घुमाई, लेकिन वह फुर्तीला जीव फिर बच निकला।",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 1.08
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "blood_impact",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.4,
+        "description": "Claws scraping cheek"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 238,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "चमगादड़ ने अपने पंख फड़फड़ाए, ऊपर की ओर उड़ा और फव्वारे की ओर गोता लगाया। जैसे ही उसके टेढ़े पंजों ने पत्थर की मुंडेर को खुरचा, वह वीभत्स, लार टपकता थूथन धुंधलाने लगा, रूप बदलने लगा और गायब होने लगा। हालाँकि उसकी जगह लेने वाले पीले और छोटे होंठ उन जानलेवा दाँतों को पूरी तरह छिपा नहीं पा रहे थे। ब्रूक्सा ज़ोर से चीखी, उसकी आवाज़ एक डरावनी धुन में बदल गई। उसने नफरत भरी नज़रों से विचर को घूरा और दोबारा चिल्लाई।",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 239,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "आवाज़ की वह लहर इतनी शक्तिशाली थी कि उसने विचर के 'चिन्ह' के सुरक्षा कवच को भी भेद दिया। गेराल्ट की आँखों के सामने काले और लाल घेरे नाचने लगे; उसकी कनपटी और सिर का ऊपरी हिस्सा धड़कने लगा। कानों में चुभते उस दर्द के बीच उसे विलाप करती और कराहती आवाज़ें सुनाई देने लगीं—जैसे बाँसुरी और शहनाई का शोर हो, या किसी तूफ़ान की सरسराहट। उसके चेहरे की खाल सुन्न और ठंडी पड़ गई। वह एक घुटने के बल गिर पड़ा और अपना सिर झटकने लगा।",
+    "emotion": "angry",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "body_fall",
+        "timing": "after",
+        "offset_ms": 500,
+        "volume": 0.4,
+        "description": "Geralt falling to one knee"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 240,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह काला चमगादड़ खामोशी से उसकी ओर बढ़ा, अपना दाँतों भरा जबड़ा खोले हुए।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 241,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "चीख से अभी भी सुन्न पड़ा गेराल्ट सहज भाव से हरकत में आया। वह तेज़ी से उछला और उस जीव की रफ़्तार से अपनी गति मिलाते हुए तीन कदम आगे बढ़ा, वार से बचा, आधा घेरा घूमा और फिर पलक झपकते ही दोनों हाथों से तलवार का एक ज़ोरदार प्रहार किया। तलवार को किसी प्रतिरोध का सामना नहीं करना पड़ा... लगभग कोई प्रतिरोध नहीं। उसे एक चीख सुनाई दी, लेकिन इस बार वह दर्द की चीख थी, जो चाँदी के स्पर्श से पैदा हुई थी।",
+    "emotion": "excited",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 1.12
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [
+      {
+        "tag": "sword_clash",
+        "timing": "under",
+        "offset_ms": 300,
+        "volume": 0.55,
+        "description": "Silver sword striking the Bruxa"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 242,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह तड़पती हुई ब्रूक्सा फव्वारे के डॉल्फिन की मूर्ति पर अपना रूप बदल रही थी। उसकी सफेद पोशाक पर, बाईं छाती के थोड़ा ऊपर, एक छोटी उंगली के बराबर कटे हुए निशान से खून का लाल धब्बा उभर आया था। विचर ने अपने दाँत पीसे—वह वार, जिसे उस जीव के दो टुकड़े कर देने चाहिए थे, महज़ एक खरोंच बनकर रह गया था।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 243,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "चीखो, पिशाचिनी... अपना पूरा दम लगा दो। अपनी सारी शक्ति खो दो। और फिर मैं तुम्हारा वह सुंदर सा सिर धड़ से अलग कर दूँगा!",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 244,
+    "type": "dialogue",
+    "speaker": "Narrator",
+    "text": "तुम। सबसे पहले तुम्हारी हिम्मत जवाब देगी, जादूगर। मैं तुम्हें मार डालूँगी।",
+    "emotion": "whispering",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "quiet_chamber",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 245,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "ब्रूक्सा के होंठ नहीं हिले, लेकिन विचर ने उन शब्दों को साफ सुना; वे उसके दिमाग में गूँज रहे थे, जैसे पानी के भीतर से कोई आवाज़ आ रही हो।",
+    "emotion": "mysterious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "mysterious",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 246,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "\"देख लेंगे,\"",
+    "emotion": "cold_menace",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.35,
+        "description": "Geralt shifting feet on gravel"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 247,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह अपने दाँतों के बीच से बुदबुदाया और झुककर फव्वारे की ओर बढ़ने लगा।",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Footsteps walking on gravel"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 248,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "मैं तुम्हें मार डालूँगी। मैं तुम्हें मार डालूँगी। मैं तुम्हें मार डालूँगी।",
+    "emotion": "whispering",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.3,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -15.0
+    }
+  },
+  {
+    "index": 249,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "\"देख लेंगे।\"",
+    "emotion": "cold_menace",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 250,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "\"वेरीना!\" निवेलेन, अपना सिर झुकाए और दरवाज़े के चौखट को दोनों हाथों से थामे, हवेली से बाहर लड़खड़ाते हुए निकला। वह अपने हाथों को बेतरतीब ढंग से लहराते हुए फव्वारे की ओर बढ़ा। उसके कुर्ते की आस्तीन पर खून के धब्बे थे।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.1,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "door_creak",
+        "timing": "before",
+        "offset_ms": -100,
+        "volume": 0.4,
+        "description": "Heavy wooden door swinging open"
+      },
+      {
+        "tag": "footsteps_wood",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.35,
+        "description": "Stumbling steps on wood"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 251,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "\"वेरीना!\"",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 252,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह फिर दहाड़ा। ब्रूक्सा ने झटके से अपना सिर उसकी ओर घुमाया। गेराल्ट ने अपनी तलवार उठाई और उस पर हमला करने के लिए कूदा, लेकिन उस वैम्पायर की फुर्ती कहीं ज़्यादा थी। एक तीखी चीख और आवाज़ की एक और लहर ने विचर को ज़मीन पर पटक दिया। वह पीठ के बल गिरा और घिसटता हुआ रास्ते की बजरी पर जा पहुँचा। ब्रूक्सा ने छलाँग लगाने के लिए अपने शरीर को कमान की तरह ताना, उसके दाँत खंजर की तरह चमक रहे थे। निवेलेन ने एक भालू की तरह अपने हाथ फैलाकर उसे पकड़ने की कोशिश की, लेकिन उसने सीधे उसके चेहरे पर चीख मारी, जिससे वह पीछे की ओर दीवार के पास रखे लकड़ी के ढाँचे से जा टकराया। ढाँचा तड़ककर टूट गया और निवेलेन लकड़ियों के ढेर के नीचे दब गया।",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.12
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "sword_draw",
+        "timing": "before",
+        "offset_ms": -50,
+        "volume": 0.45,
+        "description": "Geralt draws silver sword"
+      },
+      {
+        "tag": "body_fall",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.5,
+        "description": "Geralt thrown onto gravel"
+      },
+      {
+        "tag": "chair_scrape",
+        "timing": "after",
+        "offset_ms": 300,
+        "volume": 0.45,
+        "description": "Wooden frame smashing"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 253,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट अब तक अपने पैरों पर खड़ा हो चुका था। वह आँगन में एक अर्ध-चक्र बनाते हुए दौड़ने लगा ताकि ब्रूक्सा का ध्यान निवेलेन से हटा सके। वह वैम्पायर अपनी सफेद पोशाक लहराती हुई, एक तितली की तरह हल्की, ज़मीन को बिना छुए सीधे उसकी ओर लपकी। अब वह चीख नहीं रही थी, और न ही रूप बदलने की कोशिश कर रही थी। विचर जानता था कि वह थक चुकी है, लेकिन फिर भी वह जानलेवा थी। गेराल्ट के पीछे, निवेलेन लकड़ियों के नीचे छटपटा रहा था और दहाड़ रहा था।",
+    "emotion": "tense",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.35,
+        "description": "Running steps on gravel"
+      },
+      {
+        "tag": "cloak_rustle",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.3,
+        "description": "Fast movement through air"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 254,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट बाईं ओर कूदा और अपनी तलवार से एक छोटी सी पैंतरेबाज़ी (मुलिनेट) की ताकि उस ब्रूक्सा को भ्रमित कर सके जो उसकी ओर उड़ती आ रही थी—सफेद और काली, हवा में उड़ती हुई, भयानक। उसने उसे कम आँकने की गलती कर दी थी। वह चीखी। गेराल्ट समय पर 'चिन्ह' नहीं बना पाया और हवा में उड़ता हुआ सीधा दीवार से जा टकराया। उसकी रीढ़ में उठा दर्द उंगलियों के पोरों तक महसूस हुआ, उसके कंधे सुन्न हो गए और पैर जवाब दे गए। वह घुटनों के बल गिर पड़ा। ब्रूक्सा एक सुरीली आवाज़ में विलाप करती हुई उसकी ओर झपटी।",
+    "emotion": "angry",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "sword_clash",
+        "timing": "before",
+        "offset_ms": -100,
+        "volume": 0.45,
+        "description": "Sword swing in air"
+      },
+      {
+        "tag": "body_fall",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.5,
+        "description": "Geralt hitting the stone wall"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 255,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "\"वेरीना!\"",
+    "emotion": "angry",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 256,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह मुड़ी—और तभी निवेलेन ने तीन मीटर लंबे एक लट्ठे का टूटा हुआ नुकीला सिरा उसकी छाती के बीचों-बीच उतार दिया। वह चिल्लाई नहीं। उसने बस एक आह भरी।",
+    "emotion": "tense",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "blood_impact",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.5,
+        "description": "Wooden stake piercing flesh"
+      }
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 257,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उस आह को सुनकर विचर काँप उठा।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 258,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वे दोनों वहीं खड़े थे: निवेलेन अपने पैर फैलाए, लट्ठे को दोनों हाथों से पकड़े हुए था, जिसका एक सिरा उसकी बगल के नीचे मजबूती से दबा था।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 259,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "ब्रूक्सा, उस खूँटे के दूसरे सिरे पर किसी पिन में फँसी सफेद तितली की तरह लटकी हुई थी, और उसे अपने दोनों हाथों से जकड़े हुए थी। उसने एक दर्दनाक साँस छोड़ी और अचानक खुद को उस खूँटे पर और पीछे की ओर धकेला।",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.1,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 260,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट ने देखा कि उसकी पीठ पर, उस सफेद पोशाक पर खून का एक लाल धब्बा फैल गया है, जहाँ से वह नुकीला सिरा खून के फव्वारे के साथ बाहर निकल आया था: वीभत्स, लगभग घिनौना। निवेलेन चिल्लाया, एक कदम पीछे हटा, फिर दूसरा, उससे दूर भागने की कोशिश में, लेकिन उसने लट्ठा नहीं छोड़ा और ब्रूक्सा को अपने साथ खींचता चला गया।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.35,
+        "description": "Heavy stumbling steps backward"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 261,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "एक कदम और, और वह हवेली की दीवार से जा सटा। लट्ठे का सिरा दीवार से रगड़ाया।",
+    "emotion": "tense",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "chair_scrape",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.4,
+        "description": "Wood scraping against stone wall"
+      }
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 262,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "धीरे-धीरे, जैसे किसी को सहला रही हो, ब्रूक्सा ने अपने नन्हे हाथ उस लकड़ी पर चलाए, अपनी बाँहें पूरी तरह फैला दीं, लट्ठे को मजबूती से पकड़ा और खुद को फिर से उसकी ओर खींचा। उसकी पीठ से एक मीटर से ज़्यादा खून से सनी लकड़ी बाहर निकल चुकी थी। उसकी आँखें पूरी तरह खुली थीं, सिर पीछे की ओर झुका हुआ था। उसकी आहें अब और तेज़ और लयबद्ध हो गई थीं, जो अब गले की घरघराहट में बदल रही थीं।",
+    "emotion": "sad",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 0.88
+    },
+    "spatial": {
+      "pan": 0.1,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 263,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट खड़ा हुआ, लेकिन इस दृश्य को देखकर वह इतना स्तब्ध था कि कुछ कर नहीं पाया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 264,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसे अपने दिमाग के भीतर शब्द गूँजते सुनाई दिए, जैसे किसी ठंडे, नम तहखाने में आवाज़ टकरा रही हो।",
+    "emotion": "mysterious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "mysterious",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "stone_crypt",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 265,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "मेरी। या किसी की नहीं। मैं तुमसे प्यार करती हूँ। प्यार करती हूँ।",
+    "emotion": "whispering",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.3,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "stone_crypt",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -15.0
+    }
+  },
+  {
+    "index": 266,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "एक और भयानक, काँपती हुई आह, जो खून में घुट रही थी। ब्रूक्सा उस लट्ठे पर और आगे बढ़ी और अपनी बाँहें फैला दीं। निवेलेन हताशा में दहाड़ा और लट्ठे को छोड़े बिना उस वैम्पायर को खुद से जितना हो सके दूर धकेलने की कोशिश की—लेकिन सब बेकार था। उसने खुद को और करीब खींचा और निवेलेन का सिर पकड़ लिया। वह बुरी तरह चिल्लाया और अपना बालों भरा सिर झटकने लगा।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 267,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "ब्रूक्सा लट्ठे पर थोड़ा और आगे बढ़ी और अपना सिर निवेलेन के गले की ओर झुकाया। उसके दाँत दूध जैसे सफेद चमक रहे थे।",
+    "emotion": "tense",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.1,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 268,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "गेराल्ट कूदा। उसकी हर हरकत, उसका हर कदम, उसके वजूद का हिस्सा था: बरसों की कड़ी मेहनत से सीखा हुआ, अपने आप होने वाला और जानलेवा हद तक सटीक। तीन तेज़ कदम, और तीसरा कदम, पहले के सैकड़ों कदमों की तरह, बाएं पैर पर एक मज़बूत और पक्की धमक के साथ खत्म हुआ। शरीर का एक घुमाव और तलवार का एक ज़ोरदार, तीखा वार। उसने उसकी आँखें देखीं।",
+    "emotion": "angry",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.15
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.4,
+        "description": "Heavy decisive foot stomp on gravel"
+      },
+      {
+        "tag": "sword_draw",
+        "timing": "before",
+        "offset_ms": -50,
+        "volume": 0.45,
+        "description": "Sword flashing through air"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 269,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "अब कुछ नहीं बदल सकता था। उसने वह आवाज़ सुनी। कुछ नहीं। वह ज़ोर से चिल्लाया, ताकि उस शब्द को दबा सके जिसे वह दोहरा रही थी। कुछ नहीं बदल सकता था। उसने वार किया।",
+    "emotion": "angry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "bellowing_rage",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": -0.22,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "sword_clash",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.5,
+        "description": "Fatal sword strike"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 270,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसने पूरी ताकत से प्रहार किया, जैसा उसने सैकड़ों बार पहले किया था, तलवार के बीच के हिस्से से। और तुरंत, उस गति की लय को बनाए रखते हुए, चौथा कदम लिया और आधा चक्कर घूमा। आधे चक्कर से मुक्त होकर तलवार उसके पीछे-पीछे आई, चमकती हुई, और हवा में खून की बूंदों का एक घेरा बना गई। उसके खुले काले बाल हवा में तैरते रहे, तैरते रहे, तैरते रहे...",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "sword_clash",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.5,
+        "description": "Blade slicing through air and flesh"
+      }
+    ],
+    "music": {
+      "mood": "epic",
+      "ducking_db": -10.0
+    }
+  },
+  {
+    "index": 271,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसका सिर बजरी पर जा गिरा।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.1,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "open_road",
+    "sfx_cues": [
+      {
+        "tag": "body_fall",
+        "timing": "under",
+        "offset_ms": 200,
+        "volume": 0.4,
+        "description": "Head hitting gravel"
+      }
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 272,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "क्या दानव कम होते जा रहे हैं?",
+    "emotion": "mysterious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "stone_crypt",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 273,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "और मैं? मैं क्या हूँ?",
+    "emotion": "mysterious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "stone_crypt",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 274,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "यह कौन चिल्ला रहा है? पंछी?",
+    "emotion": "mysterious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "stone_crypt",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 275,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वह भेड़ की खाल वाली जैकेट और नीली पोशाक वाली औरत?",
+    "emotion": "mysterious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "stone_crypt",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 276,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "अंधेरे में यह सब क्या हो रहा है?",
+    "emotion": "fear",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "panicked",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "stone_crypt",
+    "sfx_cues": [],
+    "music": {
+      "mood": "suspense",
+      "ducking_db": -18.0
+    }
+  },
+  {
+    "index": 277,
+    "type": "dialogue",
+    "speaker": "Dandelion",
+    "text": "गेराल्ट! यह कैसे? यह सब—गेराल्ट!",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "cloak_rustle",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.3,
+        "description": "Subtle fabric movement as Dandelion reacts in horror"
+      }
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 278,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "उठो, निवेलेन। उठो और मेरे साथ चलो। मेरे जीन के झोले में कुछ दवाइयाँ हैं। हम दोनों को उनकी ज़रूरत है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "footsteps_wood",
+        "timing": "under",
+        "offset_ms": -100,
+        "volume": 0.35,
+        "description": "Geralt shifting weight on the bloody wooden floor of the courtyard"
+      }
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 279,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "अब मेरे पास... वह नहीं रहा, है ना? गेराल्ट? क्यों?",
+    "emotion": "sad",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 280,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर ने उसे उठने में मदद की। वह उन नन्हे हाथों की ओर न देखने की कोशिश कर रहा था—जो इतने सफेद थे कि पारदर्शी लग रहे थे—और जो उस लट्ठे को जकड़े हुए थे, जो उन छोटे सीनों के बीच धँसा हुआ था, जो अब खून से भीग चुके थे।",
+    "emotion": "sad",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "blood_impact",
+        "timing": "under",
+        "offset_ms": 100,
+        "volume": 0.3,
+        "description": "Guttural soft squelch of blood-soaked ground"
+      }
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 281,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "वेरीना—",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.88
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 282,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "वहाँ मत देखो। चलो।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 283,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "वे एक-दूसरे का सहारा लिए आँगन पार कर गए और उन नीले गुलाबों की झाड़ियों के पास से गुज़रे।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "boots_gravel",
+        "timing": "under",
+        "offset_ms": 0,
+        "volume": 0.35,
+        "description": "Slow, heavy footsteps walking over the courtyard gravel"
+      }
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -12.0
+    }
+  },
+  {
+    "index": 284,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "यकीन नहीं होता, गेराल्ट। इतने सालों बाद? यह कैसे मुमकिन है?",
+    "emotion": "sad",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 285,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "हर कहानी में सच्चाई का एक कण होता है... प्यार और खून। दोनों में ही असीम शक्ति होती है। जादूगर और विद्वान बरसों से इस पर अपना सिर खपा रहे हैं, लेकिन वे बस इसी नतीजे पर पहुँचे हैं कि—",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 286,
+    "type": "dialogue",
+    "speaker": "Nivellen",
+    "text": "कि क्या, गेराल्ट?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_exhaustion",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.2,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -14.0
+    }
+  },
+  {
+    "index": 287,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "कि वह प्यार सच्चा होना चाहिए।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 800,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "dense_forest_night",
+    "sfx_cues": [
+      {
+        "tag": "cloak_rustle",
+        "timing": "after",
+        "offset_ms": 300,
+        "volume": 0.25,
+        "description": "Soft settling sound as the scene fades out"
+      }
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -10.0
+    }
+  }
+]

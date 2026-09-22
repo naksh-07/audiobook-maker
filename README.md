@@ -68,12 +68,15 @@ flowchart TD
   - `Orus` / `Fenrir` / `Puck`: Distinct character dialogue casting.
 - **Emergency Standby:** Automatic persona-mapped fallback to local PC GPU **Kokoro & Goonj-1-82M** server if API quotas are exhausted or network drops.
 
-### 2. Cinematic Soundscape & Sidechain Ducking
-- **The Golden Rule:** *Background music must never fight the narrator.*
-- Features intelligent **FFmpeg `sidechaincompress` dynamic ducking**:
-  - Whenever dialogue is spoken, the background score automatically dips by **`-16 dB`**.
-  - During dramatic pauses and scene transitions, the music smoothly swells back up by `+8 dB`.
-- Supports **Meta MusicGen** (via PC GPU workstation) and built-in **Procedural Harmonic Ambient Beds** (0s latency, 0 external bandwidth).
+### 2. Deep Foley & 5-Track Audio Drama Compositor (GraphicAudio Standard)
+- **100% Free Local Sound Bank**: Curated Kenney CC0 RPG and Impact physical object libraries indexed via SQLite FTS5 (`audiobooks/sound_bank/`). Zero third-party API fees or subscriptions.
+- **Deep Foley Miner (`foley_miner.py`)**: Automatically analyzes screenplay prose, extracts verbs/objects (swords, tankards, footsteps, door creaks, armor rustles, magic signs), micro-timing offsets (`offset_ms`), and spatial stereo coordinates (`pan`).
+- **5-Track FFmpeg Timeline Compositor (`soundscape.py`)**:
+  - **Track 1 (Voice Bus)**: Multi-cast dialogue with room impulse reverberation matching scene acoustics.
+  - **Track 2 (Foley Bus)**: Sample-accurate physical object cues placed via FFmpeg `adelay`.
+  - **Track 3 (Ambience Bus)**: Environmental room tone and weather beds.
+  - **Track 4 (Music Bus)**: Dynamic score with **1.2kHz–3.2kHz spectral carving** (`equalizer=f=2200:t=q:w=1.5:g=-5.5`) ensuring music never masks speech, plus -16dB dynamic lookahead ducking.
+  - **Master Bus**: SOXR 48kHz sinc resampler + EBU R128 (`-19 LUFS`) broadcast mastering.
 
 ### 3. Android 48,000 Hz Bit-Perfect Rule
 - Android's native `AudioFlinger` and hardware DACs run strictly at **48,000 Hz**. Playing raw 24kHz streams triggers low-quality linear interpolation on Android.
@@ -91,17 +94,19 @@ flowchart TD
 audiobook-maker/
 ├── .agents/                      # Git-tracked Persistent Agent Memory Bank
 │   ├── memory/
-│   │   ├── activeContext.md      # Live sprint state & active context (budget <= 50 lines)
-│   │   ├── decisions.md          # Architecture Decision Records (ADR-001 through ADR-006)
+│   │   ├── activeContext.md      # Live sprint state & active context (budget <= 30 lines)
+│   │   ├── decisions.md          # Architecture Decision Records (ADR-001 through ADR-007)
 │   │   └── patterns.md           # Engineering patterns, FFmpeg tricks & gotchas
-│   └── AGENTS.md                 # Autonomous Agent & Termux Operations Protocol
+│   └── AGENTS.md                 # Autonomous Agent & Hybrid Workstation Protocol
 ├── audiobook_factory/            # Core Production Package
-│   ├── __init__.py               # Package metadata and public exports
+│   ├── __init__.py               # Package metadata and public exports (v2.1.0)
 │   ├── extractor.py              # Universal Extractor (EPUB, PDF, TXT, Markdown)
 │   ├── translator.py             # Two-Pass Literary Translation with Glossary
-│   ├── script_builder.py         # Screenplay JSON converter with character attribution
-│   ├── tts_dispatcher.py         # Dual-Engine Dispatcher with Resume Checkpoints & Fallback
-│   ├── soundscape.py             # Mood detection, BGM synthesis & Sidechain Ducking
+│   ├── script_builder.py         # Screenplay JSON converter with multi-cast attribution
+│   ├── foley_miner.py            # Deep Foley & Acoustic Director Miner (.cue.json)
+│   ├── tts_dispatcher.py         # Multi-Cast Dispatcher with TokenBucket & Stealth Cadence
+│   ├── sound_bank.py             # SQLite FTS5 Sound Bank with CC0 Foley & Spot SFX
+│   ├── soundscape.py             # 5-Track Timeline Compositor, Mood Detection & Ducking
 │   ├── mastering.py              # Studio vocal concatenation, SOXR 48kHz & EBU R128
 │   └── packager.py               # FFMETADATA1 chapter markers & M4B containerization
 ├── ffmpeg_mastering/             # Dedicated Audio DSP & Mastering Tools

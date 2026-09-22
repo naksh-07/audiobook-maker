@@ -1,0 +1,76 @@
+{
+  "chapter_id": "chapter_007",
+  "chapter_title": "The Voice of Reason 4 (तर्क की आवाज़ 4)",
+  "total_acts": 6,
+  "total_segments": 36,
+  "primary_environment": "temple_garden",
+  "acts": [
+    {
+      "act_id": 1,
+      "act_name": "The Vow of Silence & Faith in the Sword",
+      "segment_start": 1,
+      "segment_end": 10,
+      "narrative_summary": "In a secluded corner of the Melitele temple garden, Geralt approaches the silent priestess Iola. He reflects on the burden and price of silence, his lack of faith in gods, and his absolute faith in his meteorite iron and silver swords.",
+      "primary_environment": "temple_garden_quiet",
+      "characters_present": [
+        "Narrator",
+        "Geralt"
+      ]
+    },
+    {
+      "act_id": 2,
+      "act_name": "Kaer Morhen & The Price of Mutation",
+      "segment_start": 11,
+      "segment_end": 16,
+      "narrative_summary": "Geralt introduces his true identity—not of Rivia, just Geralt. He remembers Kaer Morhen, his adoptive father Vesemir, the torture of the Trial of the Grasses, the white hair side effect, and departing on the Path with his Wolf medallion.",
+      "primary_environment": "temple_garden_quiet",
+      "characters_present": [
+        "Geralt"
+      ]
+    },
+    {
+      "act_id": 3,
+      "act_name": "The First Monster & The Naive Hero",
+      "segment_start": 17,
+      "segment_end": 20,
+      "narrative_summary": "Geralt recounts slaying his first 'monster'—a bald deserter assaulting a young girl. Expecting grateful kisses and praise, he was met instead with vomiting, convulsions, and blind terror from the traumatized girl and fleeing father.",
+      "primary_environment": "temple_garden_quiet",
+      "characters_present": [
+        "Geralt"
+      ]
+    },
+    {
+      "act_id": 4,
+      "act_name": "The Path & The Hunting of Beasts",
+      "segment_start": 21,
+      "segment_end": 24,
+      "narrative_summary": "Geralt reflects on years spent on the road answering tavern notices, descending into bone-filled crypts and caves to slay manticores, strigas, and vampires, and hiding behind his personal, self-invented Witcher's Code.",
+      "primary_environment": "temple_garden_quiet",
+      "characters_present": [
+        "Geralt"
+      ]
+    },
+    {
+      "act_id": 5,
+      "act_name": "The Butcher of Blaviken & The Lesser Evil",
+      "segment_start": 25,
+      "segment_end": 28,
+      "narrative_summary": "The confession reaches its emotional climax. Geralt admits his devastating failure to heed the voice of reason in Blaviken, believing he was choosing the Lesser Evil only to be branded forever as the Butcher of Blaviken.",
+      "primary_environment": "temple_garden_quiet",
+      "characters_present": [
+        "Geralt"
+      ]
+    },
+    {
+      "act_id": 6,
+      "act_name": "The Shadow of Destiny & Dusk in the Garden",
+      "segment_start": 29,
+      "segment_end": 36,
+      "narrative_summary": "Iola reaches out to touch him, but Geralt recoils in dread of prophetic visions. He swears never to return to Cintra, ponders the child of surprise born on Belleteyn like Yennefer, and departs quietly as dusk settles over the garden.",
+      "primary_environment": "temple_garden_dusk",
+      "characters_present": [
+        "Geralt"
+      ]
+    }
+  ]
+}

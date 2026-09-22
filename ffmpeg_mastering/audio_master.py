@@ -12,9 +12,14 @@ import argparse
 import json
 import re
 import shutil
+from pathlib import Path
 
-RNNOISE_DEFAULT_MODEL = "/root/.local/share/rnnoise/cb.rnnn"
-DEFAULT_AUDIO_DIR = "/storage/emulated/0/Documents/Termux/Audio"
+if sys.platform == "win32":
+    DEFAULT_AUDIO_DIR = str(Path(__file__).resolve().parent.parent / "audiobooks" / "mastered")
+    RNNOISE_DEFAULT_MODEL = str(Path.home() / ".local/share/rnnoise/cb.rnnn")
+else:
+    DEFAULT_AUDIO_DIR = "/storage/emulated/0/Documents/Termux/Audio"
+    RNNOISE_DEFAULT_MODEL = "/root/.local/share/rnnoise/cb.rnnn"
 
 def run_cmd(cmd):
     result = subprocess.run(cmd, shell=isinstance(cmd, str), capture_output=True, text=True)
@@ -55,10 +60,42 @@ def master_vocal(
     filters.extend([
         "deesser=i=0.35:m=0.5:f=0.5",
         "lowpass=f=10500",
-        "aresample=osr=48000",
-        "loudnorm=I=-19:TP=-1.5:LRA=11"
+        "aresample=osr=48000"
     ])
-    filter_chain = ",".join(filters)
+    pre_chain = ",".join(filters)
+
+    # Dual-pass EBU R128 Loudnorm Analysis Pass
+    stats = {}
+    try:
+        analysis_cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-af", f"{pre_chain},loudnorm=I=-19:TP=-1.5:LRA=11:print_format=json",
+            "-f", "null", "-"
+        ]
+        res = subprocess.run(analysis_cmd, capture_output=True, text=True)
+        stderr = res.stderr
+        start_idx = stderr.rfind("{")
+        end_idx = stderr.rfind("}")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            stats = json.loads(stderr[start_idx:end_idx + 1])
+    except Exception:
+        stats = {}
+
+    # Pass 2: Linear-phase normalization using measured parameters (prevents dynamic pumping)
+    if stats and "input_i" in stats:
+        loudnorm_filter = (
+            f"loudnorm=I=-19:TP=-1.5:LRA=11:"
+            f"measured_I={stats.get('input_i')}:"
+            f"measured_TP={stats.get('input_tp')}:"
+            f"measured_LRA={stats.get('input_lra')}:"
+            f"measured_thresh={stats.get('input_thresh')}:"
+            f"offset={stats.get('target_offset', '0.0')}:"
+            f"linear=true"
+        )
+    else:
+        loudnorm_filter = "loudnorm=I=-19:TP=-1.5:LRA=11"
+
+    filter_chain = f"{pre_chain},{loudnorm_filter}"
 
     cmd = [
         "ffmpeg", "-y", "-i", input_path,

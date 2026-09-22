@@ -1,0 +1,1111 @@
+[
+  {
+    "index": 1,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "तर्क की आवाज़।",
+    "emotion": "mysterious",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "theatrical_title",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 2,
+    "type": "dialogue",
+    "speaker": "Falwick",
+    "text": "मैं मोएन का काउंट, फ़ाल्विक हूँ। और ये शूरवीर डॉर्नडाल के टेल्स हैं।",
+    "emotion": "arrogant_polite",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "condescending_calm",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": -0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "armor_clink"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 3,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "रिविया के गेराल्ट ने सरसरी तौर पर सिर झुकाया और उन शूरवीरों को देखा। दोनों ने बख्तरबंद कपड़े और गहरे लाल रंग के लबादे पहने थे, जिन पर बाएं कंधे की तरफ 'सफेद गुलाब' का प्रतीक बना था। उसे थोड़ी हैरानी हुई, क्योंकि जहाँ तक उसे पता था, आस-पास उस पंथ का कोई ठिकाना नहीं था।",
+    "emotion": "neutral",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "observant",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 4,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "नेनेके, जो ऊपर से सहज और मुस्कुराती दिख रही थीं, ने उसकी हैरानी ताड़ ली।",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "warm",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 5,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "ये ऊँचे खानदान के सज्जन, ड्यूक हियरवर्ड की सेवा में हैं, जो इन ज़मीनों पर बड़ी दयालुता से राज करते हैं।",
+    "emotion": "sarcastic_mocking",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "regal_mocking",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "chair_creak"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 6,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "राजकुमार।",
+    "emotion": "angry_correction",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "sharp_curt",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 7,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "टेल्स ने ज़ोर देते हुए बात काटी। उस युवा शूरवीर ने अपनी नफरत भरी नीली आँखें पुजारिन पर टिका दीं।",
+    "emotion": "tense",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "observant",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 8,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "राजकुमार हियरवर्ड।",
+    "emotion": "arrogant_proud",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "haughty_emphasis",
+      "pacing": 1.02
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 9,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "चलो, इन छोटे-मोटे ओहदों और उपाधियों में वक्त बर्बाद नहीं करते। मेरे ज़माने में सिर्फ शाही खून वालों को राजकुमार कहा जाता था, पर आजकल तो जैसे इन उपाधियों की कोई कीमत ही नहीं रही।",
+    "emotion": "condescending_amused",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "scoffing",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 10,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "आओ असल बात पर आते हैं कि 'सफेद गुलाब' के ये शूरवीर मेरे इस मामूली मंदिर में क्यों आए हैं। गेराल्ट, तुम तो जानते ही हो कि ये पंथ हियरवर्ड से संरक्षण माँग रहा है, इसीलिए गुलाब के इतने सारे शूरवीर उसकी सेवा में आ गए हैं। और यहाँ के कुछ स्थानीय लोग, जैसे कि ये टेल्स, इन्होंने भी शपथ लेकर ये लाल लबादा ओढ़ लिया है, जो इन पर खूब फबता है।",
+    "emotion": "sharp_witty",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "informative_mocking",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 11,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मेरा सौभाग्य है।",
+    "emotion": "calm_dry",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "deadpan_ironic",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 12,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर ने एक बार फिर पहले की तरह ही बेरुखी से सिर झुकाया।",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "observant",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 13,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "मुझे तो नहीं लगता। ये यहाँ तुम्हारा सम्मान करने नहीं आए हैं। बल्कि इसके उलट, ये माँग करने आए हैं कि तुम यहाँ से फौरन चले जाओ। सीधे शब्दों में कहें, तो ये तुम्हें यहाँ से खदेड़ने आए हैं। क्या तुम्हें ये सम्मान की बात लगती है? मुझे तो नहीं। मेरे लिए तो ये सरासर अपमान है।",
+    "emotion": "scornful_protective",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "blunt_authoritative",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 14,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "इन नेक शूरवीरों ने बेकार ही ज़हमत उठाई। मेरा यहाँ बसने का कोई इरादा नहीं है। मैं वैसे भी जल्द ही अपनी मर्ज़ी से यहाँ से जा रहा हूँ, किसी दबाव की ज़रूरत नहीं है।",
+    "emotion": "weary_shrug",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_dismissive",
+      "pacing": 0.94
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 15,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "अभी के अभी! एक पल की भी देरी नहीं। राजकुमार का हुक्म है—",
+    "emotion": "aggressive_snarl",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "barking_command",
+      "pacing": 1.08
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "armor_clink"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 16,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "इस मंदिर में हुक्म मेरा चलता है। मैं अक्सर कोशिश करती हूँ कि मेरे फैसले हियरवर्ड की राजनीति के आड़े न आएं, बशर्ते उसकी राजनीति में कोई तर्क या समझदारी हो। लेकिन इस मामले में उसकी बात बेतुकी है, इसलिए मैं इसे उतनी ही अहमियत दूँगी जितनी कि ये हकदार है।",
+    "emotion": "commanding_ice",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "steely_matron",
+      "pacing": 0.94
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 17,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "रिविया का विचर, गेराल्ट, मेरा मेहमान है। उसका यहाँ रुकना मेरे लिए खुशी की बात है। इसलिए, वो जब तक चाहे मेरे मंदिर में रुक सकता है।",
+    "emotion": "resolute_firm",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "unyielding",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 18,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "ऐ औरत! तुम्हारी इतनी हिम्मत कि तुम राजकुमार के खिलाफ जाओ? तुम हमारे शासक के अधिकार पर सवाल उठा रही हो?",
+    "emotion": "indignant_rage",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "outraged_shout",
+      "pacing": 1.06
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "cloth_rustle"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 19,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसने अपना लबादा कंधे से पीछे फेंका ताकि उसका पीतल की धारियों वाला चमकता हुआ सीनाबंद साफ़ दिखाई दे।",
+    "emotion": "neutral",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "observant",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "armor_clink"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 20,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "खामोश! अपनी आवाज़ नीची रखो। ज़रा तमीज़ से बात करो कि तुम किससे मुखातिब हो।",
+    "emotion": "sharp_furious",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "piercing_scold",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 21,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "नेनेके ने अपनी आँखें सिकोड़ते हुए झिड़का। शूरवीर एक कदम आगे बढ़ा। बड़े शूरवीर, फ़ाल्विक ने उसे कोहनी से ज़ोर से पकड़ लिया और तब तक दबाया जब तक कि उसके बख्तरबंद दस्ताने चरमराने नहीं लगे। टेल्स गुस्से में तिलमिला उठा।",
+    "emotion": "tense",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "tense_anticipation",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "gauntlet_squeeze"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 22,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "मुझे अच्छी तरह पता है कि मैं किससे बात कर रहा हूँ! मेरी बातें राजकुमार की इच्छा हैं, जो इस जागीर के मालिक हैं! ऐ औरत, आँगन में हमारे सिपाही खड़े हैं—",
+    "emotion": "hissing_fury",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "breathless_threat",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 23,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "नेनेके ने अपनी कमर पर बँधी थैली से एक छोटी सी चीनी मिट्टी की शीशी निकाली।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_pregnant_pause",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "porcelain_jar"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 24,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "टेल्स, मुझे सच में नहीं पता, कि अगर मैं इस शीशी को तुम्हारे पैरों के पास फोड़ दूँ, तो क्या होगा। शायद तुम्हारे फेफड़े फट जाएं। शायद तुम्हारे शरीर पर बाल उग आएं। या शायद दोनों ही हो जाएं, कौन जाने? बस दयालु मेलीतेले ही जानती हैं।",
+    "emotion": "deadpan_menace",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "whispered_threat",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 25,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "अपनी इन जादू-टोने की धमकियों से मुझे डराने की कोशिश मत करो, पुजारिन! हमारे सिपाही—",
+    "emotion": "shaken_defiance",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "shaky_arrogance",
+      "pacing": 1.05
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 26,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "अगर तुम्हारे किसी भी सिपाही ने मेलीतेले की किसी पुजारिन को छुआ, तो सूरज ढलने से पहले वो शहर जाने वाली सड़क के किनारे बबूल के पेड़ों पर लटके मिलेंगे। और वो ये बात अच्छी तरह जानते हैं। और तुम भी जानते हो, टेल्स, इसलिए बेवकूफों जैसी हरकतें बंद करो।",
+    "emotion": "chilling_authority",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "terrifying_conviction",
+      "pacing": 0.94
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 27,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "मैंने ही तुम्हें पैदा होते वक्त अपने हाथों में लिया था, ओ बदतमीज़ लड़के, और मुझे तुम्हारी माँ पर तरस आता है। लेकिन अपनी किस्मत को मत आज़माओ। और मुझे तुम्हें तमीज़ सिखाने पर मजबूर मत करो!",
+    "emotion": "scornful_furious",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "scathing_motherly_fury",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 28,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "ठीक है, ठीक है। ऐसा लग रहा है कि मैं एक बड़े झगड़े की वजह बन रहा हूँ और मुझे इसकी कोई ज़रूरत नहीं दिखती। सर फ़ाल्विक, आप अपने साथी के मुकाबले ज़्यादा समझदार लगते हैं, जो जोश में अपना आपा खो रहा है।",
+    "emotion": "weary_diplomatic",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_mediator",
+      "pacing": 0.94
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 29,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "सुनिए फ़ाल्विक, मैं आपको यकीन दिलाता हूँ कि मैं कुछ ही दिनों में यहाँ से चला जाऊँगा। और ये भी यकीन दिलाता हूँ कि मेरा यहाँ काम करने या कोई कॉन्ट्रैक्ट लेने का कोई इरादा नहीं है। मैं यहाँ एक विचर की हैसियत से नहीं, बल्कि अपने निजी काम से आया हूँ।",
+    "emotion": "reasonable_calm",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "measured_compromise",
+      "pacing": 0.93
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 30,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "काउंट फ़ाल्विक ने उसकी आँखों में देखा और गेराल्ट को अपनी गलती का अहसास हुआ। 'सफेद गुलाब' के उस शूरवीर की आँखों में गहरी और अटल नफरत थी। विचर को यकीन हो गया कि उसे बाहर निकालने का हुक्म ड्यूक हियरवर्ड का नहीं, बल्कि फ़ाल्विक और उसके जैसे लोगों का था।",
+    "emotion": "foreboding",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "chilling_revelation",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 31,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "शूरवीर नेनेके की तरफ मुड़ा, सम्मान से सिर झुकाया और बोलना शुरू किया। उसकी आवाज़ शांत और शिष्ट थी। उसकी बातें तर्कसंगत थीं। लेकिन गेराल्ट जानता था कि फ़ाल्विक सफेद झूठ बोल रहा है।",
+    "emotion": "cold_observation",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "distrustful_clarity",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "armor_clink"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 32,
+    "type": "dialogue",
+    "speaker": "Falwick",
+    "text": "आदरणीय नेनेके, मैं माफी चाहता हूँ, लेकिन राजकुमार हियरवर्ड अपनी ज़मीन पर इस विचर की मौजूदगी बर्दाश्त नहीं करेंगे। इससे कोई फर्क नहीं पड़ता कि वो यहाँ राक्षसों का शिकार कर रहा है या अपने किसी निजी काम से आया है—राजकुमार जानते हैं कि विचरों का कोई निजी काम नहीं होता। वो तो बस मुसीबतों को चुंबक की तरह अपनी ओर खींचते हैं। जादूगर बगावत कर रहे हैं और अर्ज़ियाँ लिख रहे हैं, ड्रुइड धमकियाँ दे रहे हैं—",
+    "emotion": "smooth_deceit",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "aristocratic_polite_venom",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": -0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 33,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "मुझे समझ नहीं आता कि स्थानीय जादूगरों और ड्रुइडों की बदतमीज़ियों का नतीजा गेराल्ट को क्यों भुगतना चाहिए। हियरवर्ड कब से उनकी राय की परवाह करने लगा?",
+    "emotion": "skeptical_dry",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "incredulous_dismissal",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 34,
+    "type": "dialogue",
+    "speaker": "Falwick",
+    "text": "बहुत हुई ये बहस। क्या मैंने अपनी बात साफ़ नहीं की, आदरणीय नेनेके? तो अब और भी साफ़ लफ़्ज़ों में सुन लीजिए: न तो राजकुमार और न ही इस पंथ की परिषद, विचर गेराल्ट—'ब्लाविकेन के कसाई'—को एक भी दिन और एलांडर में बर्दाश्त करेगी।",
+    "emotion": "rigid_ultimatum",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "uncompromising_iron",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": -0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "armor_clink"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 35,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "ये एलांडर नहीं है! ये मेलीतेले का मंदिर है! और मैं, नेनेके, मेलीतेले की मुख्य पुजारिन, आप लोगों की मौजूदगी इस मंदिर की सीमा में एक मिनट भी और बर्दाश्त नहीं करूँगी, जनाब!",
+    "emotion": "roaring_indignation",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "priestess_commanding_shout",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "chair_thrust"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 36,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "सर फ़ाल्विक, तर्क की आवाज़ सुनिए। मैं कोई झगड़ा नहीं चाहता, और मुझे नहीं लगता कि आप भी ऐसा कुछ चाहते हैं। मैं तीन दिनों के भीतर यहाँ से चला जाऊँगा। नहीं नेनेके, कृपया कुछ मत कहिए। अब मेरे जाने का वक्त आ गया है। तीन दिन। मैं इससे ज़्यादा कुछ नहीं माँग रहा।",
+    "emotion": "calm_gravity",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "firm_raspy_quiet",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 37,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "और अच्छा है कि तुम नहीं माँग रहे। सुना तुम लड़कों ने? विचर यहाँ तीन दिन और रुकेगा क्योंकि ये उसकी मर्ज़ी है। और मैं, महान मेलीतेले की पुजारिन, इन तीन दिनों तक उसकी मेज़बान रहूँगी क्योंकि ये मेरी मर्ज़ी है। हियरवर्ड को जाकर यही कह देना।",
+    "emotion": "mocking_defiance",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "triumphant_snub",
+      "pacing": 0.97
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 38,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "नहीं, हियरवर्ड को नहीं। उसकी पत्नी, नेक एरमेलिया से कहना और साथ में ये भी जोड़ देना कि अगर वो चाहती है कि मेरे दवाखाने से उसे दवाइयों की सप्लाई मिलती रहे, तो बेहतर होगा कि वो अपने ड्यूक को काबू में रखे। उसे कहो कि वो उसके मिज़ाज और सनक पर लगाम लगाए, जो अब पागलपन की हद पार कर रहे हैं।",
+    "emotion": "scathing_gossip",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "spiteful_wit",
+      "pacing": 0.98
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 39,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "बस! मैं यहाँ खड़ा होकर किसी पाखंडी औरत को अपने मालिक और उनकी पत्नी का अपमान करते हुए नहीं सुन सकता! मैं इस तौहीन को ऐसे ही नहीं जाने दूँगा! अब यहाँ 'सफेद गुलाब' के पंथ का राज चलेगा; तुम्हारे इन अंधकार और अंधविश्वास के अड्डों का अंत करीब है। और मैं, सफेद गुलाब का एक शूरवीर—",
+    "emotion": "screaming_falsetto",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "hysterical_fury",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "cloth_rustle"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 40,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "चुप हो जा, ओ छोकरे। अपनी इस बेकाबू ज़बान को लगाम दो। तुम एक ऐसी महिला से बात कर रहे हो जो सम्मान की हकदार हैं, खासकर सफेद गुलाब के एक शूरवीर की तरफ से।",
+    "emotion": "cold_menace",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "venomous_whisper",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 41,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "हालाँकि, आजकल उस पंथ का हिस्सा बनने के लिए परिषद की तिजोरी में बस हज़ार नोविग्राड क्राउन जमा करना ही काफी है, इसलिए ये पंथ अब सूदखोरों और दर्जियों के बेटों से भर गया है—पर फिर भी, थोड़ी बहुत तमीज़ तो बची ही होगी? या शायद मैं गलत हूँ?",
+    "emotion": "mocking_insult",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "sardonic_smirk",
+      "pacing": 0.94
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 42,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "टेल्स का चेहरा पीला पड़ गया और उसका हाथ अपनी तलवार की तरफ गया।",
+    "emotion": "suspense",
+    "pause_after_ms": 350,
+    "acting": {
+      "delivery_style": "hushed_breath",
+      "pacing": 0.95
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "sword_clink_leather"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 43,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "सर फ़ाल्विक, अगर इसने तलवार म्यान से बाहर निकाली, तो मैं वो इससे छीन लूँगा और इसी की तलवार के चपटे हिस्से से इस बदतमीज़ छोकरे के पिछवाड़े पर ऐसी मार लगाऊँगा कि इसे नानी याद आ जाएगी। और फिर इसे उठाकर दरवाज़ा तोड़ दूँगा।",
+    "emotion": "amused_threat",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "grinning_badass",
+      "pacing": 0.93
+    },
+    "spatial": {
+      "pan": -0.15,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 44,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "कांपते हाथों के साथ, टेल्स ने अपनी बेल्ट से लोहे का दस्ताना निकाला और उसे विचर के पैरों के पास ज़मीन पर दे मारा।",
+    "emotion": "dramatic_shock",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "dramatic_pause",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "gauntlet_crash"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 45,
+    "type": "dialogue",
+    "speaker": "Tailles",
+    "text": "मैं अपने पंथ के इस अपमान को तुम्हारे खून से धोऊँगा, ओ दोगले! खुले मैदान में! बाहर आँगन में आओ!",
+    "emotion": "hysterical_duel_challenge",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "screeching_challenge",
+      "pacing": 1.08
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 46,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "बेटा, तुम्हारी कोई चीज़ नीचे गिर गई है। तो इसे उठा लो; हम यहाँ कचरा नहीं छोड़ते। ये एक मंदिर है। फ़ाल्विक, इस बेवकूफ को यहाँ से ले जाओ वरना अंजाम बुरा होगा। तुम्हें पता है हियरवर्ड को क्या कहना है। और मैं उसे खुद एक खत लिखूँगी; तुम दोनों मुझे भरोसेमंद पैगाम लाने वाले नहीं लगते। दफा हो जाओ यहाँ से। उम्मीद है तुम्हें बाहर जाने का रास्ता पता होगा?",
+    "emotion": "scornful_dismissal",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "freezing_contempt",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 47,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "फ़ाल्विक ने गुस्से से तमतमाते टेल्स को अपनी फौलादी पकड़ में जकड़ लिया और अपने बख्तरबंद कपड़ों की खड़खड़ाहट के साथ सिर झुकाया। फिर उसने विचर की आँखों में देखा। विचर के चेहरे पर अब मुस्कान नहीं थी। फ़ाल्विक ने अपना सुर्ख लबादा कंधों पर डाला।",
+    "emotion": "tense_departure",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "chilling_suspense",
+      "pacing": 0.96
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "armor_clank",
+      "cloth_swish"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 48,
+    "type": "dialogue",
+    "speaker": "Falwick",
+    "text": "ये हमारी आखिरी मुलाकात नहीं थी, आदरणीय नेनेके। हम वापस आएंगे।",
+    "emotion": "whispered_threat",
+    "pause_after_ms": 450,
+    "acting": {
+      "delivery_style": "chillingly_polite",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": -0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  },
+  {
+    "index": 49,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "यही तो डर है मुझे। तकलीफ मेरी होगी।",
+    "emotion": "weary_contempt",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "dry_closing",
+      "pacing": 0.92
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_stone_hall",
+    "sfx_cues": [
+      "heavy_door_shut"
+    ],
+    "music": {
+      "mood": "tense_investigation",
+      "ducking_db": -16.0
+    }
+  }
+]

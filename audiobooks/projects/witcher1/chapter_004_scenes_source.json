@@ -1,0 +1,82 @@
+{
+  "chapter_id": "chapter_004",
+  "total_acts": 5,
+  "total_duration_ms": 3945824,
+  "acts": [
+    {
+      "act_id": 1,
+      "act_name": "The Dead Ravine & Autumn Woods",
+      "segment_start": 1,
+      "segment_end": 65,
+      "t_start_ms": 0,
+      "t_end_ms": 747116,
+      "narrative_summary": "Geralt tracks carrion birds in a desolate ravine, discovers merchant corpses with a rare blue rose, and follows the trail through cold autumn woods towards a mysterious estate.",
+      "primary_environment": "autumn_ravine_woods",
+      "characters_present": [
+        "Narrator",
+        "Geralt"
+      ]
+    },
+    {
+      "act_id": 2,
+      "act_name": "Approach to the Crumbling Enchanted Manor",
+      "segment_start": 66,
+      "segment_end": 79,
+      "t_start_ms": 747516,
+      "t_end_ms": 883146,
+      "narrative_summary": "Geralt approaches an isolated stone manor behind high palisades and rusted iron gates that swing open automatically. A beast with a boar's head charges at him.",
+      "primary_environment": "manor_exterior_courtyard",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Nivellen"
+      ]
+    },
+    {
+      "act_id": 3,
+      "act_name": "Nivellen's Feast & Tragic Confession",
+      "segment_start": 80,
+      "segment_end": 220,
+      "t_start_ms": 883546,
+      "t_end_ms": 3058951,
+      "narrative_summary": "Nivellen invites Geralt inside for a lavish feast. Over roasted fowl and fine wine before a roaring fireplace, Nivellen confesses how he was cursed after raping a priestess, his failed attempts to break the curse, and his desperate love for Vereena.",
+      "primary_environment": "manor_dining_hall_hearth",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Nivellen"
+      ]
+    },
+    {
+      "act_id": 4,
+      "act_name": "The Courtyard Dawn Duel with Vereena the Bruxa",
+      "segment_start": 221,
+      "segment_end": 255,
+      "t_start_ms": 3059351,
+      "t_end_ms": 3580621,
+      "narrative_summary": "Geralt deduces Vereena is not a rusalka but a deadly vampire Bruxa. He returns at dawn. Vereena sheds her innocent appearance, unfurls giant bat wings, and attacks with supersonic shrieks and razor claws in a brutal courtyard duel.",
+      "primary_environment": "courtyard_dawn_fog",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Vereena",
+        "Nivellen"
+      ]
+    },
+    {
+      "act_id": 5,
+      "act_name": "Nivellen Restored & Tragic Aftermath",
+      "segment_start": 256,
+      "segment_end": 287,
+      "t_start_ms": 3581021,
+      "t_end_ms": 3945824,
+      "narrative_summary": "Nivellen impales Vereena on an oak stake. Dying, she bites his throat. Her blood and the genuine love between them breaks the curse. Nivellen weeps as a restored human. Geralt delivers the final reflection on true love.",
+      "primary_environment": "courtyard_dawn_aftermath",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Nivellen"
+      ]
+    }
+  ]
+}

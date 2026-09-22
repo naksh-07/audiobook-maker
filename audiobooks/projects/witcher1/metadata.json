@@ -1,0 +1,103 @@
+{
+  "book_id": "witcher1",
+  "source_file": "C:\\Users\\Suraj\\Documents\\Antigravity\\witcher1.epub",
+  "title": "The Last Wish: Introducing The Witcher",
+  "author": "Andrzej Sapkowski",
+  "format": "EPUB",
+  "total_chapters": 13,
+  "total_words": 90654,
+  "estimated_total_hours": 10.79,
+  "chapters": [
+    {
+      "number": 1,
+      "title": "1: THE VOICE OF REASON",
+      "file": "chapter_001.md",
+      "words": 282,
+      "estimated_minutes": 2.0
+    },
+    {
+      "number": 2,
+      "title": "THE WITCHER",
+      "file": "chapter_002.md",
+      "words": 10145,
+      "estimated_minutes": 72.5
+    },
+    {
+      "number": 3,
+      "title": "2: THE VOICE OF REASON",
+      "file": "chapter_003.md",
+      "words": 1882,
+      "estimated_minutes": 13.4
+    },
+    {
+      "number": 4,
+      "title": "A GRAIN OF TRUTH",
+      "file": "chapter_004.md",
+      "words": 10329,
+      "estimated_minutes": 73.8
+    },
+    {
+      "number": 5,
+      "title": "3: THE VOICE OF REASON",
+      "file": "chapter_005.md",
+      "words": 1494,
+      "estimated_minutes": 10.7
+    },
+    {
+      "number": 6,
+      "title": "THE LESSER EVIL",
+      "file": "chapter_006.md",
+      "words": 12555,
+      "estimated_minutes": 89.7
+    },
+    {
+      "number": 7,
+      "title": "4: THE VOICE OF REASON",
+      "file": "chapter_007.md",
+      "words": 1398,
+      "estimated_minutes": 10.0
+    },
+    {
+      "number": 8,
+      "title": "A QUESTION OF PRICE",
+      "file": "chapter_008.md",
+      "words": 12948,
+      "estimated_minutes": 92.5
+    },
+    {
+      "number": 9,
+      "title": "5: THE VOICE OF REASON",
+      "file": "chapter_009.md",
+      "words": 2272,
+      "estimated_minutes": 16.2
+    },
+    {
+      "number": 10,
+      "title": "THE EDGE OF THE WORLD",
+      "file": "chapter_010.md",
+      "words": 14203,
+      "estimated_minutes": 101.5
+    },
+    {
+      "number": 11,
+      "title": "6: THE VOICE OF REASON",
+      "file": "chapter_011.md",
+      "words": 2142,
+      "estimated_minutes": 15.3
+    },
+    {
+      "number": 12,
+      "title": "THE LAST WISH",
+      "file": "chapter_012.md",
+      "words": 18140,
+      "estimated_minutes": 129.6
+    },
+    {
+      "number": 13,
+      "title": "7: THE VOICE OF REASON",
+      "file": "chapter_013.md",
+      "words": 2864,
+      "estimated_minutes": 20.5
+    }
+  ]
+}

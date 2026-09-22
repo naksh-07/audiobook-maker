@@ -185,12 +185,30 @@ def install_ambient_beds():
     print(f"[+] Installed {count} environmental ambient beds to: {AMB_DIR}")
 
 
+def install_kenney_rpg_foley():
+    print("\n=======================================================")
+    print("   INSTALLING KENNEY CC0 RPG & IMPACT FOLEY PACK       ")
+    print("=======================================================")
+    FOL_DIR.mkdir(parents=True, exist_ok=True)
+    zip_dest = BANK_DIR / "kenney_rpg_audio.zip"
+    url = "https://opengameart.org/sites/default/files/RPGsounds_Kenney.zip"
+    res = download_file(url, zip_dest, description="Kenney CC0 RPG Foley Audio Pack")
+    if res and res.exists():
+        try:
+            with zipfile.ZipFile(res, "r") as zf:
+                zf.extractall(FOL_DIR)
+            print(f"[+] Successfully unpacked Kenney CC0 Foley sounds to: {FOL_DIR}")
+        except Exception as e:
+            print(f"[!] Failed to extract zip: {e}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Audiobook Factory Sound Bank Downloader & Indexer",
     )
     parser.add_argument("--music", action="store_true", help="Download curated orchestral & cinematic mood tracks")
     parser.add_argument("--ambience", action="store_true", help="Download environmental ambient beds (Rain, Wind, Fire)")
+    parser.add_argument("--foley", action="store_true", help="Download Kenney CC0 RPG & Impact Foley pack")
     parser.add_argument("--all", action="store_true", help="Download complete curated sound bank")
     parser.add_argument("--index-only", action="store_true", help="Only re-index existing files into SQLite FTS5")
 
@@ -201,10 +219,13 @@ def main():
             install_curated_music_pack()
         if args.all or args.ambience:
             install_ambient_beds()
-        if not (args.all or args.music or args.ambience):
-            # Default to installing core curated packs
+        if args.all or args.foley:
+            install_kenney_rpg_foley()
+        if not (args.all or args.music or args.ambience or args.foley):
+            # Default to installing all core curated packs
             install_curated_music_pack()
             install_ambient_beds()
+            install_kenney_rpg_foley()
 
     # Re-index everything into SoundBank SQLite FTS5
     print("\n[*] Synchronizing and indexing all assets into SQLite FTS5 Sound Bank...")

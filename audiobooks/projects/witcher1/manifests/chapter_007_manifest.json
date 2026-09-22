@@ -1,0 +1,153 @@
+{
+  "manifest_version": "3.0",
+  "project_id": "witcher1",
+  "chapter_id": "chapter_007",
+  "silence_percentage": 70.45,
+  "mastering": {
+    "target_lufs": -19.0,
+    "true_peak_dbtp": -1.5,
+    "ducking_attenuation_db": -16.0,
+    "ducking_attack_ms": 15,
+    "ducking_release_ms": 350,
+    "spectral_carve_hz": 2200,
+    "spectral_carve_gain_db": -5.5
+  },
+  "ambience_scenes": [
+    {
+      "scene_id": 1,
+      "start_ms": 0,
+      "end_ms": 646355,
+      "asset_path": "C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/sound_bank/cache/AMB/wind_howl.ogg",
+      "target_lufs": -33.0,
+      "reverb_preset": "room",
+      "asset_name": "wind_howl.ogg"
+    }
+  ],
+  "music_cues": [
+    {
+      "cue_id": "cue_01_temple_solitude",
+      "cue_type": "EMOTIONAL_UNDERSCORE",
+      "track_id": 0,
+      "track_name": "004 The Fortress of Memory.mp3",
+      "section_name": "INTRO_BED",
+      "start_ms": 0,
+      "duration_ms": 36000,
+      "fade_in_ms": 2000,
+      "fade_out_ms": 3500,
+      "volume_db": -21.0,
+      "dramatic_justification": "Establishes the contemplative, sacred stillness of the Melitele temple garden as Geralt begins his confession."
+    },
+    {
+      "cue_id": "cue_02_kaer_morhen_trial",
+      "cue_type": "EMOTIONAL_UNDERSCORE",
+      "track_id": 0,
+      "track_name": "002 The Trail.mp3",
+      "section_name": "RISING_TENSION",
+      "start_ms": 192198,
+      "duration_ms": 40000,
+      "fade_in_ms": 2500,
+      "fade_out_ms": 3500,
+      "volume_db": -22.0,
+      "dramatic_justification": "Somber, mournful strings reflecting on the agony of the mutations and lost comrades of Kaer Morhen."
+    },
+    {
+      "cue_id": "cue_03_path_and_crypts",
+      "cue_type": "TENSION_RISER",
+      "track_id": 0,
+      "track_name": "013 Chasing the Griffin.mp3",
+      "section_name": "RISING_TENSION",
+      "start_ms": 441516,
+      "duration_ms": 35000,
+      "fade_in_ms": 2000,
+      "fade_out_ms": 3000,
+      "volume_db": -22.0,
+      "dramatic_justification": "Rhythmic tension underscore beneath Geralt listing the monsters slain in the dark across decades."
+    },
+    {
+      "cue_id": "cue_04_butcher_of_blaviken",
+      "cue_type": "CLIMACTIC_ACTION_CUE",
+      "track_id": 0,
+      "track_name": "011 The Nilfgaardians.mp3",
+      "section_name": "CLIMAX_DROP",
+      "start_ms": 554056,
+      "duration_ms": 38000,
+      "fade_in_ms": 1500,
+      "fade_out_ms": 3500,
+      "volume_db": -19.0,
+      "dramatic_justification": "Haunting, tragic climax as Geralt bitterly laments failing the voice of reason and choosing the lesser evil."
+    },
+    {
+      "cue_id": "cue_05_yennefer_and_dusk",
+      "cue_type": "AFTERMATH_FADE",
+      "track_id": 0,
+      "track_name": "016 Yennefer of Vengerberg.mp3",
+      "section_name": "AFTERMATH_FADE",
+      "start_ms": 615751,
+      "duration_ms": 42000,
+      "fade_in_ms": 2000,
+      "fade_out_ms": 4000,
+      "volume_db": -20.0,
+      "dramatic_justification": "Melancholic romantic leitmotif as Geralt connects the child of surprise born on Belleteyn to Yennefer, fading into dusk."
+    }
+  ],
+  "foley_cues": [
+    {
+      "cue_id": "fol_01_sword_draw",
+      "segment_index": 8,
+      "anchor_word": "तलवार",
+      "pre_roll_ms": 100,
+      "asset_id": 0,
+      "asset_path": "C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/sound_bank/foley/drawKnife1.ogg",
+      "asset_name": "drawKnife1.ogg",
+      "gain_dbfs": -18.0,
+      "azimuth_pan": 0.15,
+      "reverb_send": 0.15,
+      "start_ms": 122022,
+      "duration_ms": 1200
+    },
+    {
+      "cue_id": "fol_02_bench_settle",
+      "segment_index": 10,
+      "anchor_word": "बैठते",
+      "pre_roll_ms": 100,
+      "asset_id": 0,
+      "asset_path": "C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/sound_bank/foley/creak1.ogg",
+      "asset_name": "creak1.ogg",
+      "gain_dbfs": -22.0,
+      "azimuth_pan": 0.0,
+      "reverb_send": 0.15,
+      "start_ms": 165101,
+      "duration_ms": 1500
+    },
+    {
+      "cue_id": "fol_03_recoil_step",
+      "segment_index": 29,
+      "anchor_word": "छुओ",
+      "pre_roll_ms": 100,
+      "asset_id": 0,
+      "asset_path": "C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/sound_bank/foley/tiny_mud-steps-01.wav",
+      "asset_name": "tiny_mud-steps-01.wav",
+      "gain_dbfs": -20.0,
+      "azimuth_pan": -0.2,
+      "reverb_send": 0.15,
+      "start_ms": 570053,
+      "duration_ms": 1000
+    },
+    {
+      "cue_id": "fol_04_stand_dusk",
+      "segment_index": 33,
+      "anchor_word": "चलना",
+      "pre_roll_ms": 100,
+      "asset_id": 0,
+      "asset_path": "C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/sound_bank/foley/tiny_mud-steps-01.wav",
+      "asset_name": "tiny_mud-steps-01.wav",
+      "gain_dbfs": -21.0,
+      "azimuth_pan": 0.1,
+      "reverb_send": 0.15,
+      "start_ms": 632341,
+      "duration_ms": 1200
+    }
+  ],
+  "total_duration_ms": 0,
+  "metadata": {}
+}

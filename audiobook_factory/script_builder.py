@@ -140,8 +140,9 @@ def _parse_dramatized_chunk_llm(
     chunk_text: str,
     preceding_context: str = "",
     is_hindi: bool = False,
+    character_roster: Optional[Dict[str, Any]] = None,
     api_key: str = "",
-    model: str = "gemini-3-flash-preview",
+    model: str = "gemini-flash-lite-latest",
     max_retries: int = 3,
 ) -> List[Dict[str, Any]]:
     """Helper to parse a single chunk of chapter text into screenplay JSON."""
@@ -149,18 +150,39 @@ def _parse_dramatized_chunk_llm(
     import time
     import urllib.request
     import urllib.error
-    from audiobook_factory.tts_dispatcher import global_key_pool
+    from audiobook_factory.key_manager import get_persistent_key_pool
+    from audiobook_factory.cadence import get_stealth_sdk_headers
+
+    pool = get_persistent_key_pool()
 
     sys_prompt = (
-        "You are an expert audio drama director. Convert this book chapter scene into an annotated screenplay JSON script. "
-        "Split into narration segments and character dialogue segments. Attribute each dialogue to the correct character. "
-        "Remove redundant dialogue tags like 'he said', 'she replied' when spoken by the character."
+        "You are a Hollywood Audio Drama Director (GraphicAudio / BBC Radio 4 standard). "
+        "Convert this book chapter scene into an annotated multi-cast screenplay with deep cinematic audio direction. "
+        "Split into narration segments and character dialogue segments. Attribute each dialogue to the correct character by name. "
+        "Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' when spoken by the character. "
+        "Preserve the exact dialogue content accurately in Hindi Devanagari. "
+        "ACTION-BEAT PRECISION: When major physical actions occur (sword unsheathed, blade drawn, door kick, tankard slam, body impact, explosion), emit a dedicated segment with type: 'action', speaker: 'Foley', text: '[ACTION]', descriptive emotion (e.g. 'impact_strike'), pause_after_ms (400-800ms), and sfx_cues (e.g. ['sword_draw_steel']). This gives pure acoustic space for surgical Foley impact without voice collision. "
+        "ACTION-BEAT MICRO-SPLITTING: When a physical action occurs mid-sentence or between lines, SPLIT it into a separate action/narration segment and a dialogue segment to achieve frame-accurate sound alignment and natural actor reaction pauses. "
+        "NEURAL VOCAL TAGS: Gemini 3.1 Flash TTS is steered using inline English audio tags in square brackets. Prepend vocal tags directly inside the 'text' field when dialogue or dramatic narration demands it (e.g. `[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, `[gasp]`). Do NOT emit non-vocal action tags in text (put sword clash, footsteps etc in sfx_cues). "
+        "TYPOGRAPHY PROSODY: Punctuate spoken text to trigger neural voice acting: use ellipses ('...') for whispered hesitation or soft tenderness, em-dashes ('—') for cold menace or interrupted speech, and exclamation marks ('!') for commands or combat fury. "
+        "INTENSITY & BREATH TIMING: Set 'intensity_level' ('low', 'medium', 'high', 'explosive') to calibrate DSP dynamic headroom. For intimate, terrified, gasping, or whispered lines, set 'pre_roll_breath_ms' between 150 and 250 ms to simulate organic actor breath intake Foley; for standard lines set to 0. "
+        "For EVERY segment, assign audio direction: acting delivery & pacing, spatial stereo panning, acoustic environment, inline Foley SFX cues, and musical mood."
     )
+
+    roster_hint = ""
+    if character_roster:
+        chars = character_roster.get("characters", {})
+        if isinstance(chars, dict):
+            names = list(chars.keys())
+            roster_hint = f"\nKnown Canon Characters in Project: {', '.join(names)}\n"
+        elif isinstance(chars, list):
+            names = [c.get("english_name", "") for c in chars if isinstance(c, dict)]
+            roster_hint = f"\nKnown Canon Characters in Project: {', '.join(names)}\n"
 
     prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 Preceding Scene Context / Characters Speaking:
 {preceding_context if preceding_context else "Beginning of scene."}
-
+{roster_hint}
 Current Scene Text:
 \"\"\"
 {chunk_text}
@@ -168,19 +190,44 @@ Current Scene Text:
 
 Output JSON: A list of objects where each object has:
 - "index": int (1-based relative to this chunk)
-- "type": "narration" | "dialogue"
-- "speaker": character name (e.g. "Harry", "Ron") or "Narrator"
-- "text": speech text (clean spoken content in {"Devanagari Hindi" if is_hindi else "English"})
-- "emotion": "neutral" | "angry" | "whispering" | "sad" | "excited"
+- "type": "narration" | "dialogue" | "action" (emit "action" for dedicated physical action beats, sword unsheathed, door kick, tankard slam, body impact, explosion)
+- "speaker": character name (e.g. "Alice", "Bob"), "Narrator", or "Foley" (for action segments)
+- "text": speech text (clean spoken content in {"Devanagari Hindi" if is_hindi else "English"}, with optional inline vocal tags like [whispers], [shouting], [cold menace] where emotionally appropriate, or "[ACTION]" for action segments)
+- "emotion": "neutral" | "angry" | "whispering" | "sad" | "excited" | "growl" | "calm_raspy"
+- "intensity_level": "low" | "medium" | "high" | "explosive" (DSP dynamic headroom: "low" for whispered/intimate, "medium" for standard dialogue/narration, "high" for intense confrontation/shouts, "explosive" for climactic battle cries)
+- "pre_roll_breath_ms": int (150 to 250 for intimate/terrified lines, 0 for standard delivery)
 - "pause_after_ms": int (300 to 800)
+- "acting": {{
+    "delivery_style": "whispering_fear" | "cold_menace" | "breathless_exhaustion" | "ironic_mockery" | "bellowing_rage" | "calm_authoritative" | "gentle_tender" | "neutral",
+    "pacing": float (0.88 to 1.15, e.g. 0.92 for slow/bassy/deliberate, 1.0 for normal, 1.10 for fast action)
+  }}
+- "spatial": {{
+    "pan": float (-0.4 to 0.4, e.g. 0.0 for Narrator, -0.22 for protagonist, +0.22 for other speakers),
+    "proximity": "intimate_close" | "normal_room" | "distant"
+  }}
+- "acoustic_env": "tavern_interior" | "stone_crypt" | "royal_hall" | "damp_dungeon" | "dense_forest_night" | "quiet_chamber" | "open_road"
+- "sfx_cues": [
+    {{
+      "tag": "sword_draw" | "sword_clash" | "body_fall" | "blood_impact" | "beer_pour" | "tankard_slam" | "coin_clink" | "chair_scrape" | "door_creak" | "footsteps_wood" | "boots_gravel" | "cloak_rustle" | "sign_magic" | "fire_crackle" | "horse_gallop",
+      "timing": "before" | "under" | "after",
+      "offset_ms": int (-200 to 600),
+      "volume": float (0.25 to 0.55),
+      "description": "Short explanation of physical sound"
+    }}
+  ]
+- "music": {{
+    "mood": "peaceful" | "mysterious" | "tense" | "emotional" | "epic",
+    "ducking_db": float (-18.0 to -10.0)
+  }}
 """
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "systemInstruction": {"parts": [{"text": sys_prompt}]},
         "generationConfig": {
-            "temperature": 0.3,
+            "temperature": 0.2,
             "responseMimeType": "application/json",
+            "maxOutputTokens": 8192,
         },
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -191,39 +238,92 @@ Output JSON: A list of objects where each object has:
     }
 
     data_bytes = json.dumps(payload).encode("utf-8")
+    from audiobook_factory.logger import logger
 
+    max_retries = max(max_retries, 4)
     for attempt in range(max_retries):
-        curr_key = api_key or global_key_pool.get_key()
+        curr_key = pool.get_key(service="text") if (attempt > 0 or not api_key) else api_key
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={curr_key}"
+        headers = get_stealth_sdk_headers(curr_key)
         req = urllib.request.Request(
             url,
             data=data_bytes,
-            headers={
-                "Content-Type": "application/json",
-                "X-goog-api-key": curr_key,
-                "User-Agent": "AudiobookFactory/1.0",
-            },
+            headers=headers,
             method="POST",
         )
         try:
             with urllib.request.urlopen(req, timeout=90.0) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                raw_json = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    logger.warning(f"  [!] Screenplay LLM returned no candidates: {data.get('promptFeedback', {})}")
+                    continue
+                candidate = candidates[0]
+                parts = candidate.get("content", {}).get("parts", [])
+                if not parts:
+                    continue
+                text_parts = [p.get("text", "") for p in parts if "text" in p]
+                raw_json = "".join(text_parts).strip()
 
                 # Strip markdown code blocks ```json ... ```
-                if raw_json.startswith("```"):
+                match = re.search(r"```(?:json)?\s*(.*?)```", raw_json, re.DOTALL)
+                if match:
+                    raw_json = match.group(1).strip()
+                elif raw_json.startswith("```"):
                     raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
                     raw_json = re.sub(r"\s*```$", "", raw_json).strip()
 
+                parsed = None
                 try:
                     parsed = json.loads(raw_json)
                 except json.JSONDecodeError:
-                    # Regex fallback for outermost list [...] or object {...}
-                    match = re.search(r"(\[.*\]|\{.*\})", raw_json, re.DOTALL)
-                    if match:
-                        parsed = json.loads(match.group(1))
+                    # [AGENTIC SHIFT] LLM-based Truncation Recovery Loop
+                    if (raw_json.startswith("[") or raw_json.startswith("{")) and candidate.get("finishReason") == "MAX_TOKENS":
+                        logger.info("  [*] JSON truncated (MAX_TOKENS). Invoking Data Healer Agent...")
+                        healer_prompt = f"The following JSON array was truncated. Please continue outputting valid JSON exactly from where it left off, closing the array properly. Only return the continued JSON without markdown.\n\nTruncated JSON end:\n{raw_json[-1000:]}"
+                        healer_payload = {
+                            "contents": [{"parts": [{"text": healer_prompt}]}],
+                            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4096},
+                        }
+                        try:
+                            h_req = urllib.request.Request(
+                                url,  # Reusing the same URL with current key
+                                data=json.dumps(healer_payload).encode("utf-8"),
+                                headers=headers,
+                                method="POST",
+                            )
+                            with urllib.request.urlopen(h_req, timeout=90.0) as h_resp:
+                                h_data = json.loads(h_resp.read().decode("utf-8"))
+                                h_parts = h_data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                                continuation = "".join([p.get("text", "") for p in h_parts if "text" in p]).strip()
+                                if continuation.startswith("```"):
+                                    continuation = re.sub(r"^```(?:json)?\s*", "", continuation)
+                                    continuation = re.sub(r"\s*```$", "", continuation).strip()
+                                
+                                repaired_json = raw_json + continuation
+                                parsed = json.loads(repaired_json)
+                                logger.info("  [+] Data Healer Agent successfully repaired the truncated JSON.")
+                        except Exception as e:
+                            logger.warning(f"  [!] Data Healer failed: {e}. Falling back to last safe brace.")
+                            repaired = raw_json.strip()
+                            last_brace = repaired.rfind("}")
+                            if last_brace != -1 and not repaired.endswith("]"):
+                                candidate_str = repaired[:last_brace + 1].rstrip() + "\n]"
+                                try:
+                                    parsed = json.loads(candidate_str)
+                                except Exception:
+                                    raise
+                            else:
+                                raise
                     else:
-                        raise
+                        # Fallback for incomplete JSON array with safe closing brace
+                        repaired = raw_json.strip()
+                        last_brace = repaired.rfind("}")
+                        if last_brace != -1 and repaired.startswith("[") and not repaired.endswith("]"):
+                            candidate_str = repaired[:last_brace + 1].rstrip() + "\n]"
+                            parsed = json.loads(candidate_str)
+                        else:
+                            raise
 
                 if isinstance(parsed, list):
                     return parsed
@@ -235,17 +335,18 @@ Output JSON: A list of objects where each object has:
                     raise ValueError(f"Unexpected JSON structure: {type(parsed)}")
 
         except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
-                wait_sec = 3.5 * (attempt + 1)
-                time.sleep(wait_sec)
-                continue
-            break
-        except Exception:
-            if attempt < max_retries - 1:
-                time.sleep(2.0)
-                continue
-            break
+            err_body = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
+            logger.warning(f"  [!] Screenplay LLM HTTP {e.code} on key ...{curr_key[-6:]}: {err_body[:120]}")
+            if e.code == 429:
+                pool.mark_temporary_backoff(curr_key, 12.0, "RPM rate limit in script parsing")
+            time.sleep(1.5)
+            continue
+        except Exception as ex:
+            logger.warning(f"  [!] Screenplay LLM parse error: {ex}")
+            time.sleep(1.5)
+            continue
 
+    logger.warning("  [!] All screenplay retries exhausted. Falling back to narrator chunks.")
     # Guaranteed Zero Text Drop: Fall back to narrator script for this chunk instead of returning []
     return build_narrator_script(chunk_text, is_hindi)
 
@@ -259,19 +360,21 @@ def build_dramatized_script_llm(
     Dramatized Screenplay Mode with Sliding-Window Chunking:
     Converts entire chapter of arbitrary length into screenplay JSON without truncation.
     """
-    from audiobook_factory.tts_dispatcher import global_key_pool
-    api_key = global_key_pool.get_key()
+    from audiobook_factory.key_manager import get_persistent_key_pool
+    pool = get_persistent_key_pool()
+    api_key = pool.get_key(service="text")
     if not api_key:
         return build_narrator_script(chapter_text, is_hindi)
 
-    model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3-flash-preview")
+    model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-lite-latest")
 
     # If chapter is within safe token budget (~7,500 chars), process directly
     if len(chapter_text) <= 7500:
         raw_items = _parse_dramatized_chunk_llm(
             chunk_text=chapter_text,
             is_hindi=is_hindi,
-            api_key=api_key,
+            character_roster=character_roster,
+            api_key="",
             model=model,
         )
         if not raw_items:
@@ -305,7 +408,8 @@ def build_dramatized_script_llm(
                 chunk_text=chunk_str,
                 preceding_context=rolling_context,
                 is_hindi=is_hindi,
-                api_key=api_key,
+                character_roster=character_roster,
+                api_key="",
                 model=model,
             )
             if chunk_items:
@@ -321,7 +425,18 @@ def build_dramatized_script_llm(
     if not raw_items:
         return build_narrator_script(chapter_text, is_hindi)
 
-    # Normalize aliases and assign continuous 1-based indexing
+    return clean_screenplay_pass2(raw_items, is_hindi=is_hindi, character_roster=character_roster)
+
+
+def clean_screenplay_pass2(
+    raw_items: List[Dict[str, Any]],
+    is_hindi: bool = False,
+    character_roster: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Pass 2 (Alexandria Pattern): Two-pass pronoun disambiguation, alias resolution,
+    unknown speaker fallback, text normalization, and continuous 1-based indexing.
+    """
     alias_map = {}
     gender_map = {}
     if character_roster and "characters" in character_roster:
@@ -344,7 +459,6 @@ def build_dramatized_script_llm(
                         if eng:
                             alias_map[eng.lower()] = c_name
 
-    # Pass 2 (Alexandria Pattern): Two-pass pronoun disambiguation & alias resolution
     last_male_character = "Narrator"
     last_female_character = "Narrator"
     last_active_character = "Narrator"
@@ -365,8 +479,19 @@ def build_dramatized_script_llm(
             elif speaker_lower in ("unknown", "someone", "voice", "a voice", "stranger"):
                 speaker = last_active_character
 
+        # Dedicated action beat support: keep Foley speaker and action type intact
+        is_action_beat = item.get("type") == "action" or speaker_lower == "foley"
+        if is_action_beat:
+            speaker = "Foley"
+        else:
+            # Fallback check: If character is not in character roster / alias map and not "Narrator",
+            # fall back safely to "Narrator" to prevent voice synthesis failures.
+            known_speakers = set(alias_map.values()) | {"Narrator", "Foley"}
+            if alias_map and speaker not in known_speakers:
+                speaker = "Narrator"
+
         # Update active cast trackers
-        if speaker != "Narrator":
+        if speaker not in ("Narrator", "Foley"):
             last_active_character = speaker
             g = gender_map.get(speaker, "neutral")
             if g == "male":
@@ -383,14 +508,20 @@ def build_dramatized_script_llm(
         if not cleaned_text:
             continue
 
-        final_script.append({
+        seg_type = "action" if is_action_beat else sanitized_item.get("type", "narration")
+        entry = {
             "index": len(final_script) + 1,
-            "type": sanitized_item.get("type", "narration"),
+            "type": seg_type,
             "speaker": speaker,
             "text": cleaned_text,
             "emotion": sanitized_item.get("emotion", "neutral"),
             "pause_after_ms": int(sanitized_item.get("pause_after_ms", 600)),
-        })
+        }
+        for field in ("acting", "spatial", "acoustic_env", "sfx_cues", "music"):
+            if field in sanitized_item:
+                entry[field] = sanitized_item[field]
+
+        final_script.append(entry)
 
     return final_script
 
@@ -399,6 +530,7 @@ def generate_project_scripts(
     project_dir: Path,
     use_hindi: bool = False,
     dramatized: bool = False,
+    overwrite: bool = False,
 ) -> Path:
     """Generates JSON screenplay scripts for all chapters in project."""
     project_dir = Path(project_dir).resolve()
@@ -432,7 +564,7 @@ def generate_project_scripts(
 
     for chap_file in target_files:
         script_file = scripts_dir / f"{chap_file.stem}_script.json"
-        if script_file.exists() and script_file.stat().st_size > 50:
+        if not overwrite and script_file.exists() and script_file.stat().st_size > 50:
             print(f"[-] Script already exists: {script_file.name} (Skipping)")
             continue
 

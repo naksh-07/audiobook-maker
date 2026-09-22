@@ -35,6 +35,42 @@ REFUSAL_AND_META_PATTERNS = [
 
 COMPILED_META_PATTERNS = [re.compile(p, re.IGNORECASE) for p in REFUSAL_AND_META_PATTERNS]
 
+# Permitted expressive vocal tags recognized natively by Gemini 3.1 Flash TTS
+SUPPORTED_TTS_TAG_PATTERNS = [
+    r"whispers?",
+    r"shouting",
+    r"shouts?",
+    r"sighs?",
+    r"gasp",
+    r"laughs?",
+    r"giggles?",
+    r"crying",
+    r"trembling(?:\s+voice)?",
+    r"cold\s+menace",
+    r"intimate(?:,\s*breathy)?",
+    r"excitedly?",
+    r"bored",
+    r"reluctantly",
+    r"amazed",
+    r"curious",
+    r"mischievously",
+    r"panicked",
+    r"sarcastic(?:ally)?",
+    r"serious",
+    r"tired",
+    r"pause(?:=\d+(?:\.\d+)?)?",
+    r"very\s+(?:fast|slow)",
+]
+COMPILED_TTS_TAG_RE = re.compile(rf"^\[\s*(?:{'|'.join(SUPPORTED_TTS_TAG_PATTERNS)})\s*\]$", re.IGNORECASE)
+
+
+def filter_bracketed_tags(match: re.Match) -> str:
+    """Preserve valid Gemini TTS expressive tags; strip leaked Foley and Devanagari stage cues."""
+    tag_str = match.group(0).strip()
+    if COMPILED_TTS_TAG_RE.match(tag_str):
+        return tag_str
+    return ""
+
 
 def count_devanagari_chars(text: str) -> int:
     """Count number of Devanagari Unicode code points in text."""
@@ -137,15 +173,29 @@ def sanitize_screenplay_segment(segment: Dict[str, Any], is_hindi: bool = True) 
     if not isinstance(segment, dict):
         return None
 
+    if segment.get("type") == "action":
+        cleaned_seg = dict(segment)
+        cleaned_seg["speaker"] = cleaned_seg.get("speaker") or "Foley"
+        cleaned_seg["text"] = cleaned_seg.get("text") or "[ACTION]"
+        return cleaned_seg
+
     text = segment.get("text", "").strip()
     if not text:
         return None
 
-    # Strip leftover markdown syntax
+    # Strip leading/trailing markdown headers
     text = re.sub(r"^#+\s*", "", text)
-    text = re.sub(r"^\*+\s*", "", text)
-    text = re.sub(r"\*+$", "", text)
-    text = text.strip()
+    # Strip XML / HTML / SSML tags (e.g. <break.../>, <whisper>...</whisper>)
+    text = re.sub(r"<[^>]+>", "", text)
+    # Selectively preserve Gemini TTS vocal tags ([whispers], [shouting]); strip leaked non-vocal stage directions
+    text = re.sub(r"\[[^\]]+\]", filter_bracketed_tags, text)
+    # Strip inline markdown bold/italic asterisks and underscores (**word**, *word*, __word__, _word_)
+    text = re.sub(r"\*{1,3}([^*]+)\*{1,3}", r"\1", text)
+    text = re.sub(r"_{1,3}([^_]+)_{1,3}", r"\1", text)
+    text = re.sub(r"[*_~`#]+", "", text)
+    # Collapse excessive character repeats to max 2 (e.g. "आहhhhh" -> "आहhh", "हूँ...." -> "हूँ..")
+    text = re.sub(r"([a-zA-Z\u0900-\u097F])\1{2,}", r"\1\1", text)
+    text = re.sub(r"\s+", " ", text).strip()
 
     # Drop segment if it matches refusal / commentary patterns
     for pat in COMPILED_META_PATTERNS:

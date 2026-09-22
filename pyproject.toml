@@ -11,7 +11,9 @@ license = { text = "MIT" }
 authors = [{ name = "Suraj (naksh-07)" }]
 keywords = ["audiobook", "tts", "gemini", "ffmpeg", "m4b", "speech-synthesis", "audio-mastering"]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "pydantic>=2.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -32,4 +34,4 @@ include = ["audiobook_factory*", "ffmpeg_mastering*"]
 exclude = ["audiobooks*"]
 
 [tool.setuptools]
-py-modules = ["audiobook_cli", "kokoro_client"]
+py-modules = ["audiobook_cli"]

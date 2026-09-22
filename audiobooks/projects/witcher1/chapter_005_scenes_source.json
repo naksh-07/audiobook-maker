@@ -1,0 +1,66 @@
+{
+  "chapter_id": "chapter_005",
+  "chapter_title": "The Voice of Reason 3 (तर्क की आवाज़)",
+  "total_acts": 4,
+  "total_segments": 49,
+  "primary_environment": "temple_stone_hall",
+  "acts": [
+    {
+      "act_id": 1,
+      "act_name": "The Arrival of the White Rose Knights",
+      "segment_start": 1,
+      "segment_end": 15,
+      "narrative_summary": "Count Falwick of Moën and young Knight Tailles of Dorndal arrive at the Temple of Melitele bearing Duke Hereward's emblem of the White Rose. Nenneke receives them with mocking scorn, while Geralt remains calmly detached.",
+      "primary_environment": "temple_stone_hall",
+      "characters_present": [
+        "Narrator",
+        "Falwick",
+        "Geralt",
+        "Nenneke",
+        "Tailles"
+      ]
+    },
+    {
+      "act_id": 2,
+      "act_name": "The Edict Clashing & Priestess's Porcelain Jar",
+      "segment_start": 16,
+      "segment_end": 27,
+      "narrative_summary": "Tailles screams insolently at Nenneke, invoking soldiers stationed in the courtyard. Nenneke draws a mysterious porcelain jar from her belt, threatening to burst his lungs or curse him, and promises that any soldier who touches a priestess will hang from acacia trees before sundown.",
+      "primary_environment": "temple_stone_hall",
+      "characters_present": [
+        "Narrator",
+        "Nenneke",
+        "Tailles"
+      ]
+    },
+    {
+      "act_id": 3,
+      "act_name": "Falwick's Ultimatum & The Witcher's Compromise",
+      "segment_start": 28,
+      "segment_end": 38,
+      "narrative_summary": "Geralt steps in to de-escalate the dispute, offering to leave within three days. Falwick reveals cold personal hatred, demanding the Butcher of Blaviken be banished within 24 hours. Nenneke defiantly overrides the Duke's order.",
+      "primary_environment": "temple_stone_hall",
+      "characters_present": [
+        "Narrator",
+        "Geralt",
+        "Falwick",
+        "Nenneke"
+      ]
+    },
+    {
+      "act_id": 4,
+      "act_name": "The Gauntlet Thrown & Final Duel Challenge",
+      "segment_start": 39,
+      "segment_end": 49,
+      "narrative_summary": "Tailles screams that the Order of the White Rose will destroy superstition. Geralt brutally mocks the new mercenary knights of the Order. Enraged, Tailles hurls his iron gauntlet at Geralt's feet, challenging him to a duel to the death. Nenneke sweeps them out like rubbish, and Falwick retreats promising retribution.",
+      "primary_environment": "temple_stone_hall",
+      "characters_present": [
+        "Narrator",
+        "Tailles",
+        "Geralt",
+        "Nenneke",
+        "Falwick"
+      ]
+    }
+  ]
+}

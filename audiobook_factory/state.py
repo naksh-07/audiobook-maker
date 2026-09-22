@@ -123,8 +123,19 @@ class ProjectStateLedger:
                 seg_num = item.get("index", seg_num_idx)
                 text = item.get("text", "").strip()
                 speaker = item.get("speaker", "Narrator")
-                voice_cfg = voice_map.get(speaker, voice_map.get("Narrator", {}))
-                voice = voice_cfg.get("voice", default_voice) if isinstance(voice_cfg, dict) else default_voice
+                voice = default_voice
+                if speaker in voice_map:
+                    cfg = voice_map[speaker]
+                    voice = cfg.get("voice", default_voice) if isinstance(cfg, dict) else default_voice
+                else:
+                    sp_lower = speaker.lower().strip()
+                    for k, cfg in voice_map.items():
+                        if k.lower().strip() == sp_lower:
+                            voice = cfg.get("voice", default_voice) if isinstance(cfg, dict) else default_voice
+                            break
+                    else:
+                        narr_cfg = voice_map.get("Narrator", {})
+                        voice = narr_cfg.get("voice", default_voice) if isinstance(narr_cfg, dict) else default_voice
 
                 cache_key = f"{text}|{voice}".encode("utf-8")
                 seg_hash = hashlib.md5(cache_key).hexdigest()[:8]

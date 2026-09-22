@@ -233,6 +233,7 @@ def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[Any]]:
         if nav_points and has_anchors:
             # Map spine files and stitch continuous stream
             file_offsets = {}
+            file_lengths = {}
             spine_contents = []
             current_pos = 0
             for sf in spine:
@@ -241,9 +242,11 @@ def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[Any]]:
                 except Exception:
                     c = ""
                 file_offsets[sf] = current_pos
+                file_lengths[sf] = len(c)
                 spine_contents.append(c)
                 current_pos += len(c)
             full_html = "".join(spine_contents)
+            del spine_contents  # Immediately release memory to eliminate Android/Termux OOM risk
 
             all_nav_positions = []
             for lbl, src in nav_points:
@@ -252,7 +255,7 @@ def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[Any]]:
                 anchor = parts[1] if len(parts) > 1 else ""
                 if sf in file_offsets:
                     base_offset = file_offsets[sf]
-                    file_slice = full_html[base_offset : base_offset + len(spine_contents[spine.index(sf)])]
+                    file_slice = full_html[base_offset : base_offset + file_lengths.get(sf, 0)]
                     if anchor:
                         m = re.search(r'(?:id|name)=["\']' + re.escape(anchor) + r'["\']', file_slice)
                         if m:
@@ -302,19 +305,56 @@ def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
     if not api_key:
         api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable is required for PDF extraction.")
+        try:
+            from audiobook_factory.key_manager import get_persistent_key_pool
+            api_key = get_persistent_key_pool().get_key(service="text")
+        except Exception:
+            pass
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY or persistent key pool is required for PDF extraction.")
 
     file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
     if file_size_mb > 18.0:
-        raise ValueError(
-            f"PDF file '{file_path.name}' is {file_size_mb:.1f} MB, which exceeds Gemini inline data limit (20 MB base64). "
-            f"Please convert the PDF to EPUB/TXT or split into smaller volumes before processing."
-        )
+        # Large PDF: upload via Google AI Studio Resumable File API (supports up to 2GB)
+        num_bytes = os.path.getsize(file_path)
+        start_url = f"https://generativelanguage.googleapis.com/upload/v1beta/files?key={api_key}"
+        headers = {
+            "X-Goog-Upload-Protocol": "resumable",
+            "X-Goog-Upload-Command": "start",
+            "X-Goog-Upload-Header-Content-Length": str(num_bytes),
+            "X-Goog-Upload-Header-Content-Type": "application/pdf",
+            "Content-Type": "application/json",
+        }
+        init_data = json.dumps({"file": {"display_name": file_path.name}}).encode("utf-8")
+        req = urllib.request.Request(start_url, data=init_data, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=60.0) as resp:
+            upload_url = resp.headers.get("X-Goog-Upload-URL")
+        
+        if not upload_url:
+            raise RuntimeError("Failed to obtain Gemini File API upload URL.")
+        
+        with open(file_path, "rb") as f:
+            pdf_bytes = f.read()
+            
+        upload_headers = {
+            "Content-Length": str(num_bytes),
+            "X-Goog-Upload-Offset": "0",
+            "X-Goog-Upload-Command": "upload, finalize",
+        }
+        up_req = urllib.request.Request(upload_url, data=pdf_bytes, headers=upload_headers, method="POST")
+        with urllib.request.urlopen(up_req, timeout=300.0) as up_resp:
+            res_data = json.loads(up_resp.read().decode("utf-8"))
+            file_uri = res_data.get("file", {}).get("uri")
+            if not file_uri:
+                raise RuntimeError(f"Gemini File API did not return file URI: {res_data}")
 
-    with open(file_path, "rb") as f:
-        pdf_bytes = f.read()
+        pdf_part = {"fileData": {"mimeType": "application/pdf", "fileUri": file_uri}}
+    else:
+        with open(file_path, "rb") as f:
+            pdf_bytes = f.read()
+        b64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+        pdf_part = {"inlineData": {"mimeType": "application/pdf", "data": b64_pdf}}
 
-    b64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
     model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
@@ -333,25 +373,26 @@ def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
             {
                 "parts": [
                     {"text": prompt},
-                    {
-                        "inlineData": {
-                            "mimeType": "application/pdf",
-                            "data": b64_pdf,
-                        }
-                    },
+                    pdf_part,
                 ]
             }
         ]
     }
 
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
+    try:
+        from audiobook_factory.cadence import get_stealth_sdk_headers
+        req_headers = get_stealth_sdk_headers(api_key)
+    except Exception:
+        req_headers = {
             "Content-Type": "application/json",
             "X-goog-api-key": api_key,
             "User-Agent": "AudiobookFactory/1.0",
-        },
+        }
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=req_headers,
         method="POST",
     )
 
@@ -383,8 +424,9 @@ def segment_chapters_from_text(raw_text: str) -> List[Dict[str, str]]:
     splits = list(re.finditer(combined_pattern, raw_text, flags=re.IGNORECASE | re.MULTILINE))
 
     if not splits:
-        # Fallback: split into ~3,000 word chunks on paragraph boundaries
-        paragraphs = raw_text.split("\n\n")
+        # [AGENTIC SHIFT] Semantic Scene-Aware Chunking
+        # Prioritize natural scene breaks over rigid word counts to preserve context
+        paragraphs = re.split(r'\n{2,}', raw_text)
         chapters = []
         current_chunk = []
         current_words = 0
@@ -397,8 +439,11 @@ def segment_chapters_from_text(raw_text: str) -> List[Dict[str, str]]:
             words = len(para.split())
             current_chunk.append(para)
             current_words += words
-
-            if current_words >= 2500:
+            
+            # Detect natural scene boundaries (asterisks, dashes, large gaps)
+            is_scene_break = bool(re.match(r'^(\*|\-|\_)\s*\1\s*\1+$', para))
+            
+            if (current_words >= 2500 and is_scene_break) or current_words >= 3500:
                 chapters.append({
                     "title": f"Chapter {chap_num}",
                     "content": "\n\n".join(current_chunk),
@@ -444,6 +489,145 @@ def segment_chapters_from_text(raw_text: str) -> List[Dict[str, str]]:
     return chapters
 
 
+def split_large_chapter_on_semantic_boundary(
+    title: str,
+    content: str,
+    max_words: int = 12000,
+) -> List[Dict[str, Any]]:
+    """
+    Meso-Tier Verification Guard:
+    Checks chapter word count. If word count > max_words (12,000), splits chapter on
+    semantic boundary (***, ---, or markdown headings / section dividers) into Part 1 and Part 2.
+    """
+    words = content.split()
+    total_words = len(words)
+    if total_words <= max_words:
+        return [{"title": title, "content": content, "words": total_words}]
+
+    divider_patterns = [
+        r"\n\s*(?:\*\s*\*\s*\*|\-\s*\-\s*\-|—\s*—\s*—|_\s*_\s*_)\s*\n",
+        r"\n\s*#{2,4}\s+[^\n]+\n",
+    ]
+
+    best_split_idx = -1
+    split_end = -1
+    best_dist = float("inf")
+    mid_char = len(content) // 2
+
+    for pattern in divider_patterns:
+        for match in re.finditer(pattern, content):
+            pos = match.start()
+            dist = abs(pos - mid_char)
+            if 0.2 * len(content) <= pos <= 0.8 * len(content):
+                if dist < best_dist:
+                    best_dist = dist
+                    best_split_idx = match.start()
+                    split_end = match.end()
+
+    if best_split_idx == -1:
+        for match in re.finditer(r"\n\n+", content):
+            pos = match.start()
+            dist = abs(pos - mid_char)
+            if 0.25 * len(content) <= pos <= 0.75 * len(content):
+                if dist < best_dist:
+                    best_dist = dist
+                    best_split_idx = match.start()
+                    split_end = match.end()
+
+    if best_split_idx == -1:
+        mid_word_idx = total_words // 2
+        p1_content = " ".join(words[:mid_word_idx])
+        p2_content = " ".join(words[mid_word_idx:])
+    else:
+        p1_content = content[:best_split_idx].strip()
+        p2_content = content[split_end:].strip()
+
+    p1_count = len(p1_content.split())
+    p2_count = len(p2_content.split())
+
+    base_title = re.sub(r"\s*\((?:Part|भाग)\s*\d+\)", "", title, flags=re.IGNORECASE).strip()
+    part1_title = f"{base_title} (Part 1)"
+    part2_title = f"{base_title} (Part 2)"
+
+    parts: List[Dict[str, Any]] = []
+    if p1_count > max_words:
+        parts.extend(split_large_chapter_on_semantic_boundary(part1_title, p1_content, max_words))
+    else:
+        parts.append({"title": part1_title, "content": p1_content, "words": p1_count})
+
+    if p2_count > max_words:
+        parts.extend(split_large_chapter_on_semantic_boundary(part2_title, p2_content, max_words))
+    else:
+        parts.append({"title": part2_title, "content": p2_content, "words": p2_count})
+
+    return parts
+
+
+def extract_chapters(source: str | Path) -> List[Dict[str, Any]]:
+    """
+    Universal chapter extractor: accepts file path or raw text string.
+    Enforces Meso-Tier 12,000 word ceiling by splitting oversized chapters on semantic boundaries.
+    """
+    raw_chapters: List[Dict[str, Any]] = []
+
+    is_file = False
+    if isinstance(source, Path):
+        is_file = source.is_file()
+    elif isinstance(source, str) and len(source) < 300 and ("\n" not in source):
+        try:
+            is_file = Path(source).is_file()
+        except Exception:
+            is_file = False
+
+    if is_file:
+        source_path = Path(source).resolve()
+        ext = source_path.suffix.lower()
+        if ext == ".epub":
+            _, epub_chapters = extract_epub(source_path)
+            for idx, item in enumerate(epub_chapters, 1):
+                if isinstance(item, dict):
+                    raw_chapters.append(item)
+                else:
+                    sub = segment_chapters_from_text(item)
+                    if sub:
+                        raw_chapters.extend(sub)
+                    else:
+                        raw_chapters.append({
+                            "title": f"Chapter {idx}",
+                            "content": item,
+                            "words": len(item.split()),
+                        })
+        elif ext in (".txt", ".md"):
+            with open(source_path, "r", encoding="utf-8", errors="ignore") as f:
+                raw_text = clean_book_text(f.read())
+            raw_chapters = segment_chapters_from_text(raw_text)
+        elif ext == ".pdf":
+            raw_text = extract_gemini_pdf(source_path)
+            raw_chapters = segment_chapters_from_text(raw_text)
+        else:
+            raise ValueError(f"Unsupported file format: {ext}")
+    else:
+        raw_text = clean_book_text(str(source))
+        raw_chapters = segment_chapters_from_text(raw_text)
+
+    guarded_chapters: List[Dict[str, Any]] = []
+    for chap in raw_chapters:
+        title = chap.get("title", "Chapter")
+        content = chap.get("content", "")
+        words = chap.get("words", len(content.split()))
+        if words > 12000:
+            split_parts = split_large_chapter_on_semantic_boundary(title, content, max_words=12000)
+            guarded_chapters.extend(split_parts)
+        else:
+            guarded_chapters.append({
+                "title": title,
+                "content": content,
+                "words": words,
+            })
+
+    return guarded_chapters
+
+
 def process_book_file(input_file: Path, output_base_dir: Path) -> Dict[str, Any]:
     """Universal pipeline entry: ingests book file and outputs standardized project directory."""
     input_file = Path(input_file).resolve()
@@ -469,30 +653,9 @@ def process_book_file(input_file: Path, output_base_dir: Path) -> Dict[str, Any]
     print(f"[*] Extracting book: '{input_file.name}' (Format: {ext.upper()})...")
 
     if ext == ".epub":
-        meta, raw_chapters = extract_epub(input_file)
+        meta, _ = extract_epub(input_file)
         metadata.update(meta)
-        for idx, item in enumerate(raw_chapters, 1):
-            if isinstance(item, dict):
-                chapters.append(item)
-            else:
-                sub_chaps = segment_chapters_from_text(item)
-                if sub_chaps:
-                    chapters.extend(sub_chaps)
-                else:
-                    chapters.append({
-                        "title": f"Chapter {idx}",
-                        "content": item,
-                        "words": len(item.split()),
-                    })
-    elif ext in (".txt", ".md"):
-        with open(input_file, "r", encoding="utf-8", errors="ignore") as f:
-            raw_text = clean_book_text(f.read())
-        chapters = segment_chapters_from_text(raw_text)
-    elif ext == ".pdf":
-        raw_text = extract_gemini_pdf(input_file)
-        chapters = segment_chapters_from_text(raw_text)
-    else:
-        raise ValueError(f"Unsupported file format: {ext}. Supported formats: .epub, .txt, .md, .pdf")
+    chapters = extract_chapters(input_file)
 
     # Renumber and save chapters as markdown
     total_words = 0
