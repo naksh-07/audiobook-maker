@@ -159,11 +159,11 @@ class TestActionBeatsAndMusicalDucking(unittest.TestCase):
         self.assertAlmostEqual(dur, 0.5, places=2)
         self.assertGreater(out_file.stat().st_size, 1000)
 
-        # Verify WAV audio properties: 48kHz, 2 channels (stereo), 16-bit PCM
+        # Verify WAV audio properties: 24kHz, 1 channel (mono), 16-bit PCM matching speech chunks
         with wave.open(str(out_file), "rb") as wf:
-            self.assertEqual(wf.getnchannels(), 2)
+            self.assertEqual(wf.getnchannels(), 1)
             self.assertEqual(wf.getsampwidth(), 2)
-            self.assertEqual(wf.getframerate(), 48000)
+            self.assertEqual(wf.getframerate(), 24000)
             frames = wf.readframes(wf.getnframes())
             # Must be 100% pure acoustic silence (all zero bytes)
             self.assertEqual(frames, b"\x00" * len(frames))
@@ -187,8 +187,8 @@ class TestActionBeatsAndMusicalDucking(unittest.TestCase):
         self.assertAlmostEqual(dur, 0.45, places=2)
 
         with wave.open(str(out_file), "rb") as wf:
-            self.assertEqual(wf.getframerate(), 48000)
-            self.assertEqual(wf.getnchannels(), 2)
+            self.assertEqual(wf.getframerate(), 24000)
+            self.assertEqual(wf.getnchannels(), 1)
             frames = wf.readframes(wf.getnframes())
             self.assertEqual(frames, b"\x00" * len(frames))
 

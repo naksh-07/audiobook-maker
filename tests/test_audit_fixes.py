@@ -244,8 +244,8 @@ The escape of the Brazilian boa constrictor earned Harry his longest-ever punish
                     self.assertEqual(mock_open.call_count, 2)
                     self.assertAlmostEqual(dur, 1.5, places=1)
 
-    def test_10_unknown_speaker_fallback_to_narrator(self):
-        """Verify unmapped characters fall back safely to Narrator when roster is present."""
+    def test_10_character_preservation_and_alias_mapping(self):
+        """Verify alias mapping resolves known aliases while unmapped characters are preserved without Narrator erasure."""
         from audiobook_factory.script_builder import clean_screenplay_pass2
         roster = {
             "characters": {
@@ -259,7 +259,7 @@ The escape of the Brazilian boa constrictor earned Harry his longest-ever punish
         ]
         res = clean_screenplay_pass2(raw_items, is_hindi=False, character_roster=roster)
         self.assertEqual(res[0]["speaker"], "Geralt")
-        self.assertEqual(res[1]["speaker"], "Narrator")
+        self.assertEqual(res[1]["speaker"], "Drunken Guard")
 
     def test_11_snr_gatekeeper_raise_on_persistent_defect(self):
         """Verify SNR Gatekeeper raises ValueError when defect persists across all 3 attempts."""

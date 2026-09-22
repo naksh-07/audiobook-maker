@@ -81,19 +81,37 @@ from .contracts import (
     BookVoiceRoster,
     GlobalLoreBible,
     BookMasterManifest,
+    MasteringSettings,
 )
+from .agent_director import AgentDirector
+from .cinema_audio_engine import (
+    render_discrete_stems,
+    CinemaAudioManifest,
+    StemMetadata,
+    StemLedger,
+)
+from .sonic_bible import SonicBible, LeitmotifDefinition
+from .manifest_renderer import render_manifest_soundscape, assemble_master_filter_graph, get_reverb_filter_string
 from .sound_bank_ingest import UniversalSoundBankIngester
 from .gate_auditor import (
     AuditResult,
     GateAuditError,
     audit_chapter_gates,
+    audit_gate0_translation,
+    audit_gate1_roster,
+    audit_gate2_script,
+    audit_gate3_5_acoustic_feasibility,
+    audit_gate5_master,
+    audit_gate5_2_spectral_masking,
+    audit_gate5_3_stereo_phase,
     audit_gate6a_voice_continuity,
     audit_gate6b_loudness_continuity,
     audit_gate6c_toc_integrity,
+    audit_gate6c_toc_monotonicity,
     audit_gate6d_packaging_specs,
     audit_book_master,
 )
 
-__version__ = "2.2.0"
+__version__ = "4.0.0"
 
 

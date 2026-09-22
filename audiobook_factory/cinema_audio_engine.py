@@ -188,7 +188,17 @@ def render_discrete_stems(
     # --- STEM 1: DX (Dialogue Stem) ---
     dx_file = out_dir / f"{ch_id}_stem_DX.wav"
     if d_path.exists():
-        shutil.copyfile(d_path, dx_file)
+        cmd_dx = [
+            ff, "-y",
+            "-i", str(d_path),
+            "-af", "aresample=48000",
+            "-ac", "2",
+            "-c:a", "pcm_s16le",
+            str(dx_file),
+        ]
+        res_dx = subprocess.run(cmd_dx, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if res_dx.returncode != 0 or not dx_file.exists():
+            shutil.copyfile(d_path, dx_file)
     else:
         # Generate clean silent fallback
         cmd_silence = [ff, "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}", "-c:a", "pcm_s16le", str(dx_file)]
@@ -245,54 +255,76 @@ def render_discrete_stems(
 
     # --- STEM 4: AMB (Environmental Ambience Stem) ---
     amb_file = out_dir / f"{ch_id}_stem_AMB.wav"
-    # Check if scene_acoustics exists on manifest
     scene_acoustics = getattr(manifest, "scene_acoustics", None)
+
+    # Collect all ambient cues across scenes: (path, start_ms, end_ms, target_lufs)
+    amb_cues: List[Tuple[Path, int, int, float]] = []
     if scene_acoustics and scene_acoustics.scenes:
-        # Render multi-scene ambient beds
-        amb_cues: List[Tuple[Path, int, int, float]] = []
         for sc in scene_acoustics.scenes:
             for l in sc.layers:
                 resolved_amb = bank.resolve_sound(l.asset_path, category="AMB") or bank.resolve_sound(l.asset_path)
                 if resolved_amb and resolved_amb.exists():
                     amb_cues.append((resolved_amb, sc.start_ms, sc.end_ms, l.target_lufs))
-
-        if amb_cues:
-            # Render first valid layer with loop as primary bed
-            first_amb, _, _, _ = amb_cues[0]
-            cmd_amb = [
-                ff, "-y",
-                "-stream_loop", "-1",
-                "-i", str(first_amb),
-                "-t", f"{total_dur:.2f}",
-                "-af", "volume=-12dB,afade=t=in:ss=0:d=2.0,afade=t=out:st=" + f"{max(0.1, total_dur - 2.0):.2f}:d=2.0,aresample=48000",
-                "-c:a", "pcm_s16le",
-                str(amb_file),
-            ]
-            subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        else:
-            cmd_amb = [ff, "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}", "-c:a", "pcm_s16le", str(amb_file)]
-            subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     elif hasattr(manifest, "ambience_scenes") and manifest.ambience_scenes:
-        # Legacy AmbienceScene compatibility
-        amb_scene = manifest.ambience_scenes[0]
-        res_amb = bank.resolve_sound(amb_scene.asset_path, category="AMB") or bank.resolve_sound(amb_scene.asset_path)
-        if res_amb and res_amb.exists():
-            cmd_amb = [
-                ff, "-y",
-                "-stream_loop", "-1",
-                "-i", str(res_amb),
-                "-t", f"{total_dur:.2f}",
-                "-af", "volume=-12dB,afade=t=in:ss=0:d=2.0,afade=t=out:st=" + f"{max(0.1, total_dur - 2.0):.2f}:d=2.0,aresample=48000",
-                "-c:a", "pcm_s16le",
-                str(amb_file),
-            ]
-            subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        else:
-            cmd_amb = [ff, "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}", "-c:a", "pcm_s16le", str(amb_file)]
-            subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    else:
+        for amb_scene in manifest.ambience_scenes:
+            res_amb = bank.resolve_sound(amb_scene.asset_path, category="AMB") or bank.resolve_sound(amb_scene.asset_path)
+            if res_amb and res_amb.exists():
+                amb_cues.append((res_amb, amb_scene.start_ms, amb_scene.end_ms, getattr(amb_scene, "target_lufs", -32.0)))
+
+    if not amb_cues:
         cmd_amb = [ff, "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}", "-c:a", "pcm_s16le", str(amb_file)]
         subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    elif len(amb_cues) == 1 and amb_cues[0][1] == 0 and amb_cues[0][2] >= int(total_dur * 1000):
+        # Single scene covering whole chapter
+        first_amb, _, _, _ = amb_cues[0]
+        cmd_amb = [
+            ff, "-y",
+            "-stream_loop", "-1",
+            "-i", str(first_amb),
+            "-t", f"{total_dur:.2f}",
+            "-af", "volume=-12dB,afade=t=in:ss=0:d=2.0,afade=t=out:st=" + f"{max(0.1, total_dur - 2.0):.2f}:d=2.0,aresample=48000",
+            "-c:a", "pcm_s16le",
+            str(amb_file),
+        ]
+        subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    else:
+        # Multi-scene / multi-layer sequential compositor
+        inputs = ["-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}"]
+        filters = []
+        for i, (apath, s_ms, e_ms, tlufs) in enumerate(amb_cues):
+            inputs.extend(["-stream_loop", "-1", "-i", str(apath)])
+            dur_ms = max(500, e_ms - s_ms)
+            dur_sec = dur_ms / 1000.0
+            st_ms = max(0, s_ms)
+            fade_in = min(1.5, dur_sec / 3.0)
+            fade_out_st = max(0.1, dur_sec - fade_in)
+            filters.append(
+                f"[{i+1}:a]aformat=sample_rates=48000:channel_layouts=stereo,"
+                f"atrim=0:{dur_sec:.2f},"
+                f"afade=t=in:ss=0:d={fade_in:.2f},"
+                f"afade=t=out:st={fade_out_st:.2f}:d={fade_in:.2f},"
+                f"volume=-12dB,"
+                f"adelay={st_ms}|{st_ms}[amb_{i}]"
+            )
+        mix_inputs = "[0:a]" + "".join(f"[amb_{i}]" for i in range(len(amb_cues)))
+        filter_str = ";".join(filters) + f";{mix_inputs}amix=inputs={len(amb_cues)+1}:duration=first:normalize=0[amb_out]"
+        cmd_amb = [
+            ff, "-y",
+            *inputs,
+            "-filter_complex", filter_str,
+            "-map", "[amb_out]",
+            "-c:a", "pcm_s16le",
+            str(amb_file),
+        ]
+        res = subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if res.returncode != 0 or not amb_file.exists():
+            # Fallback to safe loop of first cue if complex graph exceeds bounds
+            first_amb, _, _, _ = amb_cues[0]
+            cmd_fallback = [
+                ff, "-y", "-stream_loop", "-1", "-i", str(first_amb), "-t", f"{total_dur:.2f}",
+                "-af", "volume=-12dB,aresample=48000", "-c:a", "pcm_s16le", str(amb_file)
+            ]
+            subprocess.run(cmd_fallback, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     amb_m = measure_audio_metrics(amb_file, ffmpeg=ff)
     stems_meta["AMB"] = StemMetadata(
@@ -341,7 +373,7 @@ def render_discrete_stems(
         "-i", str(dx_file),
         "-i", str(me_file),
         "-filter_complex",
-        f"[1:a][0:a]sidechaincompress=threshold=0.08:ratio=4:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
+        f"[1:a][0:a]sidechaincompress=threshold=0.018:knee=3.0:ratio=4:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
         f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0[fullmix];"
         f"[fullmix]loudnorm=I=-19.0:TP=-1.5:LRA=8.5,aresample=48000[out]",
         "-map", "[out]",

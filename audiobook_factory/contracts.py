@@ -196,7 +196,15 @@ class ScreenplaySegment(BaseModel):
     @classmethod
     def set_action_defaults(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            if data.get("type") == "action":
+            if not data.get("type"):
+                sp = str(data.get("speaker", "Narrator")).lower()
+                if sp in ("narrator", "header", "chapter_header"):
+                    data["type"] = "narration"
+                elif sp in ("foley", "sfx", "action"):
+                    data["type"] = "action"
+                else:
+                    data["type"] = "dialogue"
+            elif data.get("type") == "action":
                 if not data.get("speaker"):
                     data["speaker"] = "Foley"
                 if not data.get("text"):
@@ -338,6 +346,51 @@ MusicCueType = Literal[
 ]
 
 
+class AcousticMetrics(BaseModel):
+    """Physical acoustic invariants extracted via local DSP (zero hallucinations)."""
+    model_config = ConfigDict(extra="ignore")
+
+    true_peak_dbtp: float = Field(default=-1.5, description="True peak in dBTP")
+    integrated_lufs: float = Field(default=-19.0, description="EBU R128 integrated loudness in LUFS")
+    speech_corridor_density: float = Field(default=0.25, ge=0.0, le=1.0, description="Acoustic energy ratio in 300Hz-3.5kHz vocal corridor")
+    transient_drops_sec: List[float] = Field(default_factory=list, description="Seconds where major transient drops/crashes occur")
+    bpm: float = Field(default=90.0, ge=0.0, le=300.0, description="Detected or canonical Tempo in BPM")
+    intro_bed_end_sec: float = Field(default=0.0, ge=0.0, description="Second where subtle intro transitions into main progression")
+    vocal_clash_risk: Literal["LOW", "MODERATE", "SEVERE"] = Field(default="LOW", description="Risk of frequency masking in vocal intelligibility range")
+
+
+class SemanticAnnotations(BaseModel):
+    """Dramatic, emotional, and cultural profiling derived via multimodal LLM reasoning."""
+    model_config = ConfigDict(extra="ignore")
+
+    valence: float = Field(default=0.0, ge=-1.0, le=1.0, description="Positivity/Negativity from -1.0 (tragic) to +1.0 (joyous)")
+    arousal: float = Field(default=0.5, ge=0.0, le=1.0, description="Energy/Intensity from 0.0 (calm/stagnant) to 1.0 (adrenaline frenzy)")
+    tension: float = Field(default=0.5, ge=0.0, le=1.0, description="Narrative dread/suspense from 0.0 (resolved) to 1.0 (high dread)")
+    narrative_function: Literal[
+        "TRANSITION_BRIDGE",
+        "EMOTIONAL_UNDERSCORE",
+        "TENSION_RISER",
+        "CLIMACTIC_ACTION",
+        "AFTERMATH_FADE",
+        "AMBIENT_BED",
+    ] = Field(default="EMOTIONAL_UNDERSCORE", description="Primary structural role in dramatic scoring")
+    narrative_archetypes: List[str] = Field(default_factory=list, description="Story archetypes e.g. ['TAVERN_BRAWL', 'MONSTER_HUNT']")
+    slavic_instruments: List[str] = Field(default_factory=list, description="Identified lead timbres e.g. ['hurdy-gurdy', 'kemenche']")
+    story_triggers: List[str] = Field(default_factory=list, description="Literary action triggers for SQLite FTS5 search")
+
+
+class SonicGenome(BaseModel):
+    """The Complete Sonic Genome for a soundtrack asset or stem."""
+    model_config = ConfigDict(extra="ignore")
+
+    version: str = Field(default="1.0", description="Schema version")
+    track_id: int = Field(default=0, description="Catalog track ID")
+    filename: str = Field(default="", description="Track filename")
+    acoustic: AcousticMetrics = Field(default_factory=AcousticMetrics)
+    semantic: SemanticAnnotations = Field(default_factory=SemanticAnnotations)
+    id3_metadata: Dict[str, Any] = Field(default_factory=dict, description="Embedded ID3 tag dictionary")
+
+
 class MusicCue(BaseModel):
     """
     Music cue instruction specifying surgical track slice, timing, and dynamic gain.
@@ -357,6 +410,10 @@ class MusicCue(BaseModel):
     volume_db: float = Field(default=-18.0, description="Base track attenuation in dB")
     dramatic_justification: str = Field(default="", description="Artistic / narrative rationale for this cue placement")
     leitmotif_ref: Optional[str] = Field(default="", description="Identifier of the leitmotif definition this cue is bound to")
+    spectral_notch_needed: bool = Field(default=False, description="Flag indicating if 2.2kHz notch is needed to prevent vocal masking")
+    target_valence: Optional[float] = Field(default=None, description="Emotional positivity/negativity (-1.0 to 1.0)")
+    target_arousal: Optional[float] = Field(default=None, description="Emotional intensity/adrenaline (0.0 to 1.0)")
+    narrative_archetype: Optional[str] = Field(default=None, description="Narrative trope archetype for cue matching")
 
     @field_validator("cue_type", mode="before")
     @classmethod
@@ -371,6 +428,11 @@ class MusicCue(BaseModel):
             "TRANSITION": "TRANSITION_BRIDGE",
         }
         return mapping.get(v, v)
+
+    @property
+    def asset_path(self) -> str:
+        """Alias for track_name to maintain uniform cue interface across Ambience, Foley, and Music."""
+        return self.track_name
 
     def validate_timeline(self) -> None:
         """Structural validation method for timeline consistency."""
@@ -403,6 +465,7 @@ class FoleyCue(BaseModel):
     reverb_send: float = Field(default=0.15, ge=0.0, le=1.0, description="Aux send level to shared convolution reverb (0.0 to 1.0)")
     start_ms: Optional[int] = Field(default=0, ge=0, description="Absolute timeline offset in milliseconds")
     duration_ms: Optional[int] = Field(default=0, ge=0, description="Duration of cue in milliseconds")
+    ucs_category: Optional[str] = Field(default="MISCGnl", description="Universal Category System (UCS) 7-character Category ID")
 
     @field_validator("azimuth_pan")
     @classmethod
@@ -454,6 +517,9 @@ class MasteringConfig(BaseModel):
     spectral_carve_hz: int = Field(default=2200, ge=500, le=8000, description="Center frequency for vocal dialogue spectral notch filter")
     spectral_carve_gain_db: float = Field(default=-5.5, le=0.0, description="Spectral notch filter gain attenuation in dB")
     acoustic_ir: Optional[Dict[str, Any]] = Field(default=None, description="Impulse response parameters for convolution reverb")
+
+
+MasteringSettings = MasteringConfig
 
 
 class CreativeManifest(BaseModel):

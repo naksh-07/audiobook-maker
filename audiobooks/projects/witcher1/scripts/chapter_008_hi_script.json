@@ -905,7 +905,7 @@
     "index": 42,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "किलेदार,",
+    "text": "किलेदार...",
     "emotion": "calm_raspy",
     "pause_after_ms": 450,
     "acting": {
@@ -2863,7 +2863,7 @@
     "index": 131,
     "type": "dialogue",
     "speaker": "Calanthe",
-    "text": "गेराल्ट,",
+    "text": "गेराल्ट...",
     "emotion": "neutral",
     "pause_after_ms": 450,
     "acting": {
@@ -3281,7 +3281,7 @@
     "index": 150,
     "type": "dialogue",
     "speaker": "Calanthe",
-    "text": "राजा,",
+    "text": "राजा...",
     "emotion": "neutral",
     "pause_after_ms": 450,
     "acting": {
@@ -3699,7 +3699,7 @@
     "index": 169,
     "type": "dialogue",
     "speaker": "Calanthe",
-    "text": "गेराल्ट,",
+    "text": "गेराल्ट...",
     "emotion": "neutral",
     "pause_after_ms": 450,
     "acting": {
@@ -7483,7 +7483,7 @@
     "index": 341,
     "type": "dialogue",
     "speaker": "Calanthe",
-    "text": "एइस्ट,",
+    "text": "एइस्ट...",
     "emotion": "angry",
     "pause_after_ms": 450,
     "acting": {
@@ -12851,7 +12851,7 @@
     "index": 585,
     "type": "dialogue",
     "speaker": "Pavetta",
-    "text": "डनी,",
+    "text": "डनी...",
     "emotion": "sad",
     "pause_after_ms": 450,
     "acting": {
@@ -15051,7 +15051,7 @@
     "index": 685,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "डनी,",
+    "text": "डनी...",
     "emotion": "calm_raspy",
     "pause_after_ms": 450,
     "acting": {
@@ -15249,7 +15249,7 @@
     "index": 694,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "डनी,",
+    "text": "डनी...",
     "emotion": "calm_raspy",
     "pause_after_ms": 450,
     "acting": {
@@ -15315,7 +15315,7 @@
     "index": 697,
     "type": "dialogue",
     "speaker": "Calanthe",
-    "text": "गेराल्ट,",
+    "text": "गेराल्ट...",
     "emotion": "neutral",
     "pause_after_ms": 450,
     "acting": {

@@ -468,12 +468,12 @@ class TTSDispatcher:
 
             if not (out_file.exists() and out_file.stat().st_size > 1000):
                 out_file.parent.mkdir(parents=True, exist_ok=True)
-                sample_rate = 48000
+                sample_rate = 24000
                 num_frames = int(round(sample_rate * dur))
-                # 48kHz stereo 16-bit PCM: 2 channels * 2 bytes/sample = 4 bytes/frame
-                silence_bytes = b"\x00" * (num_frames * 4)
+                # 24kHz mono 16-bit PCM: 1 channel * 2 bytes/sample = 2 bytes/frame (identical to Gemini vocal chunks)
+                silence_bytes = b"\x00" * (num_frames * 2)
                 with wave.open(str(out_file), "wb") as wf:
-                    wf.setnchannels(2)
+                    wf.setnchannels(1)
                     wf.setsampwidth(2)
                     wf.setframerate(sample_rate)
                     wf.writeframes(silence_bytes)
@@ -627,6 +627,7 @@ class TTSDispatcher:
         results: List[Optional[Path]] = [None] * total
 
         # STEALTH HUMAN CADENCE EXECUTION (Strictly 1-worker sequential pipeline)
+        keys_exhausted = False
         for idx, segment in enumerate(script, 1):
             speaker = segment.get("speaker", "Narrator")
             text = segment.get("text", "")
@@ -634,7 +635,7 @@ class TTSDispatcher:
             # If action beat: generate clean silent canvas instantly without human cadence delay or API calls
             if segment.get("type") == "action":
                 audio_path, dur = self.synthesize_segment(segment, chapter_num, idx)
-                self.ledger.mark_segment_completed(audio_path.stem, str(audio_path), dur)
+                self.ledger.mark_segment_completed(audio_path.stem, str(audio_path), dur, chapter_num=chapter_num, seg_num=idx)
                 results[idx - 1] = audio_path
                 logger.info(f"  [{idx}/{total}] Generated Action Beat Foley Canvas ({audio_path.name}, {dur:.1f}s)")
                 continue
@@ -644,7 +645,7 @@ class TTSDispatcher:
             if existing_matches and existing_matches[0].stat().st_size > 1000:
                 audio_path, dur = self.synthesize_segment(segment, chapter_num, idx)
                 results[idx - 1] = audio_path
-                self.ledger.mark_segment_completed(audio_path.stem, str(audio_path), dur)
+                self.ledger.mark_segment_completed(audio_path.stem, str(audio_path), dur, chapter_num=chapter_num, seg_num=idx)
                 logger.info(f"  [{idx}/{total}] Cached {speaker} ({audio_path.name}, {dur:.1f}s)")
                 continue
 
@@ -655,11 +656,11 @@ class TTSDispatcher:
             seg_id = f"c{chapter_num:03d}_s{idx:04d}_{seg_hash}"
 
             cadence.wait_before_segment(text, idx, total)
-            self.ledger.mark_segment_started(seg_id)
+            self.ledger.mark_segment_started(seg_id, chapter_num=chapter_num, seg_num=idx)
 
             try:
                 audio_path, dur = self.synthesize_segment(segment, chapter_num, idx)
-                self.ledger.mark_segment_completed(seg_id, str(audio_path), dur)
+                self.ledger.mark_segment_completed(seg_id, str(audio_path), dur, chapter_num=chapter_num, seg_num=idx)
                 cadence.record_completed_segment(dur)
                 results[idx - 1] = audio_path
                 logger.info(f"  [{idx}/{total}] Generated {speaker} ({audio_path.name}, {dur:.1f}s)")
@@ -668,9 +669,10 @@ class TTSDispatcher:
                     f"  [STEALTH QUOTA PAUSE] {e}. "
                     f"Safely checkpointed at segment {idx}/{total}. No wasted requests."
                 )
+                keys_exhausted = True
                 break
             except Exception as e:
-                self.ledger.mark_segment_failed(seg_id, str(e))
+                self.ledger.mark_segment_failed(seg_id, str(e), chapter_num=chapter_num, seg_num=idx)
                 logger.error(f"  [ERROR] Segment {idx} ({speaker}) failed: {e}")
 
         # Targeted 1-pass recovery on transient missed segments
@@ -689,6 +691,10 @@ class TTSDispatcher:
 
         missing = [i + 1 for i, p in enumerate(results) if p is None]
         if missing:
+            if keys_exhausted or pool.get_status_summary().get("active_keys", 0) == 0:
+                raise AllKeysExhaustedTodayError(
+                    f"All TTS API keys exhausted for today. Chapter {chapter_num} paused at segment {missing[0]}/{total}."
+                )
             raise RuntimeError(
                 f"Chapter {chapter_num} synthesis incomplete: {len(missing)} segments pending ({missing[:5]}...)."
             )

@@ -7,8 +7,9 @@ Ensures zero token loss and instantaneous recovery upon network drops or restart
 
 import sqlite3
 import json
+import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 
 
@@ -83,6 +84,7 @@ class ProjectStateLedger:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_chap ON segments(chapter_num);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_status ON segments(status);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_chap_seg ON segments(chapter_num, seg_num);")
             # Auto-recover orphaned in-progress segments from previous crashes
             conn.execute("UPDATE segments SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE status = 'IN_PROGRESS';")
 
@@ -174,26 +176,89 @@ class ProjectStateLedger:
             rows = conn.execute(query, params).fetchall()
             return [dict(r) for r in rows]
 
-    def mark_segment_started(self, segment_id: str):
-        with self._connection() as conn:
-            conn.execute(
-                "UPDATE segments SET status = 'IN_PROGRESS', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
-                (segment_id,)
-            )
+    @staticmethod
+    def _extract_ch_seg(segment_id: str) -> Tuple[Optional[int], Optional[int]]:
+        m = re.search(r"c(\d+)_s(\d+)", str(segment_id))
+        return (int(m.group(1)), int(m.group(2))) if m else (None, None)
 
-    def mark_segment_completed(self, segment_id: str, audio_path: str, duration_sec: float):
-        with self._connection() as conn:
-            conn.execute(
-                "UPDATE segments SET status = 'COMPLETED', audio_path = ?, duration_sec = ?, error_message = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
-                (audio_path, duration_sec, segment_id)
-            )
+    def mark_segment_started(
+        self,
+        segment_id: str,
+        chapter_num: Optional[int] = None,
+        seg_num: Optional[int] = None,
+    ):
+        if chapter_num is None or seg_num is None:
+            c, s = self._extract_ch_seg(segment_id)
+            chapter_num = chapter_num if chapter_num is not None else c
+            seg_num = seg_num if seg_num is not None else s
 
-    def mark_segment_failed(self, segment_id: str, error_message: str):
         with self._connection() as conn:
-            conn.execute(
-                "UPDATE segments SET status = 'FAILED', retry_count = retry_count + 1, error_message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
-                (error_message, segment_id)
-            )
+            if chapter_num is not None and seg_num is not None:
+                conn.execute(
+                    "UPDATE segments SET status = 'IN_PROGRESS', updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ? OR (chapter_num = ? AND seg_num = ?);",
+                    (segment_id, chapter_num, seg_num),
+                )
+            else:
+                conn.execute(
+                    "UPDATE segments SET status = 'IN_PROGRESS', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
+                    (segment_id,),
+                )
+
+    def mark_segment_completed(
+        self,
+        segment_id: str,
+        audio_path: str,
+        duration_sec: float,
+        chapter_num: Optional[int] = None,
+        seg_num: Optional[int] = None,
+    ):
+        if chapter_num is None or seg_num is None:
+            c, s = self._extract_ch_seg(segment_id)
+            chapter_num = chapter_num if chapter_num is not None else c
+            seg_num = seg_num if seg_num is not None else s
+
+        with self._connection() as conn:
+            if chapter_num is not None and seg_num is not None:
+                conn.execute(
+                    "UPDATE segments SET status = 'COMPLETED', audio_path = ?, duration_sec = ?, "
+                    "error_message = NULL, updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ? OR (chapter_num = ? AND seg_num = ?);",
+                    (str(audio_path), duration_sec, segment_id, chapter_num, seg_num),
+                )
+            else:
+                conn.execute(
+                    "UPDATE segments SET status = 'COMPLETED', audio_path = ?, duration_sec = ?, "
+                    "error_message = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
+                    (str(audio_path), duration_sec, segment_id),
+                )
+
+    def mark_segment_failed(
+        self,
+        segment_id: str,
+        error_message: str,
+        chapter_num: Optional[int] = None,
+        seg_num: Optional[int] = None,
+    ):
+        if chapter_num is None or seg_num is None:
+            c, s = self._extract_ch_seg(segment_id)
+            chapter_num = chapter_num if chapter_num is not None else c
+            seg_num = seg_num if seg_num is not None else s
+
+        with self._connection() as conn:
+            if chapter_num is not None and seg_num is not None:
+                conn.execute(
+                    "UPDATE segments SET status = 'FAILED', retry_count = retry_count + 1, "
+                    "error_message = ?, updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ? OR (chapter_num = ? AND seg_num = ?);",
+                    (error_message, segment_id, chapter_num, seg_num),
+                )
+            else:
+                conn.execute(
+                    "UPDATE segments SET status = 'FAILED', retry_count = retry_count + 1, "
+                    "error_message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
+                    (error_message, segment_id),
+                )
 
     def get_chapter_segments(self, chapter_num: int) -> List[Dict[str, Any]]:
         with self._connection() as conn:

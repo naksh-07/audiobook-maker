@@ -483,12 +483,8 @@ def clean_screenplay_pass2(
         is_action_beat = item.get("type") == "action" or speaker_lower == "foley"
         if is_action_beat:
             speaker = "Foley"
-        else:
-            # Fallback check: If character is not in character roster / alias map and not "Narrator",
-            # fall back safely to "Narrator" to prevent voice synthesis failures.
-            known_speakers = set(alias_map.values()) | {"Narrator", "Foley"}
-            if alias_map and speaker not in known_speakers:
-                speaker = "Narrator"
+        elif not speaker or speaker_lower in ("narrator", "narration", "header", "chapter_header"):
+            speaker = "Narrator"
 
         # Update active cast trackers
         if speaker not in ("Narrator", "Foley"):
@@ -517,7 +513,7 @@ def clean_screenplay_pass2(
             "emotion": sanitized_item.get("emotion", "neutral"),
             "pause_after_ms": int(sanitized_item.get("pause_after_ms", 600)),
         }
-        for field in ("acting", "spatial", "acoustic_env", "sfx_cues", "music"):
+        for field in ("acting", "spatial", "acoustic_env", "sfx_cues", "music", "intensity_level", "pre_roll_breath_ms"):
             if field in sanitized_item:
                 entry[field] = sanitized_item[field]
 

@@ -271,8 +271,11 @@ MANDATORY ACOUSTIC DIRECTING RULES:
    - "EMOTIONAL_UNDERSCORE": 25-45s quiet strings or solo cello for intimate realizations (energy: "INTRO_BED" or "RISING_TENSION").
    - "CLIMACTIC_ACTION_CUE": 25-45s battle fury triggering when weapons clash (energy: "CLIMAX_DROP").
 
-3. DYNAMIC SOUNDTRACK DESCRIPTORS (Do NOT specify filenames or titles):
-   - Provide musical mood, tempo ("slow", "moderate", "fast"), timbre ("solo cello", "dark strings", "brass", "flute"), and energy section ("INTRO_BED", "RISING_TENSION", "CLIMAX_DROP", "AFTERMATH_FADE").
+3. SONIC GENOME & DYNAMIC SOUNDTRACK DESCRIPTORS (Do NOT specify filenames or titles):
+   - Provide valence: float between -1.0 (grim tragedy, terror, mourning) and +1.0 (triumphant victory, joy, solace).
+   - Provide arousal: float between 0.0 (quiet, somber, contemplative, stealth) and 1.0 (violent combat, intense adrenaline, frenzy).
+   - Provide narrative_archetype: string tag (e.g. "TAVERN_BRAWL", "MONSTER_HUNT", "ROYAL_CONSPIRACY", "TRAGIC_ROMANCE", "CRYPT_VIGIL", "MEDIEVAL_FESTIVAL", "WILDERNESS_VIGIL", "WAR_MARCH", "MYSTIC_RITUAL").
+   - Provide musical mood, tempo ("slow", "moderate", "fast"), timbre ("solo cello", "dark strings", "brass", "flute", "percussion"), and energy section ("INTRO_BED", "RISING_TENSION", "CLIMAX_DROP", "AFTERMATH_FADE").
    - Provide 3-5 descriptive keyword search terms for SQLite FTS5 search.
 
 4. CONTEXTUAL GRAMMATICAL FOLEY (Physical Interactions Only - Zero Metaphors):
@@ -297,6 +300,9 @@ Output STRICT JSON schema:
       "cue_id": "cue_01",
       "cue_type": "TRANSITION_BRIDGE" | "EMOTIONAL_UNDERSCORE" | "CLIMACTIC_ACTION_CUE",
       "trigger_segment": int,
+      "narrative_archetype": "MONSTER_HUNT" | "TAVERN_BRAWL" | "ROYAL_CONSPIRACY" | "TRAGIC_ROMANCE" | "CRYPT_VIGIL" | "MEDIEVAL_FESTIVAL" | "WILDERNESS_VIGIL" | "WAR_MARCH",
+      "valence": float (-1.0 to 1.0),
+      "arousal": float (0.0 to 1.0),
       "mood": "mournful" | "tense" | "triumphant" | "mysterious" | "combat",
       "tempo": "slow" | "moderate" | "fast",
       "timbre": "solo cello" | "dark strings" | "brass" | "lute" | "ethereal choir",
@@ -424,6 +430,9 @@ Output STRICT JSON schema:
                     "cue_id": "cue_01_bridge",
                     "cue_type": "TRANSITION_BRIDGE",
                     "trigger_segment": 1,
+                    "narrative_archetype": "CRYPT_VIGIL",
+                    "valence": -0.4,
+                    "arousal": 0.25,
                     "mood": "mysterious",
                     "tempo": "slow",
                     "timbre": timbre,
@@ -473,6 +482,7 @@ Output STRICT JSON schema:
             chosen_track = ""
             track_id = 0
             section_start_sec = 0.0
+            results: List[Dict[str, Any]] = []
 
             if resolved_motif:
                 chosen_track = getattr(resolved_motif, "track_name", "")
@@ -480,9 +490,12 @@ Output STRICT JSON schema:
                 track_id = int(raw_tid) if str(raw_tid).isdigit() else 0
                 section_start_sec = float(getattr(resolved_motif, "default_section_start_sec", 0.0) or 0.0)
                 energy_sec = cue_data.get("energy_section", "INTRO_BED")
+                # Look up track in sound bank to fetch its sonic_genome (for spectral notch & duration)
+                results = self.sound_bank.search_music_catalog(chosen_track, limit=1)
             else:
-                # Dynamic query formulated from mood, tempo, timbre, and search query
+                # Dynamic query formulated from narrative archetype, mood, tempo, timbre, and search query
                 q_terms = [
+                    cue_data.get("narrative_archetype", ""),
                     cue_data.get("search_query", ""),
                     cue_data.get("mood", ""),
                     cue_data.get("timbre", ""),
@@ -491,18 +504,39 @@ Output STRICT JSON schema:
                 clean_query = " ".join([t for t in q_terms if t]).strip() or "orchestral drama"
                 energy_sec = cue_data.get("energy_section", "INTRO_BED")
 
-                # 1. Query with energy section filter
-                results = self.sound_bank.search_music_catalog(clean_query, section_type=energy_sec, limit=3)
+                target_val = cue_data.get("valence")
+                target_aro = cue_data.get("arousal")
+                try:
+                    t_val = float(target_val) if target_val is not None else None
+                except (ValueError, TypeError):
+                    t_val = None
+                try:
+                    t_aro = float(target_aro) if target_aro is not None else None
+                except (ValueError, TypeError):
+                    t_aro = None
 
-                # 2. Relax energy section filter if not found
+                # 1. Query with energy section filter and emotional valence/arousal
+                results = self.sound_bank.search_music_catalog(
+                    clean_query,
+                    section_type=energy_sec,
+                    target_valence=t_val,
+                    target_arousal=t_aro,
+                    limit=3,
+                )
+
+                # 2. Relax valence/arousal filter if not found
+                if not results:
+                    results = self.sound_bank.search_music_catalog(clean_query, section_type=energy_sec, limit=3)
+
+                # 3. Relax energy section filter if not found
                 if not results:
                     results = self.sound_bank.search_music_catalog(clean_query, limit=3)
 
-                # 3. Fallback to general music FTS5 search
+                # 4. Fallback to general music FTS5 search
                 if not results:
                     results = self.sound_bank.search(clean_query, category="music", limit=3)
 
-                # 4. CRITICAL RULE: GRACEFUL FALLBACK TO PURE SILENCE, NEVER HARDCODED TRACKS
+                # 5. CRITICAL RULE: GRACEFUL FALLBACK TO PURE SILENCE, NEVER HARDCODED TRACKS
                 if not results:
                     logger.info(
                         f"  [-] Music Director: No matching asset in catalog for query '{clean_query}'. "
@@ -513,6 +547,18 @@ Output STRICT JSON schema:
                 chosen_track = results[0]["filename"]
                 track_id = results[0].get("id", 0)
                 section_start_sec = float(results[0].get("start_sec", 0.0) or 0.0)
+
+            # Check Sonic Genome for vocal masking risk
+            spectral_notch = False
+            if results:
+                g_str = results[0].get("sonic_genome", "{}")
+                if g_str and g_str != "{}":
+                    try:
+                        g_json = json.loads(g_str)
+                        if g_json.get("acoustic", {}).get("vocal_clash_risk") in ("MODERATE", "SEVERE"):
+                            spectral_notch = True
+                    except Exception:
+                        pass
 
             trigger_seg = cue_data.get("trigger_segment", 1)
             start_ms = seg_starts_ms.get(trigger_seg, 0)
@@ -544,6 +590,10 @@ Output STRICT JSON schema:
                     volume_db=float(cue_data.get("volume_db", -18.0)),
                     dramatic_justification=cue_data.get("dramatic_justification", ""),
                     leitmotif_ref=lm_ref or (getattr(resolved_motif, "motif_id", "") if resolved_motif else ""),
+                    spectral_notch_needed=spectral_notch,
+                    target_valence=cue_data.get("valence"),
+                    target_arousal=cue_data.get("arousal"),
+                    narrative_archetype=cue_data.get("narrative_archetype"),
                 )
             )
 
@@ -637,6 +687,9 @@ Output STRICT JSON schema:
                 pre_roll_ms = 100  # 100ms transient lead-in for physical impact
                 cue_start_ms = max(0, seg_start_ms + anchor_offset_ms - pre_roll_ms)
 
+            from audiobook_factory.acoustic_bus_matrix import derive_ucs_category
+            ucs_code = derive_ucs_category(action_verb, object_material)
+
             foley_cues.append(
                 FoleyCue(
                     cue_id=f"fc_{s_idx:04d}_{idx:03d}",
@@ -650,10 +703,12 @@ Output STRICT JSON schema:
                     azimuth_pan=pan_val,
                     start_ms=cue_start_ms,
                     duration_ms=0,
+                    ucs_category=ucs_code,
                 )
             )
 
-        return foley_cues
+        from audiobook_factory.acoustic_bus_matrix import filter_concurrency_window
+        return filter_concurrency_window(foley_cues, window_ms=200, max_concurrency=3)
 
     def _parse_grammatical_foley_dependencies(
         self, script_segments: List[Dict[str, Any]]

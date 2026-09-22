@@ -135,6 +135,23 @@ class SoundBank:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_track_sections ON sound_track_sections(track_id, section_name);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_section_energy ON sound_track_sections(energy_level);")
+
+            # Sonic Genome non-destructive column check & generated columns
+            cols = [col[1] for col in conn.execute("PRAGMA table_info(sound_catalog)")]
+            if "sonic_genome" not in cols:
+                conn.execute("ALTER TABLE sound_catalog ADD COLUMN sonic_genome TEXT DEFAULT '{}';")
+            if "genome_valence" not in cols:
+                try:
+                    conn.execute("ALTER TABLE sound_catalog ADD COLUMN genome_valence REAL GENERATED ALWAYS AS (json_extract(sonic_genome, '$.semantic.valence')) VIRTUAL;")
+                    conn.execute("CREATE INDEX IF NOT EXISTS idx_sonic_valence ON sound_catalog(genome_valence);")
+                except Exception:
+                    pass
+            if "genome_arousal" not in cols:
+                try:
+                    conn.execute("ALTER TABLE sound_catalog ADD COLUMN genome_arousal REAL GENERATED ALWAYS AS (json_extract(sonic_genome, '$.semantic.arousal')) VIRTUAL;")
+                    conn.execute("CREATE INDEX IF NOT EXISTS idx_sonic_arousal ON sound_catalog(genome_arousal);")
+                except Exception:
+                    pass
             conn.commit()
 
             # Harmonized sound_assets table for rich EBU R128 LUFS & True Peak DSP metrics
@@ -894,11 +911,13 @@ class SoundBank:
         query: str,
         section_type: Optional[str] = None,
         max_energy: Optional[int] = None,
+        target_valence: Optional[float] = None,
+        target_arousal: Optional[float] = None,
         limit: int = 5,
     ) -> List[Dict[str, Any]]:
         """
         Dynamically searches the full music soundtrack catalog and energy sections.
-        Returns candidate tracks with energy levels, start/end seconds, and tags.
+        Returns candidate tracks with energy levels, start/end seconds, tags, and Sonic Genome.
         Zero hardcoded track lists, 100% dynamic FTS5 search across all 230 tracks.
         """
         raw_words = re.findall(r"[a-zA-Z0-9]+", query.strip())
@@ -907,8 +926,9 @@ class SoundBank:
         fts_query = " OR ".join(f"{w}*" for w in raw_words)
 
         sql = """
-            SELECT c.id, c.filename, c.filepath, c.mood, c.tags, c.duration_sec,
-                   s.id as section_id, s.section_name, s.start_sec, s.end_sec, s.energy_level, s.tags as section_tags,
+            SELECT c.id, c.filename, c.filepath, c.mood, c.tags, c.duration_sec, c.sonic_genome,
+                   c.genome_valence, c.genome_arousal,
+                   s.id as section_id, s.section_name, s.start_sec, s.end_sec, s.energy_level, s.tempo_bpm, s.tags as section_tags,
                    rank
             FROM sound_catalog_fts f
             JOIN sound_catalog c ON f.rowid = c.id
@@ -925,6 +945,14 @@ class SoundBank:
         if max_energy is not None:
             sql += " AND (s.energy_level IS NULL OR s.energy_level <= ?)"
             params.append(max_energy)
+
+        if target_valence is not None:
+            sql += " AND (c.genome_valence IS NULL OR abs(c.genome_valence - ?) <= 0.45)"
+            params.append(target_valence)
+
+        if target_arousal is not None:
+            sql += " AND (c.genome_arousal IS NULL OR abs(c.genome_arousal - ?) <= 0.45)"
+            params.append(target_arousal)
 
         sql += " GROUP BY c.id ORDER BY rank LIMIT ?"
         params.append(limit)

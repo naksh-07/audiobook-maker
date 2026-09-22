@@ -70,23 +70,76 @@ def audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dic
 
 
 def audit_gate1_roster(
-    roster_file: Path,
-    registry_file: Path,
+    roster_file: Any,
+    registry_file: Any,
     active_characters: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Audit Gate 1: Verifies character roster and voice registry, checking for voice collisions."""
-    roster_file = Path(roster_file).resolve()
-    registry_file = Path(registry_file).resolve()
+    roster_data: Dict[str, Any] = {}
 
-    if not roster_file.exists():
-        raise GateAuditError(f"Gate 1 Failed: Character roster missing at {roster_file}")
-    if not registry_file.exists():
-        raise GateAuditError(f"Gate 1 Failed: Voice registry missing at {registry_file}")
+    if isinstance(roster_file, (list, tuple)):
+        for i, c in enumerate(roster_file):
+            if hasattr(c, "display_name"):
+                name = c.display_name or getattr(c, "english_name", f"char_{i}")
+                roster_data[name] = c.model_dump() if hasattr(c, "model_dump") else dict(c)
+            elif isinstance(c, dict):
+                name = c.get("display_name") or c.get("english_name") or c.get("name", f"char_{i}")
+                roster_data[name] = c
+    elif isinstance(roster_file, dict):
+        chars_val = roster_file.get("characters", roster_file)
+        if isinstance(chars_val, dict):
+            roster_data = chars_val
+        elif isinstance(chars_val, list):
+            for i, c in enumerate(chars_val):
+                if hasattr(c, "display_name"):
+                    name = c.display_name or getattr(c, "english_name", f"char_{i}")
+                    roster_data[name] = c.model_dump() if hasattr(c, "model_dump") else dict(c)
+                elif isinstance(c, dict):
+                    name = c.get("display_name") or c.get("english_name") or c.get("name", f"char_{i}")
+                    roster_data[name] = c
+        else:
+            roster_data = roster_file
+    elif hasattr(roster_file, "characters"):
+        chars_val = getattr(roster_file, "characters")
+        if isinstance(chars_val, dict):
+            roster_data = chars_val
+        elif isinstance(chars_val, list):
+            for i, c in enumerate(chars_val):
+                name = getattr(c, "display_name", None) or getattr(c, "english_name", f"char_{i}")
+                roster_data[name] = c.model_dump() if hasattr(c, "model_dump") else dict(c)
+    else:
+        r_path = Path(roster_file).resolve()
+        if not r_path.exists():
+            raise GateAuditError(f"Gate 1 Failed: Character roster missing at {r_path}")
+        with open(r_path, "r", encoding="utf-8") as f:
+            raw_roster = json.load(f)
+            if isinstance(raw_roster, dict):
+                chars_val = raw_roster.get("characters", {})
+                if isinstance(chars_val, dict):
+                    roster_data = chars_val
+                elif isinstance(chars_val, list):
+                    roster_data = {
+                        (c.get("english_name") or c.get("name", f"char_{i}")): c
+                        for i, c in enumerate(chars_val) if isinstance(c, dict)
+                    }
+                else:
+                    roster_data = raw_roster
+            elif isinstance(raw_roster, list):
+                roster_data = {
+                    (c.get("english_name") or c.get("name", f"char_{i}")): c
+                    for i, c in enumerate(raw_roster) if isinstance(c, dict)
+                }
+            else:
+                roster_data = {}
 
-    with open(roster_file, "r", encoding="utf-8") as f:
-        roster_data = json.load(f).get("characters", {})
-    with open(registry_file, "r", encoding="utf-8") as f:
-        registry_data = json.load(f)
+    if isinstance(registry_file, dict):
+        registry_data = registry_file
+    else:
+        reg_path = Path(registry_file).resolve()
+        if not reg_path.exists():
+            raise GateAuditError(f"Gate 1 Failed: Voice registry missing at {reg_path}")
+        with open(reg_path, "r", encoding="utf-8") as f:
+            registry_data = json.load(f)
 
     active = active_characters or list(roster_data.keys())
     voice_signatures: Dict[str, str] = {}
@@ -99,9 +152,14 @@ def audit_gate1_roster(
             raise GateAuditError(f"Gate 1 Failed: Character '{role}' not configured in voice registry!")
 
         cfg = registry_data[role]
-        voice = cfg.get("voice", "Default")
-        pitch = cfg.get("pitch", 1.0)
-        speed = cfg.get("speed", 1.0)
+        if isinstance(cfg, str):
+            voice = cfg
+            pitch = 1.0
+            speed = 1.0
+        else:
+            voice = cfg.get("voice", "Default")
+            pitch = cfg.get("pitch", 1.0)
+            speed = cfg.get("speed", 1.0)
         sig = f"{voice}_p{pitch:.2f}_s{speed:.2f}"
 
         if sig in voice_signatures:
@@ -588,12 +646,15 @@ def audit_gate5_master(
         i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
         tp_match = re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output) or re.search(r"True peak:\s+([-\d.]+)\s+dBFS", output)
 
-        measured_lufs = float(i_match.group(1)) if i_match else target_lufs
+        if not i_match:
+            raise GateAuditError(f"Gate 5 Failed: Could not parse Integrated Loudness from FFmpeg output on {master_file}")
+
+        measured_lufs = float(i_match.group(1))
         measured_tp = float(tp_match.group(1)) if tp_match else -1.5
+    except GateAuditError:
+        raise
     except Exception as e:
-        logger.warning(f"Gate 5 FFmpeg probe failed ({e}); assuming broadcast compliant.")
-        measured_lufs = target_lufs
-        measured_tp = max_true_peak - 0.1
+        raise GateAuditError(f"Gate 5 Failed: FFmpeg ebur128 probe failed on {master_file}: {e}")
 
     if abs(measured_lufs - target_lufs) > tolerance_lu:
         raise GateAuditError(
@@ -854,20 +915,40 @@ def audit_gate5_3_stereo_phase(
         "-af", "aphasemeter=video=0,ametadata=print:key=lavfi.aphasemeter.phase",
         "-f", "null", "-"
     ]
-    phase_values: List[float] = []
+    import wave
+    is_mono = False
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        for line in res.stderr.splitlines():
-            if "lavfi.aphasemeter.phase=" in line:
-                val_str = line.split("lavfi.aphasemeter.phase=")[-1].strip()
-                try:
-                    phase_values.append(float(val_str))
-                except ValueError:
-                    pass
-    except Exception as e:
-        logger.warning(f"Stereo phase audit error: {e}")
+        with wave.open(str(a_path), "rb") as wf:
+            if wf.getnchannels() == 1:
+                is_mono = True
+    except Exception:
+        pass
 
-    mean_phase = sum(phase_values) / len(phase_values) if phase_values else 1.0
+    phase_values: List[float] = []
+    if not is_mono:
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            for line in res.stderr.splitlines():
+                if "lavfi.aphasemeter.phase=" in line:
+                    val_str = line.split("lavfi.aphasemeter.phase=")[-1].strip()
+                    try:
+                        phase_values.append(float(val_str))
+                    except ValueError:
+                        pass
+        except Exception as e:
+            logger.warning(f"Stereo phase audit error: {e}")
+            errors.append(f"Gate 5.3 Failed: Stereo phase probe crashed: {e}")
+
+    if is_mono:
+        mean_phase = 1.0
+        details["channel_layout"] = "mono"
+    elif phase_values:
+        mean_phase = sum(phase_values) / len(phase_values)
+        details["channel_layout"] = "stereo"
+    else:
+        mean_phase = 0.0
+        if not errors:
+            errors.append(f"Gate 5.3 Failed: Zero phase frames extracted from {a_path.name}")
 
     if mean_phase < min_phase_correlation:
         errors.append(
@@ -991,11 +1072,13 @@ def audit_gate6b_loudness_continuity(
     chapter_files: List[Path],
     target_lufs: float = -19.0,
     max_variance: float = 1.0,
+    strict: bool = False,
 ) -> AuditResult:
     """
     Gate 6B: Loudness Continuity Auditor.
     Verifies that all mastered chapters adhere to target integrated LUFS (+/- max_variance)
     and true peak ceiling <= -1.4 dBTP, preventing jarring volume jumps between chapters.
+    When strict=True, FFmpeg probe failures or unparseable outputs fail-closed immediately.
     """
     errors: List[str] = []
     chapter_metrics = []
@@ -1032,14 +1115,34 @@ def audit_gate6b_loudness_continuity(
         ]
         try:
             proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
-            output = proc.stderr
-            i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
-            tp_match = re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output) or re.search(r"True peak:\s+([-\d.]+)\s+dBFS", output)
-            m_lufs = float(i_match.group(1)) if i_match else target_lufs
-            m_tp = float(tp_match.group(1)) if tp_match else -1.5
-        except Exception:
-            m_lufs = target_lufs
-            m_tp = -1.5
+            if proc.returncode != 0:
+                if strict:
+                    errors.append(f"Chapter {c_path.name}: FFmpeg probe returned exit code {proc.returncode}.")
+                    continue
+                else:
+                    m_lufs = target_lufs
+                    m_tp = -1.5
+            else:
+                output = proc.stderr
+                i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
+                tp_match = re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output) or re.search(r"True peak:\s+([-\d.]+)\s+dBFS", output)
+                if not i_match:
+                    if strict:
+                        errors.append(f"Chapter {c_path.name}: Failed to parse Integrated Loudness from FFmpeg output.")
+                        continue
+                    else:
+                        m_lufs = target_lufs
+                        m_tp = -1.5
+                else:
+                    m_lufs = float(i_match.group(1))
+                    m_tp = float(tp_match.group(1)) if tp_match else -1.5
+        except Exception as e:
+            if strict:
+                errors.append(f"Chapter {c_path.name}: FFmpeg loudness probe failed: {e}")
+                continue
+            else:
+                m_lufs = target_lufs
+                m_tp = -1.5
 
         measured_lufs_list.append(m_lufs)
         deviation = abs(m_lufs - target_lufs)
@@ -1146,6 +1249,29 @@ def audit_gate6c_toc_integrity(
         },
         errors=errors,
     )
+
+
+def audit_gate6c_toc_monotonicity(
+    chapter_files_or_project_dir: Any,
+    toc: Optional[BookTableOfContents] = None,
+) -> AuditResult:
+    """
+    Gate 6C: Table of Contents & Timeline Monotonicity Auditor.
+    Accepts either a list of chapter audio paths or a project directory path.
+    """
+    if isinstance(chapter_files_or_project_dir, (str, Path)):
+        p = Path(chapter_files_or_project_dir)
+        if p.is_dir():
+            cfiles = sorted((p / "mastered").glob("chapter_*_cinematic.m4a"))
+            if not cfiles:
+                cfiles = sorted((p / "mastered").glob("chapter_*_dialogue.wav"))
+            if not cfiles:
+                cfiles = sorted(p.glob("*.m4a")) or sorted(p.glob("*.wav"))
+            return audit_gate6c_toc_integrity(cfiles, toc=toc)
+        else:
+            return audit_gate6c_toc_integrity([p], toc=toc)
+    return audit_gate6c_toc_integrity(chapter_files_or_project_dir, toc=toc)
+
 
 
 def audit_gate6d_packaging_specs(

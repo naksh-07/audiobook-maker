@@ -11,6 +11,7 @@ import uuid
 import shutil
 import json
 import logging
+import subprocess
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
@@ -166,6 +167,35 @@ def build_audio_transcript_ledger(
     return ledger
 
 
+def _read_normalized_frames(chunk_path: Path, target_sample_rate: int = 24000) -> bytes:
+    """
+    Reads audio frames from chunk_path, guaranteeing target_sample_rate (default 24000Hz),
+    1-channel (mono), 16-bit PCM format. If chunk_path matches directly, reads via wave.
+    If sample rate, channel count, or format differs, normalizes safely via FFmpeg pipe.
+    """
+    try:
+        with wave.open(str(chunk_path), "rb") as in_wf:
+            if in_wf.getnchannels() == 1 and in_wf.getframerate() == target_sample_rate and in_wf.getsampwidth() == 2:
+                return in_wf.readframes(in_wf.getnframes())
+    except Exception:
+        pass
+
+    from audiobook_factory.tts_dispatcher import get_ffmpeg
+    ffmpeg_bin = get_ffmpeg()
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-v", "error",
+        "-i", str(chunk_path),
+        "-ar", str(target_sample_rate),
+        "-ac", "1",
+        "-f", "s16le",
+        "-"
+    ]
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    return proc.stdout
+
+
 def stitch_dialogue_track_from_ledger(
     ledger: TimelineLedger,
     audio_dir: Path | str,
@@ -202,9 +232,8 @@ def stitch_dialogue_track_from_ledger(
                 else:
                     raise FileNotFoundError(f"Audio chunk not found: {chunk_path}")
 
-            with wave.open(str(chunk_path), "rb") as in_wf:
-                in_frames = in_wf.readframes(in_wf.getnframes())
-                out_wf.writeframes(in_frames)
+            in_frames = _read_normalized_frames(chunk_path, target_sample_rate=sample_rate)
+            out_wf.writeframes(in_frames)
 
             # Add silence padding if not the last segment
             if i < len(ledger.segments) - 1 and seg.pause_after_ms > 0:

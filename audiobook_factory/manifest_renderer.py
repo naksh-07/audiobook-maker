@@ -114,13 +114,13 @@ def render_foley_bus_reel_chunked(
                 cue_gain = 10.0 ** (float(getattr(cue, "gain_dbfs", -15.0)) / 20.0)
                 pan = float(getattr(cue, "azimuth_pan", 0.0))
 
-                # Handle panning if non-zero, otherwise stereo volume + delay
+                # Handle panning if non-zero, safely formatting to stereo first for mono inputs
                 if abs(pan) > 0.05:
                     left_gain = max(0.0, min(1.0, (1.0 - pan)))
                     right_gain = max(0.0, min(1.0, (1.0 + pan)))
-                    pan_filter = f"pan=stereo|c0={left_gain:.2f}*c0|c1={right_gain:.2f}*c1,"
+                    pan_filter = f"aformat=sample_rates=48000:channel_layouts=stereo,pan=stereo|c0={left_gain:.2f}*c0|c1={right_gain:.2f}*c1,"
                 else:
-                    pan_filter = ""
+                    pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,"
 
                 filters.append(
                     f"[{i+1}:a]{pan_filter}volume={cue_gain:.3f},adelay={cue_start_ms}|{cue_start_ms}[cue_{i}]"
@@ -225,12 +225,22 @@ def render_music_bus(
             fade_out = min(4.0, dur_sec / 3.0)
             start_offset_sec = max(0.0, float(getattr(cue, "section_start_sec", 0.0)))
             out_cue = tmp_dir / f"music_cue_{idx:03d}.wav"
+            af_filters = [
+                f"volume={vol_linear:.3f}",
+                f"afade=t=in:ss=0:d={fade_in:.2f}",
+                f"afade=t=out:st={max(0.1, dur_sec - fade_out):.2f}:d={fade_out:.2f}",
+            ]
+            if getattr(cue, "spectral_notch_needed", False):
+                af_filters.append("equalizer=f=2200:t=q:w=1.5:g=-5.5")
+            af_filters.append("aresample=osr=48000")
+            af_str = ",".join(af_filters)
+
             cmd = [
                 ffmpeg, "-y",
                 *(["-ss", f"{start_offset_sec:.2f}"] if start_offset_sec > 0 else []),
                 "-i", str(cue_path),
                 "-t", f"{dur_sec:.2f}",
-                "-af", f"volume={vol_linear:.3f},afade=t=in:ss=0:d={fade_in:.2f},afade=t=out:st={max(0.1, dur_sec - fade_out):.2f}:d={fade_out:.2f},aresample=osr=48000",
+                "-af", af_str,
                 "-c:a", "pcm_s16le",
                 str(out_cue),
             ]
@@ -372,6 +382,19 @@ def render_ambience_bus(
         return res.returncode == 0 and output_bus_file.exists()
 
 
+def get_reverb_filter_string(preset: str = "room") -> Tuple[str, float]:
+    """Resolves dynamic FFmpeg aecho filter and wet send volume for acoustic presets."""
+    p = str(preset).lower()
+    if any(k in p for k in ("cathedral", "crypt", "temple", "cavern", "large_hall")):
+        return "aecho=0.8:0.8:100|180|260:0.55|0.40|0.25", 0.32
+    elif any(k in p for k in ("open_road", "exterior", "forest", "field", "outdoor")):
+        return "aecho=0.8:0.7:20|40:0.08|0.04", 0.05
+    elif any(k in p for k in ("bedroom", "intimate", "cabin", "small_room", "study")):
+        return "aecho=0.8:0.8:30|60|90:0.20|0.15|0.08", 0.18
+    else:  # stone_hall, tavern, room, castle, default
+        return "aecho=0.8:0.8:50|80|120:0.35|0.25|0.15", 0.25
+
+
 def assemble_master_filter_graph(
     has_foley: bool = True,
     target_lufs: float = -19.0,
@@ -381,6 +404,8 @@ def assemble_master_filter_graph(
     duck_release_ms: int = 750,
     spectral_carve_hz: int = 2200,
     spectral_carve_gain_db: float = -5.5,
+    sidechain_threshold: float = 0.03,
+    reverb_preset: str = "room",
 ) -> str:
     """
     Deterministic FFmpeg Master Filter Graph Assembly:
@@ -388,10 +413,11 @@ def assemble_master_filter_graph(
     - Ducked BGM [1:a] (-7.5dB musical ducking, 120ms atk, 750ms rel, 2.2kHz vocal notch EQ)
     - Decoupled Ambience Bed [2:a] (-32 LUFS)
     - Calibrated Foley Bus [3:a] (Unity fader, punchy transients)
-    - Shared Convolution Reverb Send (early reflections + tail)
+    - Shared Dynamic Reverb Send (early reflections + tail adapted from scene acoustics)
     - Broadcast EBU R128 Master (-19 LUFS, -1.5 dBTP)
     """
     comp_ratio = max(4.0, min(10.0, abs(duck_attenuation_db) / 2.3))
+    rev_filter, rev_vol = get_reverb_filter_string(reverb_preset)
 
     if has_foley:
         filter_str = (
@@ -399,7 +425,7 @@ def assemble_master_filter_graph(
             "[0:a]asplit=3[voc_dry][voc_sc][voc_rev];"
             # 2. BGM stem: 2.2kHz spectral notch EQ + fast sidechain ducking (-16dB, 15ms atk, 350ms rel)
             f"[1:a]equalizer=f={spectral_carve_hz}:t=q:w=1.5:g={spectral_carve_gain_db:.1f}[bgm_carved];"
-            f"[bgm_carved][voc_sc]sidechaincompress=threshold=0.03:ratio={comp_ratio:.1f}:attack={duck_attack_ms}:release={duck_release_ms}:knee=2.0[bgm_ducked];"
+            f"[bgm_carved][voc_sc]sidechaincompress=threshold={sidechain_threshold:g}:ratio={comp_ratio:.1f}:attack={duck_attack_ms}:release={duck_release_ms}:knee=2.0[bgm_ducked];"
             # 3. Decoupled Ambience Bed (-32 LUFS calibrated)
             "[2:a]volume=1.0[amb_bed];"
             # 4. Calibrated Foley Bus: punchy transients, split into direct and reverb send
@@ -409,7 +435,7 @@ def assemble_master_filter_graph(
             "[voc_rev]volume=0.12[voc_rev_att];"
             "[fol_rev]volume=0.15[fol_rev_att];"
             "[voc_rev_att][fol_rev_att]amix=inputs=2:normalize=0[rev_send_mix];"
-            "[rev_send_mix]aecho=0.8:0.8:50|80|120:0.35|0.25|0.15,volume=0.25[reverb_wet];"
+            f"[rev_send_mix]{rev_filter},volume={rev_vol:.2f}[reverb_wet];"
             # 6. Master Multitrack Summing with explicit normalize=0 and unity faders
             "[voc_dry][bgm_ducked][amb_bed][fol_bus][reverb_wet]amix=inputs=5:duration=first:normalize=0:weights=1.0 1.0 1.0 1.0 1.0[master_mix];"
             # 7. EBU R128 Broadcast Loudness Normalization & Peak Limiting
@@ -421,12 +447,12 @@ def assemble_master_filter_graph(
             "[0:a]asplit=3[voc_dry][voc_sc][voc_rev];"
             # 2. BGM stem: 2.2kHz spectral notch EQ + sidechain ducking (-16dB, 15ms atk, 350ms rel)
             f"[1:a]equalizer=f={spectral_carve_hz}:t=q:w=1.5:g={spectral_carve_gain_db:.1f}[bgm_carved];"
-            f"[bgm_carved][voc_sc]sidechaincompress=threshold=0.03:ratio={comp_ratio:.1f}:attack={duck_attack_ms}:release={duck_release_ms}:knee=2.0[bgm_ducked];"
+            f"[bgm_carved][voc_sc]sidechaincompress=threshold={sidechain_threshold:g}:ratio={comp_ratio:.1f}:attack={duck_attack_ms}:release={duck_release_ms}:knee=2.0[bgm_ducked];"
             # 3. Decoupled Ambience Bed (-32 LUFS)
             "[2:a]volume=1.0[amb_bed];"
             # 4. Shared Reverb Send (Dialogue aux send)
             "[voc_rev]volume=0.12[voc_rev_att];"
-            "[voc_rev_att]aecho=0.8:0.8:50|80|120:0.35|0.25|0.15,volume=0.25[reverb_wet];"
+            f"[voc_rev_att]{rev_filter},volume={rev_vol:.2f}[reverb_wet];"
             # 5. Master Summing with explicit normalize=0
             "[voc_dry][bgm_ducked][amb_bed][reverb_wet]amix=inputs=4:duration=first:normalize=0:weights=1.0 1.0 1.0 1.0[master_mix];"
             # 6. EBU R128 Broadcast Loudness Normalization & Peak Limiting
@@ -514,7 +540,16 @@ def render_manifest_soundscape(
         spectral_carve_hz = getattr(mastering, "spectral_carve_hz", 2200)
         spectral_carve_gain_db = getattr(mastering, "spectral_carve_gain_db", -5.5)
 
-        # Build master filter graph with calibrated gain staging and convolution reverb send
+        # Resolve dynamic acoustic reverb preset from ambience scene or metadata
+        rev_preset = "room"
+        if hasattr(manifest, "ambience_scenes") and manifest.ambience_scenes:
+            first_scene = manifest.ambience_scenes[0]
+            rev_preset = getattr(first_scene, "reverb_preset", getattr(first_scene, "ir_preset", "room")) or "room"
+        elif isinstance(manifest, dict) and manifest.get("ambience_scenes"):
+            first_scene = manifest["ambience_scenes"][0]
+            rev_preset = first_scene.get("reverb_preset", first_scene.get("ir_preset", "room")) or "room"
+
+        # Build master filter graph with calibrated gain staging, dynamic room reverb, and whisper-safe ducking
         master_filter_str = assemble_master_filter_graph(
             has_foley=has_foley,
             target_lufs=target_lufs,
@@ -524,6 +559,8 @@ def render_manifest_soundscape(
             duck_release_ms=duck_release_ms,
             spectral_carve_hz=spectral_carve_hz,
             spectral_carve_gain_db=spectral_carve_gain_db,
+            sidechain_threshold=0.018,
+            reverb_preset=rev_preset,
         )
 
         out_ext = output_master_file.suffix.lower()
