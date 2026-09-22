@@ -615,6 +615,16 @@ class CreativeManifest(BaseModel):
         """Deserialize and validate manifest from JSON string."""
         return cls.model_validate_json(json_str)
 
+    def save_to_file(self, path: Union[str, Path]) -> None:
+        """Serialize and save manifest directly to JSON file."""
+        Path(path).write_text(self.to_json(), encoding="utf-8")
+
+    @classmethod
+    def from_file(cls, path: Union[str, Path]) -> CreativeManifest:
+        """Load and deserialize manifest directly from JSON file."""
+        with open(path, "r", encoding="utf-8") as f:
+            return cls.from_json(f.read())
+
 
 # ==============================================================================
 # Macro-Tier Book Level Contracts & Specifications

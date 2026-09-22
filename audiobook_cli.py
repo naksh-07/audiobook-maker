@@ -82,8 +82,10 @@ def cmd_synthesize(args):
     if not script_files:
         raise FileNotFoundError(f"No script files found in {scripts_dir}")
 
-    for idx, sf in enumerate(script_files, 1):
-        dispatcher.synthesize_chapter_script(sf, idx)
+    for sf in script_files:
+        m = re.search(r"chapter_(\d+)", sf.stem)
+        ch_num = int(m.group(1)) if m else 1
+        dispatcher.synthesize_chapter_script(sf, ch_num)
 
     print(f"\n[OK] Synthesis complete for {len(script_files)} chapters!")
 
@@ -97,12 +99,14 @@ def cmd_master(args):
     scripts_dir = project_dir / "scripts"
     script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
 
-    for idx, sf in enumerate(script_files, 1):
+    for sf in script_files:
         chap_stem = sf.stem.replace("_script", "")
+        m = re.search(r"chapter_(\d+)", sf.stem)
+        ch_num = int(m.group(1)) if m else 1
         # Find audio segments for this chapter
-        segments = sorted(audio_dir.glob(f"c{idx:03d}_*.wav"))
+        segments = sorted(audio_dir.glob(f"c{ch_num:03d}_*.wav"))
         if not segments:
-            print(f"[!] Warning: No audio segments found for chapter {idx}, skipping.")
+            print(f"[!] Warning: No audio segments found for chapter {ch_num}, skipping.")
             continue
 
         out_file = mastered_dir / f"{chap_stem}_mastered.m4a"
@@ -136,12 +140,16 @@ def cmd_bgm(args):
     from audiobook_factory.sound_bank import get_sound_bank
     from audiobook_factory.soundscape import get_audio_duration, get_ffmpeg
 
-    # Find dialogue tracks or mastered chapters
+    # Find dialogue tracks or mastered chapters (.wav or .m4a)
     dialogue_tracks = sorted(mastered_dir.glob("chapter_*_dialogue.wav"))
     if not dialogue_tracks:
         dialogue_tracks = sorted(mastered_dir.glob("chapter_*_mastered.wav"))
     if not dialogue_tracks:
-        print(f"[!] No dialogue WAVs found in {mastered_dir}. Run 'master' or 'produce' first.")
+        dialogue_tracks = sorted(mastered_dir.glob("chapter_*_dialogue.m4a"))
+    if not dialogue_tracks:
+        dialogue_tracks = sorted(mastered_dir.glob("chapter_*_mastered.m4a"))
+    if not dialogue_tracks:
+        print(f"[!] No dialogue audio tracks found in {mastered_dir}. Run 'master' or 'produce' first.")
         return
 
     print(f"[*] Applying Cinema Audio Engine discrete stems & dynamic ducking ({len(dialogue_tracks)} chapters)...")
@@ -451,11 +459,35 @@ def cmd_render(args):
     vocal_file = Path(args.vocal) if getattr(args, "vocal", None) else None
     if not vocal_file or not vocal_file.exists():
         ch_id = manifest.chapter_id
-        inferred = PROJECTS_DIR / "witcher1" / "mastered" / f"{ch_id}_dialogue.wav"
-        if inferred.exists():
-            vocal_file = inferred
-        else:
-            raise FileNotFoundError(f"Vocal dialogue track not found or specified.")
+        # Infer vocal track dynamically from manifest directory structure:
+        # e.g., <project_dir>/manifests/<chapter_id>_manifest.json -> <project_dir>/mastered/
+        project_mastered = manifest_file.parent.parent / "mastered"
+        cand_dirs = [project_mastered]
+        if hasattr(manifest, "project_dir") and manifest.project_dir:
+            cand_dirs.append(Path(manifest.project_dir) / "mastered")
+
+        cand_names = [
+            f"{ch_id}_dialogue.wav",
+            f"{ch_id}_mastered.wav",
+            f"{ch_id}_dialogue.m4a",
+            f"{ch_id}_mastered.m4a",
+            f"{ch_id}.wav",
+            f"{ch_id}.m4a",
+        ]
+        for cdir in cand_dirs:
+            for name in cand_names:
+                test_p = cdir / name
+                if test_p.exists():
+                    vocal_file = test_p
+                    break
+            if vocal_file:
+                break
+
+        if not vocal_file or not vocal_file.exists():
+            raise FileNotFoundError(
+                f"Vocal dialogue track for '{ch_id}' not found in {project_mastered}. "
+                f"Please specify path explicitly via --vocal."
+            )
 
     output_file = Path(args.output) if getattr(args, "output", None) else vocal_file.parent / f"{manifest.chapter_id}_cinematic_v2.m4a"
 
@@ -567,9 +599,9 @@ def main():
     p_sc.add_argument("book", help="Project book slug")
 
     # synthesize
-    p_synth = subparsers.add_parser("synthesize", help="Synthesize audio segments via Gemini or Kokoro TTS")
+    p_synth = subparsers.add_parser("synthesize", help="Synthesize audio segments via Gemini Cloud TTS")
     p_synth.add_argument("book", help="Project book slug")
-    p_synth.add_argument("--backend", default="gemini_tts", choices=["gemini_tts", "kokoro"], help="TTS engine")
+    p_synth.add_argument("--backend", default="gemini_tts", choices=["gemini_tts"], help="TTS engine (default: gemini_tts)")
     p_synth.add_argument("--voice", default="Aoede", help="Default voice persona")
 
     # master
@@ -579,7 +611,7 @@ def main():
     # bgm
     p_bgm = subparsers.add_parser("bgm", help="Generate ambient score and apply dynamic sidechain ducking")
     p_bgm.add_argument("book", help="Project book slug")
-    p_bgm.add_argument("--engine", default="ambient_bed", choices=["ambient_bed", "musicgen"], help="Music generation engine")
+    p_bgm.add_argument("--engine", default="ambient_bed", choices=["ambient_bed"], help="Music scoring engine (default: ambient_bed)")
     p_bgm.add_argument("--duck-db", default=-16.0, type=float, help="Sidechain attenuation in dB (default: -16)")
 
     # package
@@ -596,7 +628,7 @@ def main():
     p_auto = subparsers.add_parser("auto", help="Run entire end-to-end pipeline in one command")
     p_auto.add_argument("file", help="Input book path")
     p_auto.add_argument("--hindi", action="store_true", help="Translate English book to Hindi")
-    p_auto.add_argument("--backend", default="gemini_tts", choices=["gemini_tts", "kokoro"], help="TTS engine")
+    p_auto.add_argument("--backend", default="gemini_tts", choices=["gemini_tts"], help="TTS engine (default: gemini_tts)")
     p_auto.add_argument("--voice", default="Aoede", help="Voice persona")
     p_auto.add_argument("--dramatized", action="store_true", help="Multi-voice dramatization")
     p_auto.add_argument("--cover", default=None, help="Cover art image path")

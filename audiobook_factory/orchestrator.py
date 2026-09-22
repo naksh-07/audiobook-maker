@@ -409,8 +409,8 @@ class PipelineOrchestrator:
             except Exception as e:
                 logger.warning(f"[!] Gate 5 Broadcast Master notice: {e}")
 
-        # 6. Build Millisecond Timeline Ledger
-        ledger_file = bgm_dir / f"{chap_stem}_timeline_ledger.json"
+        # 6. Build Millisecond Timeline Ledger (Canonical in scripts_dir, mirrored to bgm_dir)
+        ledger_file = scripts_dir / f"{chap_stem}_timeline_ledger.json"
         cue_sheet = {
             "foley_cues": [c.model_dump() if hasattr(c, "model_dump") else dict(c) for c in manifest.foley_cues],
             "music_cues": [c.model_dump() if hasattr(c, "model_dump") else dict(c) for c in manifest.music_cues],
@@ -428,6 +428,11 @@ class PipelineOrchestrator:
             soundscape_plan=plan,
             output_ledger_file=ledger_file,
         )
+        try:
+            import shutil
+            shutil.copy2(ledger_file, bgm_dir / f"{chap_stem}_timeline_ledger.json")
+        except Exception:
+            pass
 
         # 9. Auto-Janitor: Clean up intermediate uncompressed WAV chunks ONLY IF certified
         #    Safety Invariant: Chunks are NEVER purged if cinematic master failed, is corrupt,

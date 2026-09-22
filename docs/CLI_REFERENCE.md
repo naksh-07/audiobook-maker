@@ -24,7 +24,7 @@ audiobook-factory [COMMAND] [OPTIONS]
 | **[`extract`](#3-universal-document-extraction-extract)** | Ingestion | Ingests EPUB, PDF, TXT, or MD documents into clean Markdown chapters. |
 | **[`translate`](#4-literary-translation-translate)** | Translation | Translates extracted chapters into literary dramatic Hindustani with project glossary. |
 | **[`script`](#5-screenplay-scripting-script)** | Screenplay | Parses prose into standardized screenplay JSON with speaker attribution and acting tags. |
-| **[`synthesize`](#6-speech-synthesis-synthesize)** | Audio (TTS) | Synthesizes dialogue chunks using Google Gemini 3.1 Flash Cloud TTS or Kokoro fallback. |
+| **[`synthesize`](#6-speech-synthesis-synthesize)** | Audio (TTS) | Synthesizes dialogue chunks using Google Gemini 3.1 Flash Cloud TTS. |
 | **[`timeline`](#7-master-timeline-ledger-timeline)** | Timeline | Builds and verifies the sample-accurate Gate 4.5 Audio Transcript & Timeline Ledger. |
 | **[`direct`](#8-agentic-dramaturgy-direct)** | Directing | Directs chapter dramaturgy via `AgentDirector`, producing a `CreativeManifest`. |
 | **[`render`](#9-deterministic-manifest-rendering-render)** | Compositing | Compiles and renders a `CreativeManifest` into master audio using FFmpeg filter graphs. |
@@ -53,7 +53,7 @@ python audiobook_cli.py auto <FILE> [OPTIONS]
 | Flag | Type | Default | Description |
 |---|:---:|:---:|---|
 | `--hindi` | Flag | `False` | Translate English source text to literary Hindustani. |
-| `--backend` | Choice | `gemini_tts` | Speech synthesis backend (`gemini_tts`, `kokoro`). |
+| `--backend` | Choice | `gemini_tts` | Speech synthesis backend (`gemini_tts`). |
 | `--voice` | String | `Aoede` | Lead voice persona (`Aoede`, `Charon`, `Puck`, `Fenrir`, `Zephyr`). |
 | `--dramatized` | Flag | `False` | Multi-voice character casting vs single narrator reading. |
 | `--cover` | Path | `None` | Path to cover artwork image (JPEG/PNG, min $1400 \times 1400$ px). |
@@ -170,7 +170,7 @@ python audiobook_cli.py script <BOOK_SLUG> [OPTIONS]
 
 ## 6. Speech Synthesis (`synthesize`)
 
-Synthesizes audio segments from screenplay JSON using Google Gemini 3.1 Flash Cloud TTS API with Token Bucket concurrency.
+Synthesizes audio segments from screenplay JSON using Google Gemini 3.1 Flash Cloud TTS API with Token Bucket concurrency. Chapter indices are extracted dynamically via regex `chapter_(\d+)`, ensuring partial or non-sequential runs never corrupt chapter numbers.
 
 ```bash
 python audiobook_cli.py synthesize <BOOK_SLUG> [OPTIONS]
@@ -179,7 +179,7 @@ python audiobook_cli.py synthesize <BOOK_SLUG> [OPTIONS]
 ### Options
 | Flag | Type | Default | Description |
 |---|:---:|:---:|---|
-| `--backend` | Choice | `gemini_tts` | Speech engine backend (`gemini_tts`, `kokoro`). |
+| `--backend` | Choice | `gemini_tts` | Speech engine backend (`gemini_tts`). |
 | `--voice` | String | `Aoede` | Default fallback voice persona. |
 
 ### Output Artifacts
@@ -242,23 +242,30 @@ python audiobook_cli.py render --manifest <PATH> [OPTIONS]
 | Flag | Type | Default | Description |
 |---|:---:|:---:|---|
 | `--manifest` | Path | *(Required)* | Path to `creative_manifest.json`. |
-| `--vocal` | Path | `None` | Optional path to vocal dialogue stem (`chapter_XXX_dialogue.wav`). |
-| `--output` | Path | `None` | Optional output audio master destination path. |
+| `--vocal` | Path | `None` | Optional vocal dialogue track. Dynamically inferred from manifest parent directories if omitted. |
+| `--output` | Path | `None` | Optional output audio master destination path. Defaults to `mastered/<chapter_id>_cinematic_v2.m4a`. |
 | `--skip-gate3-5` | Flag | `False` | Bypass Gate 3.5 Pre-Flight Feasibility Guard check. |
+
+> [!NOTE]
+> **Dynamic Vocal Track Inference**: If `--vocal` is not provided, the CLI dynamically checks `<project>/mastered/` for `<chapter_id>_dialogue.wav`, `<chapter_id>_mastered.wav`, `<chapter_id>_dialogue.m4a`, `<chapter_id>_mastered.m4a`, or simple `.wav` / `.m4a` stems. Hardcoded book paths have been completely eliminated.
 
 ### Example
 ```bash
+# Automated vocal stem inference:
+python audiobook_cli.py render \
+  --manifest audiobooks/projects/witcher1/manifests/chapter_001_manifest.json
+
+# Explicit vocal stem override:
 python audiobook_cli.py render \
   --manifest audiobooks/projects/witcher1/manifests/chapter_001_manifest.json \
-  --vocal audiobooks/projects/witcher1/mastered/chapter_001_dialogue.wav \
-  --output audiobooks/projects/witcher1/mastered/chapter_001_cinematic.m4a
+  --vocal audiobooks/projects/witcher1/mastered/chapter_001_dialogue.wav
 ```
 
 ---
 
 ## 10. Vocal DSP Mastering (`master`)
 
-Concatenates speech WAV chunks with 5-stage DSP chain (SOXR 48kHz, rumble cut, de-esser, lowpass) and normalizes to EBU R128 (-19 LUFS).
+Concatenates speech WAV chunks with 5-stage DSP chain (SOXR 48kHz, rumble cut, de-esser, lowpass) and normalizes to EBU R128 (-19 LUFS). Segments are matched dynamically via regex `chapter_(\d+)` against `c{ch_num:03d}_*.wav` files, preventing chapter renumbering during partial runs.
 
 ```bash
 python audiobook_cli.py master <BOOK_SLUG>
@@ -268,7 +275,7 @@ python audiobook_cli.py master <BOOK_SLUG>
 
 ## 11. Soundscape & Ducking (`bgm`)
 
-Generates ambient score and applies whisper-safe dynamic sidechain ducking.
+Generates ambient score and applies whisper-safe dynamic sidechain ducking. Automatically discovers dialogue stems across both uncompressed `.wav` and `.m4a` formats (`chapter_*_dialogue.wav`, `chapter_*_mastered.wav`, `chapter_*_dialogue.m4a`, `chapter_*_mastered.m4a`).
 
 ```bash
 python audiobook_cli.py bgm <BOOK_SLUG> [OPTIONS]
@@ -277,7 +284,7 @@ python audiobook_cli.py bgm <BOOK_SLUG> [OPTIONS]
 ### Options
 | Flag | Type | Default | Description |
 |---|:---:|:---:|---|
-| `--engine` | Choice | `ambient_bed` | Scoring engine (`ambient_bed`, `musicgen`). |
+| `--engine` | Choice | `ambient_bed` | Scoring engine (`ambient_bed`). |
 | `--duck-db` | Float | `-16.0` | Sidechain ducking attenuation depth in dB. |
 
 ---
@@ -326,6 +333,9 @@ python audiobook_cli.py audit-book <PROJECT_DIR_OR_SLUG>
 ## 15. M4B Container Packaging (`package`)
 
 Assembles all mastered chapters into a single chapterized `.m4b` container with embedded cover art and `FFMETADATA1` markers.
+
+> [!IMPORTANT]
+> **AAC Packaging Safety Guard**: `package` performs pre-flight codec validation (`is_all_aac`). Uncompressed WAV stems (`pcm_s16le`) or non-AAC assets are automatically transcoded to AAC (`-c:a aac -b:a 192k`) with `+faststart` MP4 metadata flags. If all inputs are already AAC (`.m4a` / `.aac`), stream copying (`-c:a copy`) is used for maximum speed.
 
 ```bash
 python audiobook_cli.py package <BOOK_SLUG> [OPTIONS]
@@ -390,7 +400,7 @@ Configure these in your [`.env`](file:///c:/Users/Suraj/Documents/Antigravity/Au
 | Variable | Default | Description |
 |---|:---:|---|
 | `GEMINI_API_KEY` | *(Required)* | Google Gemini API key for TTS and LLM translation/dramaturgy. |
-| `TTS_PRIMARY_BACKEND` | `gemini_tts` | Primary speech engine (`gemini_tts` or `kokoro`). |
+| `TTS_PRIMARY_BACKEND` | `gemini_tts` | Primary speech engine (`gemini_tts`). |
 | `GEMINI_TTS_MODEL` | `gemini-3.1-flash-tts-preview` | Gemini TTS model endpoint identifier. |
 | `GEMINI_DEFAULT_VOICE` | `Aoede` | Default narration voice persona. |
 | `AUDIOBOOK_RETAIN_CHUNKS` | `0` | If set to `1`, auto-janitor preserves all raw WAV chunks for debugging. |
@@ -398,6 +408,11 @@ Configure these in your [`.env`](file:///c:/Users/Suraj/Documents/Antigravity/Au
 | `AUDIOBOOK_SOUND_BANK_DIR` | `audiobooks/sound_bank` | SQLite Sound Bank catalog directory. |
 | `AUDIOBOOK_STRICT_AUDIT` | `0` | If set to `1`, forces Gate 6B probe checks to fail-closed. |
 | `DEBUG` | `0` | If set to `1`, prints full Python tracebacks on exceptions. |
+
+> [!TIP]
+> **Key Sanitization & Quota Isolation**:
+> - **Quote Stripping**: The `.env` fallback loader automatically strips surrounding quotes (`'` or `"`) from API keys, preventing header corruption and HTTP 400 errors.
+> - **Quota Routing**: Soundscape mood analysis and auxiliary dramaturgy route explicitly to `service="text"`, ensuring text requests never consume scarce 10 RPD Gemini TTS quota allocations.
 
 ---
 

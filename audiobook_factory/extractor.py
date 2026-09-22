@@ -227,10 +227,7 @@ def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[Any]]:
             except Exception:
                 nav_points = []
 
-        # Check if navPoints have internal anchors
-        has_anchors = any("#" in src for _, src in nav_points)
-
-        if nav_points and has_anchors:
+        if nav_points:
             # Map spine files and stitch continuous stream
             file_offsets = {}
             file_lengths = {}
@@ -301,7 +298,24 @@ def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[Any]]:
 
 
 def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
-    """Extract clean structured Markdown from PDF using Gemini multimodal document API."""
+    """Extract clean structured Markdown from PDF using local pypdf parser or Gemini multimodal document API."""
+    file_path = Path(file_path).resolve()
+
+    # Step 1: Try local fast text extraction via pypdf (zero token limit, instant)
+    try:
+        import pypdf
+        reader = pypdf.PdfReader(str(file_path))
+        pdf_pages = []
+        for page in reader.pages:
+            p_text = page.extract_text() or ""
+            if p_text.strip():
+                pdf_pages.append(p_text.strip())
+        full_extracted = "\n\n".join(pdf_pages)
+        if len(full_extracted.split()) >= 100:
+            return clean_book_text(full_extracted)
+    except Exception:
+        pass
+
     if not api_key:
         api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:

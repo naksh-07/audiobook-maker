@@ -334,9 +334,10 @@ def translate_chapter(
                 f.write(trans_part)
         translated_pieces.append(trans_part)
         rolling_ctx = trans_part[-500:]
-        print(f"    [OK] [Part {i}/{len(chunks)}] Done ({len(trans_part)} chars).", flush=True)
-
-    return "\n\n".join(translated_pieces)
+    full_trans = "\n\n".join(translated_pieces)
+    if glossary:
+        full_trans = normalize_translated_lexicon(full_trans, glossary)
+    return full_trans
 
 
 def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Path:
@@ -389,6 +390,13 @@ def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Pat
         target_file = trans_dir / f"{chap_file.stem}_hi.md"
         if target_file.exists() and target_file.stat().st_size > 100:
             print(f"[-] Chapter {idx}/{total} already translated: {target_file.name} (Skipping)", flush=True)
+            try:
+                with open(target_file, "r", encoding="utf-8") as f:
+                    skipped_tail = f.read().split()[-250:]
+                    if skipped_tail:
+                        preceding_summary = f"Previous chapter ending: {' '.join(skipped_tail)}"
+            except Exception:
+                pass
             continue
 
         with open(chap_file, "r", encoding="utf-8") as f:
@@ -408,6 +416,11 @@ def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Pat
 
         with open(target_file, "w", encoding="utf-8") as f:
             f.write(trans_content + "\n")
+
+        # Maintain rolling narrative context across chapter boundaries
+        tail_words = trans_content.split()[-250:] if trans_content else []
+        if tail_words:
+            preceding_summary = f"Previous chapter ending: {' '.join(tail_words)}"
 
         print(f"[+] [{idx}/{total}] Successfully translated -> {target_file.name}", flush=True)
         time.sleep(2.0)

@@ -7,7 +7,8 @@
 - **FFmpeg**: Version 6.0+ (compiled with `soxr`, `libmp3lame`, and `aac` support).
   - Verify on Windows: `ffmpeg -version`
   - Verify SOXR support: `ffmpeg -filters | findstr soxr` (or `grep soxr` on Linux/macOS).
-- **Poppler Utilities**: `pdftotext` (optional, for PDF extraction).
+- **pypdf**: Bundled dependency (`pypdf>=5.0`) for fast zero-quota digital PDF extraction.
+- **Poppler Utilities**: `pdftotext` (optional fallback for non-standard formats).
 
 ### 2. Virtual Environment & Dependencies
 ```bash
@@ -33,11 +34,11 @@ Copy the `.env.example` file and configure your API keys:
 ```bash
 cp .env.example .env
 ```
-Ensure `GEMINI_API_KEY` is provided:
+Ensure `GEMINI_API_KEY` is provided (surrounding quotes are automatically stripped during load):
 ```env
 GEMINI_API_KEY=AIzaSy...your_gemini_api_key...
 TTS_PRIMARY_BACKEND=gemini_tts
-GEMINI_TTS_MODEL=gemini-2.5-flash-preview-tts
+GEMINI_TTS_MODEL=gemini-3.1-flash-tts-preview
 GEMINI_DEFAULT_VOICE=Aoede
 ```
 
@@ -45,10 +46,13 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **197 passing unit tests** across all modules with a zero-regression invariant.
+The codebase maintains **203 passing unit tests** across all modules with a zero-regression invariant.
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# Audit Remediation & Hardening Sprint (P0-P3 showstoppers)
+python -m unittest tests/test_audit_remediation_sprint.py
+
 # Phase 1: Audio Timing & State Integrity
 python -m unittest tests/test_phase1_remediation.py
 
@@ -81,6 +85,8 @@ python -m unittest discover tests -p "test_*.py"
    Synthesized speech WAV chunks are valuable and consume API quota. Chunks must NEVER be purged unless the master audio file has been generated and validated with $> 1000$ bytes on disk.
 5. **Clickable Links In Prose**:
    All file paths in development handoffs and internal documentation must use markdown file links (`[file.py](file:///path/to/file.py)`).
+6. **Strict Agent Creative Mandate**:
+   Creative decisions (character casting, emotion tags, dramaturgy, silence carving, leitmotif assignment, and Foley placement) belong exclusively to autonomous AI agents ([`AgentDirector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)). Downstream execution layers ([`CinemaAudioEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py), [`ManifestRenderer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/manifest_renderer.py), and DSP mastering) are 100% deterministic compilation and execution runtimes and must NEVER override agent creative intent.
 
 ---
 
@@ -108,3 +114,7 @@ The `UniversalSoundBankIngester` will:
 | `RuntimeError: FFmpeg mastering failed: ... filter 'soxr' not found` | FFmpeg was compiled without libsoxr. | Reinstall FFmpeg with `libsoxr` enabled (e.g. `choco install ffmpeg-full` on Windows or `apt install ffmpeg` on Ubuntu). |
 | `AllKeysExhaustedTodayError: ... 429 quota reached` | Daily API request or token limits exceeded on Gemini API keys. | The system automatically checkpoints progress to disk. Production can be resumed after daily midnight PT quota reset or by adding additional keys to `.env`. |
 | `GateAuditError: Gate 1 Failed: Voice collision detected` | Two characters are assigned the exact same voice and pitch. | Edit `voice_registry.json` or character roster so each active character has a distinct voice persona or pitch offset. |
+| `GateAuditError: Gate 3 Failed: Scenes source file missing` | Project uses modern `CreativeManifest` rather than legacy scenes. | Gate 3 has been dynamically hardened in `gate_auditor.py` to audit `CreativeManifest` directly or grant PASS for director-managed workflows. Ensure latest `gate_auditor.py` is in place. |
+| `FFmpeg packaging failed: Invalid audio stream copy` | Uncompressed WAV (`pcm_s16le`) was passed to M4B packager with `-c:a copy`. | The packager now automatically validates `is_all_aac` and transcodes non-AAC/WAV stems to AAC 192k with `+faststart`. |
+| `HTTP 400 Bad Request on Gemini API Key` | Key in `.env` was enclosed in quotes (e.g. `GEMINI_API_KEY="AIza..."`). | Fixed automatically in `key_manager.py` by `.strip("'\"")`. Remove surrounding quotes if overriding via external environment variables. |
+| `TTS Quota rapidly depleted by background tasks` | Text prompts (mood detection, dramaturgy) were sharing the TTS key pool. | Quota isolation now explicitly routes text prompts through `global_key_pool.get_key(service="text")`, shielding the scarce 10 RPD Gemini TTS quota. |

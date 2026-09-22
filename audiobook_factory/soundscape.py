@@ -58,7 +58,7 @@ def detect_chapter_mood(chapter_text: str, model: str | None = None) -> Dict[str
     Returns recommended mood profile, intensity, and music generation prompts.
     """
     from audiobook_factory.tts_dispatcher import global_key_pool
-    api_key = global_key_pool.get_key()
+    api_key = global_key_pool.get_key(service="text")
     if not api_key:
         return {"primary_mood": "default", "intensity": 0.5, "musicgen_prompt": "subtle warm ambient bed, soft lo-fi cinematic texture"}
 

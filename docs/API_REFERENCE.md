@@ -29,6 +29,11 @@ class CreativeManifest(BaseModel):
 
     def to_dict(self) -> Dict[str, Any]: ...
     def to_json(self, indent: int = 2) -> str: ...
+    def save_to_file(self, path: Union[str, Path]) -> None:
+        """Serialize and save manifest directly to JSON file."""
+    @classmethod
+    def from_file(cls, path: Union[str, Path]) -> CreativeManifest:
+        """Load and deserialize manifest directly from JSON file."""
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> CreativeManifest: ...
     @classmethod
@@ -212,11 +217,14 @@ class PipelineOrchestrator:
 ```
 
 ### `UniversalExtractor` ([`audiobook_factory.extractor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/extractor.py))
-*Zero-dependency multi-format document parser.*
+*Multi-format document parser with native pypdf digital parsing and Gemini multimodal fallback.*
 
 ```python
 def process_book_file(input_file: Path, output_projects_dir: Path) -> Dict[str, Any]:
     """Ingests EPUB, PDF, TXT, or MD, creates a project folder, and extracts structured chapters."""
+
+def extract_gemini_pdf(file_path: Path, api_key: str | None = None) -> str:
+    """Extracts text using local fast pypdf (zero-quota, instant) with fallback to Gemini multimodal document API."""
 
 def extract_chapters(text: str) -> List[Dict[str, Any]]:
     """Detects semantic chapter breaks, Roman numerals, and headings."""
@@ -228,7 +236,7 @@ def split_large_chapter_on_semantic_boundary(
 ```
 
 ### `LiteraryTranslator` ([`audiobook_factory.translator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py))
-*Two-pass literary Hindustani translation engine with glossary synchronization.*
+*Two-pass literary Hindustani translation engine with glossary synchronization and rolling narrative context.*
 
 ```python
 def translate_book_project(
@@ -236,10 +244,19 @@ def translate_book_project(
     model: str = "gemini-flash-latest",
     target_lang: str = "hi",
 ) -> Path:
-    """Translates all extracted chapters in a project, maintaining consistent terminology."""
+    """Translates all extracted chapters in a project, threading 250-word rolling context across chapter boundaries."""
+
+def translate_chapter(
+    chapter_text: str,
+    glossary: Optional[Dict[str, str]] = None,
+    chapter_num: int = 1,
+    preceding_summary: str = "",
+    model: str = "gemini-flash-latest",
+) -> str:
+    """Translates a chapter in chunks, enforcing canonical lexicon normalization."""
 
 def normalize_translated_lexicon(text: str, glossary: Dict[str, str]) -> str:
-    """Applies canonical proper noun substitutions to translated text."""
+    """Applies canonical proper noun substitutions to translated text based on project glossary."""
 ```
 
 ### `ScriptBuilder` ([`audiobook_factory.script_builder`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))
@@ -361,7 +378,7 @@ class UniversalSoundBankIngester:
 ```
 
 ### `CinemaAudioEngine` ([`audiobook_factory.cinema_audio_engine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py))
-*Film-standard discrete stem renderer and packaging ledger.*
+*Film-standard discrete stem renderer and packaging ledger with Music-Only 2.2kHz notch EQ.*
 
 ```python
 def render_discrete_stems(
@@ -371,7 +388,7 @@ def render_discrete_stems(
     sound_bank: Optional[SoundBank] = None,
     ffmpeg: Optional[str] = None,
 ) -> StemLedger:
-    """Renders 5 discrete DME stems (DX, MX, FX, AMB, ME) and final broadcast master."""
+    """Renders 5 discrete DME stems (DX, MX, FX, AMB, ME) with isolated 2.2kHz notch on Music [0:a] only, and final broadcast master."""
 ```
 
 ### `ManifestRenderer` ([`audiobook_factory.manifest_renderer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/manifest_renderer.py))
@@ -384,7 +401,7 @@ def render_manifest_soundscape(
     output_master_file: Path,
     sound_bank: Optional[SoundBank] = None,
 ) -> Path:
-    """Assembles and executes multitrack audio graph with ducking and reverb."""
+    """Assembles and executes multitrack audio graph with ducking, IR reverb, and music-only notch."""
 
 def get_reverb_filter_string(preset: str = "room") -> Tuple[str, float]:
     """Generates FFmpeg aecho parameters and wet mix gain for scene presets."""
@@ -410,7 +427,7 @@ def concatenate_and_master_chapter(
 ```
 
 ### `Packager` ([`audiobook_factory.packager`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/packager.py))
-*M4B container packaging with chapter metadata and artwork.*
+*M4B container packaging with AAC safety validation, faststart atom placement, and artwork embedding.*
 
 ```python
 def package_m4b_audiobook(
@@ -419,7 +436,7 @@ def package_m4b_audiobook(
     output_dir: Optional[Path] = None,
     enforce_gate6: bool = False,
 ) -> Path:
-    """Generates FFMETADATA1 file and packages all mastered chapters into deliverable M4B."""
+    """Validates AAC streams (is_all_aac); automatically transcodes uncompressed WAV or non-AAC chapters to AAC 192k."""
 ```
 
 ---
@@ -448,11 +465,20 @@ def audit_gate1_roster(roster_file: Union[Path, Dict], registry_file: Union[Path
 # Gate 2: Screenplay Scripting Schema
 def audit_gate2_script(script_file: Path) -> Dict[str, Any]: ...
 
-# Gate 3.5: Acoustic Pre-Flight Feasibility
+# Gate 3 & 3.5: Acoustic Feasibility & Scene Coverage
+def audit_gate3_scenes(scenes_file: Path, script_file: Path) -> Dict[str, Any]: ...
 def audit_gate3_5_acoustic_feasibility(manifest: CreativeManifest, sound_bank: Optional[SoundBank] = None) -> AuditResult: ...
 
-# Gate 5: Broadcast EBU R128 Master
-def audit_gate5_master(master_file: Path, target_lufs: float = -19.0) -> Dict[str, Any]: ...
+# Gate 4.5: Master Timeline & Audio Transcript Ledger
+def audit_gate4_ledger(ledger_file: Path, script_file: Path, audio_dir: Path) -> Dict[str, Any]: ...
+
+# Gate 5: Broadcast EBU R128 Master (Standardized 1.0 LU tolerance)
+def audit_gate5_master(
+    master_file: Path,
+    target_lufs: float = -19.0,
+    tolerance_lu: float = 1.0,
+    max_true_peak: float = -1.4,
+) -> Dict[str, Any]: ...
 
 # Gate 5.2: Spectral Masking (DMR)
 def audit_gate5_2_spectral_masking(dialogue_stem: Path, music_stem: Path, min_dmr_db: float = 12.0) -> AuditResult: ...
@@ -463,8 +489,8 @@ def audit_gate5_3_stereo_phase(audio_file: Path, min_phase_correlation: float = 
 # Gate 6A: Voice Continuity Across Chapters
 def audit_gate6a_voice_continuity(project_dir: Path) -> AuditResult: ...
 
-# Gate 6B: Inter-Chapter Loudness Continuity
-def audit_gate6b_loudness_continuity(chapter_files: List[Path], strict: bool = False) -> AuditResult: ...
+# Gate 6B: Inter-Chapter Loudness Continuity (1.0 LU max variance)
+def audit_gate6b_loudness_continuity(chapter_files: List[Path], target_lufs: float = -19.0, max_variance: float = 1.0, strict: bool = False) -> AuditResult: ...
 
 # Gate 6C: Table of Contents Monotonicity
 def audit_gate6c_toc_monotonicity(chapter_files_or_project_dir: Any, toc: Optional[BookTableOfContents] = None) -> AuditResult: ...
@@ -472,7 +498,7 @@ def audit_gate6c_toc_monotonicity(chapter_files_or_project_dir: Any, toc: Option
 # Gate 6D: Container Packaging Specifications
 def audit_gate6d_packaging_specs(cover_image: Optional[Path], specs: Optional[BookPackagingSpecs] = None) -> AuditResult: ...
 
-# Multi-Gate Macro Audits
-def audit_chapter_gates(project_dir: Path, chapter_num: int) -> Dict[str, Any]: ...
+# Multi-Gate Macro Audits (Dynamic Gate 3 handling)
+def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Optional[List[str]] = None) -> Dict[str, Any]: ...
 def audit_book_master(project_dir: Path, strict: bool = False) -> Dict[str, Any]: ...
 ```

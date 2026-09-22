@@ -221,10 +221,10 @@ class ProjectStateLedger:
         with self._connection() as conn:
             if chapter_num is not None and seg_num is not None:
                 conn.execute(
-                    "UPDATE segments SET status = 'COMPLETED', audio_path = ?, duration_sec = ?, "
+                    "UPDATE segments SET id = ?, status = 'COMPLETED', audio_path = ?, duration_sec = ?, "
                     "error_message = NULL, updated_at = CURRENT_TIMESTAMP "
                     "WHERE id = ? OR (chapter_num = ? AND seg_num = ?);",
-                    (str(audio_path), duration_sec, segment_id, chapter_num, seg_num),
+                    (segment_id, str(audio_path), duration_sec, segment_id, chapter_num, seg_num),
                 )
             else:
                 conn.execute(

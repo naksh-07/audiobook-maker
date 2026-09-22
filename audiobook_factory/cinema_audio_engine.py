@@ -350,7 +350,8 @@ def render_discrete_stems(
         "-i", str(fx_file),
         "-i", str(amb_file),
         "-filter_complex",
-        f"[0:a][1:a][2:a]amix=inputs=3:duration=first:normalize=0[memix];[memix]{notch_filter},aresample=48000[meout]",
+        f"[0:a]{notch_filter}[mx_notched];"
+        f"[mx_notched][1:a][2:a]amix=inputs=3:duration=first:normalize=0,aresample=48000[meout]",
         "-map", "[meout]",
         "-c:a", "pcm_s16le",
         str(me_file),

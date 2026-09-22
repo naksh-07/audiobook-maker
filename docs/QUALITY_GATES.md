@@ -10,8 +10,9 @@ The verification system spans **Gates 0 through 6D**, auditing every artifact fr
 flowchart LR
     G0["Gate 0:<br/>Translation"] --> G1["Gate 1:<br/>Voice Roster"]
     G1 --> G2["Gate 2:<br/>Screenplay"]
-    G2 --> G35["Gate 3.5:<br/>Pre-Flight Feasibility"]
-    G35 --> G52["Gate 5.2:<br/>Spectral Masking"]
+    G2 --> G3["Gate 3 / 3.5:<br/>Manifest Feasibility"]
+    G3 --> G45["Gate 4.5:<br/>Timeline Ledger"]
+    G45 --> G52["Gate 5.2:<br/>Spectral Masking"]
     G52 --> G53["Gate 5.3:<br/>Stereo Phase"]
     G53 --> G5["Gate 5:<br/>Broadcast Master"]
     G5 --> G6A["Gate 6A:<br/>Voice Continuity"]
@@ -61,27 +62,40 @@ flowchart LR
 
 ---
 
-### Gate 3.5: Acoustic Pre-Flight Feasibility Guard
-- **Function**: `audit_gate3_5_acoustic_feasibility(manifest: CreativeManifest, sound_bank: SoundBank) -> AuditResult`
+### Gate 3 & Gate 3.5: Dynamic Manifest Feasibility & Scene Coverage
+- **Functions**: `audit_chapter_gates(project_dir: Path, chapter_num: int)`, `audit_gate3_5_acoustic_feasibility(manifest: CreativeManifest, sound_bank: Optional[SoundBank] = None) -> AuditResult`, `audit_gate3_scenes(scenes_file: Path, script_file: Path) -> Dict[str, Any]`
 - **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
-- **Pipeline Stage**: Executed immediately after `AgentDirector` emits a `CreativeManifest`, before any FFmpeg audio rendering begins.
+- **Pipeline Stage**: Executed immediately after `AgentDirector` emits a `CreativeManifest` or scene breakdown, before any FFmpeg audio rendering begins.
+- **Dynamic Resolution Logic**:
+  - **Modern Manifest Path**: If `manifests/chapter_XXX_manifest.json` exists, validates acoustic silence ($\ge 60.0\%$), asset file availability on disk in Sound Bank, and timeline monotonicity.
+  - **Legacy Scene Source Path**: If `chapter_XXX_scenes_source.json` exists, verifies dramatic acts and segment coverage against the script.
+  - **Director-Managed Autonomous Path**: If neither legacy file exists, verifies script segment coverage and emits `status: PASS` with `type: "director_managed"`. This eliminates brittle pipeline failures when running modern agent-directed workflows.
+- **Fail Condition**: Raises `GateAuditError` if silence mandate is violated, missing assets exceed threshold, or dramatic segments are discontinuous.
+
+---
+
+### Gate 4.5: Master Timeline & Audio Transcript Ledger
+- **Function**: `audit_gate4_ledger(ledger_file: Path, script_file: Path, audio_dir: Path) -> Dict[str, Any]`
+- **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
+- **Pipeline Stage**: Executed during timeline assembly and certified in `produce_chapter`.
 - **Audit Rules**:
-  - **Silence Mandate**: Validates that musical cues do not exceed 40.0% of the chapter timeline (enforcing $\ge 60.0\%$ acoustic silence).
-  - **Asset Verification**: Checks that every audio asset referenced by `AmbienceScene`, `MusicCue`, and `FoleyCue` exists on disk in the Sound Bank.
-  - **Timeline Monotonicity**: Verifies that cues do not specify negative offsets or durations exceeding the chapter boundary.
-- **Fail Condition**: Returns `AuditResult(passed=False)` if missing assets exceed threshold or silence mandate is violated.
+  - Inspects canonical `scripts/chapter_XXX_timeline_ledger.json` (mirrored to `soundscapes/`).
+  - **Monotonicity**: Asserts that each segment's `start_ms` is strictly greater than or equal to the previous segment's `end_ms`.
+  - **Text Preservation**: Compares speech transcripts in the ledger with the screenplay script, flagging any text truncation or divergence.
+  - **Physical Chunk Validation**: Verifies that every referenced `cXXX_sYYYY_voice.wav` chunk exists on disk in `audio_chunks/` and exceeds $1,000$ bytes (not corrupt or 0-byte header).
+- **Fail Condition**: Raises `GateAuditError` on overlapping timestamps, text divergence, or missing WAV chunks.
 
 ---
 
 ### Gate 5: Broadcast Master EBU R128 Probe
-- **Function**: `audit_gate5_master(master_file: Path, target_lufs: float = -19.0, tolerance_lu: float = 0.5, max_true_peak: float = -1.4) -> Dict[str, Any]`
+- **Function**: `audit_gate5_master(master_file: Path, target_lufs: float = -19.0, tolerance_lu: float = 1.0, max_true_peak: float = -1.4) -> Dict[str, Any]`
 - **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
 - **Pipeline Stage**: Executed after chapter mastering.
 - **Audit Rules**:
   - Probes the rendered master file using FFmpeg `ebur128=framelog=verbose`.
   - Measures Integrated Loudness ($I$ in LUFS) and True Peak ($TP$ in dBTP).
-  - Asserts integrated loudness is within $target\_lufs \pm tolerance\_lu$ (standard $-19.0 \pm 0.5$ LUFS).
-  - Asserts true peak does not exceed ceiling $-1.4$ dBTP (preventing inter-sample clipping on MP3/AAC encoders).
+  - Asserts integrated loudness is within $target\_lufs \pm tolerance\_lu$ (standardized to $-19.0 \pm 1.0\text{ LU}$ across Gate 5 and Gate 6B).
+  - Asserts true peak does not exceed ceiling $-1.4\text{ dBTP}$ (preventing inter-sample clipping on MP3/AAC encoders).
 - **Fail Condition**: Raises `GateAuditError` if probe fails or audio violates loudness/peak ceilings.
 
 ---

@@ -36,7 +36,8 @@ def _load_env_fallback():
                     line = line.strip()
                     if line and not line.startswith("#") and "=" in line:
                         k, v = line.split("=", 1)
-                        os.environ.setdefault(k.strip(), v.strip())
+                        clean_v = v.strip().strip("'\"")
+                        os.environ.setdefault(k.strip(), clean_v)
         except Exception:
             pass
 

@@ -6,7 +6,7 @@
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-6.0%2B%20%7C%208.0-red.svg)](https://ffmpeg.org/)
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.1%20Flash%20API-green.svg)](https://ai.google.dev/)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-197%20Passing%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-203%20Passing%20(100%25)-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
@@ -24,20 +24,20 @@ It transforms raw literature (**EPUB, PDF, TXT, Markdown**) into broadcast-ready
 ```mermaid
 flowchart TD
     subgraph Room1["🚪 Room 1: Creative Production Room"]
-        Book["Raw Book (PDF / EPUB / TXT)"] --> Extractor["Universal Extractor (Zero Pip)"]
+        Book["Raw Book (PDF / EPUB / TXT)"] --> Extractor["Universal Extractor (Native PyPDF + Zero-Pip Fallback)"]
         Extractor --> Chapters["Structured Chapters (.txt / .md)"]
-        Chapters --> Translator["Literary Hindustani Translator (Two-Pass)"]
+        Chapters --> Translator["Literary Hindustani Translator (Rolling Context & Glossary)"]
         Translator --> ScriptBuilder["Sliding-Window Screenplay Builder (Pydantic v2)"]
         ScriptBuilder --> Dispatcher["Token-Bucket Gemini 3.1 Flash TTS Dispatcher"]
         Dispatcher --> AudioChunks["Audio Segments (24kHz Mono 16-bit PCM)"]
     end
 
-    subgraph Room2["🚪 Room 2: Agentic Directing Layer"]
-        Bible["Sonic Bible & Leitmotifs (sound_bible.json)"] --> Director["Autonomous AgentDirector"]
+    subgraph Room2["🚪 Room 2: Agentic Directing Layer (Strict Agent Mandate)"]
+        Bible["Sonic Bible & Leitmotifs (sound_bible.json)"] --> Director["Autonomous AgentDirector (No Script Overrides)"]
         AudioChunks --> Director
         Director --> SilenceCarve["Pass 1: Silence Carving (>= 60.0% Silence Mandate)"]
         SilenceCarve --> MusicDir["Pass 2: Dynamic FTS5 Music Director"]
-        MusicDir --> FoleyMiner["Pass 3: Acoustic Foley Miner"]
+        MusicDir --> FoleyMiner["Pass 3: Acoustic Foley Miner + Whisper Attenuation"]
         FoleyMiner --> Manifest["CreativeManifest v3.0 / CinemaAudioManifest"]
     end
 
@@ -50,42 +50,50 @@ flowchart TD
     end
 
     subgraph Room4["🚪 Room 4: Cinema Discrete Multi-Stem Engine"]
-        VocalDSP --> CinemaEngine["Cinema Multi-Stem Engine"]
+        VocalDSP --> CinemaEngine["Cinema Multi-Stem Engine (Music-Only 2.2kHz Notch)"]
         CinemaEngine --> Stems["5 Discrete Stems (DX, MX, FX, AMB, ME)"]
         CinemaEngine --> Master["Cinema Master (-19 LUFS, -1.5 dBTP)"]
         CinemaEngine --> Ledger["chapter_XXX_stem_ledger.json"]
     end
 
-    Room4 --> Packager["FFMETADATA1 Chapter Generator & Packager"]
-    Packager --> M4B["Deliverable Audiobook (.m4b with Artwork)"]
+    Room4 --> Packager["FFMETADATA1 Chapter Generator & AAC Packager"]
+    Packager --> M4B["Deliverable Audiobook (.m4b with FastStart Artwork)"]
 ```
 
 ---
 
 ## ✨ Key Technical Highlights
 
-### 1. Dual-Engine Speech Synthesis with Token-Bucket Concurrency
-- **Primary:** **Google Gemini 3.1 Flash Cloud TTS API** (`gemini-3.1-flash-tts-preview`). Expressive personas tailored for multilingual cadence:
+### 1. Cloud Speech Synthesis & Quota Isolation
+- **Primary Engine:** **Google Gemini 3.1 Flash Cloud TTS API** (`gemini-3.1-flash-tts-preview`). Expressive personas tailored for multilingual cadence:
   - `Aoede`: Polished, melodic feminine narration (top choice for Hindi / Hinglish).
   - `Charon`: Deep, authoritative, resonant masculine cadence (ideal for fantasy / dark mystery).
   - `Orus` / `Fenrir` / `Puck` / `Zephyr`: Distinct character dialogue casting.
-- **Emergency Standby:** Automatic persona-mapped fallback to local GPU **Kokoro & Goonj-1-82M** server if cloud quota drops.
+- **Quota Intelligence & Isolation:** Dedicated `service="text"` vs `service="tts"` key pool routing prevents auxiliary text prompts from depleting scarce 10 RPD Gemini TTS quotas. Multi-key persistent rotation pool with automatic date rollover, stealth cadence pacing, and automated `.env` quote stripping.
 
-### 2. The 6-Gate Independent Verification Suite
+### 2. Multi-Gate Independent Verification Suite (Gates 0 - 6D)
 Quality is mathematically audited at every stage of the pipeline:
 - **Gate 0:** Source Text & Translation Coverage Parity
 - **Gate 1:** Character Voice Casting & Collision Elimination
 - **Gate 2:** Screenplay Scripting Schema & Prosody (Pydantic v2)
-- **Gate 3.5:** Acoustic Pre-Flight Feasibility Guard ($\ge 60\%$ acoustic silence mandate)
-- **Gate 5 / 5.2 / 5.3:** EBU R128 Master, Dialogue-to-Music Ratio ($\text{DMR} \ge +12\text{ dB}$), and Stereo Phase ($r \ge 0.85$)
-- **Gate 6A / 6B / 6C / 6D:** Cross-Chapter Voice Continuity, Loudness Consistency, and TOC Monotonicity
+- **Gate 3 / 3.5:** Dynamic Manifest Feasibility Guard ($\ge 60\%$ acoustic silence mandate; accepts `CreativeManifest` & director-managed workflows)
+- **Gate 5 / 5.2 / 5.3:** EBU R128 Master (standardized $\pm 1.0\text{ LU}$ tolerance), Dialogue-to-Music Ratio ($\text{DMR} \ge +12\text{ dB}$), and Stereo Phase ($r \ge 0.85$)
+- **Gate 6A / 6B / 6C / 6D:** Cross-Chapter Voice Continuity, Inter-Chapter Loudness Consistency ($\le 1.0\text{ LU}$), TOC Monotonicity, and M4B Container Certification
 
 ### 3. Hollywood-Grade Acoustic DSP Mastering
-- **Whisper-Safe Sidechain Ducking**: Detector calibrated to `0.018` linear (-34.9 dBFS) with $15\text{ ms}$ attack and $350\text{ ms}$ release. Soft whispers trigger music ducking without audio clipping.
-- **2.2kHz Spectral Notch Carving**: Attenuates music by $-5.5\text{ dB}$ at $2,200\text{ Hz}$ ($Q=1.5$) during speech to guarantee vocal intelligibility.
-- **Dialogue Spatial Soundstage**: Constant-power stereo azimuth panning anchors Narrator dead-center ($pan = 0.0$) while subtly positioning cast characters across the stereo stage, maintaining 100% mono phase compatibility ($r \ge 0.85$).
-- **Dynamic Headroom Calibration**: Explosive scenes tighten the limiter to `0.82` with True Peak ceiling `-2.0 dBTP`. Soft whisper scenes calibrate dynamic Loudness Range (`LRA = 6.0 LU`).
-- **Auto-Janitor Safety Shield**: Raw WAV chunks are strictly preserved if master rendering or quality verification fails, protecting your API quota.
+- **Strict Agent Creative Mandate:** All creative acoustic choices (scoring, leitmotifs, Foley placement, pacing) belong strictly to autonomous agents (`AgentDirector`). Lower engine layers (`CinemaAudioEngine`, `ManifestRenderer`, DSP) are 100% deterministic execution runtimes with zero script overrides.
+- **Music-Only 2.2kHz Spectral Notch EQ:** Parametric notch filter ($-5.5\text{ dB}$ at $2,200\text{ Hz}$, $Q=1.5$) is isolated strictly to the Music Bus `[0:a]`, preserving crisp Foley transients and expansive Ambience beds.
+- **Whisper Collision Attenuation:** Foley cues triggered during quiet or whispered dialogue segments receive automatic $-6\text{ dBFS}$ attenuation via `attenuate_foley_whisper_collisions`.
+- **Whisper-Safe Sidechain Ducking:** Detector calibrated to `0.018` linear (-34.9 dBFS) with $15\text{ ms}$ attack and $350\text{ ms}$ release, smoothly ducking music even during intimate whispers.
+- **Dialogue Spatial Soundstage:** Constant-power stereo azimuth panning anchors Narrator dead-center ($pan = 0.0$) while subtly positioning cast characters across the stereo stage, maintaining 100% mono phase compatibility ($r \ge 0.85$).
+- **Dynamic Headroom Calibration:** Explosive scenes tighten the limiter to `0.82` with True Peak ceiling `-2.0 dBTP`. Soft whisper scenes calibrate dynamic Loudness Range (`LRA = 6.0 LU`).
+- **Auto-Janitor Safety Shield:** Raw WAV chunks are strictly preserved if master rendering or quality verification fails, protecting your API quota.
+
+### 4. Container Reliability & Robust Orchestration
+- **M4B AAC Packaging Safety:** Replaced brittle container copy with strict AAC validation (`is_all_aac`). Uncompressed WAV stems (`pcm_s16le`) or non-AAC assets are automatically transcoded to AAC (`-c:a aac -b:a 192k`) with `+faststart` MP4 metadata atom positioning.
+- **Dynamic Vocal Track Inference:** Removed hardcoded paths; dynamically discovers vocal stems (`.wav` and `.m4a`) across project directory hierarchies.
+- **Regex Chapter Parsing:** Script and audio chunk extraction utilizes robust regex `chapter_(\d+)` patterns, preventing chapter renumbering during partial runs.
+- **Fast Zero-Quota PDF Extraction:** Integrated `pypdf>=5.0` for instantaneous local digital PDF parsing, bypassing the 8,192 token window before falling back to multimodal vision.
 
 ---
 
@@ -93,12 +101,13 @@ Quality is mathematically audited at every stage of the pipeline:
 
 | Document | Description |
 |---|---|
-| **[🏛️ Architecture Blueprint](docs/ARCHITECTURE.md)** | In-depth breakdown of the 4 rooms, 5 stems, and the 7 metadata bridges. |
+| **[🏛️ Architecture Blueprint](docs/ARCHITECTURE.md)** | In-depth breakdown of the 4 rooms, 5 stems, 7 metadata bridges, and strict agent creative mandate. |
 | **[🎓 End-to-End Tutorial & Cookbook](docs/TUTORIAL_E2E.md)** | Step-by-step recipes: 1-click runs, English audio drama, manual directing, quota resume, and DAW stems. |
 | **[💻 CLI Reference](docs/CLI_REFERENCE.md)** | Full command reference for all 17 autonomous and modular production commands. |
 | **[📚 API Reference](docs/API_REFERENCE.md)** | Pydantic v2 data models, public engine classes, and method signatures across 28 modules. |
-| **[🎛️ Audio Engineering & DSP](docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, sidechain ducking, spectral carving, and reverb presets. |
+| **[🎛️ Audio Engineering & DSP](docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, music-only 2.2kHz notch, whisper ducking, and dynamic reverb. |
 | **[🛡️ Quality Gates Manual](docs/QUALITY_GATES.md)** | Complete specification of Gates 0 through 6D, thresholds, and CLI audit syntax. |
+| **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Engineering report on P0 container safety, dynamic gates, routing fixes, and DSP isolation. |
 | **[🎹 Sound Bank & Asset Catalog](docs/SOUND_BANK.md)** | SQLite FTS5 database schema, Sonic Genome indexing, UCS categories, and cloud CC0 seeding. |
 | **[🤖 AI Agent & MCP Integration](docs/MCP_AGENT_INTEGRATION.md)** | Autonomous agent workflows, Agent Skills (`novel-audiobook-factory`, `audio-engineer-ffmpeg`), and MCP tools. |
 | **[🛠️ Developer Guide](docs/DEVELOPER_GUIDE.md)** | Development environment setup, testing standards, and contribution guide. |
@@ -110,7 +119,7 @@ Quality is mathematically audited at every stage of the pipeline:
 ### 1. Requirements
 - Python 3.10+
 - FFmpeg 6.0+ (compiled with `libsoxr` and `aac` support)
-- Poppler Utilities (`pdftotext` optional, for PDF extraction)
+- `pypdf>=5.0` (bundled dependency for fast, zero-quota digital PDF extraction)
 
 ### 2. Installation
 ```bash
@@ -172,7 +181,7 @@ python audiobook_cli.py bank stats
 
 ## 🧪 Verification & Test Suite
 
-The codebase maintains **197 passing unit tests** across all modules with a zero-regression invariant:
+The codebase maintains **203 passing unit tests** across all modules with a zero-regression invariant:
 
 ```powershell
 # Run full regression suite

@@ -173,7 +173,7 @@ def package_m4b_audiobook(
     chapter_durations = []
     total_ms = 0
     concat_list = output_dir / "m4b_concat.txt"
-    has_mp3 = any(f.suffix.lower() == ".mp3" for f in chapter_audio_files)
+    is_all_aac = all(f.suffix.lower() in (".m4a", ".aac") for f in chapter_audio_files)
 
     with open(concat_list, "w", encoding="utf-8") as f:
         for idx, cf in enumerate(chapter_audio_files, 1):
@@ -199,7 +199,7 @@ def package_m4b_audiobook(
 
     # Assemble M4B directly from concat demuxer with +faststart
     has_cover = cover_image and Path(cover_image).exists()
-    audio_codec_args = ["-c:a", "aac", "-b:a", "192k"] if has_mp3 else ["-c:a", "copy"]
+    audio_codec_args = ["-c:a", "copy"] if is_all_aac else ["-c:a", "aac", "-b:a", "192k"]
 
     pack_cmd = [
         ffmpeg,

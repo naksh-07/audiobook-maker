@@ -708,7 +708,9 @@ Output STRICT JSON schema:
             )
 
         from audiobook_factory.acoustic_bus_matrix import filter_concurrency_window
-        return filter_concurrency_window(foley_cues, window_ms=200, max_concurrency=3)
+        from audiobook_factory.soundscape import attenuate_foley_whisper_collisions
+        pruned_foley = filter_concurrency_window(foley_cues, window_ms=200, max_concurrency=3)
+        return attenuate_foley_whisper_collisions(pruned_foley, script_segments, attenuation_db=-6.0)
 
     def _parse_grammatical_foley_dependencies(
         self, script_segments: List[Dict[str, Any]]
