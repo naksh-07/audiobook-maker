@@ -356,12 +356,15 @@ class MusicCue(BaseModel):
     fade_out_ms: int = Field(default=3000, ge=0, description="Fade-out envelope duration in milliseconds")
     volume_db: float = Field(default=-18.0, description="Base track attenuation in dB")
     dramatic_justification: str = Field(default="", description="Artistic / narrative rationale for this cue placement")
+    leitmotif_ref: Optional[str] = Field(default="", description="Identifier of the leitmotif definition this cue is bound to")
 
     @field_validator("cue_type", mode="before")
     @classmethod
     def normalize_cue_type(cls, v: str) -> str:
         """Map legacy or alternate cue type names to standard literal set."""
         mapping = {
+            "BGM_MAIN": "EMOTIONAL_UNDERSCORE",
+            "BGM": "EMOTIONAL_UNDERSCORE",
             "CLIMACTIC_COMBAT": "CLIMACTIC_ACTION_CUE",
             "COMBAT": "CLIMACTIC_ACTION_CUE",
             "UNDERSCORE": "EMOTIONAL_UNDERSCORE",
@@ -645,4 +648,79 @@ class BookMasterManifest(BaseModel):
         """Load BookMasterManifest from file."""
         with open(path, "r", encoding="utf-8") as f:
             return cls.model_validate_json(f.read())
+
+
+# ==============================================================================
+# Next-Gen Cinema Architecture Adapter Bridge
+# ==============================================================================
+
+class LegacyCreativeManifestAdapter:
+    """
+    Adapter bridging Legacy CreativeManifest (v3.0) to Next-Gen CinemaAudioManifest (v4.0).
+    Guarantees 100% backward compatibility for Chapters 4, 5, 6, 7 and certified productions
+    without modifying legacy JSON structures or breaking old tests.
+    """
+
+    @staticmethod
+    def lift_legacy_manifest_to_cinema(legacy: CreativeManifest) -> Any:
+        """
+        Lifts flat legacy manifest into modular cinema structures:
+        - Converts legacy AmbienceScene list into SceneSoundscapeManifest.
+        - Converts legacy mastering settings into calibrated DuckingProfile.
+        - Transfers MusicCue and FoleyCue collections with zero loss.
+        """
+        from audiobook_factory.scene_acoustics import SceneSoundscapeManifest, SceneAcousticProfile, AmbienceLayer
+        from audiobook_factory.acoustic_bus_matrix import DuckingProfile, PROFILE_STANDARD
+        from audiobook_factory.cinema_audio_engine import CinemaAudioManifest
+
+        # Convert AmbienceScenes to SceneSoundscapeManifest
+        scenes: List[SceneAcousticProfile] = []
+        for s in legacy.ambience_scenes:
+            layer = AmbienceLayer(
+                layer_type="base_room_tone",
+                asset_path=s.asset_path or s.asset_name or "wind_howl.ogg",
+                target_lufs=s.target_lufs,
+            )
+            sc_prof = SceneAcousticProfile(
+                scene_id=f"scene_{s.scene_id:03d}",
+                start_ms=s.start_ms,
+                end_ms=s.end_ms,
+                ir_preset=s.reverb_preset or "room",
+                layers=[layer],
+            )
+            scenes.append(sc_prof)
+
+        scene_manifest = SceneSoundscapeManifest(
+            chapter_id=legacy.chapter_id,
+            scenes=scenes,
+            metadata={"source": "lifted_from_legacy_manifest"},
+        ) if scenes else None
+
+        # Resolve ducking profile from mastering settings or default
+        ducking_policy = PROFILE_STANDARD
+        if legacy.mastering:
+            ducking_policy = DuckingProfile(
+                profile_name="standard_speech",
+                attenuation_db=legacy.mastering.ducking_attenuation_db,
+                attack_ms=legacy.mastering.ducking_attack_ms,
+                release_ms=legacy.mastering.ducking_release_ms,
+                spectral_carve_hz=legacy.mastering.spectral_carve_hz,
+                spectral_carve_depth_db=legacy.mastering.spectral_carve_gain_db,
+            )
+
+        total_sec = float(legacy.total_duration_ms) / 1000.0 if legacy.total_duration_ms else 0.0
+
+        return CinemaAudioManifest(
+            manifest_version="4.0",
+            chapter_id=legacy.chapter_id,
+            project_id=legacy.project_id,
+            scene_acoustics=scene_manifest,
+            music_cues=list(legacy.music_cues),
+            foley_cues=list(legacy.foley_cues),
+            ducking_policy=ducking_policy,
+            total_duration_sec=total_sec,
+            silence_percentage=legacy.silence_percentage,
+            metadata=dict(legacy.metadata),
+        )
+
 

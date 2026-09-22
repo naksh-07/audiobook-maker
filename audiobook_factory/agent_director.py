@@ -43,10 +43,34 @@ class AgentDirector:
     via a 3-Pass Creative Agent Workflow with zero heuristics and zero regex.
     """
 
-    def __init__(self, sound_bank: Optional[SoundBank] = None, model: str = "gemini-flash-latest"):
+    def __init__(
+        self,
+        sound_bank: Optional[SoundBank] = None,
+        model: str = "gemini-flash-latest",
+        sonic_bible: Optional[Any] = None,
+        project_dir: Optional[Path] = None,
+    ):
         self.sound_bank = sound_bank or get_sound_bank()
         self.model = os.environ.get("GEMINI_TEXT_MODEL", model)
         self.pool = get_persistent_key_pool()
+        self.project_dir = Path(project_dir) if project_dir else None
+        self.sonic_bible = sonic_bible
+        if not self.sonic_bible and self.project_dir:
+            self._load_project_sonic_bible(self.project_dir)
+
+    def _load_project_sonic_bible(self, pdir: Path) -> None:
+        """Attempt to load project-level sound_bible.json if present."""
+        bible_path = pdir / "sound_bible.json"
+        if bible_path.exists():
+            try:
+                from audiobook_factory.sonic_bible import SonicBible
+                self.sonic_bible = SonicBible.load_from_disk(bible_path)
+                logger.info(
+                    f"[+] Agent Director: Loaded Sonic Bible from {bible_path} "
+                    f"({len(self.sonic_bible.leitmotifs)} motifs, {len(self.sonic_bible.acoustic_spaces)} spaces)"
+                )
+            except Exception as e:
+                logger.warning(f"  [!] Failed to load Sonic Bible from {bible_path}: {e}")
 
     def direct_chapter_manifest(
         self,
@@ -57,6 +81,8 @@ class AgentDirector:
         total_duration_sec: Optional[float] = None,
         timeline_ledger: Optional[TimelineLedger] = None,
         max_retries: int = 3,
+        project_dir: Optional[Path] = None,
+        sonic_bible: Optional[Any] = None,
     ) -> CreativeManifest:
         """
         Directs a chapter into a broadcast-standard CreativeManifest using the 3-Pass Workflow:
@@ -65,6 +91,18 @@ class AgentDirector:
                   graceful fallback to pure silence, NEVER hardcoded tracks)
         - Pass 3: Acoustic Foley (grammatical dependency parsing without regex, word-level alignment with transient pre-roll)
         """
+        active_bible = sonic_bible or self.sonic_bible
+        if not active_bible:
+            check_dir = project_dir or self.project_dir
+            if check_dir:
+                bible_path = Path(check_dir) / "sound_bible.json"
+                if bible_path.exists():
+                    try:
+                        from audiobook_factory.sonic_bible import SonicBible
+                        active_bible = SonicBible.load_from_disk(bible_path)
+                    except Exception as e:
+                        logger.warning(f"  [!] Failed to load Sonic Bible from {bible_path}: {e}")
+
         if timeline_ledger is not None:
             total_duration_ms = timeline_ledger.total_timeline_duration_ms
             total_duration_sec = total_duration_ms / 1000.0
@@ -104,6 +142,7 @@ class AgentDirector:
             script_segments=script_segments,
             total_duration_sec=total_duration_sec,
             max_retries=max_retries,
+            sonic_bible=active_bible,
         )
 
         # Ambience Bed Resolution (Environmental room tone, -32 LUFS)
@@ -119,6 +158,7 @@ class AgentDirector:
             cues_plan=dramaturgy_plan.get("music_cues", []),
             seg_starts_ms=seg_starts_ms,
             total_duration_ms=total_duration_ms,
+            sonic_bible=active_bible,
         )
 
         # =====================================================================
@@ -176,6 +216,7 @@ class AgentDirector:
         script_segments: List[Dict[str, Any]],
         total_duration_sec: float,
         max_retries: int = 3,
+        sonic_bible: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Pass 1: Analyzes dramatic structure, acts, and emotional climaxes.
@@ -194,12 +235,29 @@ class AgentDirector:
 
         script_sample = "\n".join(sample_lines)
 
+        bible_context = ""
+        if sonic_bible:
+            motifs = getattr(sonic_bible, "leitmotifs", {})
+            if isinstance(motifs, dict) and motifs:
+                unique_motifs = {}
+                for k, m in motifs.items():
+                    m_id = getattr(m, "motif_id", str(k))
+                    if m_id not in unique_motifs:
+                        unique_motifs[m_id] = m
+                lines = []
+                for m_id, m in unique_motifs.items():
+                    entity = getattr(m, "associated_entity", "")
+                    intent = getattr(m, "dramatic_intent", "")
+                    t_name = getattr(m, "track_name", "")
+                    lines.append(f"  - [{m_id}] for '{entity}': {t_name} (Intent: {intent})")
+                bible_context = "\nCANONICAL BOOK LEITMOTIFS (Bind these themes when characters/factions appear):\n" + "\n".join(lines) + "\n"
+
         prompt = f"""You are an elite Audio Drama Director & Supervising Sound Designer (BBC Radio 4 / Hollywood standard).
 Direct the soundscape and acoustic dramaturgy for {chapter_id} (Total Duration: {total_duration_sec/60:.1f} mins, {len(script_segments)} segments).
 
 SCREENPLAY SAMPLE:
 {script_sample}
-
+{bible_context}
 MANDATORY ACOUSTIC DIRECTING RULES:
 1. 2-TIER SCORE ARCHITECTURE & ACOUSTIC SILENCE MANDATE:
    - Dialogue breathes and punches in pure acoustic silence supported only by subtle room tone (must maintain >= 60.0% acoustic silence).
@@ -308,7 +366,7 @@ Output STRICT JSON schema:
 
         # Deterministic Pass 1 fallback guaranteeing 75% silence
         logger.warning("  [!] LLM API unavailable. Activating calibrated 75% silence dramatic template.")
-        return self._build_deterministic_dramaturgy_plan(script_segments, total_duration_sec)
+        return self._build_deterministic_dramaturgy_plan(script_segments, total_duration_sec, sonic_bible=sonic_bible)
 
     def _enforce_silence_carving(self, plan: Dict[str, Any], total_duration_sec: float) -> Dict[str, Any]:
         """
@@ -332,10 +390,32 @@ Output STRICT JSON schema:
         return plan
 
     def _build_deterministic_dramaturgy_plan(
-        self, script_segments: List[Dict[str, Any]], total_duration_sec: float
+        self,
+        script_segments: List[Dict[str, Any]],
+        total_duration_sec: float,
+        sonic_bible: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Deterministic plan with high acoustic silence (75% silence)."""
         dur_sec = round(min(25.0, max(2.0, total_duration_sec * 0.20)), 1)
+        leitmotif_ref = ""
+        timbre = "dark strings"
+        query = "mystery solo cello destination"
+        if sonic_bible and hasattr(sonic_bible, "leitmotifs"):
+            for seg in script_segments:
+                spk = seg.get("speaker", "")
+                if spk and spk.lower() != "narrator":
+                    m = sonic_bible.resolve_theme_for_character(spk) if hasattr(sonic_bible, "resolve_theme_for_character") else None
+                    if m:
+                        leitmotif_ref = getattr(m, "motif_id", "")
+                        timbre = getattr(m, "primary_instrument", timbre)
+                        query = getattr(m, "track_name", query)
+                        break
+            if not leitmotif_ref and sonic_bible.leitmotifs:
+                first_m = next(iter(sonic_bible.leitmotifs.values()))
+                leitmotif_ref = getattr(first_m, "motif_id", "")
+                timbre = getattr(first_m, "primary_instrument", timbre)
+                query = getattr(first_m, "track_name", query)
+
         return {
             "dramatic_theme": "Grim Dark Fantasy Mystery",
             "ambience": [{"name": "room_tone", "target_lufs": -32.0, "description": "Atmospheric subtle room tone"}],
@@ -346,14 +426,15 @@ Output STRICT JSON schema:
                     "trigger_segment": 1,
                     "mood": "mysterious",
                     "tempo": "slow",
-                    "timbre": "dark strings",
+                    "timbre": timbre,
                     "energy_section": "INTRO_BED",
-                    "search_query": "mystery solo cello destination",
+                    "search_query": query,
                     "duration_sec": dur_sec,
                     "fade_in_sec": 3.0,
                     "fade_out_sec": 4.0,
                     "volume_db": -18.0,
                     "dramatic_justification": "Introductory dramatic scene transition into silence",
+                    "leitmotif_ref": leitmotif_ref,
                 }
             ],
             "foley_events": [],
@@ -367,6 +448,7 @@ Output STRICT JSON schema:
         cues_plan: List[Dict[str, Any]],
         seg_starts_ms: Dict[int, int],
         total_duration_ms: int,
+        sonic_bible: Optional[Any] = None,
     ) -> List[MusicCue]:
         """
         Pass 2: Music Director executes dynamic FTS5 queries against the sound catalog.
@@ -382,38 +464,55 @@ Output STRICT JSON schema:
                 # Timeline silence mandate reached: remaining cues omitted for silence
                 break
 
-            # Dynamic query formulated from mood, tempo, timbre, and search query
-            q_terms = [
-                cue_data.get("search_query", ""),
-                cue_data.get("mood", ""),
-                cue_data.get("timbre", ""),
-                cue_data.get("tempo", ""),
-            ]
-            clean_query = " ".join([t for t in q_terms if t]).strip() or "orchestral drama"
-            energy_sec = cue_data.get("energy_section", "INTRO_BED")
+            # 0. Check if cue is bound to a canonical Sonic Bible leitmotif
+            lm_ref = cue_data.get("leitmotif_ref", "")
+            resolved_motif = None
+            if lm_ref and sonic_bible and hasattr(sonic_bible, "leitmotifs"):
+                resolved_motif = sonic_bible.leitmotifs.get(lm_ref.lower()) or sonic_bible.leitmotifs.get(lm_ref)
 
-            # 1. Query with energy section filter
-            results = self.sound_bank.search_music_catalog(clean_query, section_type=energy_sec, limit=3)
+            chosen_track = ""
+            track_id = 0
+            section_start_sec = 0.0
 
-            # 2. Relax energy section filter if not found
-            if not results:
-                results = self.sound_bank.search_music_catalog(clean_query, limit=3)
+            if resolved_motif:
+                chosen_track = getattr(resolved_motif, "track_name", "")
+                raw_tid = getattr(resolved_motif, "track_id", 0)
+                track_id = int(raw_tid) if str(raw_tid).isdigit() else 0
+                section_start_sec = float(getattr(resolved_motif, "default_section_start_sec", 0.0) or 0.0)
+                energy_sec = cue_data.get("energy_section", "INTRO_BED")
+            else:
+                # Dynamic query formulated from mood, tempo, timbre, and search query
+                q_terms = [
+                    cue_data.get("search_query", ""),
+                    cue_data.get("mood", ""),
+                    cue_data.get("timbre", ""),
+                    cue_data.get("tempo", ""),
+                ]
+                clean_query = " ".join([t for t in q_terms if t]).strip() or "orchestral drama"
+                energy_sec = cue_data.get("energy_section", "INTRO_BED")
 
-            # 3. Fallback to general music FTS5 search
-            if not results:
-                results = self.sound_bank.search(clean_query, category="music", limit=3)
+                # 1. Query with energy section filter
+                results = self.sound_bank.search_music_catalog(clean_query, section_type=energy_sec, limit=3)
 
-            # 4. CRITICAL RULE: GRACEFUL FALLBACK TO PURE SILENCE, NEVER HARDCODED TRACKS
-            if not results:
-                logger.info(
-                    f"  [-] Music Director: No matching asset in catalog for query '{clean_query}'. "
-                    f"Falling back gracefully to pure acoustic silence (0 hardcoded tracks)."
-                )
-                continue
+                # 2. Relax energy section filter if not found
+                if not results:
+                    results = self.sound_bank.search_music_catalog(clean_query, limit=3)
 
-            chosen_track = results[0]["filename"]
-            track_id = results[0].get("id", 0)
-            section_start_sec = float(results[0].get("start_sec", 0.0) or 0.0)
+                # 3. Fallback to general music FTS5 search
+                if not results:
+                    results = self.sound_bank.search(clean_query, category="music", limit=3)
+
+                # 4. CRITICAL RULE: GRACEFUL FALLBACK TO PURE SILENCE, NEVER HARDCODED TRACKS
+                if not results:
+                    logger.info(
+                        f"  [-] Music Director: No matching asset in catalog for query '{clean_query}'. "
+                        f"Falling back gracefully to pure acoustic silence (0 hardcoded tracks)."
+                    )
+                    continue
+
+                chosen_track = results[0]["filename"]
+                track_id = results[0].get("id", 0)
+                section_start_sec = float(results[0].get("start_sec", 0.0) or 0.0)
 
             trigger_seg = cue_data.get("trigger_segment", 1)
             start_ms = seg_starts_ms.get(trigger_seg, 0)
@@ -444,6 +543,7 @@ Output STRICT JSON schema:
                     fade_out_ms=int(float(cue_data.get("fade_out_sec", 4.0)) * 1000),
                     volume_db=float(cue_data.get("volume_db", -18.0)),
                     dramatic_justification=cue_data.get("dramatic_justification", ""),
+                    leitmotif_ref=lm_ref or (getattr(resolved_motif, "motif_id", "") if resolved_motif else ""),
                 )
             )
 

@@ -349,7 +349,7 @@ def cmd_direct(args):
                 seg_durs[s_idx] = 4.0
 
     from audiobook_factory.agent_director import AgentDirector
-    director = AgentDirector()
+    director = AgentDirector(project_dir=project_dir)
     manifests_dir = project_dir / "manifests"
     manifests_dir.mkdir(parents=True, exist_ok=True)
     manifest_file = Path(args.output) if getattr(args, "output", None) else (manifests_dir / f"chapter_{args.chapter:03d}_manifest.json")
@@ -362,6 +362,7 @@ def cmd_direct(args):
         segment_durations_sec=seg_durs,
         dialogue_stem_path=vocal_stem if vocal_stem.exists() else None,
         timeline_ledger=timeline_ledger,
+        project_dir=project_dir,
     )
 
     with open(manifest_file, "w", encoding="utf-8") as f:
@@ -382,9 +383,27 @@ def cmd_render(args):
 
     from audiobook_factory.contracts import CreativeManifest
     from audiobook_factory.manifest_renderer import render_manifest_soundscape
+    from audiobook_factory.gate_auditor import audit_gate3_5_acoustic_feasibility
 
     with open(manifest_file, "r", encoding="utf-8") as f:
         manifest = CreativeManifest.from_json(f.read())
+
+    # Pre-Flight Gate 3.5 Feasibility Guard
+    skip_gate35 = getattr(args, "skip_gate3_5", False)
+    if not skip_gate35:
+        print(f"[*] Executing Gate 3.5 Pre-Flight Feasibility Guard on {manifest_file.name}...")
+        gate35_res = audit_gate3_5_acoustic_feasibility(manifest)
+        if not gate35_res.passed:
+            print(f"\n[FAIL] Gate 3.5 Pre-Flight Feasibility Guard Failed!", file=sys.stderr)
+            for err in gate35_res.errors:
+                print(f"  [!] {err}", file=sys.stderr)
+            sys.exit(1)
+        print(
+            f"    [+] Gate 3.5 Passed: {gate35_res.details.get('total_music_cues', 0)} music, "
+            f"{gate35_res.details.get('total_foley_cues', 0)} foley cues verified."
+        )
+        for w in gate35_res.details.get("warnings", [])[:3]:
+            print(f"    [*] Warning: {w}")
 
     vocal_file = Path(args.vocal) if getattr(args, "vocal", None) else None
     if not vocal_file or not vocal_file.exists():
@@ -588,6 +607,7 @@ def main():
     p_render.add_argument("--manifest", required=True, help="Path to creative_manifest.json")
     p_render.add_argument("--vocal", default=None, help="Optional path to vocal dialogue stem")
     p_render.add_argument("--output", default=None, help="Optional output audio master path")
+    p_render.add_argument("--skip-gate3-5", action="store_true", help="Skip Gate 3.5 Pre-Flight Feasibility Guard")
 
     # audit
     p_audit = subparsers.add_parser("audit", help="Run multi-gate independent verification audit on a chapter")

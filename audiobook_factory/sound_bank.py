@@ -522,8 +522,12 @@ class SoundBank:
         if not raw_words:
             return []
 
-        fts_query_and = " AND ".join(f"{w}*" for w in raw_words)
-        fts_query_or = " OR ".join(f"{w}*" for w in raw_words)
+        # Filter out common audio file extension tokens from search terms if there are other tokens
+        meaningful_words = [w for w in raw_words if w.lower() not in ("wav", "mp3", "flac", "ogg", "aiff", "m4a")]
+        search_words = meaningful_words if meaningful_words else raw_words
+
+        fts_query_and = " AND ".join(f"{w}*" for w in search_words)
+        fts_query_or = " OR ".join(f"{w}*" for w in search_words)
 
         def _execute_fts(fts_term: str) -> List[Dict[str, Any]]:
             sql = """
@@ -564,7 +568,7 @@ class SoundBank:
 
         # High-precision AND search first
         results = _execute_fts(fts_query_and)
-        if not results and len(raw_words) > 1:
+        if not results and len(search_words) > 1:
             # Broad-recall OR fallback
             results = _execute_fts(fts_query_or)
 
@@ -963,10 +967,11 @@ class SoundBank:
                 if fp.exists():
                     return fp
 
-        # 5. Try resolve_sound exact match
-        found = self.resolve_sound(str(identifier))
-        if found and found.exists():
-            return found
+        # 5. If not an explicit file reference with extension, try resolve_sound
+        if not p.suffix and "/" not in str(identifier) and "\\" not in str(identifier):
+            found = self.resolve_sound(str(identifier))
+            if found and found.exists():
+                return found
 
         raise FileNotFoundError(f"Sound asset '{identifier}' could not be resolved in sound bank.")
 

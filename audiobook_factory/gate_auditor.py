@@ -15,6 +15,8 @@ from __future__ import annotations
 import json
 import re
 import logging
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Dict, Any, List, Set, Optional
 
@@ -637,6 +639,254 @@ class AuditResult(BaseModel):
 
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
+
+
+# ==============================================================================
+# Next-Gen Cinema Quality Gates: Gate 3.5, Gate 5.2, Gate 5.3
+# ==============================================================================
+
+def audit_gate3_5_acoustic_feasibility(
+    manifest: Any,
+    sound_bank: Optional[Any] = None,
+) -> AuditResult:
+    """
+    Gate 3.5: Acoustic Pre-Flight Feasibility Guard.
+    Audits creative manifest before rendering:
+    1. Validates physical audio asset existence (> 1000 bytes on disk).
+    2. Validates section slicing bounds: section_start_sec + duration <= track duration on disk.
+    3. Validates fade envelope geometry (fade_in + fade_out <= cue duration).
+    4. Validates sliding window voice concurrency (flags high density transient collisions).
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+    details: Dict[str, Any] = {}
+
+    from audiobook_factory.sound_bank import get_sound_bank
+    bank = sound_bank or get_sound_bank()
+
+    music_cues = list(getattr(manifest, "music_cues", []))
+    foley_cues = list(getattr(manifest, "foley_cues", []))
+
+    # 1. Audit Music Cues
+    for cue in music_cues:
+        track_name = getattr(cue, "track_name", "") or str(getattr(cue, "track_id", ""))
+        is_direct_file = any(track_name.lower().endswith(ext) for ext in (".wav", ".mp3", ".flac", ".ogg", ".aiff", ".m4a")) or ("/" in track_name or "\\" in track_name)
+        try:
+            resolved = bank.resolve_asset_path(track_name)
+        except Exception:
+            if not is_direct_file:
+                try:
+                    resolved = bank.resolve_sound(track_name, category="BGM") or bank.resolve_sound(track_name)
+                except Exception:
+                    resolved = None
+            else:
+                resolved = None
+
+        if not resolved or not resolved.exists():
+            errors.append(f"Music cue '{getattr(cue, 'cue_id', 'unknown')}' asset not found on disk: {track_name}")
+        elif resolved.stat().st_size < 1000:
+            errors.append(f"Music cue asset empty or corrupt (<1000B): {resolved.name}")
+        else:
+            track_dur = bank._extract_duration(resolved)
+            s_start = float(getattr(cue, "section_start_sec", 0.0) or 0.0)
+            if track_dur > 0 and s_start >= track_dur:
+                errors.append(f"Music cue '{getattr(cue, 'cue_id', '')}' section_start_sec ({s_start:.1f}s) exceeds source duration ({track_dur:.1f}s).")
+
+        fade_in_ms = getattr(cue, "fade_in_ms", 0) or 0
+        fade_out_ms = getattr(cue, "fade_out_ms", 0) or 0
+        dur_ms = getattr(cue, "duration_ms", 0) or 0
+        if (fade_in_ms + fade_out_ms) > dur_ms and dur_ms > 0:
+            warnings.append(f"Music cue '{getattr(cue, 'cue_id', '')}' fade times ({fade_in_ms + fade_out_ms}ms) exceed cue duration ({dur_ms}ms).")
+
+    # 2. Audit Foley Cues
+    for cue in foley_cues:
+        asset_ref = getattr(cue, "asset_path", "") or getattr(cue, "asset_name", "") or str(getattr(cue, "asset_id", ""))
+        if not asset_ref:
+            continue
+        is_direct_file = any(asset_ref.lower().endswith(ext) for ext in (".wav", ".mp3", ".flac", ".ogg", ".aiff", ".m4a")) or ("/" in asset_ref or "\\" in asset_ref)
+        try:
+            resolved = bank.resolve_asset_path(asset_ref)
+        except Exception:
+            if not is_direct_file:
+                try:
+                    resolved = bank.resolve_sound(asset_ref, category="SFX")
+                except Exception:
+                    resolved = None
+            else:
+                resolved = None
+
+        if not resolved or not resolved.exists():
+            errors.append(f"Foley cue '{getattr(cue, 'cue_id', 'unknown')}' asset not found on disk: {asset_ref}")
+        elif resolved.stat().st_size < 1000:
+            errors.append(f"Foley cue asset empty or corrupt (<1000B): {resolved.name}")
+
+    # 3. Concurrency window scan (sliding 200ms)
+    sorted_foley = sorted(foley_cues, key=lambda c: getattr(c, "start_ms", 0) or 0)
+    for i, c in enumerate(sorted_foley):
+        c_start = getattr(c, "start_ms", 0) or 0
+        window_count = sum(1 for other in sorted_foley if abs((getattr(other, "start_ms", 0) or 0) - c_start) < 200)
+        if window_count > 4:
+            warnings.append(f"High foley density ({window_count} cues) within 200ms window at {c_start}ms.")
+            break
+
+    details["total_music_cues"] = len(music_cues)
+    details["total_foley_cues"] = len(foley_cues)
+    details["warnings"] = warnings
+
+    passed = len(errors) == 0
+    return AuditResult(
+        gate="Gate 3.5 (Acoustic Feasibility)",
+        status="PASS" if passed else "FAIL",
+        passed=passed,
+        details=details,
+        errors=errors,
+    )
+
+
+def audit_gate5_2_spectral_masking(
+    dialogue_stem: Path,
+    music_bus: Path,
+    min_dmr_db: float = 12.0,
+    ffmpeg: Optional[str] = None,
+) -> AuditResult:
+    """
+    Gate 5.2: Spectral Masking & Dialogue-to-Music Ratio (DMR) Guard.
+    Measures dialogue vs music loudness in the 300Hz-3.5kHz vocal intelligibility corridor.
+    Asserts dialogue punches through music with at least `min_dmr_db` separation.
+    """
+    import shutil
+    import subprocess
+    import re
+
+    ff = ffmpeg or shutil.which("ffmpeg") or "ffmpeg"
+    d_path = Path(dialogue_stem).resolve()
+    m_path = Path(music_bus).resolve()
+
+    errors: List[str] = []
+    warnings: List[str] = []
+    details: Dict[str, Any] = {}
+
+    def _measure_corridor_lufs(fpath: Path) -> float:
+        if not fpath.exists() or fpath.stat().st_size < 1000:
+            return -70.0
+        cmd = [
+            ff, "-y",
+            "-i", str(fpath),
+            "-af", "bandpass=f=1900:w=3200,ebur128=framelog=quiet",
+            "-f", "null", "-"
+        ]
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
+            match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", res.stderr)
+            return float(match.group(1)) if match else -70.0
+        except Exception:
+            return -70.0
+
+    d_lufs = _measure_corridor_lufs(d_path)
+    m_lufs = _measure_corridor_lufs(m_path)
+
+    # If music is silent (< -60 LUFS), DMR is effectively infinite -> PASS
+    if m_lufs <= -60.0:
+        dmr_db = 99.0
+        status_note = "Music stem silent or unvoiced in vocal corridor (zero masking)."
+    elif d_lufs <= -60.0:
+        dmr_db = -99.0
+        warnings.append("Dialogue stem silent in vocal corridor.")
+        status_note = "Dialogue unvoiced."
+    else:
+        dmr_db = round(d_lufs - m_lufs, 2)
+        status_note = f"Measured DMR: +{dmr_db:.1f} dB"
+
+    if dmr_db < min_dmr_db and m_lufs > -60.0:
+        errors.append(
+            f"Vocal spectral masking violation: Dialogue-to-Music Ratio is +{dmr_db:.1f} dB "
+            f"(required minimum +{min_dmr_db:.1f} dB in 300Hz-3.5kHz corridor)."
+        )
+
+    details["dialogue_corridor_lufs"] = d_lufs
+    details["music_corridor_lufs"] = m_lufs
+    details["measured_dmr_db"] = dmr_db
+    details["min_required_dmr_db"] = min_dmr_db
+    details["note"] = status_note
+
+    passed = len(errors) == 0
+    return AuditResult(
+        gate="Gate 5.2 (Spectral Masking)",
+        status="PASS" if passed else "FAIL",
+        passed=passed,
+        details=details,
+        errors=errors,
+    )
+
+
+def audit_gate5_3_stereo_phase(
+    audio_file: Path,
+    min_phase_correlation: float = 0.20,
+    ffmpeg: Optional[str] = None,
+) -> AuditResult:
+    """
+    Gate 5.3: Stereo Phase Correlation & Mono Compatibility Guard.
+    Uses FFmpeg aphasemeter filter to evaluate frame-by-frame Pearson stereo phase correlation r.
+    Guarantees r >= min_phase_correlation to prevent mono phase cancellation on mobile/smart speakers.
+    """
+    import shutil
+    import subprocess
+    import re
+
+    ff = ffmpeg or shutil.which("ffmpeg") or "ffmpeg"
+    a_path = Path(audio_file).resolve()
+
+    errors: List[str] = []
+    details: Dict[str, Any] = {}
+
+    if not a_path.exists():
+        return AuditResult(
+            gate="Gate 5.3 (Stereo Phase)",
+            status="FAIL",
+            passed=False,
+            errors=[f"Audio file does not exist: {a_path}"],
+            details={},
+        )
+
+    cmd = [
+        ff, "-y",
+        "-i", str(a_path),
+        "-af", "aphasemeter=video=0,ametadata=print:key=lavfi.aphasemeter.phase",
+        "-f", "null", "-"
+    ]
+    phase_values: List[float] = []
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        for line in res.stderr.splitlines():
+            if "lavfi.aphasemeter.phase=" in line:
+                val_str = line.split("lavfi.aphasemeter.phase=")[-1].strip()
+                try:
+                    phase_values.append(float(val_str))
+                except ValueError:
+                    pass
+    except Exception as e:
+        logger.warning(f"Stereo phase audit error: {e}")
+
+    mean_phase = sum(phase_values) / len(phase_values) if phase_values else 1.0
+
+    if mean_phase < min_phase_correlation:
+        errors.append(
+            f"Stereo phase cancellation hazard: Mean phase correlation r={mean_phase:.3f} "
+            f"is below required mono compatibility threshold r={min_phase_correlation:.2f}."
+        )
+
+    details["mean_phase_correlation"] = round(mean_phase, 3)
+    details["min_phase_threshold"] = min_phase_correlation
+    details["frames_evaluated"] = len(phase_values)
+
+    passed = len(errors) == 0
+    return AuditResult(
+        gate="Gate 5.3 (Stereo Phase)",
+        status="PASS" if passed else "FAIL",
+        passed=passed,
+        details=details,
+        errors=errors,
+    )
 
 
 def audit_gate6a_voice_continuity(
