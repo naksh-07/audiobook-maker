@@ -137,6 +137,70 @@ class SoundBank:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_section_energy ON sound_track_sections(energy_level);")
             conn.commit()
 
+            # Harmonized sound_assets table for rich EBU R128 LUFS & True Peak DSP metrics
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS sound_assets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    filepath TEXT UNIQUE NOT NULL,
+                    filename TEXT NOT NULL,
+                    category TEXT NOT NULL,          -- foley, ambience, music, sfx
+                    action_type TEXT NOT NULL,       -- impact, footstep, clash, draw, whoosh, etc.
+                    exciter TEXT NOT NULL,           -- metal, leather, wood, stone, water, etc.
+                    resonator TEXT NOT NULL,         -- ground, hall, room, wood_floor, etc.
+                    tags TEXT NOT NULL,              -- Space-delimited searchable tokens
+                    duration_sec REAL DEFAULT 0.0,
+                    sample_rate INTEGER DEFAULT 48000,
+                    channels INTEGER DEFAULT 2,
+                    format TEXT,                    -- wav, mp3, flac, ogg
+                    file_size_bytes INTEGER DEFAULT 0,
+                    bit_rate INTEGER DEFAULT 0,
+                    integrated_lufs REAL DEFAULT -70.0,
+                    true_peak_db REAL DEFAULT -70.0,
+                    loudness_range_lu REAL DEFAULT 0.0,
+                    spectral_centroid_hz REAL DEFAULT 0.0,
+                    rms_level_db REAL DEFAULT -70.0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            conn.execute("""
+                CREATE VIRTUAL TABLE IF NOT EXISTS sound_assets_fts USING fts5(
+                    filename,
+                    category,
+                    action_type,
+                    exciter,
+                    resonator,
+                    tags,
+                    content='sound_assets',
+                    content_rowid='id'
+                );
+            """)
+            conn.execute("""
+                CREATE TRIGGER IF NOT EXISTS sound_assets_ai AFTER INSERT ON sound_assets BEGIN
+                    INSERT INTO sound_assets_fts(rowid, filename, category, action_type, exciter, resonator, tags)
+                    VALUES (new.id, new.filename, new.category, new.action_type, new.exciter, new.resonator, new.tags);
+                END;
+            """)
+            conn.execute("""
+                CREATE TRIGGER IF NOT EXISTS sound_assets_ad AFTER DELETE ON sound_assets BEGIN
+                    INSERT INTO sound_assets_fts(sound_assets_fts, rowid, filename, category, action_type, exciter, resonator, tags)
+                    VALUES ('delete', old.id, old.filename, old.category, old.action_type, old.exciter, old.resonator, old.tags);
+                END;
+            """)
+            conn.execute("""
+                CREATE TRIGGER IF NOT EXISTS sound_assets_au AFTER UPDATE ON sound_assets BEGIN
+                    INSERT INTO sound_assets_fts(sound_assets_fts, rowid, filename, category, action_type, exciter, resonator, tags)
+                    VALUES ('delete', old.id, old.filename, old.category, old.action_type, old.exciter, old.resonator, old.tags);
+                    INSERT INTO sound_assets_fts(rowid, filename, category, action_type, exciter, resonator, tags)
+                    VALUES (new.id, new.filename, new.category, new.action_type, new.exciter, new.resonator, new.tags);
+                END;
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_category ON sound_assets(category);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_action ON sound_assets(action_type);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_exciter ON sound_assets(exciter);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_resonator ON sound_assets(resonator);")
+            conn.commit()
+
             # Auto-seed sections if empty
             sec_row = conn.execute("SELECT COUNT(*) FROM sound_track_sections").fetchone()
             if sec_row and sec_row[0] == 0:
@@ -240,10 +304,14 @@ class SoundBank:
             subcategory = "Tavern"
         elif any(k in name_lower or k in parts for k in ("footstep", "walk", "run", "gravel", "stone", "wood")):
             subcategory = "Footsteps"
-        elif any(k in name_lower or k in parts for k in ("magic", "spell", "glow", "enchant")):
+        elif any(k in name_lower or k in parts for k in ("magic", "spell", "glow", "enchant", "igni", "aard", "quen", "axii", "yrden")):
             subcategory = "Magic"
-        elif any(k in name_lower or k in parts for k in ("combat", "sword", "shield", "hit", "punch", "arrow")):
+        elif any(k in name_lower or k in parts for k in ("combat", "sword", "shield", "hit", "punch", "arrow", "parry", "clash", "thud")):
             subcategory = "Combat"
+        elif any(k in name_lower or k in parts for k in ("monster", "beast", "creature", "striga", "ghoul", "wolf", "roar", "snarl")):
+            subcategory = "Monster"
+        elif any(k in name_lower or k in parts for k in ("crypt", "tomb", "dungeon", "hearth", "hall", "swamp", "marsh", "blizzard")):
+            subcategory = "Fantasy"
         elif any(k in name_lower or k in parts for k in ("drone", "dark", "horror", "eerie", "creepy")):
             subcategory = "Drone"
         elif any(k in name_lower or k in parts for k in ("forest", "birds", "nature", "night", "crickets", "fire")):
@@ -255,15 +323,41 @@ class SoundBank:
             mood = "peaceful"
         elif any(k in name_lower for k in ("mysterious", "suspense", "secret", "archive")):
             mood = "mysterious"
-        elif any(k in name_lower for k in ("tense", "danger", "dark", "chase", "heartbeat")):
+        elif any(k in name_lower for k in ("tense", "danger", "dark", "chase", "heartbeat", "striga", "ghoul", "beast", "monster")):
             mood = "tense"
         elif any(k in name_lower for k in ("emotional", "sad", "melancholy", "poignant")):
             mood = "emotional"
-        elif any(k in name_lower for k in ("epic", "triumph", "glory", "battle", "brass")):
+        elif any(k in name_lower for k in ("epic", "triumph", "glory", "battle", "brass", "igni", "aard")):
             mood = "epic"
 
-        # 4. Tags: tokens extracted from filename and subfolder
+        # 4. Tags: tokens extracted from filename, subfolder, and semantic expansion dictionaries
         tokens = re.findall(r"[a-z0-9]+", name_lower + " " + " ".join(parts[-3:]))
+        combined_text = name_lower + " " + " ".join(parts[-3:])
+        semantic_expansions = {
+            "igni": ["igni", "fire", "flame", "whoosh", "burst", "combustion", "spell", "magic", "blaze", "heat", "pyromancy", "witcher"],
+            "aard": ["aard", "shockwave", "blast", "concussive", "telekinetic", "push", "force", "air", "wave", "kinetic", "impact", "witcher"],
+            "quen": ["quen", "shield", "barrier", "protection", "forcefield", "hum", "resonance", "armor", "defense", "ward", "witcher"],
+            "axii": ["axii", "hypnotic", "chime", "charm", "psychic", "mind", "control", "stun", "daze", "calm", "suggestion", "witcher"],
+            "yrden": ["yrden", "trap", "glyph", "arcane", "circle", "spark", "electric", "zap", "binding", "slow", "rune", "witcher"],
+            "striga": ["striga", "monster", "beast", "roar", "screech", "demonic", "creature", "horror", "growl", "predator", "curse"],
+            "ghoul": ["ghoul", "monster", "creature", "snarl", "growl", "necrophage", "scavenge", "flesh", "tear", "bite", "alghoul"],
+            "wolf": ["wolf", "wolves", "howl", "howling", "canine", "pack", "wild", "beast", "predator", "forest", "night"],
+            "sword": ["sword", "blade", "steel", "weapon", "scabbard", "draw", "clash", "parry", "strike", "swing", "slash"],
+            "clash": ["clash", "parry", "strike", "hit", "metal", "duel", "fight", "combat", "steel", "ring", "sword"],
+            "thud": ["thud", "body", "heavy", "impact", "fall", "stone", "hit", "ground", "crash", "bodyfall", "blunt"],
+            "armor": ["armor", "plate", "chainmail", "metal", "movement", "gear", "knight", "suit", "clank", "rattle"],
+            "crypt": ["crypt", "tomb", "dungeon", "subterranean", "stone", "cave", "drips", "damp", "reverberant", "ancient", "vault", "catacomb"],
+            "dungeon": ["dungeon", "crypt", "tomb", "cell", "chains", "underground", "stone", "dark", "cave"],
+            "hearth": ["hearth", "fireplace", "castle", "hall", "fire", "crackling", "warmth", "indoor", "room"],
+            "castle": ["castle", "hall", "hearth", "fireplace", "court", "room", "chamber", "noble"],
+            "swamp": ["swamp", "bog", "marsh", "wetland", "eerie", "murky", "night", "water", "mist", "reeds", "nocturnal"],
+            "bog": ["bog", "swamp", "marsh", "wetland", "eerie", "murky", "night", "water", "mist", "reeds"],
+            "blizzard": ["blizzard", "mountain", "snow", "howling", "wind", "storm", "cold", "winter", "frost", "gale", "ice", "freeze"],
+        }
+        for kw, exp_tags in semantic_expansions.items():
+            if kw in combined_text:
+                tokens.extend(exp_tags)
+
         # Remove noisy common tokens
         clean_tokens = set(t for t in tokens if len(t) > 2 and t not in ("mp3", "wav", "flac", "ogg", "audiobooks", "soundscapes"))
         tags = " ".join(sorted(clean_tokens))
@@ -434,9 +528,11 @@ class SoundBank:
         def _execute_fts(fts_term: str) -> List[Dict[str, Any]]:
             sql = """
                 SELECT c.id, c.filename, c.filepath, c.category, c.subcategory, c.mood, c.tags,
-                       c.duration_sec, c.size_bytes, c.source_url, c.is_downloaded, rank
+                       c.duration_sec, c.size_bytes, c.source_url, c.is_downloaded, rank,
+                       a.integrated_lufs, a.true_peak_db, a.spectral_centroid_hz
                 FROM sound_catalog_fts f
                 JOIN sound_catalog c ON f.rowid = c.id
+                LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
                 WHERE sound_catalog_fts MATCH ?
             """
             params = [fts_term]
@@ -493,16 +589,24 @@ class SoundBank:
 
         q_clean = query.lower().strip()
 
-        # 2. Try exact category & mood match
-        results = self.search(q_clean, category=category, mood=prefer_mood, limit=4)
-        if not results and prefer_mood:
-            # Relax mood filter if no match, but strictly preserve category
-            results = self.search(q_clean, category=category, limit=4)
-
-        for cand in results:
-            cand_path = Path(cand["filepath"])
-            if cand.get("is_downloaded", 1) and cand_path.exists() and cand_path.is_file():
+        # Helper to test candidate path existence and virtual download
+        def _check_cand(cand: Dict[str, Any]) -> Optional[Path]:
+            raw_fp = cand.get("filepath", "")
+            cand_path = Path(raw_fp)
+            if cand_path.is_file() and cand_path.exists():
                 return cand_path
+
+            # Also check relative to bank_root if relative path or moved
+            if cand.get("filename"):
+                rel_p = self.bank_root / cand["filename"]
+                if rel_p.is_file() and rel_p.exists():
+                    return rel_p
+                # Check category subdirectories
+                cat = cand.get("category", "")
+                if cat:
+                    cat_p = self.bank_root / cat.lower() / cand["filename"]
+                    if cat_p.is_file() and cat_p.exists():
+                        return cat_p
 
             # Virtual entry with remote source_url -> JIT download
             if cand.get("source_url"):
@@ -514,6 +618,46 @@ class SoundBank:
                 )
                 if downloaded and downloaded.exists():
                     return downloaded
+            return None
+
+        # 2. Try exact category & mood match (limit 20 to prevent ghost depletion)
+        results = self.search(q_clean, category=category, mood=prefer_mood, limit=20)
+        for cand in results:
+            resolved = _check_cand(cand)
+            if resolved:
+                return resolved
+
+        # 3. Relax mood filter if not found
+        if prefer_mood:
+            results = self.search(q_clean, category=category, limit=20)
+            for cand in results:
+                resolved = _check_cand(cand)
+                if resolved:
+                    return resolved
+
+        # 4. If still not found and category was provided, try broad category search
+        if category:
+            cat_aliases = {
+                "FOL": ["foley", "SFX"],
+                "foley": ["FOL", "SFX"],
+                "AMB": ["ambience", "CHAPTER_BED"],
+                "ambience": ["AMB", "CHAPTER_BED"],
+                "MUS": ["music", "DYNAMIC_STEM", "CHAPTER_BED"],
+                "music": ["MUS", "DYNAMIC_STEM", "CHAPTER_BED"],
+            }
+            for alt_cat in cat_aliases.get(category, []):
+                results = self.search(q_clean, category=alt_cat, limit=10)
+                for cand in results:
+                    resolved = _check_cand(cand)
+                    if resolved:
+                        return resolved
+
+        # 5. Broad search without category constraint
+        results = self.search(q_clean, limit=20)
+        for cand in results:
+            resolved = _check_cand(cand)
+            if resolved:
+                return resolved
 
         return None
 
@@ -778,7 +922,7 @@ class SoundBank:
             sql += " AND (s.energy_level IS NULL OR s.energy_level <= ?)"
             params.append(max_energy)
 
-        sql += " ORDER BY rank LIMIT ?"
+        sql += " GROUP BY c.id ORDER BY rank LIMIT ?"
         params.append(limit)
 
         with self._get_conn() as conn:
@@ -825,6 +969,62 @@ class SoundBank:
             return found
 
         raise FileNotFoundError(f"Sound asset '{identifier}' could not be resolved in sound bank.")
+
+    def get_asset_metrics(self, identifier: Union[str, int, Path]) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves EBU R128 LUFS, True Peak, and Spectral Centroid metrics
+        from the harmonized sound_assets table.
+        """
+        resolved_p: Optional[Path] = None
+        if isinstance(identifier, int) or (isinstance(identifier, str) and identifier.isdigit()):
+            with self._get_conn() as conn:
+                row = conn.execute("SELECT filepath FROM sound_catalog WHERE id = ?", (int(identifier),)).fetchone()
+                if row and row["filepath"]:
+                    resolved_p = Path(row["filepath"])
+        elif isinstance(identifier, (str, Path)):
+            p = Path(identifier)
+            if p.exists():
+                resolved_p = p
+            else:
+                resolved_p = self.resolve_sound(str(identifier))
+
+        with self._get_conn() as conn:
+            table_check = conn.execute(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sound_assets'"
+            ).fetchone()[0]
+            if not table_check:
+                return None
+
+            row = None
+            if resolved_p:
+                norm_fwd = str(resolved_p.resolve()).replace("\\", "/")
+                norm_win = str(resolved_p.resolve()).replace("/", "\\")
+                row = conn.execute("""
+                    SELECT * FROM sound_assets
+                    WHERE filepath = ? OR filepath = ? OR filename = ?
+                    LIMIT 1
+                """, (norm_fwd, norm_win, resolved_p.name)).fetchone()
+
+            if not row and isinstance(identifier, (str, int)):
+                row = conn.execute("""
+                    SELECT * FROM sound_assets WHERE id = ? OR filename = ? LIMIT 1
+                """, (identifier, str(identifier))).fetchone()
+
+            if row:
+                return {
+                    "id": row["id"],
+                    "filename": row["filename"],
+                    "filepath": row["filepath"],
+                    "category": row["category"],
+                    "action_type": row["action_type"],
+                    "integrated_lufs": float(row["integrated_lufs"]) if row["integrated_lufs"] is not None else -23.0,
+                    "true_peak_db": float(row["true_peak_db"]) if row["true_peak_db"] is not None else -1.5,
+                    "spectral_centroid_hz": float(row["spectral_centroid_hz"]) if row["spectral_centroid_hz"] is not None else 0.0,
+                    "sample_rate": int(row["sample_rate"]) if row["sample_rate"] is not None else 48000,
+                    "channels": int(row["channels"]) if row["channels"] is not None else 2,
+                    "duration_sec": float(row["duration_sec"]) if row["duration_sec"] is not None else 0.0,
+                }
+        return None
 
     def stats(self) -> Dict[str, Any]:
         """Returns storage and catalog statistics for the local sound bank."""

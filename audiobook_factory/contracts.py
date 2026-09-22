@@ -349,6 +349,7 @@ class MusicCue(BaseModel):
     track_id: int = Field(default=0, ge=0, description="Database asset identifier of the music track")
     track_name: str = Field(..., description="Human-readable track name or title")
     section_name: str = Field(..., description="Sub-track section name (e.g. 'INTRO_BED', 'RISING_TENSION', 'CLIMAX_DROP')")
+    section_start_sec: float = Field(default=0.0, ge=0.0, description="Start offset inside source track in seconds")
     start_ms: int = Field(..., ge=0, description="Placement offset on chapter timeline in milliseconds")
     duration_ms: int = Field(..., gt=0, description="Duration of the cue in milliseconds")
     fade_in_ms: int = Field(default=2000, ge=0, description="Fade-in envelope duration in milliseconds")

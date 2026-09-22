@@ -374,7 +374,7 @@ Output STRICT JSON schema:
         MANDATE: Graceful fallback to pure silence, NEVER hardcoded tracks.
         """
         music_cues: List[MusicCue] = []
-        max_music_budget_ms = int(total_duration_ms * 0.35)
+        max_music_budget_ms = int(total_duration_ms * 0.40)
         accumulated_music_ms = 0
 
         for idx, cue_data in enumerate(cues_plan):
@@ -413,6 +413,7 @@ Output STRICT JSON schema:
 
             chosen_track = results[0]["filename"]
             track_id = results[0].get("id", 0)
+            section_start_sec = float(results[0].get("start_sec", 0.0) or 0.0)
 
             trigger_seg = cue_data.get("trigger_segment", 1)
             start_ms = seg_starts_ms.get(trigger_seg, 0)
@@ -436,6 +437,7 @@ Output STRICT JSON schema:
                     track_name=chosen_track,
                     track_id=track_id,
                     section_name=energy_sec,
+                    section_start_sec=section_start_sec,
                     start_ms=start_ms,
                     duration_ms=dur_ms,
                     fade_in_ms=int(float(cue_data.get("fade_in_sec", 3.0)) * 1000),

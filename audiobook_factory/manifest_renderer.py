@@ -110,7 +110,7 @@ def render_foley_bus_reel_chunked(
 
             for i, (cue, apath) in enumerate(sub_cues):
                 inputs.extend(["-i", str(apath)])
-                cue_start_ms = max(0, int(cue.start_ms - getattr(cue, "pre_roll_ms", 0)))
+                cue_start_ms = max(0, int(cue.start_ms))
                 cue_gain = 10.0 ** (float(getattr(cue, "gain_dbfs", -15.0)) / 20.0)
                 pan = float(getattr(cue, "azimuth_pan", 0.0))
 
@@ -172,6 +172,10 @@ def render_foley_bus_reel_chunked(
         return res.returncode == 0 and output_bus_file.exists()
 
 
+# Backward-compatible alias for render_foley_bus_reel_chunked
+render_foley_bus = render_foley_bus_reel_chunked
+
+
 def render_music_bus(
     music_cues: List[MusicCue],
     total_duration_sec: float,
@@ -219,10 +223,11 @@ def render_music_bus(
             vol_linear = 10.0 ** (cue.volume_db / 20.0)
             fade_in = min(3.0, dur_sec / 3.0)
             fade_out = min(4.0, dur_sec / 3.0)
+            start_offset_sec = max(0.0, float(getattr(cue, "section_start_sec", 0.0)))
             out_cue = tmp_dir / f"music_cue_{idx:03d}.wav"
-
             cmd = [
                 ffmpeg, "-y",
+                *(["-ss", f"{start_offset_sec:.2f}"] if start_offset_sec > 0 else []),
                 "-i", str(cue_path),
                 "-t", f"{dur_sec:.2f}",
                 "-af", f"volume={vol_linear:.3f},afade=t=in:ss=0:d={fade_in:.2f},afade=t=out:st={max(0.1, dur_sec - fade_out):.2f}:d={fade_out:.2f},aresample=osr=48000",
