@@ -19,10 +19,16 @@ DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "audiobooks" / "key_p
 def _google_quota_date_str() -> str:
     """
     Google AI Studio resets daily quotas at Midnight US Pacific Time (PT).
-    Uses IANA 'America/Los_Angeles' for automatic PDT/PST DST transitions.
+    Uses IANA 'America/Los_Angeles' for automatic PDT/PST DST transitions,
+    with a graceful fallback for environments lacking tzdata (e.g. Windows).
     """
-    pacific_tz = ZoneInfo("America/Los_Angeles")
-    pacific_now = datetime.now(pacific_tz)
+    try:
+        pacific_tz = ZoneInfo("America/Los_Angeles")
+        pacific_now = datetime.now(pacific_tz)
+    except Exception:
+        # Fallback for Windows without tzdata package (approximate Pacific Time: UTC-7 PDT / UTC-8 PST)
+        pacific_tz = timezone(timedelta(hours=-7))
+        pacific_now = datetime.now(pacific_tz)
     return pacific_now.strftime("%Y-%m-%d")
 
 

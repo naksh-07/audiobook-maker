@@ -87,7 +87,13 @@ Audio assets are classified into 4 primary functional categories:
 | `FOL` | Tactile Foley | Footsteps, Cloth rustle, Door creak, Breathing | Dialogue-anchored physical movement sounds. |
 | `SFX` | Dramatic Sound FX | Sword clash, Explosion, Spell cast, Monster roar | High-intensity impact audio events. |
 
-Assets also support **Universal Category System (UCS)** 7-character naming conventions (e.g. `WATRRain`, `BLDNGate`, `DOORWood`).
+Assets also support **Universal Category System (UCS)** 7-character naming conventions (e.g. `WATRRain`, `BLDNGate`, `DOORWood`, `WEAPSwd`).
+
+### Domestic Tableware & Anatomical Gore UCS Isolation (ADR-022)
+To prevent dining banquet scenes from triggering violent sword clatter:
+- **`DOMETabl` (Domestic Tableware)**: Explicitly categorizes plates, dishes, bowls, cups, spoons, forks, trays, and tankards (`थाली`, `कटोरा`, `चम्मच`, `बर्तन`, `प्याला`, `plate`, `dish`, `bowl`, `ceramic`, `wood_tankard`).
+- **`GOREAnat` (Anatomical & Organic Gore)**: Isolates bone fractures, cartilage, and flesh squelches (`हड्डी`, `मांस`, `bone`, `cartilage`, `flesh`).
+- **`WEAPSwd` / `WEAPKnf` (Combat Weaponry)**: Isolated strictly to blades, swords, parries, and daggers. Direct dining keywords are strictly barred from resolving to combat weaponry.
 
 ---
 

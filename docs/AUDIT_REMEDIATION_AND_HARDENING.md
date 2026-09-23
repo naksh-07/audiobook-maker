@@ -3,18 +3,20 @@
 > **Authoritative Engineering Record of the Audiobook Maker Core Engine Overhaul, Dynamic Gate Architecture, Acoustic DSP Signal Isolation, and Container Multiplexer Safety.**
 
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-232%20Passing%20(100%25)-brightgreen.svg)](../tests/)
+[![Verification](https://img.shields.io/badge/Tests-243%20Passing%20(100%25)-brightgreen.svg)](../tests/)
 [![Safety](https://img.shields.io/badge/TTS%20Safety-BLOCK__NONE%20(Permanent)-red.svg)](../audiobook_factory/tts_dispatcher.py)
 
 ---
 
 ## 📌 Executive Summary
 
-During production validation of multi-chapter novel production runs on Windows 11 high-performance workstations, two systematic hardening sprints were executed:
+During production validation of multi-chapter novel production runs on Windows 11 high-performance workstations, four systematic hardening sprints were executed:
 1. **Phase 1: Architecture Audit Remediation (P0-P3)**: Resolved container multiplexer crashes (WAV stream-copy in M4B), dynamic Gate 3 deadlock for agent-directed manifests, acoustic notch signal isolation to music bus, and quota exhaustion via dedicated text key routing.
 2. **Phase 2: Forensic Audit Remediation & Hardening (ADR-020)**: Remediated 13 real-world production defects across model deserialization rehydration, CLI script unpacking, defensive TTS parsing, key manager cooldowns, Quality Gates 3.5 & 4.5, Sanitizer linguistic evaluation, audio take deduplication, and Windows shell command limit bypass.
+3. **Phase 3: Zero-Voice-Drift Hardening & Deterministic Speaker Attribution (ADR-021)**: Eliminated silent narrator fallbacks, implemented fail-closed `UnregisteredSpeakerError`, auto-discovery of canonical project rosters, Gate 1 acoustic gender alignment checks, Gate 2 speaker whitelist enforcement, and two-pass pronoun disambiguation.
+4. **Phase 4: Audio Drama Timeline Sync, Foley Staging & Soundscape Remediation (ADR-022)**: Eradicated cumulative timeline drift via contractual `pre_roll_breath_ms` synchronization, eliminated the 50% dead-center Foley trap with `BILINGUAL_ANCHOR_MAP`, isolated domestic tableware (`DOMETabl`) from combat weaponry (`WEAPSwd`), implemented scene-bound BGM underscore with `until_segment`, and enabled dynamic multi-scene ambience bed partitioning from `acoustic_env` shifts.
 
-As of this release, the entire test suite maintains a **232/232 unit and regression test pass rate (100%)** with zero failures, zero errors, and zero regressions.
+As of this release, the entire test suite maintains a **243/243 unit and regression test pass rate (100%)** with zero failures, zero errors, and zero regressions across all 34 test suites.
 
 ---
 
@@ -400,19 +402,112 @@ Following full-pipeline novel stress tests, a rigorous forensic code audit was c
 
 ---
 
+## 🎭 Phase 3: Zero-Voice-Drift Hardening & Deterministic Attribution (ADR-021)
+
+### 1. Fail-Closed Unregistered Speaker Protection (`UnregisteredSpeakerError`)
+- **Module**: [`audiobook_factory/tts_dispatcher.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py)
+- **Problem**: When LLM screenplay extraction produced an unmapped or hallucinated character name, `TTSDispatcher.get_speaker_config()` silently fell back to the default narrator voice (`Aoede`). In full-cast audio dramas, this resulted in jarring "voice drift", where male warriors or sorceresses suddenly spoke in the narrator's female voice for a single dialogue line.
+- **Remediation**:
+  Implemented a strict fail-closed policy. Dialogue segments requesting an unregistered speaker raise a typed `UnregisteredSpeakerError` displaying fuzzy suggestions (`difflib.get_close_matches`):
+  ```python
+  if self.strict_speakers:
+      raise UnregisteredSpeakerError(
+          f"Speaker '{sp_clean}' (type: {seg_type}) is not registered in voice_registry.json "
+          f"or character_roster.json!{close_hint} Silent fallback to Narrator is prohibited to prevent voice drift."
+      )
+  ```
+
+### 2. Dynamic Character Roster & Voice Registry Auto-Discovery
+- **Module**: [`audiobook_factory/tts_dispatcher.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py)
+- **Remediation**:
+  `TTSDispatcher._load_character_roster()` automatically loads `character_roster.json`, indexing canonical names, Devanagari transliterations, underscore/space variations, and character aliases. When a dialogue line is dispatched under an alias (e.g. `Witcher`, `विचर`, `Geralt_of_Rivia`), it resolves deterministically to the canonical voice configuration (`Charon`).
+
+### 3. Pre-Flight Chapter Voice Validation
+- **Module**: [`audiobook_factory/tts_dispatcher.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py)
+- **Remediation**:
+  Before making any external API calls, `TTSDispatcher.synthesize_chapter_script()` runs a zero-cost pre-flight sweep across all segments in the chapter. If any segment contains an unregistered speaker, synthesis aborts immediately, shielding Gemini API quota from partial run failures.
+
+### 4. Gate 2 Screenplay Roster Audit & Whitelist Enforcement
+- **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py), [`audiobook_factory/orchestrator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestrator.py)
+- **Remediation**:
+  `audit_gate2_script(script_file, project_dir=pdir)` auto-discovers the project character roster and builds a case-insensitive, space/underscore-normalized canonical whitelist. In `orchestrator.py`, Gate 2 failure halts chapter processing cleanly:
+  ```python
+  except GateAuditError as e:
+      logger.error(f"\n[!] 🛑 GATE 2 AUDIT FAILED for Chapter {chapter_num:02d}: {e}")
+      logger.error("[!] Screenplay contains non-canonical speakers or schema violations. Aborting synthesis to prevent voice drift.")
+      raise
+  ```
+
+### 5. Gate 1 Acoustic Gender Alignment Check
+- **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
+- **Remediation**:
+  `audit_gate1_roster()` cross-references roster `gender` against known Gemini persona profiles (`FEMALE_PERSONAS = {"aoede", "kore", "leda", "zephyr"}`, `MALE_PERSONAS = {"charon", "fenrir", "puck", "zeus", "orpheus", "achilles"}`), emitting diagnostic warnings if male characters are assigned female personas or vice versa. Non-vocal action tags (`Foley`, `SFX`) are cleanly bypassed.
+
+### 6. Two-Pass Screenplay Pronoun & Alias Disambiguation
+- **Module**: [`audiobook_factory/script_builder.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py)
+- **Remediation**:
+  `clean_screenplay_pass2()` strips parenthetical actor annotations (`Geralt (Witcher)` $\rightarrow$ `Geralt`) and resolves pronouns in both English (`he`, `she`, `the man`, `the woman`) and Hindi (`उसने`, `वह`, `आदमी`, `लड़की`, `महिला`) to the most recently active character matching the gender.
+
+---
+
+## 🎧 Phase 4: Audio Drama Timeline Sync, Foley Staging & Soundscape Partitioning (ADR-022)
+
+### 1. Cumulative Timeline Drift Elimination (`pre_roll_breath_ms`)
+- **Modules**: [`contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py), [`timeline_ledger.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/timeline_ledger.py), [`agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)
+- **Problem**: When intimate dialogue segments included `pre_roll_breath_ms`, physical silence was inserted into the concatenated WAV audio, but `start_ms` in `TimelineLedger` and `seg_starts_ms` in `AgentDirector` did not offset speech accordingly. Over a long chapter, this accumulated 10-30s of timing drift, misaligning music drops and Foley hits.
+- **Remediation**:
+  - Added `pre_roll_breath_ms: int = Field(default=0, ge=0)` to `TimelineSegment`.
+  - Synchronized start calculation: `start_ms = curr_t_ms + pre_breath`.
+  - Synchronized director timeline offsets: `seg_starts_ms[s_idx] = current_time_ms + pre_breath`.
+
+### 2. Eradication of 50% Dead-Center Foley Trap & Bilingual Anchor Mapping
+- **Module**: [`audiobook_factory/agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)
+- **Problem**: Unmatched anchor words in Hindi dialogue lines fell back to segment midpoint (`len(words) // 2`), causing every sound effect to land dead-center in the middle of dialogue lines.
+- **Remediation**:
+  - Implemented `BILINGUAL_ANCHOR_MAP` mapping Hindi and English stems (`sword` $\leftrightarrow$ `तलवार`, `blade` $\leftrightarrow$ `खंजर`, `door` $\leftrightarrow$ `दरवाजा`, `slam` $\leftrightarrow$ `पटक`, `plate` $\leftrightarrow$ `थाली`, `pour` $\leftrightarrow$ `उड़ेल`).
+  - Implemented transient lead-in phasing: preparatory actions land early ($\sim 15\%$), while physical impacts land on climax windows ($\sim 75\%$), eliminating dead-center sound effect placement.
+
+### 3. Domestic Tableware vs. Combat Weaponry Taxonomy Isolation
+- **Modules**: [`acoustic_bus_matrix.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/acoustic_bus_matrix.py), [`agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)
+- **Problem**: In Universal Category System (UCS) rules, the keyword "plate" expanded to armor plating (`WEAPMtl` / `steel`), causing dinner plates (`थाली`) in banquet scenes to trigger battlefield sword clashes.
+- **Remediation**:
+  - Added `DOMETabl` to `UCS_RULES` for tableware (`थाली`, `कटोरा`, `चम्मच`, `बर्तन`, `प्याला`, `plate`, `dish`, `bowl`, `cup`, `tankard`).
+  - Added `GOREAnat` for anatomical bones and flesh (`हड्डी`, `मांस`).
+  - Added category guards in `_resolve_foley_asset`: strictly prohibits weapon assets during domestic dining scenes.
+
+### 4. Scene-Bound BGM Underscore with `until_segment` Calculation
+- **Module**: [`audiobook_factory/agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)
+- **Remediation**:
+  Pass 2 Music Director calculates cue duration dynamically using `until_segment`:
+  $$\text{duration\_ms} = \text{seg\_starts\_ms}[u\_idx] - \text{start\_ms}$$
+  Cues now span natural dramatic scenes (25s to 240s) rather than arbitrary 30s chops, with an enforced 40% chapter music budget.
+
+### 5. Dynamic Multi-Scene Ambience Bed Partitioning
+- **Module**: [`audiobook_factory/agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)
+- **Remediation**:
+  `_partition_script_ambience_scenes()` monitors shifts in `acoustic_env` across screenplay segments (e.g. Castle Bath $\rightarrow$ Royal Banquet Hall $\rightarrow$ Forest Night), partitioning chapters into distinct acoustic scene blocks with smooth crossfades and decoupled 4-stem profiles, replacing flat monolithic 106-minute ambience loops.
+
+---
+
 ## 🧪 Comprehensive Verification & Test Suite
 
 The entire remediation and hardening architecture is codified and guarded by dedicated regression tests in [`tests/test_audit_remediation_sprint.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_audit_remediation_sprint.py) and [`tests/test_forensic_audit_remediation.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_forensic_audit_remediation.py).
 
 ### Test Suite Execution
 ```powershell
+# Run Zero-Voice-Drift Hardening & Speaker Attribution suite (ADR-021):
+python -m unittest tests/test_zero_voice_drift_adr021.py
+
+# Run Audio Drama Sync, Foley Staging & Soundscape Remediation suite (ADR-022):
+python -m unittest tests/test_audio_sync_and_soundscape_remediation.py
+
 # Run the dedicated forensic audit remediation regression suite (ADR-020):
 python -m unittest tests/test_forensic_audit_remediation.py
 
 # Run the Phase 1 audit remediation sprint suite:
 python -m unittest tests/test_audit_remediation_sprint.py
 
-# Run the full project test discovery across all 32 suites (232 tests):
+# Run the full project test discovery across all 34 suites (243 tests):
 python -m unittest discover tests -p "test_*.py"
 ```
 
@@ -437,7 +532,16 @@ python -m unittest discover tests -p "test_*.py"
 | `test_env_loader_strips_quotes` | `key_manager.py` | Single and double quotes around `.env` keys are stripped cleanly. | **PASS** |
 | `test_soundscape_mood_service_type` | `soundscape.py` | Mood analysis calls `get_key(service="text")`, shielding TTS quota. | **PASS** |
 | `test_cli_chapter_regex_parsing` | `audiobook_cli.py` | Script chapter numbers are parsed via regex, preventing partial run renumbering. | **PASS** |
-| **Full Suite Total** | **29 Modules** | **232/232 unit and regression tests passing with 0 errors and 0 regressions.** | **100% PASS** |
+| `test_unregistered_dialogue_speaker_raises_error` | `tts_dispatcher.py` | Unregistered dialogue roles raise `UnregisteredSpeakerError` (ADR-021). | **PASS** |
+| `test_alias_resolution_in_tts_dispatcher` | `tts_dispatcher.py` | Hindi/English aliases resolve deterministically to canonical voices (ADR-021). | **PASS** |
+| `test_preflight_validation_aborts_synthesis` | `tts_dispatcher.py` | Halts synthesis before API dispatch on unmapped speakers (ADR-021). | **PASS** |
+| `test_gate2_auto_discovers_roster_and_catches_unmapped` | `gate_auditor.py` | Auto-discovers project roster and enforces speaker whitelist (ADR-021). | **PASS** |
+| `test_pre_roll_breath_cumulative_timeline_sync` | `contracts.py` | `pre_roll_breath_ms` synchronized across contracts, ledger, and director (ADR-022). | **PASS** |
+| `test_bilingual_anchor_offset_no_dead_center` | `agent_director.py` | `BILINGUAL_ANCHOR_MAP` eliminates 50% dead-center trap (ADR-022). | **PASS** |
+| `test_domestic_vs_combat_foley_taxonomy` | `acoustic_bus_matrix.py` | `DOMETabl` strictly isolates tableware from sword clash assets (ADR-022). | **PASS** |
+| `test_scene_bound_bgm_duration` | `agent_director.py` | `until_segment` dynamically extends BGM across scene boundaries (ADR-022). | **PASS** |
+| `test_dynamic_multi_scene_ambience_partitioning` | `agent_director.py` | `acoustic_env` shifts cleanly partition chapter ambience beds (ADR-022). | **PASS** |
+| **Full Suite Total** | **29 Modules** | **243/243 unit and regression tests passing with 0 errors and 0 regressions.** | **100% PASS** |
 
 ---
 

@@ -59,10 +59,13 @@ flowchart TD
 - **Sliding-Window Parsing**: Chunks chapters into 1,200-word blocks with rolling context. Eliminates text truncation for long chapters.
 - **Multi-Cast Speaker Attribution**: Attributes character dialogue vs narrator, removes redundant speech tags, tags acting emotions (`whispering`, `growl`, `calm_raspy`, `angry`).
 
-### Stage 4: Deep Foley & Acoustic Director ([`foley_miner.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/foley_miner.py))
-- **Verb/Object Extraction**: Mines physical interactions (weapons, tankards, footsteps, door creaks, armor rustle, magic signs).
-- **Micro-Timing & Stereo Panning**: Generates master cue sheet (`.cue.json`) with millisecond offsets (`offset_ms`) and spatial stereo staging (`pan`).
-- **Room Acoustic Presets**: Configures impulse reverb and room EQ profiles (`tavern_interior`, `stone_crypt`, `royal_hall`, `dense_forest_night`).
+### Stage 4: Autonomous Directing Layer ([`agent_director.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py))
+- **3-Pass Dramaturgy & Multi-Scene Partitioning (ADR-018 & ADR-022)**:
+  - *Pass 1*: Carves acoustic silence ($\ge 60\%$).
+  - *Pass 1.5*: Partitions chapters dynamically into distinct scene blocks based on `acoustic_env` shifts (`_partition_script_ambience_scenes`).
+  - *Pass 2*: Queries FTS5 sound bank for scene-bound BGM underscore with `until_segment` duration calculation.
+  - *Pass 3*: Mines physical Foley interactions using `BILINGUAL_ANCHOR_MAP` without the 50% dead-center trap, strictly enforcing `DOMETabl` tableware isolation.
+  - Emits the authoritative Pydantic v2 `CreativeManifest`.
 
 ### Stage 5: Concurrent Multi-Cast TTS ([`tts_dispatcher.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))
 - **Engine**: Google Gemini 3.1 Flash TTS (`gemini-3.1-flash-tts-preview`) generating 24kHz raw PCM.

@@ -36,3 +36,6 @@ exclude = ["audiobooks*"]
 
 [tool.setuptools]
 py-modules = ["audiobook_cli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

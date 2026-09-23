@@ -3,7 +3,7 @@
 > **Authoritative Technical Guide to Hollywood/AAA-Game Combat Sound Design (ADR-017), Pottermore-Grade 4-Stem Decoupled Scene Acoustics (ADR-018), and Unfiltered Adult Literary Fidelity (ADR-019).**
 
 [![Standard](https://img.shields.io/badge/Acoustic%20Standard-Audible%20%2F%20BBC%20Radio%204-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-232%20Passing%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-243%20Passing%20(100%25)-brightgreen.svg)](tests/)
 [![Safety](https://img.shields.io/badge/TTS%20Safety-BLOCK__NONE%20(Permanent)-red.svg)](audiobook_factory/tts_dispatcher.py)
 
 ---
@@ -185,26 +185,59 @@ To guarantee zero-failure execution of complex soundscapes and intimate sequence
 
 ---
 
+## 🎭 Pillar 4: Audio Drama Timeline Sync, Bilingual Foley Staging & Zero Voice Drift (ADR-021 & ADR-022)
+
+To maintain GraphicAudio / Audible broadcast standards across 100,000-word full-novel productions:
+
+### 1. Cumulative Timeline Drift Elimination (`pre_roll_breath_ms`)
+- **Synchronized Actor Breath Timing:** Standardized `pre_roll_breath_ms` across contracts, ledger, and director (`start_ms = curr_t_ms + pre_breath`). Intimate breath intakes (150-250ms) are sample-accurately accounted for in speech start timestamps, eliminating up to 30s of cumulative timing drift across long chapters.
+
+### 2. Bilingual Foley Anchor Mapping & Zero Dead-Center Trap
+- **Bidirectional Synonym Map (`BILINGUAL_ANCHOR_MAP`):** Bridges Devanagari and English acoustic roots (`sword` $\leftrightarrow$ `तलवार`, `blade` $\leftrightarrow$ `खंजर`, `door` $\leftrightarrow$ `दरवाजा`, `slam` $\leftrightarrow$ `पटक`, `plate` $\leftrightarrow$ `थाली`).
+- **Phased Transient Staging:** Unmatched preparatory actions land early ($\sim 15\%$), while physical impacts land on climax windows ($\sim 75\%$), eliminating the artificial 50% dead-center sound effect placement.
+
+### 3. Domestic Tableware vs. Combat Weaponry Taxonomy Isolation
+- **UCS Classification (`DOMETabl`):** Strictly classifies tableware (`थाली`, `कटोरा`, `plate`, `dish`, `bowl`, `cup`) into domestic categories.
+- **Weaponry Safeguard:** If a dining scene is detected, weapon sound assets (`sword`, `blade`, `clash`) are strictly prohibited, ensuring banquet dining scenes never trigger battlefield sword clashes.
+
+### 4. Scene-Bound BGM Underscore with `until_segment` Calculation
+- Pass 2 Music Director calculates cue duration dynamically using `until_segment`, allowing musical cues to span full dramatic scenes (25s to 240s) rather than arbitrary 30s chops, bounded by a strict 40% chapter music budget.
+
+### 5. Dynamic Multi-Scene Ambience Bed Partitioning
+- In [`_partition_script_ambience_scenes()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py), shifts in screenplay `acoustic_env` (e.g. Castle Bath $\rightarrow$ Royal Banquet Hall $\rightarrow$ Forest Night) automatically partition chapters into distinct acoustic scene blocks with smooth crossfades and decoupled 4-stem profiles, replacing flat monolithic 106-minute ambience loops.
+
+### 6. Zero-Voice-Drift Hardening & Whitelist Enforcement (ADR-021)
+- Fail-closed `UnregisteredSpeakerError` prevents dialogue lines from drifting into the narrator's voice.
+- Auto-discovery of `character_roster.json` and `voice_registry.json` resolves character aliases (English, Devanagari, underscore, and space variations).
+- Pre-flight chapter validation halts synthesis before API dispatch if unmapped speakers appear.
+- Gate 1 checks acoustic gender alignment, and Gate 2 enforces a strict speaker whitelist.
+
+---
+
 ## 🧪 Verification & Regression Test Suites
 
 The entire sound design, combat acoustics, adult literary fidelity, and forensic audit remediation suite is codified and guarded by comprehensive unit and integration tests:
 
 | Test Suite | File Location | Key Verification Invariants | Passing Tests |
 |---|---|---|:---:|
+| **Zero-Voice-Drift Hardening (ADR-021)** | [`tests/test_zero_voice_drift_adr021.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_voice_drift_adr021.py) | `UnregisteredSpeakerError`, alias resolution, pre-flight abort, Gate 1 gender check, Gate 2 roster discovery. | **6/6** |
+| **Audio Sync & Soundscape Remediation (ADR-022)** | [`tests/test_audio_sync_and_soundscape_remediation.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_audio_sync_and_soundscape_remediation.py) | Timeline drift elimination, bilingual anchor mapping, DOMETabl isolation, scene-bound BGM, multi-scene ambience. | **5/5** |
 | **Forensic Audit Remediation (ADR-020)** | [`tests/test_forensic_audit_remediation.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_forensic_audit_remediation.py) | 13 defect fixes: contract rehydration, dynamic filter scripts, TTS safety, key backoff, sanitizer shield, FFMETADATA escaping. | **11/11** |
 | **4-Stem Scene Acoustics & Stochastic** | [`tests/test_scene_acoustics_and_stochastic.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_scene_acoustics_and_stochastic.py) | 4-stem decoupling, pause-slot stochastic spots, lowpass barrier occlusion, DMR $\ge 10.0$ dB, pre-baked composite retrieval. | **5/5** |
 | **Hollywood Combat Fidelity** | [`tests/test_combat_audio_drama_fidelity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_combat_audio_drama_fidelity.py) | 3-layer sandwich, action-beat splitting, dual-perspective panning, `PROFILE_COMBAT_SHOCK`, mono sub-bass anchor. | **6/6** |
 | **Adult Literary Fidelity** | [`tests/test_adult_literary_fidelity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_adult_literary_fidelity.py) | TTS `safetySettings: BLOCK_NONE`, Rule 8 erotic dirty talk, "Nothing Above Source", Grunt Engine prosody. | **7/7** |
-| **Full Repository Regression Suite** | `tests/test_*.py` | Complete end-to-end regression across all 29 modules and 32 test suites. | **232/232 (100% OK)** |
+| **Full Repository Regression Suite** | `tests/test_*.py` | Complete end-to-end regression across all 29 modules and 34 test suites. | **243/243 (100% OK)** |
 
 ```powershell
 # Run the dedicated targeted test suites:
+python -m unittest tests/test_zero_voice_drift_adr021.py
+python -m unittest tests/test_audio_sync_and_soundscape_remediation.py
 python -m unittest tests/test_forensic_audit_remediation.py
 python -m unittest tests/test_scene_acoustics_and_stochastic.py
 python -m unittest tests/test_combat_audio_drama_fidelity.py
 python -m unittest tests/test_adult_literary_fidelity.py
 
-# Run full project regression suite (232 passing):
+# Run full project regression suite (243 passing):
 python -m unittest discover tests -p "test_*.py"
 ```
 

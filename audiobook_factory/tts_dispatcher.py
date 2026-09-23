@@ -399,6 +399,11 @@ def synthesize_gemini_tts(
             pool.mark_temporary_backoff(api_key, 25.0, "3 consecutive transient errors")
 
 
+class UnregisteredSpeakerError(KeyError):
+    """Raised when a dialogue segment requests an unregistered character voice."""
+    pass
+
+
 class TTSDispatcher:
     """Orchestrates concurrent speech synthesis with TokenBucket rate limiting and SQLite ledger state."""
 
@@ -410,19 +415,70 @@ class TTSDispatcher:
         max_workers: int = 1,
         rpm: float = DEFAULT_RPM,
         audio_dir: Optional[Path] = None,
+        strict_speakers: bool = True,
     ):
         self.project_dir = Path(project_dir).resolve()
         self.audio_dir = Path(audio_dir).resolve() if audio_dir else (self.project_dir / "audio_chunks")
         self.audio_dir.mkdir(parents=True, exist_ok=True)
         self.registry_file = self.project_dir / "voice_registry.json"
+        self.roster_file = self.project_dir / "character_roster.json"
         self.default_backend = default_backend
         self.default_voice = default_voice
+        self.strict_speakers = strict_speakers
         if max_workers > 1:
             logger.info("  [STEALTH INVARIANT] Multi-worker network requests disabled to prevent IP clustering and quota flags. Operating strictly in 1-worker mode.")
         self.max_workers = 1
         self.rate_limiter = TokenBucketRateLimiter(rate_rpm=rpm)
         self.voice_map = self._load_voice_registry()
+        self.alias_map, self.gender_map = self._load_character_roster()
         self.ledger = ProjectStateLedger(self.project_dir)
+
+    def _load_character_roster(self) -> Tuple[Dict[str, str], Dict[str, str]]:
+        """Loads character aliases and gender mappings from character_roster.json."""
+        alias_map: Dict[str, str] = {}
+        gender_map: Dict[str, str] = {}
+        if not self.roster_file.exists():
+            return alias_map, gender_map
+
+        try:
+            with open(self.roster_file, "r", encoding="utf-8") as f:
+                roster_data = json.load(f)
+            chars = roster_data.get("characters", roster_data)
+            if isinstance(chars, dict):
+                for canon_name, details in chars.items():
+                    c_clean = canon_name.strip()
+                    alias_map[c_clean.lower()] = c_clean
+                    alias_map[c_clean.lower().replace("_", " ")] = c_clean
+                    alias_map[c_clean.lower().replace(" ", "_")] = c_clean
+                    if isinstance(details, dict):
+                        gender_map[c_clean] = details.get("gender", "neutral").lower()
+                        for alias in details.get("aliases", []):
+                            if isinstance(alias, str) and alias.strip():
+                                a_clean = alias.strip()
+                                alias_map[a_clean.lower()] = c_clean
+                                alias_map[a_clean.lower().replace("_", " ")] = c_clean
+                                alias_map[a_clean.lower().replace(" ", "_")] = c_clean
+            elif isinstance(chars, list):
+                for item in chars:
+                    if isinstance(item, dict):
+                        canon_name = item.get("english_name") or item.get("display_name") or item.get("name", "")
+                        if canon_name:
+                            c_clean = canon_name.strip()
+                            alias_map[c_clean.lower()] = c_clean
+                            alias_map[c_clean.lower().replace("_", " ")] = c_clean
+                            gender_map[c_clean] = item.get("gender", "neutral").lower()
+                            hindi = item.get("hindi_name", "")
+                            if hindi:
+                                alias_map[hindi.strip().lower()] = c_clean
+                            for alias in item.get("aliases", []):
+                                if isinstance(alias, str) and alias.strip():
+                                    a_clean = alias.strip()
+                                    alias_map[a_clean.lower()] = c_clean
+                                    alias_map[a_clean.lower().replace("_", " ")] = c_clean
+        except Exception as e:
+            logger.warning(f"  [ROSTER LOAD NOTICE] Failed to parse character_roster.json: {e}")
+
+        return alias_map, gender_map
 
     def _load_voice_registry(self) -> Dict[str, Any]:
         if self.registry_file.exists():
@@ -449,16 +505,72 @@ class TTSDispatcher:
     def get_speaker_config(self, speaker: str, seg_type: str = "narration") -> Dict[str, Any]:
         """
         Resolves complete speaker configuration (backend, voice, speed, pitch, bass_boost_db).
+        Strictly prohibits silent fallback to Narrator (Aoede) for dialogue segments.
         """
-        if speaker in self.voice_map:
-            return dict(self.voice_map[speaker])
+        sp_clean = (speaker or "").strip()
+        sp_lower = sp_clean.lower()
 
-        sp_lower = speaker.lower().strip()
+        # 1. Exact match in voice_map
+        if sp_clean in self.voice_map:
+            return dict(self.voice_map[sp_clean])
+
+        # 2. Case-insensitive / normalized underscore match in voice_map
         for k, cfg in self.voice_map.items():
-            if k.lower().strip() == sp_lower:
+            k_lower = k.strip().lower()
+            if k_lower == sp_lower or k_lower.replace("_", " ") == sp_lower.replace("_", " "):
                 return dict(cfg)
 
-        # Fallback to Narrator or global defaults
+        # 3. Alias resolution via character_roster.json
+        if sp_lower in self.alias_map:
+            canon = self.alias_map[sp_lower]
+            if canon in self.voice_map:
+                return dict(self.voice_map[canon])
+            canon_norm = canon.lower().replace("_", " ")
+            for k, cfg in self.voice_map.items():
+                if k.strip().lower() == canon.lower() or k.strip().lower().replace("_", " ") == canon_norm:
+                    return dict(cfg)
+
+        sp_norm = sp_lower.replace("_", " ")
+        if sp_norm in self.alias_map:
+            canon = self.alias_map[sp_norm]
+            if canon in self.voice_map:
+                return dict(self.voice_map[canon])
+            canon_norm = canon.lower().replace("_", " ")
+            for k, cfg in self.voice_map.items():
+                if k.strip().lower() == canon.lower() or k.strip().lower().replace("_", " ") == canon_norm:
+                    return dict(cfg)
+
+        # 4. Narrator / Foley / Narration segment type
+        if sp_clean in ("Narrator", "Foley") or sp_lower in ("narrator", "narration", "foley") or seg_type == "narration":
+            narr_cfg = self.voice_map.get("Narrator", {})
+            return {
+                "backend": narr_cfg.get("backend", self.default_backend),
+                "voice": narr_cfg.get("voice", self.default_voice),
+                "speed": narr_cfg.get("speed", 1.0),
+            }
+
+        # 5. Unregistered Speaker in Dialogue Segment
+        import difflib
+        known_speakers = sorted(list(set(list(self.voice_map.keys()) + list(self.alias_map.keys()))))
+        close = difflib.get_close_matches(sp_clean, known_speakers, n=3, cutoff=0.5)
+        close_hint = f" Did you mean: {', '.join(close)}?" if close else ""
+
+        if self.strict_speakers:
+            raise UnregisteredSpeakerError(
+                f"Speaker '{sp_clean}' (type: {seg_type}) is not registered in voice_registry.json "
+                f"or character_roster.json!{close_hint} Silent fallback to Narrator is prohibited to prevent voice drift."
+            )
+
+        # Non-strict fallback with gender awareness
+        logger.error(
+            f"  [UNREGISTERED SPEAKER] '{sp_clean}' not in registry.{close_hint} Fallback initiated."
+        )
+        gender = self.gender_map.get(sp_clean, "neutral")
+        if gender == "male":
+            for male_fallback in ("Charon", "Fenrir", "Puck"):
+                for k, cfg in self.voice_map.items():
+                    if cfg.get("voice") == male_fallback:
+                        return dict(cfg)
         narr_cfg = self.voice_map.get("Narrator", {})
         return {
             "backend": narr_cfg.get("backend", self.default_backend),
@@ -632,8 +744,24 @@ class TTSDispatcher:
         """
         with open(script_path, "r", encoding="utf-8") as f:
             script = json.load(f)
+        if isinstance(script, dict):
+            script = script.get("segments", script)
 
         total = len(script)
+
+        # Pre-flight voice registry validation across all segments (ADR-021 Zero Voice Drift)
+        for seg_idx, seg in enumerate(script, 1):
+            seg_t = seg.get("type", "narration")
+            sp = seg.get("speaker", "Narrator")
+            if seg_t == "dialogue" or (sp and sp not in ("Narrator", "Foley")):
+                try:
+                    self.get_speaker_config(sp, seg_t)
+                except UnregisteredSpeakerError as e:
+                    logger.error(
+                        f"\n[!] PRE-FLIGHT SYNTHESIS HALT: Chapter {chapter_num}, Segment {seg_idx} has invalid speaker: {e}"
+                    )
+                    raise
+
         cadence = get_human_cadence_controller()
         logger.info(
             f"[*] Synthesizing Chapter {chapter_num} ({total} speech segments, mode="

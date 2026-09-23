@@ -238,3 +238,41 @@ To protect final chapters from acoustic defects (clipping distortion, faint low-
   - Inter-word silence ceiling
 - If any defect is detected, the temporary file is unlinked immediately (`tmp_file.unlink(missing_ok=True)`) and retry logic is invoked. Only audio that passes 100% of checks is promoted atomically via `.replace(output_file)`, guaranteeing that defective WAVs never enter the multitrack mix.
 
+---
+
+### 12. Audio Drama Timeline Sync, Foley Staging & Soundscape Remediation (ADR-022)
+
+#### A. Cumulative Timeline Drift Elimination (`pre_roll_breath_ms`)
+In high-intimacy and dramatic dialogue, segments often feature organic pre-roll breath intakes (`pre_roll_breath_ms: 150-250ms`).
+- **The Timing Skew Bug:** In earlier builds, while `mastering.py` inserted physical silence for pre-roll breaths during WAV concatenation, neither `TimelineLedger` nor `AgentDirector` factored `pre_roll_breath_ms` into speech start timestamps. Across a 150-segment chapter, this accumulated up to $30\text{ seconds}$ of timeline drift, causing music transitions and Foley strikes to trigger noticeably early.
+- **The Contractual Sync:** ADR-022 added `pre_roll_breath_ms: int = Field(default=0, ge=0)` to [`TimelineSegment`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py) and synchronized the master timeline calculation:
+  ```python
+  seg_starts_ms[s_idx] = current_time_ms + pre_breath
+  current_time_ms = seg_starts_ms[s_idx] + dur_ms + pause_after
+  ```
+- **Result:** Timeline ledger start offsets match physical master audio sample-accurately with 0ms cumulative drift.
+
+#### B. Bilingual Foley Anchor Mapping & Zero Dead-Center Trap
+Dialogue-anchored sound effects (e.g. unsheathing a sword, slamming a door, clinking tableware) must align with the exact spoken words in dialogue.
+- **The 50% Midpoint Trap:** Previously, when Hindi dialogue was synthesized from English screenplay cues, unmatched anchor words defaulted to $50\%$ of segment duration (`len(words) // 2`), causing every sound effect to land dead-center in the middle of dialogue lines regardless of sentence structure.
+- **Bilingual Expansion (`BILINGUAL_ANCHOR_MAP`):** [`AgentDirector._compute_word_level_offset()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py) now provides exhaustive bidirectional mapping between Devanagari and English stems (`sword` $\leftrightarrow$ `तलवार`, `blade` $\leftrightarrow$ `खंजर`, `door` $\leftrightarrow$ `दरवाजा`, `slam` $\leftrightarrow$ `पटक`, `plate` $\leftrightarrow$ `थाली`, `pour` $\leftrightarrow$ `उड़ेल`).
+- **Transient Phasing:** For unmatched phrases, preparatory actions (draw, unsheathe, reach) land early ($\sim 15\%$ into the segment), while impact actions (slam, clash, break, fall) land on climax resolution windows ($\sim 75\%$), eliminating dead-center sound effect placement.
+
+#### C. Domestic Tableware vs. Combat Foley Taxonomy Isolation
+- **The Banquet Clatter Anomaly:** In Universal Category System (UCS) taxonomies, the keyword "plate" previously expanded to armor plating (`WEAPMtl` / `steel`), causing dialogue mentions of dinner plates (`थाली`) in dining banquet scenes to resolve to violent metal sword clashes!
+- **Taxonomy Segregation:**
+  - Added `DOMETabl` (Domestic Tableware) to `UCS_RULES` in [`acoustic_bus_matrix.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/acoustic_bus_matrix.py) for dishes, bowls, cups, spoons, forks, trays, and tankards (`थाली`, `कटोरा`, `चम्मच`, `बर्तन`, `प्याला`).
+  - Added `GOREAnat` for anatomical bones, cartilage, and flesh (`हड्डी`, `मांस`).
+  - Added strict category guards in `_resolve_foley_asset`: if domestic dining is detected, weapon files (`sword`, `blade`, `clash`, `scabbard`, `axe`) are strictly prohibited. If no dining sound exists, the system outputs silence rather than an erroneous battlefield clash.
+
+#### D. Scene-Bound BGM Underscore & `until_segment` Duration
+- **The 30-Second Chop Limitation:** Previously, all BGM cues defaulted to rigid 30-second fixed chops, cutting off orchestral scores abruptly in the middle of ongoing dramatic conversations.
+- **Scene-Bound Duration:** Pass 2 Music Director in [`agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py) now supports `until_segment`. When specified, the duration is dynamically calculated from the timeline offset of the closing scene segment:
+  $$\text{duration\_ms} = \text{seg\_starts\_ms}[u\_idx] - \text{start\_ms}$$
+- Cues now naturally span entire dramatic scenes (25s to 240s), subject to a 20s minimum cue floor and an enforced 40% maximum chapter music budget.
+
+#### E. Dynamic Multi-Scene Ambience Bed Partitioning
+- **The Flat 106-Minute Monolithic Ambience Problem:** In long chapters traversing multiple locations (e.g. Castle Bath $\rightarrow$ Royal Banquet Hall $\rightarrow$ Dense Forest Night), previous builds applied a single static ambient bed loop across the entire chapter duration.
+- **Dynamic Partitioning (`_partition_script_ambience_scenes`):** The director monitors transitions in `acoustic_env` across screenplay segments. When the environment shifts, it partitions the timeline into distinct acoustic scene blocks with smooth crossfades and decoupled 4-stem profiles, matching the listener's journey through physical space.
+
+

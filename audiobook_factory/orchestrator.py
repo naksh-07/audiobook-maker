@@ -267,10 +267,14 @@ class PipelineOrchestrator:
 
         chap_stem = script_file.stem.replace("_script", "")
 
-        # Gate 2: Screenplay Script Schema and canonical speakers
+        # Gate 2: Screenplay Script Schema and canonical speakers (ADR-021 Whitelist Enforcement)
         try:
-            gate2_res = audit_gate2_script(script_file)
+            gate2_res = audit_gate2_script(script_file, project_dir=project_dir)
             logger.info(f"[*] Gate 2 Script Audit: PASSED for Chapter {chapter_num:02d} ({gate2_res.get('total_segments', 0)} segments)")
+        except GateAuditError as e:
+            logger.error(f"\n[!] 🛑 GATE 2 AUDIT FAILED for Chapter {chapter_num:02d}: {e}")
+            logger.error("[!] Screenplay contains non-canonical speakers or schema violations. Aborting synthesis to prevent voice drift.")
+            raise
         except Exception as e:
             logger.warning(f"[!] Gate 2 Script Audit notice for Chapter {chapter_num:02d}: {e}")
 

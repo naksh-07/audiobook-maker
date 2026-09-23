@@ -37,20 +37,21 @@ flowchart LR
 
 ---
 
-### Gate 1: Character Voice Casting & Collision Elimination
+### Gate 1: Character Voice Casting, Collision Elimination & Acoustic Gender Alignment (ADR-021)
 - **Function**: `audit_gate1_roster(roster_file, registry_file, active_characters=None) -> Dict[str, Any]`
 - **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
 - **Pipeline Stage**: Inline execution after Stage 3 (Screenplay Script Generation).
 - **Audit Rules**:
-  - Every character present in the chapter screenplay must have an entry in `character_roster.json` and `voice_registry.json`.
+  - Every character present in the chapter screenplay must have an entry in `character_roster.json` and `voice_registry.json`. Non-vocal action tags (`Foley`, `SFX`) are automatically excluded from vocal requirements.
   - Computes acoustic voice signature: `sig = f"{voice}_p{pitch:.2f}_s{speed:.2f}"`.
   - **Zero Voice Collision Mandate**: No two active characters in the same project can share the exact same voice signature unless explicitly configured as ensemble crowd voices.
+  - **Acoustic Gender Alignment Check (ADR-021)**: Cross-references roster `gender` with known Gemini persona gender profiles (`FEMALE_PERSONAS = {"aoede", "kore", "leda", "zephyr"}`, `MALE_PERSONAS = {"charon", "fenrir", "puck", "zeus", "orpheus", "achilles"}`). Emits clear acoustic gender warning logs if male roles are assigned female personas or vice versa.
 - **Fail Condition**: Raises `GateAuditError` detailing conflicting characters (e.g. `Harry vs Ron (Puck_p1.00_s1.00)`).
 
 ---
 
-### Gate 2: Screenplay Scripting Schema & Prosody
-- **Functions**: `audit_gate2_script(script_file) -> Dict[str, Any]`, `audit_gate2_prosody(script_file) -> Dict[str, Any]`
+### Gate 2: Screenplay Scripting Schema, Prosody & Canonical Whitelist Enforcement (ADR-021)
+- **Functions**: `audit_gate2_script(script_file, allowed_speakers=None, project_dir=None) -> Dict[str, Any]`, `audit_gate2_prosody(script_file) -> Dict[str, Any]`
 - **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
 - **Pipeline Stage**: Executed at beginning of `produce_chapter`.
 - **Audit Rules**:
@@ -58,7 +59,9 @@ flowchart LR
   - Asserts that all segment indices are monotonically sequential starting at 1.
   - Ensures no segment text is empty or whitespace-only.
   - Evaluates emotional prosody: checks that emotional lines possess either punctuation cadence (`...`, `!`, `—`), SSML vocal tags, or acting delivery style instructions.
-- **Fail Condition**: Raises `GateAuditError` on schema corruption or missing keys.
+  - **Auto-Discovery of Canonical Roster & Whitelist Enforcement (ADR-021)**: If `allowed_speakers` is not explicitly provided, auto-discovers `character_roster.json` and `voice_registry.json` from `project_dir`. Dynamically indexes English names, Devanagari transliterations, underscore/space variants, and character aliases.
+  - **Fail-Closed Drift Prevention**: Screens every segment's `speaker` against the whitelist. Any non-canonical character or hallucinated role triggers a fail-closed `GateAuditError`, halting chapter synthesis in `orchestrator.py` before external TTS API calls are initiated.
+- **Fail Condition**: Raises `GateAuditError` on schema corruption, missing keys, or unauthorized non-canonical speakers.
 
 ---
 

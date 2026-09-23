@@ -46,10 +46,16 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **232 passing unit tests** across all modules with a zero-regression invariant (100% OK, 0 failures, 0 errors).
+The codebase maintains **243 passing unit tests** across all 34 test suites with a zero-regression invariant (100% OK, 0 failures, 0 errors in ~95s).
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# Zero-Voice-Drift Hardening & Deterministic Speaker Attribution (ADR-021)
+python -m unittest tests/test_zero_voice_drift_adr021.py
+
+# Audio Drama Sync, Foley Staging & Soundscape Remediation (ADR-022)
+python -m unittest tests/test_audio_sync_and_soundscape_remediation.py
+
 # Forensic Audit Remediation & Hardening Suite (ADR-020 - 13 Defects)
 python -m unittest tests/test_forensic_audit_remediation.py
 

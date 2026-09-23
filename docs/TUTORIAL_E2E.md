@@ -200,9 +200,11 @@ python audiobook_cli.py audit-book witcher1
 ```
 
 ### Understanding Audit Output:
-- `Gate 0 (Translation)`: Ratio of translated characters vs source characters.
-- `Gate 1 (Voice Roster)`: Asserts zero voice persona collisions across active cast.
-- `Gate 2 (Screenplay)`: Confirms Pydantic v2 schema compliance.
-- `Gate 4.5 (Timeline)`: Confirms pause buffers and continuous dialogue alignment.
+- `Gate 0 (Translation)`: Ratio of translated characters vs source characters and Devanagari purity.
+- `Gate 1 (Voice Roster)`: Asserts zero voice persona collisions and verified acoustic gender alignment across cast.
+- `Gate 2 (Screenplay)`: Confirms Pydantic v2 schema compliance and fail-closed canonical speaker whitelist (zero voice drift).
+- `Gate 3 & 3.5 (Acoustic Feasibility)`: Validates sound bank asset existence and dynamic acoustic cues prior to rendering.
+- `Gate 4.5 (Timeline)`: Confirms pre-roll breath buffers and sample-accurate continuous dialogue alignment.
 - `Gate 5 (Broadcast Master)`: Integrated loudness $-19.0 \pm 0.5$ LUFS, True Peak $\le -1.5$ dBTP.
-- `Gate 6A-6D`: Continuity across chapters, TOC monotonicity, and container metadata.
+- `Gate 6A-6D`: Cross-chapter voice continuity, TOC monotonicity, and container packaging compliance.
+

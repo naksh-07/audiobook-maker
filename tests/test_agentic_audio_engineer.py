@@ -24,6 +24,8 @@ from audiobook_factory.ffmpeg_agent import (
     TOOLS,
 )
 
+test_filter_graph.__test__ = False
+
 
 class TestAgenticAudioEngineer(unittest.TestCase):
 

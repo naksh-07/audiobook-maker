@@ -161,7 +161,9 @@ def _parse_dramatized_chunk_llm(
         "Core Dramaturgy Invariants:\n"
         "1. UNFILTERED ADULT DIALOGUE & DIRTY BANTER MANDATE: Never sanitize, soften, or omit coarse curses ('गांड', 'भोसड़ीके', 'लंड', 'रांड', 'मादरचोद'), "
         "tavern obscenities, or raw intimate bedroom dirty talk ('चोदना', 'मसलना', 'लंड', 'चूत', 'गांड'). Preserve 100% of explicit dramatic truth.\n"
-        "2. MULTI-CAST ATTRIBUTION: Split into narration segments and character dialogue segments. Attribute each dialogue to the correct character by name. "
+        "2. MULTI-CAST ATTRIBUTION & CANONICAL SPEAKER MANDATE: Split into narration segments and character dialogue segments. "
+        "Attribute each dialogue to the correct canonical character by their English canonical name from Known Canon Characters (e.g. 'Hero', NOT transliterations or nicknames). "
+        "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('उसने', 'वह', 'he', 'she') as the speaker name. "
         "Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' when spoken by the character.\n"
         "3. NEURAL VOCAL TAGS: Gemini 3.1 Flash TTS is steered using inline English audio tags in square brackets. Prepend vocal tags directly inside the 'text' field "
         "when dialogue or dramatic narration demands it: `[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, "
@@ -187,12 +189,30 @@ def _parse_dramatized_chunk_llm(
     roster_hint = ""
     if character_roster:
         chars = character_roster.get("characters", {})
+        formatted_chars = []
         if isinstance(chars, dict):
-            names = list(chars.keys())
-            roster_hint = f"\nKnown Canon Characters in Project: {', '.join(names)}\n"
+            for cname, details in chars.items():
+                if cname in ("Narrator", "Foley"):
+                    continue
+                gender = details.get("gender", "neutral") if isinstance(details, dict) else "neutral"
+                aliases = details.get("aliases", []) if isinstance(details, dict) else []
+                alias_str = f", aliases: {', '.join(aliases[:4])}" if aliases else ""
+                formatted_chars.append(f"{cname} [{gender}{alias_str}]")
         elif isinstance(chars, list):
-            names = [c.get("english_name", "") for c in chars if isinstance(c, dict)]
-            roster_hint = f"\nKnown Canon Characters in Project: {', '.join(names)}\n"
+            for c in chars:
+                if isinstance(c, dict):
+                    cname = c.get("english_name", "")
+                    if cname and cname not in ("Narrator", "Foley"):
+                        gender = c.get("gender", "neutral")
+                        aliases = c.get("aliases", [])
+                        alias_str = f", aliases: {', '.join(aliases[:4])}" if aliases else ""
+                        formatted_chars.append(f"{cname} [{gender}{alias_str}]")
+        if formatted_chars:
+            roster_hint = (
+                "\nKnown Canon Characters in Project (Use canonical English name as 'speaker'):\n"
+                + "\n".join(f"- {fc}" for fc in formatted_chars)
+                + "\n"
+            )
 
     prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 Preceding Scene Context / Characters Speaking:
@@ -205,7 +225,7 @@ Current Scene Text:
 
 Output JSON: A list of objects where each object has:
 - "index": int (1-based relative to this chunk)
-- "type": "narration" | "dialogue" | "action" (emit "action" for dedicated physical action beats, sword unsheathed, door kick, tankard slam, body impact, explosion)
+- "type": "narration" | "dialogue" | "action" (MANDATORY: emit dedicated "action" segments for major physical beats — weapon draw/clash, door kick/slam, tankard slam, heavy fall/blow, explosion — DO NOT layer heavy impacts directly on top of speech; isolate them with speaker: "Foley", text: "[ACTION]")
 - "speaker": character name (e.g. "Alice", "Bob"), "Narrator", or "Foley" (for action segments)
 - "text": speech text (clean spoken content in {"Devanagari Hindi" if is_hindi else "English"}, with optional inline vocal tags like [whispers], [shouting], [cold menace] where emotionally appropriate, or "[ACTION]" for action segments)
 - "emotion": "neutral" | "angry" | "whispering" | "sad" | "excited" | "growl" | "calm_raspy"
@@ -429,9 +449,21 @@ def build_dramatized_script_llm(
             )
             if chunk_items:
                 raw_items.extend(chunk_items)
-                # Form rolling context from the last 2 items
-                recent_speakers = [it.get("speaker", "Narrator") for it in chunk_items[-2:]]
-                rolling_context = f"Scene chunk {c_idx} ended with speakers: {', '.join(recent_speakers)}."
+                # Form rich rolling dialogue context from the last 3 exchanges (ADR-021)
+                tail_lines = []
+                for it in chunk_items[-3:]:
+                    sp = it.get("speaker", "Narrator")
+                    typ = it.get("type", "dialogue")
+                    txt = (it.get("text", "") or "").strip()
+                    if len(txt) > 85:
+                        txt = txt[:82] + "..."
+                    tail_lines.append(f"  - [{typ.upper()}] {sp}: \"{txt}\"")
+                rolling_context = (
+                    f"Preceding Scene Context (Last exchanges of chunk {c_idx}):\n"
+                    + "\n".join(tail_lines)
+                    + "\nATTRIBUTION INSTRUCTION: Use this conversational memory to attribute opening dialogue tags "
+                    f"and pronouns (e.g. 'उसने', 'वह', 'he', 'she') to the correct character."
+                )
             else:
                 # Fallback on this chunk
                 fallback_chunk = build_narrator_script(chunk_str, is_hindi)
@@ -452,44 +484,95 @@ def clean_screenplay_pass2(
     Pass 2 (Alexandria Pattern): Two-pass pronoun disambiguation, alias resolution,
     unknown speaker fallback, text normalization, and continuous 1-based indexing.
     """
+    import re
     alias_map = {}
     gender_map = {}
     if character_roster and "characters" in character_roster:
         chars = character_roster["characters"]
         if isinstance(chars, dict):
             for canon_name, details in chars.items():
-                alias_map[canon_name.lower()] = canon_name
+                c_clean = canon_name.strip()
+                alias_map[c_clean.lower()] = c_clean
+                alias_map[c_clean.lower().replace("_", " ")] = c_clean
+                alias_map[c_clean.lower().replace(" ", "_")] = c_clean
                 if isinstance(details, dict):
-                    gender_map[canon_name] = details.get("gender", "neutral").lower()
+                    gender_map[c_clean] = details.get("gender", "neutral").lower()
                     for alias in details.get("aliases", []):
-                        alias_map[alias.lower()] = canon_name
+                        if isinstance(alias, str) and alias.strip():
+                            a_clean = alias.strip()
+                            alias_map[a_clean.lower()] = c_clean
+                            alias_map[a_clean.lower().replace("_", " ")] = c_clean
+                            alias_map[a_clean.lower().replace(" ", "_")] = c_clean
         elif isinstance(chars, list):
             for c in chars:
                 if isinstance(c, dict):
                     c_name = c.get("hindi_name") if is_hindi and c.get("hindi_name") else c.get("english_name", "")
                     if c_name:
-                        alias_map[c_name.lower()] = c_name
-                        gender_map[c_name] = c.get("gender", "neutral").lower()
+                        c_clean = c_name.strip()
+                        alias_map[c_clean.lower()] = c_clean
+                        alias_map[c_clean.lower().replace("_", " ")] = c_clean
+                        alias_map[c_clean.lower().replace(" ", "_")] = c_clean
+                        gender_map[c_clean] = c.get("gender", "neutral").lower()
                         eng = c.get("english_name", "")
                         if eng:
-                            alias_map[eng.lower()] = c_name
+                            e_clean = eng.strip()
+                            alias_map[e_clean.lower()] = c_clean
+                            alias_map[e_clean.lower().replace("_", " ")] = c_clean
+                        for alias in c.get("aliases", []):
+                            if isinstance(alias, str) and alias.strip():
+                                a_clean = alias.strip()
+                                alias_map[a_clean.lower()] = c_clean
+                                alias_map[a_clean.lower().replace("_", " ")] = c_clean
 
     last_male_character = "Narrator"
     last_female_character = "Narrator"
     last_active_character = "Narrator"
 
+    MALE_PRONOUNS = {
+        "he", "him", "his", "himself", "the man", "the boy", "the lad", "his voice",
+        "उसने", "वह", "उसका", "आदमी", "लड़के ने", "युवक ने"
+    }
+    FEMALE_PRONOUNS = {
+        "she", "her", "hers", "herself", "the woman", "the girl", "the lady", "her voice",
+        "लड़की", "महिला", "उसने (महिला)", "स्त्री"
+    }
+
     final_script = []
     for idx, item in enumerate(raw_items, 1):
         speaker = item.get("speaker", "Narrator").strip()
+        speaker = speaker.strip(" \"':()[]")
         speaker_lower = speaker.lower()
+
+        # Robust alias matching
         if speaker_lower in alias_map:
             speaker = alias_map[speaker_lower]
+        elif speaker_lower.replace("_", " ") in alias_map:
+            speaker = alias_map[speaker_lower.replace("_", " ")]
+        elif speaker_lower.replace(" ", "_") in alias_map:
+            speaker = alias_map[speaker_lower.replace(" ", "_")]
+        else:
+            # Check parenthetical annotations e.g. "Geralt (Witcher)" or "विचर (गेराल्ट)"
+            m = re.search(r"\(([^)]+)\)", speaker)
+            if m:
+                inner = m.group(1).strip().lower()
+                if inner in alias_map:
+                    speaker = alias_map[inner]
+                elif inner.replace("_", " ") in alias_map:
+                    speaker = alias_map[inner.replace("_", " ")]
+            if "(" in speaker and speaker.lower() not in alias_map:
+                prefix = speaker.split("(")[0].strip().lower()
+                if prefix in alias_map:
+                    speaker = alias_map[prefix]
+                elif prefix.replace("_", " ") in alias_map:
+                    speaker = alias_map[prefix.replace("_", " ")]
+
+        speaker_lower = speaker.lower().strip()
 
         # Disambiguate pronouns if LLM attributed dialogue to a pronoun
         if item.get("type") == "dialogue":
-            if speaker_lower in ("he", "him", "the man", "the boy", "the lad", "his voice", "उसने", "वह", "आदमी"):
+            if speaker_lower in MALE_PRONOUNS:
                 speaker = last_male_character if last_male_character != "Narrator" else last_active_character
-            elif speaker_lower in ("she", "her", "the woman", "the girl", "the lady", "her voice", "लड़की", "महिला"):
+            elif speaker_lower in FEMALE_PRONOUNS:
                 speaker = last_female_character if last_female_character != "Narrator" else last_active_character
             elif speaker_lower in ("unknown", "someone", "voice", "a voice", "stranger"):
                 speaker = last_active_character

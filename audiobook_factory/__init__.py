@@ -46,7 +46,7 @@ from .script_builder import (
     build_dramatized_script_llm,
     build_narrator_script,
 )
-from .tts_dispatcher import TTSDispatcher, probe_key_health
+from .tts_dispatcher import TTSDispatcher, UnregisteredSpeakerError, probe_key_health
 from .soundscape import (
     detect_chapter_mood,
     resolve_ambient_score,

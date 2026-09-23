@@ -121,6 +121,7 @@ class MusicCue(BaseModel):
     section_start_sec: float = 0.0      # Offset inside source track
     start_ms: int                       # Offset on chapter timeline in ms
     duration_ms: int                    # Duration of cue in ms
+    until_segment: Optional[int] = None # Segment boundary where cue terminates (ADR-022)
     fade_in_ms: int = 2000
     fade_out_ms: int = 3000
     volume_db: float = -18.0
@@ -226,12 +227,15 @@ class TimelineSegment(BaseModel):
     text: str                           # Full unabridged speech transcript
     audio_file: str                     # Filename of synthesized WAV chunk
     duration_ms: int                    # Sample duration in ms
-    start_ms: int                       # Timeline start offset in ms
+    start_ms: int                       # Timeline start offset in ms (curr_t + pre_breath)
     end_ms: int                         # Timeline end offset in ms
     pause_after_ms: int = 400
     emotion: str = "neutral"
     spatial_pan: float = 0.0
     acoustic_env: str = "temple_stone_hall"
+    sfx_cues: List[str] = []            # Associated physical Foley tags
+    music_mood: str = "neutral"         # Underlying musical mood
+    pre_roll_breath_ms: int = 0         # Organic breath intake duration (ADR-022)
 
 class TimelineLedger(BaseModel):
     ledger_version: str = "2.0"
@@ -423,21 +427,36 @@ def build_dramatized_script_llm(
 *Token-Bucket concurrent speech synthesizer with automatic failover.*
 
 ```python
+class UnregisteredSpeakerError(KeyError):
+    """Raised when a dialogue segment requests an unregistered character voice (ADR-021)."""
+
 class TTSDispatcher:
     def __init__(
         self,
         project_dir: Path,
         default_backend: str = "gemini_tts",
         default_voice: str = "Aoede",
-        max_workers: int = 3,
-    ): ...
+        max_workers: int = 1,
+        rpm: float = DEFAULT_RPM,
+        audio_dir: Optional[Path] = None,
+        strict_speakers: bool = True,
+    ):
+        """
+        Orchestrates concurrent speech synthesis with TokenBucket rate limiting.
+        When strict_speakers=True (default), prohibits silent fallback to Narrator for dialogue.
+        """
+
+    def get_speaker_config(
+        self, speaker: str, seg_type: str = "narration"
+    ) -> Dict[str, Any]:
+        """Resolves complete speaker configuration, mapping roster aliases and checking whitelist."""
 
     def synthesize_chapter_script(
         self,
         script_file: Path,
         chapter_idx: int,
     ) -> List[Path]:
-        """Synthesizes all segments in a chapter script with token-bucket rate limiting."""
+        """Pre-flights all segments against voice registry, then synthesizes chunks concurrently."""
 
 def synthesize_gemini_tts(
     text: str,
@@ -470,6 +489,23 @@ class AgentDirector:
         sonic_bible: Optional[SonicBible] = None,
     ) -> CreativeManifest:
         """Executes 3-pass dramaturgy (silence carving, FTS5 music matching, foley mining)."""
+
+    def _partition_script_ambience_scenes(
+        self,
+        script_segments: Optional[List[Dict[str, Any]]],
+        seg_starts_ms: Optional[Dict[int, int]],
+        segment_durations_sec: Optional[Dict[int, float]],
+        total_duration_ms: int,
+    ) -> List[Tuple[str, int, int]]:
+        """Partitions chapter into contiguous scene blocks based on acoustic_env shifts (ADR-022)."""
+
+    def _compute_word_level_offset(
+        self, text: str, anchor_word: str, seg_dur_ms: int, action_verb: str = ""
+    ) -> int:
+        """Calculates Foley anchor timing with BILINGUAL_ANCHOR_MAP, eliminating 50% dead-center trap (ADR-022)."""
+
+    def _resolve_foley_asset(self, action_verb: str, object_material: str) -> Optional[Path]:
+        """Resolves sound asset from sound bank using category guards (e.g. DOMETabl vs WEAPSwd)."""
 ```
 
 ### `SonicBible` ([`audiobook_factory.sonic_bible`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_bible.py))
@@ -527,7 +563,8 @@ PROFILE_COMBAT_SHOCK = DuckingProfile(profile_name="combat_shock", attenuation_d
 PROFILE_COMBAT = DuckingProfile(profile_name="combat_shouting", attenuation_db=-22.0, release_ms=250)
 
 def get_ducking_profile(name_or_scene_type: str) -> DuckingProfile: ...
-def derive_ucs_category(action_verb_or_cue: str, exciter: str = "") -> str: ...
+def derive_ucs_category(action_verb_or_cue: str, exciter: str = "") -> str:
+    """Derives Universal Category System ID (e.g. DOMETabl for dining, WEAPSwd for swords, GOREAnat for flesh/bone)."""
 def filter_concurrency_window(
     foley_cues: List[FoleyCue],
     window_ms: int = 200,
@@ -660,11 +697,19 @@ class GateAuditError(Exception):
 # Gate 0: Translation Coverage
 def audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dict[str, Any]: ...
 
-# Gate 1: Voice Collision Elimination
-def audit_gate1_roster(roster_file: Union[Path, Dict], registry_file: Union[Path, Dict]) -> Dict[str, Any]: ...
+# Gate 1: Voice Collision Elimination & Acoustic Gender Alignment (ADR-021)
+def audit_gate1_roster(
+    roster_file: Union[Path, Dict],
+    registry_file: Union[Path, Dict],
+    active_characters: Optional[List[str]] = None,
+) -> Dict[str, Any]: ...
 
-# Gate 2: Screenplay Scripting Schema
-def audit_gate2_script(script_file: Path) -> Dict[str, Any]: ...
+# Gate 2: Screenplay Scripting Schema & Canonical Whitelist Enforcement (ADR-021)
+def audit_gate2_script(
+    script_file: Path,
+    allowed_speakers: Optional[Set[str]] = None,
+    project_dir: Optional[Path] = None,
+) -> Dict[str, Any]: ...
 
 # Gate 3 & 3.5: Acoustic Feasibility & Scene Coverage
 def audit_gate3_scenes(scenes_file: Path, script_file: Path) -> Dict[str, Any]: ...

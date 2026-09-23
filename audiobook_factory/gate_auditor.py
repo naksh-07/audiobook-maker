@@ -145,7 +145,13 @@ def audit_gate1_roster(
     voice_signatures: Dict[str, str] = {}
     collisions = []
 
+    # Known persona gender profiles for Gemini TTS / standard acoustic personas
+    FEMALE_PERSONAS = {"aoede", "kore", "leda", "zephyr"}
+    MALE_PERSONAS = {"charon", "fenrir", "puck", "zeus", "orpheus", "achilles"}
+
     for role in active:
+        if role in ("Foley", "SFX"):
+            continue
         if role not in roster_data:
             raise GateAuditError(f"Gate 1 Failed: Character '{role}' not found in roster!")
         if role not in registry_data:
@@ -161,6 +167,20 @@ def audit_gate1_roster(
             pitch = cfg.get("pitch", 1.0)
             speed = cfg.get("speed", 1.0)
         sig = f"{voice}_p{pitch:.2f}_s{speed:.2f}"
+
+        # ADR-021: Acoustic Gender Alignment Check
+        r_entry = roster_data.get(role, {})
+        if isinstance(r_entry, dict):
+            gender = r_entry.get("gender", "neutral").lower()
+            v_lower = voice.lower()
+            if gender == "male" and v_lower in FEMALE_PERSONAS:
+                logger.warning(
+                    f"  [ACOUSTIC GENDER WARNING] Male character '{role}' assigned female voice persona '{voice}'."
+                )
+            elif gender == "female" and v_lower in MALE_PERSONAS:
+                logger.warning(
+                    f"  [ACOUSTIC GENDER WARNING] Female character '{role}' assigned male voice persona '{voice}'."
+                )
 
         if sig in voice_signatures:
             collisions.append((role, voice_signatures[sig], sig))
@@ -181,6 +201,7 @@ def audit_gate1_roster(
 def audit_gate2_script(
     script_file: Path,
     allowed_speakers: Optional[Set[str]] = None,
+    project_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Audit Gate 2: Verifies screenplay script against Pydantic v2 schema, checking canonical speaker keys."""
     script_file = Path(script_file).resolve()
@@ -191,14 +212,85 @@ def audit_gate2_script(
     if not script.segments:
         raise GateAuditError(f"Gate 2 Failed: Screenplay has 0 segments!")
 
+    # Auto-discover project roster and voice registry if allowed_speakers is not explicitly provided
+    if allowed_speakers is None:
+        pdir = Path(project_dir).resolve() if project_dir else script_file.parent.parent
+        roster_file = pdir / "character_roster.json"
+        reg_file = pdir / "voice_registry.json"
+        discovered: Set[str] = {"Narrator", "Foley"}
+        has_catalog = False
+
+        if roster_file.exists():
+            try:
+                with open(roster_file, "r", encoding="utf-8") as f:
+                    rdata = json.load(f)
+                chars = rdata.get("characters", rdata)
+                if isinstance(chars, dict):
+                    has_catalog = True
+                    for cname, details in chars.items():
+                        discovered.add(cname.strip())
+                        discovered.add(cname.strip().replace("_", " "))
+                        discovered.add(cname.strip().replace(" ", "_"))
+                        if isinstance(details, dict):
+                            for alias in details.get("aliases", []):
+                                if isinstance(alias, str) and alias.strip():
+                                    discovered.add(alias.strip())
+                                    discovered.add(alias.strip().replace("_", " "))
+                                    discovered.add(alias.strip().replace(" ", "_"))
+                elif isinstance(chars, list):
+                    has_catalog = True
+                    for item in chars:
+                        if isinstance(item, dict):
+                            cname = item.get("english_name") or item.get("display_name") or item.get("name")
+                            if cname:
+                                discovered.add(cname.strip())
+                                discovered.add(cname.strip().replace("_", " "))
+                            hname = item.get("hindi_name")
+                            if hname:
+                                discovered.add(hname.strip())
+                            for alias in item.get("aliases", []):
+                                if isinstance(alias, str) and alias.strip():
+                                    discovered.add(alias.strip())
+            except Exception as e:
+                logger.warning(f"  [GATE 2 NOTICE] Could not parse {roster_file.name}: {e}")
+
+        if reg_file.exists():
+            try:
+                with open(reg_file, "r", encoding="utf-8") as f:
+                    reg_data = json.load(f)
+                if isinstance(reg_data, dict):
+                    has_catalog = True
+                    for k in reg_data.keys():
+                        discovered.add(k.strip())
+                        discovered.add(k.strip().replace("_", " "))
+            except Exception as e:
+                logger.warning(f"  [GATE 2 NOTICE] Could not parse {reg_file.name}: {e}")
+
+        if has_catalog:
+            allowed_speakers = discovered
+
     speaker_breakdown: Dict[str, int] = {}
     invalid_speakers = []
 
+    # Pre-compute lowercase sets for robust normalization
+    allowed_lower = {a.lower().strip() for a in allowed_speakers} if allowed_speakers else set()
+    allowed_lower_space = {a.lower().replace("_", " ").strip() for a in allowed_speakers} if allowed_speakers else set()
+
     for seg in script.segments:
-        sp = seg.speaker
+        sp = seg.speaker.strip()
         speaker_breakdown[sp] = speaker_breakdown.get(sp, 0) + 1
-        if allowed_speakers and sp not in allowed_speakers:
-            invalid_speakers.append((seg.index, sp))
+        if allowed_speakers:
+            sp_l = sp.lower()
+            sp_space = sp_l.replace("_", " ")
+            matched = (
+                sp in allowed_speakers
+                or sp_l in allowed_lower
+                or sp_space in allowed_lower_space
+                or sp in ("Narrator", "Foley")
+                or sp_l in ("narrator", "foley")
+            )
+            if not matched:
+                invalid_speakers.append((seg.index, sp))
 
     if invalid_speakers:
         raise GateAuditError(f"Gate 2 Failed: Found non-canonical speakers: {invalid_speakers[:5]}")
@@ -358,18 +450,18 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
     ledger_file = pdir / "scripts" / f"{ch_str}_timeline_ledger.json"
     audio_dir = pdir / "audio_chunks"
 
-    # Auto-detect active speakers from screenplay script if not explicitly specified
+    # Auto-detect active speakers from screenplay script for Gate 1 checking if not explicitly specified
     if active_speakers is None and script_file.exists():
         try:
             script = ScreenplayScript.from_file(script_file)
-            active_speakers = sorted(list({s.speaker for s in script.segments}))
+            active_speakers = sorted(list({s.speaker for s in script.segments if s.speaker not in ("Foley",)}))
         except Exception:
             pass
 
     report = {}
     report["gate_0"] = audit_gate0_translation(ext_file, trans_file)
     report["gate_1"] = audit_gate1_roster(roster_file, registry_file, active_speakers)
-    report["gate_2"] = audit_gate2_script(script_file, set(active_speakers) if active_speakers else None)
+    report["gate_2"] = audit_gate2_script(script_file, project_dir=pdir)
 
     if scenes_file.exists():
         report["gate_3"] = audit_gate3_scenes(scenes_file, script_file)

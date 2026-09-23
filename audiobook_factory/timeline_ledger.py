@@ -95,8 +95,9 @@ def build_audio_transcript_ledger(
                 f"Audio chunk {audio_chunk.name} is corrupt or too small ({audio_chunk.stat().st_size} bytes)"
             )
 
+        pre_breath = int(getattr(seg, "pre_roll_breath_ms", 0) or 0)
         dur_ms = get_wav_duration_ms(audio_chunk)
-        start_ms = curr_t_ms
+        start_ms = curr_t_ms + pre_breath
         end_ms = start_ms + dur_ms
         total_speech_ms += dur_ms
 
@@ -117,6 +118,7 @@ def build_audio_transcript_ledger(
             acoustic_env=seg.acoustic_env,
             sfx_cues=list(seg.sfx_cues),
             music_mood=seg.music.mood if seg.music else "neutral",
+            pre_roll_breath_ms=pre_breath,
         )
         timeline_segments.append(t_seg)
 
