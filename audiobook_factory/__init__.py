@@ -112,6 +112,6 @@ from .gate_auditor import (
     audit_book_master,
 )
 
-__version__ = "4.0.0"
+__version__ = "4.0.0b1"
 
 

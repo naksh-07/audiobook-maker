@@ -8,5 +8,7 @@
   - Upgraded BGM to Scene-Bound Underscore with `until_segment` duration calculation and 20s cue floor.
   - Replaced 106-min flat monolithic ambience with dynamic multi-scene partitioning from `acoustic_env` shifts.
 - **Zero-Voice-Drift Hardening & Speaker Attribution (ADR-021):** COMPLETE & VERIFIED.
-- **Verification:** 100% test pass rate across all 243 tests in repository (0 failures, 0 errors in 95.6s).
-- **Next Horizon:** Full novel batch production under sample-accurate cinematic audio drama standards.
+- **Milestone v4.0.0-beta.1 (Latest Pre-Stable Beta):** TAGGED & RELEASED.
+  - Final pre-stable beta consolidating ADR-001 through ADR-022.
+  - 100% test pass rate across 243 tests (zero failures, zero errors).
+- **Next Horizon:** Production stress test on full novel batch and subsequent v4.0.0 stable release.

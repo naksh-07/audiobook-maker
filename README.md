@@ -2,6 +2,7 @@
 
 > **Autonomous Studio-Grade Cinematic Audio Drama Production Engine with Multi-Cast Character Attribution, Dynamic BGM Scoring, SQLite FTS5 Foley & Native M4B Packaging.**
 
+[![Release](https://img.shields.io/badge/Release-v4.0.0--beta.1%20(Pre--Stable)-orange.svg)](https://github.com/naksh-07/audiobook-maker/releases)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-6.0%2B%20%7C%208.0-red.svg)](https://ffmpeg.org/)
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.1%20Flash%20API-green.svg)](https://ai.google.dev/)
