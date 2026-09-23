@@ -235,6 +235,18 @@ def render_discrete_stems(
     # --- STEM 3: FX (Foley & Transient Stem) ---
     fx_file = out_dir / f"{ch_id}_stem_FX.wav"
     raw_foley = list(manifest.foley_cues)
+    scene_acoustics = getattr(manifest, "scene_acoustics", None)
+
+    # Idea 2 Integration: Merge procedural stochastic spot cues from scene acoustics into Foley bus (if not already added)
+    has_stoch = any(getattr(c, "anchor_word", "") == "[STOCHASTIC]" for c in raw_foley)
+    if not has_stoch and scene_acoustics and hasattr(scene_acoustics, "generate_stochastic_cues"):
+        stoch_cues = scene_acoustics.generate_stochastic_cues(sound_bank=bank)
+        if stoch_cues:
+            existing_ids = {c.cue_id for c in raw_foley}
+            for sc_cue in stoch_cues:
+                if sc_cue.cue_id not in existing_ids:
+                    raw_foley.append(sc_cue)
+
     # Apply Voice Limiter & Priority Stealing to prevent transient mud
     calibrated_foley = filter_concurrency_window(raw_foley, window_ms=200, max_concurrency=3)
     render_foley_bus(
@@ -255,59 +267,75 @@ def render_discrete_stems(
 
     # --- STEM 4: AMB (Environmental Ambience Stem) ---
     amb_file = out_dir / f"{ch_id}_stem_AMB.wav"
-    scene_acoustics = getattr(manifest, "scene_acoustics", None)
 
-    # Collect all ambient cues across scenes: (path, start_ms, end_ms, target_lufs)
-    amb_cues: List[Tuple[Path, int, int, float]] = []
+    # Collect all ambient cues across scenes: (path, start_ms, end_ms, target_lufs, cutoff_hz, stereo_width)
+    amb_cues: List[Tuple[Path, int, int, float, int, float]] = []
     if scene_acoustics and scene_acoustics.scenes:
         for sc in scene_acoustics.scenes:
+            occ_cutoff = getattr(sc, "occlusion_cutoff_hz", 18000)
             for l in sc.layers:
+                # Stochastic spots are routed to FX stem, not looped in AMB bed
+                if getattr(l, "layer_type", "") == "spot_stochastic":
+                    continue
                 resolved_amb = bank.resolve_sound(l.asset_path, category="AMB") or bank.resolve_sound(l.asset_path)
                 if resolved_amb and resolved_amb.exists():
-                    amb_cues.append((resolved_amb, sc.start_ms, sc.end_ms, l.target_lufs))
+                    width = getattr(l, "stereo_width", 1.30)
+                    cutoff = occ_cutoff if l.layer_type in ("weather_elements", "base_room_tone") and occ_cutoff < 18000 else 18000
+                    amb_cues.append((resolved_amb, sc.start_ms, sc.end_ms, getattr(l, "target_lufs", -32.0), cutoff, width))
     elif hasattr(manifest, "ambience_scenes") and manifest.ambience_scenes:
         for amb_scene in manifest.ambience_scenes:
             res_amb = bank.resolve_sound(amb_scene.asset_path, category="AMB") or bank.resolve_sound(amb_scene.asset_path)
             if res_amb and res_amb.exists():
-                amb_cues.append((res_amb, amb_scene.start_ms, amb_scene.end_ms, getattr(amb_scene, "target_lufs", -32.0)))
+                amb_cues.append((res_amb, amb_scene.start_ms, amb_scene.end_ms, getattr(amb_scene, "target_lufs", -32.0), 18000, 1.30))
 
     if not amb_cues:
         cmd_amb = [ff, "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}", "-c:a", "pcm_s16le", str(amb_file)]
         subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     elif len(amb_cues) == 1 and amb_cues[0][1] == 0 and amb_cues[0][2] >= int(total_dur * 1000):
         # Single scene covering whole chapter
-        first_amb, _, _, _ = amb_cues[0]
+        first_amb, _, _, _, cutoff, width = amb_cues[0]
+        af_filters = ["volume=-12dB", "afade=t=in:ss=0:d=2.0", f"afade=t=out:st={max(0.1, total_dur - 2.0):.2f}:d=2.0"]
+        if cutoff < 18000:
+            af_filters.append(f"lowpass=f={cutoff}")
+        if width > 1.05:
+            af_filters.append("stereotools=mlev=1.00:slev=1.15")
+        af_filters.append("aresample=48000")
         cmd_amb = [
             ff, "-y",
             "-stream_loop", "-1",
             "-i", str(first_amb),
             "-t", f"{total_dur:.2f}",
-            "-af", "volume=-12dB,afade=t=in:ss=0:d=2.0,afade=t=out:st=" + f"{max(0.1, total_dur - 2.0):.2f}:d=2.0,aresample=48000",
+            "-af", ",".join(af_filters),
             "-c:a", "pcm_s16le",
             str(amb_file),
         ]
         subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
-        # Multi-scene / multi-layer sequential compositor
+        # Multi-scene / multi-layer sequential compositor with dynamic occlusion & stereo widening
         inputs = ["-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}"]
         filters = []
-        for i, (apath, s_ms, e_ms, tlufs) in enumerate(amb_cues):
+        for i, (apath, s_ms, e_ms, tlufs, cutoff, width) in enumerate(amb_cues):
             inputs.extend(["-stream_loop", "-1", "-i", str(apath)])
             dur_ms = max(500, e_ms - s_ms)
             dur_sec = dur_ms / 1000.0
             st_ms = max(0, s_ms)
             fade_in = min(1.5, dur_sec / 3.0)
             fade_out_st = max(0.1, dur_sec - fade_in)
-            filters.append(
-                f"[{i+1}:a]aformat=sample_rates=48000:channel_layouts=stereo,"
-                f"atrim=0:{dur_sec:.2f},"
-                f"afade=t=in:ss=0:d={fade_in:.2f},"
-                f"afade=t=out:st={fade_out_st:.2f}:d={fade_in:.2f},"
-                f"volume=-12dB,"
-                f"adelay={st_ms}|{st_ms}[amb_{i}]"
-            )
+            cue_filters = [
+                "aformat=sample_rates=48000:channel_layouts=stereo",
+                f"atrim=0:{dur_sec:.2f}",
+                f"afade=t=in:ss=0:d={fade_in:.2f}",
+                f"afade=t=out:st={fade_out_st:.2f}:d={fade_in:.2f}",
+                "volume=-12dB"
+            ]
+            if cutoff < 18000:
+                cue_filters.append(f"lowpass=f={cutoff}")
+            if width > 1.05:
+                cue_filters.append("stereotools=mlev=1.00:slev=1.15")
+            cue_filters.append(f"adelay={st_ms}|{st_ms}")
+            filters.append(f"[{i+1}:a]" + ",".join(cue_filters) + f"[amb_{i}]")
         mix_inputs = "[0:a]" + "".join(f"[amb_{i}]" for i in range(len(amb_cues)))
-        filter_str = ";".join(filters) + f";{mix_inputs}amix=inputs={len(amb_cues)+1}:duration=first:normalize=0[amb_out]"
+        filter_str = ";".join(filters) + f";{mix_inputs}amix=inputs={len(amb_cues)+1}:duration=first:normalize=0,alimiter=limit=0.95:attack=5:release=50[amb_out]"
         cmd_amb = [
             ff, "-y",
             *inputs,
@@ -319,7 +347,7 @@ def render_discrete_stems(
         res = subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode != 0 or not amb_file.exists():
             # Fallback to safe loop of first cue if complex graph exceeds bounds
-            first_amb, _, _, _ = amb_cues[0]
+            first_amb, _, _, _, _, _ = amb_cues[0]
             cmd_fallback = [
                 ff, "-y", "-stream_loop", "-1", "-i", str(first_amb), "-t", f"{total_dur:.2f}",
                 "-af", "volume=-12dB,aresample=48000", "-c:a", "pcm_s16le", str(amb_file)
@@ -391,15 +419,25 @@ def render_discrete_stems(
         true_peak_dbtp=master_m["true_peak_dbtp"],
     )
 
+    # Anti-Overengineered DMR Validation (Dialogue-to-Masking Ratio Proxy)
+    dmr_db = round(dx_m["integrated_lufs"] - me_m["integrated_lufs"], 2)
+    dmr_compliant = bool(dmr_db >= 10.0 or me_m["integrated_lufs"] <= -35.0)
+
     ledger = StemLedger(
         chapter_id=ch_id,
         stems=stems_meta,
         master_lufs=master_m["integrated_lufs"],
         master_peak=master_m["true_peak_dbtp"],
-        compliance_status=(master_m["integrated_lufs"] >= -21.0 and master_m["true_peak_dbtp"] <= -1.4),
+        compliance_status=(
+            master_m["integrated_lufs"] >= -21.0
+            and master_m["true_peak_dbtp"] <= -1.4
+            and dmr_compliant
+        ),
         metadata={
             "engine": "CinemaAudioEngine v4.0",
             "ducking_profile": ducking_prof.profile_name,
+            "dialogue_masking_ratio_db": dmr_db,
+            "dmr_compliant": dmr_compliant,
             "total_stems": len(stems_meta),
         },
     )

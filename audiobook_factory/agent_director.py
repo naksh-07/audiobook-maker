@@ -152,6 +152,16 @@ class AgentDirector:
         )
 
         # =====================================================================
+        # PASS 1.5: 4-Stem Decoupled Scene Acoustics Manifest (Idea 1 & 2)
+        # =====================================================================
+        scene_acoustics = self._resolve_scene_acoustics(
+            chapter_id=chapter_id,
+            dramaturgy_plan=dramaturgy_plan,
+            total_duration_ms=total_duration_ms,
+            sonic_bible=active_bible,
+        )
+
+        # =====================================================================
         # PASS 2: Music Director (Dynamic FTS5 queries, graceful fallback to silence)
         # =====================================================================
         music_cues = self._pass2_music_director(
@@ -171,6 +181,19 @@ class AgentDirector:
             segment_durations_sec=segment_durations_sec,
         )
 
+        # Merge procedural Layer 4 stochastic spot transients into foley cues
+        if scene_acoustics and hasattr(scene_acoustics, "generate_stochastic_cues"):
+            stoch_foley = scene_acoustics.generate_stochastic_cues(
+                timeline_ledger=timeline_ledger,
+                sound_bank=self.sound_bank,
+            )
+            if stoch_foley:
+                foley_cues.extend(stoch_foley)
+
+        # Apply Voice Limiter & Priority Stealing to prevent transient mud and concurrency collisions
+        from audiobook_factory.acoustic_bus_matrix import filter_concurrency_window
+        foley_cues = filter_concurrency_window(foley_cues, window_ms=200, max_concurrency=3)
+
         # Compute final acoustic silence percentage
         total_music_ms = sum(c.duration_ms for c in music_cues)
         calculated_silence = max(0.0, 100.0 * (1.0 - (total_music_ms / max(1, total_duration_ms))))
@@ -189,6 +212,7 @@ class AgentDirector:
                 spectral_carve_gain_db=-5.5,
             ),
             ambience_scenes=ambience_scenes,
+            scene_acoustics=scene_acoustics,
             music_cues=music_cues,
             foley_cues=foley_cues,
             metadata={
@@ -199,6 +223,15 @@ class AgentDirector:
                 "silence_mandate_verified": True,
             },
         )
+
+        # Persist scene acoustics JSON if project directory is set
+        active_project_dir = project_dir or self.project_dir
+        if active_project_dir and scene_acoustics:
+            try:
+                scene_path = Path(active_project_dir) / f"{chapter_id}_scene_acoustics.json"
+                scene_acoustics.save_to_disk(scene_path)
+            except Exception as e:
+                logger.warning(f"Failed to auto-save scene acoustics JSON: {e}")
 
         manifest.validate()
         logger.info(
@@ -915,3 +948,124 @@ Output STRICT JSON schema:
                     )
 
         return scenes
+
+    def _resolve_scene_acoustics(
+        self,
+        chapter_id: str,
+        dramaturgy_plan: Dict[str, Any],
+        total_duration_ms: int,
+        sonic_bible: Optional[Any] = None,
+    ) -> Any:
+        """
+        Pillar 4 / Idea 1 & 2: Resolves rich 4-stem decoupled scene acoustics manifest.
+        Creates scene profiles with Base Room Tone, Weather Elements, Crowd Wallah, and Stochastic Spots.
+        """
+        from audiobook_factory.scene_acoustics import SceneSoundscapeManifest, SceneAcousticProfile, AmbienceLayer
+
+        scene_manifest = SceneSoundscapeManifest(chapter_id=chapter_id)
+
+        # Check if plan already has explicit scene profiles
+        raw_scenes = dramaturgy_plan.get("scene_acoustics") or dramaturgy_plan.get("scenes")
+        if raw_scenes and isinstance(raw_scenes, list):
+            for sc_data in raw_scenes:
+                try:
+                    profile = SceneAcousticProfile.model_validate(sc_data)
+                    scene_manifest.add_scene(profile)
+                except Exception as e:
+                    logger.debug(f"Could not parse custom scene profile: {e}")
+
+        if not scene_manifest.scenes:
+            # Construct standard 4-stem scene acoustic profile from dramaturgy_plan ambience & defaults
+            amb_list = dramaturgy_plan.get("ambience", [])
+            primary_name = amb_list[0].get("name", "room_tone") if amb_list else "room_tone"
+
+            # Determine weather and wallah if keywords match
+            layers: List[AmbienceLayer] = []
+
+            # 1. Base Room Tone Layer
+            base_res = (
+                self.sound_bank.resolve_sound(f"{primary_name}.ogg", category="AMB") or
+                self.sound_bank.resolve_sound(primary_name, category="AMB") or
+                self.sound_bank.resolve_sound("room_tone", category="AMB") or
+                self.sound_bank.resolve_sound("amb_castle_hall_hearth.wav", category="AMB")
+            )
+            base_path = base_res.name if base_res else "room_tone"
+            layers.append(
+                AmbienceLayer(
+                    layer_type="base_room_tone",
+                    asset_path=base_path,
+                    target_lufs=-34.0,
+                    stereo_width=1.35,
+                    loop=True,
+                )
+            )
+
+            # 2. Weather Elements (if mentioned in dramatic theme or ambience)
+            theme_str = str(dramaturgy_plan.get("dramatic_theme", "")).lower()
+            weather_path = None
+            if "rain" in theme_str or "storm" in theme_str:
+                weather_path = "rain_thunder.ogg"
+            elif "wind" in theme_str or "snow" in theme_str or "blizzard" in theme_str or "mountain" in theme_str:
+                weather_path = "amb_blizzard_mountain_gale.wav"
+            elif "swamp" in theme_str or "bog" in theme_str:
+                weather_path = "amb_bog_swamp_night.wav"
+            elif "crypt" in theme_str or "tomb" in theme_str:
+                weather_path = "amb_crypt_tomb_drips.wav"
+
+            if weather_path:
+                layers.append(
+                    AmbienceLayer(
+                        layer_type="weather_elements",
+                        asset_path=weather_path,
+                        target_lufs=-32.0,
+                        stereo_width=1.40,
+                        loop=True,
+                    )
+                )
+
+            # 3. Crowd / Wallah (if tavern / market / hall)
+            if "tavern" in theme_str or "crowd" in theme_str or "brawl" in theme_str or "hall" in theme_str:
+                layers.append(
+                    AmbienceLayer(
+                        layer_type="crowd_wallah",
+                        asset_path="tavern_crowd_murmur.ogg",
+                        target_lufs=-30.0,
+                        stereo_width=1.30,
+                        loop=True,
+                    )
+                )
+
+            # 4. Stochastic Spot Transients (Layer 4)
+            stoch_asset = "tiny_floor-creak-01.wav"
+            if "fire" in theme_str or "torch" in theme_str or "hearth" in theme_str:
+                stoch_asset = "dry_grass_fireplace_raw.ogg"
+            elif "water" in theme_str or "dungeon" in theme_str:
+                stoch_asset = "tiny_water-drop-01.wav"
+
+            layers.append(
+                AmbienceLayer(
+                    layer_type="spot_stochastic",
+                    asset_path=stoch_asset,
+                    target_lufs=-24.0,
+                    stochastic_interval_sec=35.0,
+                    loop=False,
+                )
+            )
+
+            # Occlusion cutoff: if indoor space, occlude exterior weather to 1400Hz
+            occ_cutoff = 1400 if any(k in theme_str for k in ("castle", "tavern", "room", "crypt", "indoor")) else 18000
+
+            scene_manifest.add_scene(
+                SceneAcousticProfile(
+                    scene_id=f"sc_001_{chapter_id}",
+                    act_index=1,
+                    start_ms=0,
+                    end_ms=max(1000, total_duration_ms),
+                    ir_preset="room",
+                    layers=layers,
+                    occlusion_cutoff_hz=occ_cutoff,
+                )
+            )
+
+        return scene_manifest
+

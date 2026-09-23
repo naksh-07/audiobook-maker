@@ -175,7 +175,13 @@ def synthesize_gemini_tts(
                     }
                 }
             }
-        }
+        },
+        "safetySettings": [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ],
     }
 
     # Note: gemini-3.1-flash-tts-preview does not support systemInstruction/Developer instruction (HTTP 400).

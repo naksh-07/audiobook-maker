@@ -548,6 +548,7 @@ class CreativeManifest(BaseModel):
     )
     mastering: MasteringConfig = Field(default_factory=MasteringConfig, description="Mastering bus settings")
     ambience_scenes: List[AmbienceScene] = Field(default_factory=list, description="Environmental ambience scenes")
+    scene_acoustics: Optional[Any] = Field(default=None, description="Decoupled 4-stem SceneSoundscapeManifest")
     music_cues: List[MusicCue] = Field(default_factory=list, description="Surgical musical score cues")
     foley_cues: List[FoleyCue] = Field(default_factory=list, description="Physical foley sound cues")
     total_duration_ms: Optional[int] = Field(default=0, ge=0, description="Total chapter duration in milliseconds")
@@ -755,28 +756,30 @@ class LegacyCreativeManifestAdapter:
         from audiobook_factory.acoustic_bus_matrix import DuckingProfile, PROFILE_STANDARD
         from audiobook_factory.cinema_audio_engine import CinemaAudioManifest
 
-        # Convert AmbienceScenes to SceneSoundscapeManifest
-        scenes: List[SceneAcousticProfile] = []
-        for s in legacy.ambience_scenes:
-            layer = AmbienceLayer(
-                layer_type="base_room_tone",
-                asset_path=s.asset_path or s.asset_name or "wind_howl.ogg",
-                target_lufs=s.target_lufs,
-            )
-            sc_prof = SceneAcousticProfile(
-                scene_id=f"scene_{s.scene_id:03d}",
-                start_ms=s.start_ms,
-                end_ms=s.end_ms,
-                ir_preset=s.reverb_preset or "room",
-                layers=[layer],
-            )
-            scenes.append(sc_prof)
+        # Prefer existing 4-stem decoupled scene acoustics manifest if present
+        scene_manifest = getattr(legacy, "scene_acoustics", None)
+        if not scene_manifest and legacy.ambience_scenes:
+            scenes: List[SceneAcousticProfile] = []
+            for s in legacy.ambience_scenes:
+                layer = AmbienceLayer(
+                    layer_type="base_room_tone",
+                    asset_path=s.asset_path or s.asset_name or "wind_howl.ogg",
+                    target_lufs=s.target_lufs,
+                )
+                sc_prof = SceneAcousticProfile(
+                    scene_id=f"scene_{s.scene_id:03d}",
+                    start_ms=s.start_ms,
+                    end_ms=s.end_ms,
+                    ir_preset=s.reverb_preset or "room",
+                    layers=[layer],
+                )
+                scenes.append(sc_prof)
 
-        scene_manifest = SceneSoundscapeManifest(
-            chapter_id=legacy.chapter_id,
-            scenes=scenes,
-            metadata={"source": "lifted_from_legacy_manifest"},
-        ) if scenes else None
+            scene_manifest = SceneSoundscapeManifest(
+                chapter_id=legacy.chapter_id,
+                scenes=scenes,
+                metadata={"source": "lifted_from_legacy_manifest"},
+            ) if scenes else None
 
         # Resolve ducking profile from mastering settings or default
         ducking_policy = PROFILE_STANDARD

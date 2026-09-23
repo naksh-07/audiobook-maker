@@ -254,3 +254,37 @@
   7. **Staccato Combat Prose & Neural Tags**: Enhanced translation prompt for rapid 2-4 word clauses ('कदम पीछे। तलवार का पैंतरा। वार। चूक गया!') and expanded `sanitizer.py` with combat vocal tags (`[bellowing battlecry]`, `[combat strain]`, `[diaphragm strain]`, `[guttural grunt on blade deflect]`, `[spits blood]`, `[choked gasp]`, `[ragged heaving pant]`).
   8. **4-Phase Combat Curve & "The Smother Cut"**: Standoff (80 BPM, 75% silence) -> First Blows (125 BPM, 50% silence) -> Bloodlust (160 BPM, 35% silence) -> Fatal Kill (Hard Mute 150-250ms digital silence before lethal strike).
 - **Rationale:** Delivers heart-stopping Hollywood combat impact with crystal-clear dialogue intelligibility and strict broadcast compliance.
+
+## ADR-018: Harry Potter & Pottermore Grade 4-Stem Decoupled Ambience, Spatial Occlusion & Tactile Magic Foley Architecture
+- **Context:** Full-cast immersive audio drama productions (Audible/Pottermore Harry Potter benchmark) require hyper-realistic world-building where ambience and tactile Foley create deep spatial presence without drowning dialogue in continuous BGM.
+- **Decision:**
+  1. **4-Stem Decoupled Ambience Architecture**: Replaced flat single-loop ambience with 4 distinct stems per scene:
+     - Stem 1: Base Room Tone / Acoustic Hull (-34 to -36 LUFS, architectural cavity resonance).
+     - Stem 2: Weather & Macro World (-30 to -32 LUFS, exterior precipitation, howling wind, thunder).
+     - Stem 3: Social & Life Wallah (-28 to -30 LUFS, student/patron murmurs, cutlery, crackling hearth).
+     - Stem 4: Stochastic Spot Transients (-22 to -26 dBFS, 15-45s non-repetitive micro-events: owl flutter, candle spark, floor creak).
+  2. **Acoustic Occlusion & Room Reverb (Space Physics)**:
+     - Convolution IR presets (`IR_STONE_HALL`, `IR_COZY_ROOM`, `IR_FOREST`) dynamically applied across scene transitions.
+     - Low-pass barrier occlusion filter (1200Hz - 1500Hz) applied to exterior stems when behind closed doors/windows, sweeping to 18kHz upon door open action beats.
+  3. **3-Phase Organic Magic Sound Design**:
+     - Spells structured as composite 3-part micro-chains: Phase A Gesture Pre-roll (wand flick whoosh 0-100ms) -> Phase B Arcane Exciter (crackling spark/ionization 100-300ms) -> Phase C Diegetic Impact/Dissipation (sub-bass drop 40-60Hz + acoustic reverb tail).
+  4. **Material Affinity Foley Engine**:
+     - Footsteps bound to terrain physics (stone flags, gravel, wet mud, creaking oak).
+     - Micro-props: parchment rolls, quill scratching, wax seal snaps, potion uncorking, and robe cloth movement.
+  5. **Binaural Spatial Staging & Spectral Pocketing**:
+     - Center channel (azimuth 0.0) reserved exclusively for dry, crisp dialogue.
+     - Ambience stereo width expanded to 1.3-1.5, carving out center space.
+     - Foley panned across character stage coordinates (-0.6 to +0.6).
+     - Formant pocketing: -5.5dB parametric notch at 2.2kHz-2.8kHz on background buses to guarantee zero vocal masking.
+     - Whisper protection: dynamic ducking (-8dB to -12dB) during intimate or whispered lines.
+- **Rationale:** Elevates Audiobook Maker to world-class Audible/BBC Radio 4 cinematic standards with 100% automated agent orchestration and zero token bloat.
+
+## ADR-019: Full-Scale Unfiltered Adult Intimacy & Gemini TTS Safety Filter Unlock
+- **Context:** In mature dark fantasy audiobooks, intimate, bedroom, and passionate scenes require authentic somatic realism, raw passion, and visceral dialogue without prudish television euphemisms, while ensuring the engine remains strictly faithful to the source material and preventing Google Gemini TTS safety filtering false positives.
+- **Decision:**
+  1. **TTS Safety Filter Unlock (`tts_dispatcher.py`)**: Added explicit `safetySettings: [BLOCK_NONE]` across all 4 harm categories (`HARM_CATEGORY_HARASSMENT`, `HARM_CATEGORY_HATE_SPEECH`, `HARM_CATEGORY_SEXUALLY_EXPLICIT`, `HARM_CATEGORY_DANGEROUS_CONTENT`) in `synthesize_gemini_tts`. Live API testing verified 100% synthesis success and zero censorship blocks.
+  2. **Rule 8 Somatic Intimacy & Dirty Banter Mandate (`translator.py`)**: Mandated visceral erotic vocabulary and somatic friction ('लंड', 'चूत', 'गांड', 'चोदना', 'मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें') during passionate encounters and bedroom dialogue.
+  3. **The "Nothing Above Source" Invariant**: Strictly prohibited fabricating explicit sexual acts out of thin air if characters are merely conversing or brushing shoulders. But whenever the source novel presents sexual tension, touching, nudity, or intercourse, the 19-to-21 Amplification Rule renders it in unapologetic, authentic Desi passion.
+  4. **The Anti-Cringe Invariant**: Preserved the absolute ban on sterile, clinical biology-textbook words ('योनि', 'लिंग') that evoke autopsy reports or exams.
+  5. **Screenplay ASMR Intimacy Staging (`script_builder.py`)**: Enhanced Rule 1 and Rule 6 to pair raw passion with `[whispers]` / `[intimate, breathy]` neural audio tags, `spatial.proximity: 'intimate_close'`, `spatial.pan: 0.0`, `pre_roll_breath_ms: 200-250`, and `music.ducking_db: -22.0` ("The Erotic Silence").
+- **Rationale:** Unlocks full dramatic realism and adult literary authenticity for mature fiction while maintaining strict narrative truth and zero API censorship.

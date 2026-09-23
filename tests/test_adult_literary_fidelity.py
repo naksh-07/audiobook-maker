@@ -118,7 +118,8 @@ class TestAdultLiteraryFidelity(unittest.TestCase):
         self.assertIn("चूतड़", func_source)
         self.assertIn("19-TO-21 AMPLIFICATION", func_source)
         self.assertIn("TU <-> MAAI-BAAP", func_source)
-        self.assertIn("SOMATIC INTIMACY & EROTICA", func_source)
+        self.assertIn("SOMATIC INTIMACY", func_source)
+        self.assertIn("NOTHING ABOVE SOURCE", func_source)
 
     def test_normalize_speech_text_preserves_adult_slang_and_prosody(self):
         """Verifies that normalize_speech_text preserves Hindi cuss words, slurs, and dramatic ellipses."""
@@ -127,6 +128,18 @@ class TestAdultLiteraryFidelity(unittest.TestCase):
         self.assertIn("भोसड़ीके", normalized)
         self.assertIn("...", normalized)
 
+    def test_tts_dispatcher_safety_settings_block_none(self):
+        """Verifies that tts_dispatcher passes BLOCK_NONE across all 4 harm categories to prevent false-positive censorship."""
+        import audiobook_factory.tts_dispatcher as tts_dispatcher
+        func_source = inspect.getsource(tts_dispatcher.synthesize_gemini_tts)
+        self.assertIn('"safetySettings"', func_source)
+        self.assertIn('"HARM_CATEGORY_HARASSMENT"', func_source)
+        self.assertIn('"HARM_CATEGORY_HATE_SPEECH"', func_source)
+        self.assertIn('"HARM_CATEGORY_SEXUALLY_EXPLICIT"', func_source)
+        self.assertIn('"HARM_CATEGORY_DANGEROUS_CONTENT"', func_source)
+        self.assertIn('"BLOCK_NONE"', func_source)
+
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -711,6 +711,7 @@ class AuditResult(BaseModel):
     passed: bool = True
     details: Dict[str, Any] = Field(default_factory=dict)
     errors: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)

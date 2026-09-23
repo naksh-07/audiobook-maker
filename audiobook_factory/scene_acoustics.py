@@ -168,3 +168,129 @@ class SceneSoundscapeManifest(BaseModel):
             "warnings": warnings,
             "errors": errors,
         }
+
+    def generate_stochastic_cues(
+        self,
+        timeline_ledger: Optional[Any] = None,
+        sound_bank: Optional[Any] = None,
+        seed: int = 42,
+    ) -> List[Any]:
+        """
+        Pillar 4 / Idea 2: Zero-Token Local Stochastic Transient Generator.
+        Generates subtle non-repetitive Layer 4 spot cues (owls, floor creaks, candle crackle, clock ticks)
+        bounded within each scene's start_ms and end_ms, prioritizing dialogue pauses to prevent vocal masking.
+        """
+        from audiobook_factory.contracts import FoleyCue
+        from audiobook_factory.acoustic_bus_matrix import derive_ucs_category
+
+        generated_cues: List[FoleyCue] = []
+        cue_counter = 0
+
+        for sc in self.scenes:
+            spot_layers = [l for l in sc.layers if l.layer_type == "spot_stochastic"]
+            if not spot_layers:
+                continue
+
+            scene_dur_sec = max(1.0, (sc.end_ms - sc.start_ms) / 1000.0)
+
+            # Discover pause slots in this scene from timeline_ledger if available
+            pause_slots: List[int] = []
+            if timeline_ledger and hasattr(timeline_ledger, "segments"):
+                segs = [s for s in timeline_ledger.segments if sc.start_ms <= s.start_ms < sc.end_ms]
+                for i in range(len(segs) - 1):
+                    gap = segs[i + 1].start_ms - segs[i].end_ms
+                    if gap >= 600:
+                        # Place spot transient 150ms into pause
+                        pause_slots.append(segs[i].end_ms + 150)
+
+            for layer in spot_layers:
+                interval_sec = layer.stochastic_interval_sec or 30.0
+                num_cues = max(1, int(scene_dur_sec / interval_sec))
+
+                # Resolve candidate sound assets from sound bank
+                candidates: List[Path] = []
+                if sound_bank is not None:
+                    res = sound_bank.resolve_sound(layer.asset_path, category="FOL") or sound_bank.resolve_sound(layer.asset_path)
+                    if res and res.exists():
+                        candidates.append(res)
+                    else:
+                        q = layer.asset_path.replace("_", " ").strip() or "wood creak"
+                        search_res = sound_bank.search(q, category="foley", limit=6)
+                        if not search_res:
+                            search_res = sound_bank.search(q, limit=6)
+                        for r in search_res:
+                            fp = Path(r.get("filepath", ""))
+                            if fp.exists() and fp not in candidates:
+                                candidates.append(fp)
+
+                asset_str = layer.asset_path
+                asset_name = Path(layer.asset_path).name
+
+                used_timestamps: List[int] = []
+                if pause_slots:
+                    stride = max(1, len(pause_slots) // num_cues)
+                    for k in range(min(num_cues, len(pause_slots))):
+                        used_timestamps.append(pause_slots[(k * stride) % len(pause_slots)])
+                else:
+                    scene_len = max(100, sc.end_ms - sc.start_ms)
+                    step_ms = int(scene_len / (num_cues + 1))
+                    margin_ms = min(500, max(50, int(scene_len * 0.05)))
+                    max_jitter = max(20, min(300, step_ms // 3))
+
+                    for k in range(num_cues):
+                        jitter = int(((seed + k * 17) % 11 - 5) / 5.0 * max_jitter)
+                        ts = sc.start_ms + step_ms * (k + 1) + jitter
+                        # Safe clamping respecting scene duration
+                        if sc.end_ms - sc.start_ms > 2 * margin_ms:
+                            ts = max(sc.start_ms + margin_ms, min(sc.end_ms - margin_ms, ts))
+                        else:
+                            ts = sc.start_ms + int(scene_len / 2)
+                        used_timestamps.append(ts)
+
+                used_timestamps.sort()
+                gain_target = layer.target_lufs if -40.0 <= layer.target_lufs <= -10.0 else -24.0
+
+                for idx, t_ms in enumerate(used_timestamps):
+                    cue_counter += 1
+                    chosen_path = asset_str
+                    chosen_name = asset_name
+                    if candidates:
+                        chosen_asset = candidates[(seed + idx + cue_counter) % len(candidates)]
+                        chosen_path = str(chosen_asset.resolve()).replace("\\", "/")
+                        chosen_name = chosen_asset.name
+
+                    pan = layer.azimuth_pan
+                    if pan == 0.0:
+                        pan = 0.35 if (cue_counter % 2 == 0) else -0.35
+
+                    ucs = derive_ucs_category(layer.asset_path, "spot")
+
+                    cue = FoleyCue(
+                        cue_id=f"stoch_{sc.scene_id}_{cue_counter:03d}",
+                        segment_index=0,
+                        anchor_word="[STOCHASTIC]",
+                        pre_roll_ms=100,
+                        asset_id=0,
+                        asset_path=chosen_path,
+                        asset_name=chosen_name,
+                        gain_dbfs=gain_target,
+                        azimuth_pan=pan,
+                        reverb_send=0.20,
+                        start_ms=t_ms,
+                        duration_ms=0,
+                        ucs_category=ucs,
+                    )
+                    generated_cues.append(cue)
+
+        return generated_cues
+
+
+def generate_stochastic_cues(
+    manifest: SceneSoundscapeManifest,
+    timeline_ledger: Optional[Any] = None,
+    sound_bank: Optional[Any] = None,
+    seed: int = 42,
+) -> List[Any]:
+    """Helper functional interface to generate stochastic spot foley cues from a SceneSoundscapeManifest."""
+    return manifest.generate_stochastic_cues(timeline_ledger=timeline_ledger, sound_bank=sound_bank, seed=seed)
+
