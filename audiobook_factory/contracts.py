@@ -34,6 +34,7 @@ class ProjectConfig(BaseModel):
     assets_dir: str = Field(..., description="Root directory path for all project media assets")
     ebu_r128_lufs: float = Field(default=-19.0, description="EBU R128 integrated loudness target in LUFS")
     true_peak_db: float = Field(default=-1.5, description="Maximum allowable True Peak in dBTP")
+    adult_literary_mode: bool = Field(default=True, description="Enables unfiltered Gangs-of-Wasseypur / Manto grade raw adult literary fidelity")
 
     @field_validator("ebu_r128_lufs")
     @classmethod
@@ -63,6 +64,7 @@ class CharacterProfile(BaseModel):
     assigned_voice_id: str = Field(..., description="Voice model identifier (e.g. 'Charon', 'Aoede', 'Puck')")
     pitch_shift: float = Field(default=0.0, description="Semitone or frequency pitch shift")
     speed_multiplier: float = Field(default=1.0, ge=0.5, le=2.0, description="Speech rate multiplier (0.5 to 2.0)")
+    sociolect_trait: Optional[str] = Field(default=None, description="Subtle Desi sociolect trait (e.g. 'COLD_CYNIC', 'CAUSTIC_ARISTOCRAT', 'THARKI_BARD')")
 
 
 class CharacterRoster(BaseModel):

@@ -8,7 +8,43 @@ The `audiobook_factory` package provides a strictly-typed, modular architecture 
 
 ## 📐 Data Contracts ([`audiobook_factory.contracts`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py))
 
-### 1. `CreativeManifest`
+### 1. `ProjectConfig` & `CharacterProfile`
+*Project setup, adult literary fidelity configuration, and character sociolect profiles.*
+
+```python
+class ProjectConfig(BaseModel):
+    project_id: str                     # Unique identifier for the project
+    title: str                          # Book/Project title
+    author: str                         # Author name
+    source_language: str                # Source text language code (e.g. 'en', 'hi')
+    target_language: str = "hi-IN"      # Target TTS/audiobook language code
+    assets_dir: str                     # Root directory path for all project media assets
+    ebu_r128_lufs: float = -19.0        # EBU R128 integrated loudness target in LUFS
+    true_peak_db: float = -1.5          # Maximum allowable True Peak in dBTP
+    adult_literary_mode: bool = Field(
+        default=True,
+        description="Enables unfiltered Gangs-of-Wasseypur / Manto grade raw adult literary fidelity"
+    )
+
+class CharacterProfile(BaseModel):
+    character_uuid: str                 # Unique UUID for character persona
+    display_name: str                   # Display name of character in screenplay
+    gender: str                         # Gender identifier ('male', 'female', 'neutral')
+    assigned_voice_id: str              # Voice model identifier ('Charon', 'Aoede', 'Puck', etc.)
+    pitch_shift: float = 0.0            # Pitch shift in semitones
+    speed_multiplier: float = 1.0       # Speech rate multiplier (0.5 to 2.0)
+    sociolect_trait: Optional[str] = Field(
+        default=None,
+        description="Subtle Desi sociolect trait (e.g. 'COLD_CYNIC', 'CAUSTIC_ARISTOCRAT', 'THARKI_BARD')"
+    )
+
+class CharacterRoster(BaseModel):
+    project_id: str                     # Associated project identifier
+    characters: List[CharacterProfile] = []
+    pronunciation_overrides: Dict[str, str] = {}
+```
+
+### 2. `CreativeManifest`
 *The authoritative creative and acoustic blueprint for a chapter.*
 
 ```python
@@ -40,7 +76,7 @@ class CreativeManifest(BaseModel):
     def from_json(cls, json_str: str) -> CreativeManifest: ...
 ```
 
-### 2. `ScreenplaySegment` & `ScreenplayScript`
+### 3. `ScreenplaySegment` & `ScreenplayScript`
 *Atomic units of standardized screenplay dialogue, narration, and action.*
 
 ```python
@@ -67,7 +103,7 @@ class ScreenplayScript(BaseModel):
     def from_file(cls, path: str | Path) -> ScreenplayScript: ...
 ```
 
-### 3. `MusicCue` & `FoleyCue`
+### 4. `MusicCue` & `FoleyCue`
 *Surgical musical score and tactile sound effect instructions.*
 
 ```python
@@ -102,7 +138,7 @@ class FoleyCue(BaseModel):
     duration_ms: Optional[int] = 0
 ```
 
-### 4. `AmbienceScene` & `MasteringConfig`
+### 5. `AmbienceScene` & `MasteringConfig`
 *Continuous environmental background beds and broadcast mastering parameters.*
 
 ```python
@@ -124,7 +160,7 @@ class MasteringConfig(BaseModel):
     spectral_carve_gain_db: float = -5.5
 ```
 
-### 5. `TimelineSegment` & `TimelineLedger`
+### 6. `TimelineSegment` & `TimelineLedger`
 *Gate 4.5 sample-accurate transcript and millisecond timeline ledger.*
 
 ```python
@@ -158,7 +194,7 @@ class TimelineLedger(BaseModel):
     def from_file(cls, path: str | Path) -> TimelineLedger: ...
 ```
 
-### 6. `BookMasterManifest` & Macro Contracts
+### 7. `BookMasterManifest` & Macro Contracts
 *Macro-tier book-level contracts aggregating voice roster, lore bible, TOC, and packaging.*
 
 ```python
@@ -201,8 +237,24 @@ class PipelineOrchestrator:
         workers: int = 3,
         duck_db: float = -16.0,
         spatial_staging: bool = False,
+        adult_literary_mode: bool = True,
     ) -> Path:
-        """Runs the 6-stage autonomous novel production pipeline, returning path to final M4B."""
+        """
+        Runs the 6-stage autonomous novel production pipeline, returning path to final M4B.
+
+        Parameters:
+            input_file: Path to input novel file (.epub, .pdf, .txt, .md).
+            hindi: Whether to translate text into literary Hindustani (default: True).
+            dramatized: Enables multi-cast dialogue attribution and soundscape staging (default: True).
+            voice: Lead narrator voice identifier (default: "Aoede").
+            cover_image: Optional path to JPEG/PNG cover artwork for M4B packaging.
+            workers: Max concurrent synthesis threads for token-bucket pool (default: 3).
+            duck_db: Dynamic music sidechain ducking attenuation in dB (default: -16.0).
+            spatial_staging: Enables stereo azimuth panning across character cast (default: False).
+            adult_literary_mode: bool = True: Enables unfiltered Gangs-of-Wasseypur / Manto grade
+                raw adult literary fidelity, 70/30 Anti-Parody Invariant, HBO somatic erotica,
+                Cynical Protagonist Grunt Engine, and ASMR intimate close proximity staging.
+        """
 
     def produce_chapter(
         self,
@@ -257,6 +309,38 @@ def translate_chapter(
 
 def normalize_translated_lexicon(text: str, glossary: Dict[str, str]) -> str:
     """Applies canonical proper noun substitutions to translated text based on project glossary."""
+```
+
+### `LinguisticSanitizer` ([`audiobook_factory.sanitizer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sanitizer.py))
+*Defense-in-depth linguistic guardrail, TTS vocal tag validator, and profanity preservation engine.*
+
+```python
+SUPPORTED_TTS_TAG_PATTERNS: List[str] = [
+    r"whispers?", r"shouting", r"shouts?", r"sighs?", r"gasp", r"laughs?",
+    r"giggles?", r"crying", r"trembling(?:\s+voice)?", r"cold\s+menace",
+    r"intimate(?:,\s*breathy)?", r"growl", r"groan", r"spits?",
+    r"bellowing\s+rage", r"breathless[\s_]+exhaustion", r"mocking\s+chuckle", ...
+]
+
+def validate_and_sanitize_translation(
+    text: str,
+    is_hindi: bool = True,
+) -> Tuple[bool, str, str]:
+    """
+    Validates Devanagari purity, strips LLM meta-chatter/markdown fences,
+    and guarantees 100% preservation of raw adult profanity and somatic erotica vocabulary.
+    Returns: (is_valid: bool, cleaned_text: str, failure_reason: str).
+    """
+
+def sanitize_screenplay_segment(
+    segment: Dict[str, Any],
+    is_hindi: bool = True,
+) -> Optional[Dict[str, Any]]:
+    """
+    Sanitizes screenplay segment text, selectively preserving permitted Gemini TTS neural
+    vocal tags ([whispers], [growl], [spits], etc.) while stripping leaked non-vocal stage directions.
+    Returns None if segment contains LLM refusal or conversational meta-commentary.
+    """
 ```
 
 ### `ScriptBuilder` ([`audiobook_factory.script_builder`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))

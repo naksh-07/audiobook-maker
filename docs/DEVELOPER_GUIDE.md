@@ -46,10 +46,13 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **203 passing unit tests** across all modules with a zero-regression invariant.
+The codebase maintains **210 passing unit tests** across all modules with a zero-regression invariant (100% OK, 0 failures, 0 errors).
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# Adult Literary Fidelity & HBO Intimacy Suite
+python -m unittest tests/test_adult_literary_fidelity.py
+
 # Audit Remediation & Hardening Sprint (P0-P3 showstoppers)
 python -m unittest tests/test_audit_remediation_sprint.py
 

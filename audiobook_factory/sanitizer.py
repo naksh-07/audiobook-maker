@@ -60,6 +60,12 @@ SUPPORTED_TTS_TAG_PATTERNS = [
     r"tired",
     r"pause(?:=\d+(?:\.\d+)?)?",
     r"very\s+(?:fast|slow)",
+    r"growl",
+    r"groan",
+    r"spits?",
+    r"bellowing\s+rage",
+    r"breathless[\s_]+exhaustion",
+    r"mocking\s+chuckle",
 ]
 COMPILED_TTS_TAG_RE = re.compile(rf"^\[\s*(?:{'|'.join(SUPPORTED_TTS_TAG_PATTERNS)})\s*\]$", re.IGNORECASE)
 

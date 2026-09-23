@@ -14,7 +14,7 @@ During production validation of multi-chapter novel production runs on Windows 1
 
 In response, the engineering team executed a comprehensive **Audit Remediation & Hardening Sprint**, resolving all **P0 showstoppers**, eliminating **P1 routing hardcodings**, restoring **P2 acoustic signal integrity and agent creative autonomy**, and implementing **P3 quota and ingestion isolation**.
 
-As of this release, the entire test suite maintains a **203/203 unit and integration test pass rate (100%)** with zero regressions.
+As of this release, the entire test suite maintains a **210/210 unit and integration test pass rate (100%)** with zero regressions.
 
 ---
 
@@ -236,7 +236,7 @@ The entire remediation sprint is codified and guarded by dedicated regression te
 # Run the dedicated audit remediation regression suite:
 python -m unittest tests/test_audit_remediation_sprint.py
 
-# Run the full project test discovery (203 tests):
+# Run the full project test discovery (210 tests):
 python -m unittest discover tests -p "test_*.py"
 ```
 
@@ -250,7 +250,7 @@ python -m unittest discover tests -p "test_*.py"
 | `test_env_loader_strips_quotes` | `key_manager.py` | Single and double quotes around `.env` keys are stripped cleanly. | **PASS** |
 | `test_soundscape_mood_service_type` | `soundscape.py` | Mood analysis calls `get_key(service="text")`, shielding TTS quota. | **PASS** |
 | `test_cli_chapter_regex_parsing` | `audiobook_cli.py` | Script chapter numbers are parsed via regex, preventing partial run renumbering. | **PASS** |
-| **Full Suite Total** | **28 Modules** | **203/203 unit and integration tests passing with 0 errors and 0 regressions.** | **100% PASS** |
+| **Full Suite Total** | **29 Modules** | **210/210 unit and integration tests passing with 0 errors and 0 regressions.** | **100% PASS** |
 
 ---
 

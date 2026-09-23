@@ -16,8 +16,9 @@ flowchart TB
         direction TB
         RawBook["Raw Book File<br/>(EPUB / PDF / TXT / Markdown)"] --> Extractor["Universal Extractor<br/>(audiobook_factory/extractor.py)<br/>• Native PyPDF + Vision Fallback"]
         Extractor --> Chapters["Structured Chapter Files (.txt / .md)"]
-        Chapters --> Translator["Literary Hindustani Translator<br/>(audiobook_factory/translator.py)<br/>• 250-Word Rolling Context & Glossary"]
-        Translator --> Screenplay["Sliding-Window Screenplay Builder<br/>(audiobook_factory/script_builder.py)"]
+        Chapters --> Translator["Literary Hindustani Translator<br/>(audiobook_factory/translator.py)<br/>• Adult Literary Fidelity & 70/30 Invariant"]
+        Translator --> Sanitizer["Linguistic Sanitizer & Guardrail<br/>(audiobook_factory/sanitizer.py)<br/>• Profanity Preserved + Expanded Vocal Tags"]
+        Sanitizer --> Screenplay["Sliding-Window Screenplay Builder<br/>(audiobook_factory/script_builder.py)<br/>• Grunt Engine, ASMR Intimacy & Sociolects"]
         Screenplay --> Scripts["Standardized Screenplay Script JSON<br/>(Speaker, Emotion, Spatial Pan, Intensity, Breath)"]
         Scripts --> Dispatcher["Token-Bucket TTS Dispatcher<br/>(audiobook_factory/tts_dispatcher.py)<br/>• Quota Isolation (service='text')"]
         Dispatcher --> Chunks["Speech Chunks (24kHz Mono PCM)"]
@@ -74,14 +75,25 @@ flowchart TB
   - Detects semantic chapter breaks, table of contents, and scene dividers.
   - Automatically splits chapters $> 45,000$ characters on semantic boundaries to avoid LLM context overflow.
 - **Literary Hindi Translator ([`audiobook_factory/translator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py))**:
-  - Two-pass dramatic Hindustani translation.
-  - Pass 1: Generates project glossary for proper nouns, character names, and honorifics.
-  - Pass 2: Preserves rhythmic cadence and archaic fantasy flavor without mechanical machine-translation artifacts.
+  - Two-pass dramatic Hindustani translation with **Adult Literary Mode prompt switching** governed by `ADULT_LITERARY_MODE` (default `True`):
+    - **Anti-Bowdlerization Mandate:** Strictly prohibits censorship, softening, or prudish television euphemisms for visceral combat, coarse tavern banter, or sensual bedroom intimacy.
+    - **The 70/30 Anti-Parody Invariant:** Mandates that 70% of canon dark-fantasy lore, proper nouns, monster classifications (specters, strigas, cursed beasts), and geographic realms remain sacred; 30% sensory layer is localized through organic Hindustani grit without slipping into tapori spoofs.
+    - **Period Tavern Grit & Raw Profanity:** Direct, unapologetic translation of gritty curses and tavern insults (`'गांड'`, `'भोसड़ीके'`, `'लंड'`, `'रांड'`, `'मादरचोद'`, `'बकचोदी'`, `'सूअर का पेशाब'`) replacing sanitized substitutions (e.g. never converting 'bastard' to 'दुष्ट').
+    - **19-to-21 Amplification Rule & Dynamic Power Shifts:** Elevates mild source dialogue to authentic Desi punch, with dynamic honorific shifts (`तू / अबे` collapsing into groveling `माई-बाप / सरकार` under physical intimidation).
+    - **Somatic Erotica & HBO Intimacy Standard:** Depicts passionate intimacy through somatic touch, heat, skin friction, breath physics, and garment mechanics (`'तपती कमर'`, `'पसलियों की लचक'`, `'कांपती उंगलियां'`). Clinical autopsy terms (`'योनि'`, `'लिंग'`, `'स्तन'`, `'संभोग'`) and roadside smut are strictly banned.
+    - **Urdu ka Tarka:** Calibrates 10–15% atmospheric noir vocabulary (`'जिस्म'`, `'हवस'`, `'क़यामत'`, `'ख़ौफ़'`, `'ज़ख़्म'`) for existential dark-fantasy weight.
   - **Rolling Narrative Context**: Seamlessly threads a 250-word rolling context tail across chapter boundaries, ensuring narrative continuity and pronoun consistency across chapters.
   - **Lexicon Normalization**: Enforces strict post-translation canonical terminology via `normalize_translated_lexicon`.
+- **Linguistic Sanitizer & Defense Guardrail ([`audiobook_factory/sanitizer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sanitizer.py))**:
+  - **Raw Profanity & Intimacy Preservation:** Zero-loss preservation of earthy Hindustani vocabulary, slang, and somatic erotic textures—never misclassifying raw literary realism as harmful content.
+  - **Expanded Neural Vocal Tags:** Validates and preserves expressive inline tags recognized natively by Gemini 3.1 Flash TTS: `[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, `[gasp]`, `[growl]`, `[groan]`, `[spits]`, `[bellowing rage]`, `[breathless exhaustion]`, and `[mocking chuckle]`.
+  - **Defense-in-Depth Stripping:** Recursively removes LLM meta-commentary, conversational refusals, Devanagari non-vocal stage directions, markdown fences, and conversational preambles/postambles.
 - **Sliding-Window Screenplay Builder ([`audiobook_factory/script_builder.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))**:
-  - Dissects prose into discrete `ScreenplaySegment` records.
-  - Assigns canonical speaker identity, emotion, delivery style, spatial coordinates (`spatial.pan`), dynamic intensity (`intensity_level`), and organic breath timing (`pre_roll_breath_ms`).
+  - Dissects prose into discrete `ScreenplaySegment` records with Hollywood Dramaturgy Director prompts.
+  - **Sociolect Traits Integration:** Binds character profiles to distinct sociolect idiolects (`sociolect_trait` in `CharacterProfile`, e.g. `'COLD_CYNIC'`, `'CAUSTIC_ARISTOCRAT'`, `'THARKI_BARD'`).
+  - **Cynical Protagonist Grunt Engine:** Automatically tags weary, cynical protagonist reactions with signature neural grunts (`[growl] हूँ...`, `[sighs] हम्म...`) and enforces `pause_after_ms` of 1000–1400ms for dramatic pregnant pause prosody.
+  - **Duraangi Zubaan (Inner Monologues):** Encodes unspoken internal thoughts contrasting outward speech as `[whispers] (मन में: ...)`, paired with `spatial.proximity: 'intimate_close'` and `acoustic_env: 'binaural_whisper'`.
+  - **ASMR Intimacy Staging:** Automatically assigns `spatial.proximity: "intimate_close"`, dead-center `spatial.pan: 0.0`, dynamic intensity `low`, `pre_roll_breath_ms: 200-250`, and music sidechain attenuation of `-22.0 dB` ("The Erotic Silence").
   - Employs a sliding-window character memory bank to eliminate narrator fallback and preserve character continuity across multi-chapter novels.
 - **Precision Speech Synthesizer ([`audiobook_factory/tts_dispatcher.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))**:
   - Primary: Google Gemini 3.1 Flash Cloud TTS API (`gemini-2.5-flash-preview-tts` / `gemini-3.1-flash-tts-preview`).
@@ -120,9 +132,9 @@ flowchart TB
   - Categorizes tracks into `BGM`, `AMB`, and `SFX` with metadata: BPM, valence, arousal, dominant instruments, and duration.
 - **Manifest Soundscape Renderer ([`audiobook_factory/manifest_renderer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/manifest_renderer.py))**:
   - Constructs complex dynamic FFmpeg `filter_complex` graphs.
-  - **Whisper-Safe Sidechain Ducking**: Detector threshold set to `0.018` linear (-34.9 dBFS) with 15ms attack and 350ms release. Whispered dialogue triggers ducking just as reliably as loud screams.
+  - **Whisper-Safe Sidechain Ducking**: Detector threshold set to `0.018` linear (-34.9 dBFS) with 15ms attack and 350ms release. Seamlessly accommodates **-22.0 dB "Erotic Silence"** ASMR cues and whispered dialogue without false gating or music pumping.
   - **Music-Only 2.2kHz Spectral Notch Carving**: Carves a -5.5 dB notch (`equalizer=f=2200:t=q:w=1.5:g=-5.5`) strictly into the music stem `[0:a]`, preserving the high-frequency snap of Foley cues and the spatial depth of Ambience beds without vocal masking.
-  - **Dynamic Impulse Response Reverb**: Adapts wet send volume and delay reflections to scene presets (`cathedral`, `bedroom`, `open_road`, `stone_hall`).
+  - **Dynamic Impulse Response Reverb**: Adapts wet send volume and delay reflections to scene presets (`cathedral`, `bedroom`, `open_road`, `stone_hall`, `binaural_whisper`).
 - **DSP Vocal Mastering ([`audiobook_factory/mastering.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering.py))**:
   - 5-stage DSP chain:
     1. SOXR 48kHz sinc resampling
@@ -130,8 +142,10 @@ flowchart TB
     3. Neural vocoder broadband denoiser (`afftdn`)
     4. De-esser filter (6.7kHz sibilance control)
     5. Lowpass ultrasonic filter (14kHz air ceiling)
-  - **Dynamic Headroom Calibration**: Explosive scenes trigger `limiter=0.82`, `attack=2ms`, `TP=-2.0 dBTP`. Whisper scenes calibrate `effective_lra = 6.0`.
-  - **Dialogue Spatial Staging**: Constant-power stereo azimuth panning anchors Narrator at dead-center ($pan = 0.0$) and subtly separates cast members, maintaining mono phase correlation $r \ge 0.85$.
+  - **Adult Literary Mode DSP Calibration**:
+    - **Organic Breath Preservation:** Intimate pre-roll breaths (`pre_roll_breath_ms: 200-250`) and Grunt Engine pause buffers (`pause_after_ms: 1000-1400ms`) pass transparently through the mastering chain without noise-gate truncation or clipping.
+    - **Dynamic Headroom Calibration:** Explosive combat cries trigger `limiter=0.82`, `attack=2ms`, `TP=-2.0 dBTP`. Soft whisper/erotic scenes calibrate `effective_lra = 6.0` to preserve close-mic nuance.
+    - **Dialogue Spatial Staging & ASMR Centering:** Constant-power stereo azimuth panning anchors Narrator and intimate ASMR lines dead-center ($pan = 0.0$, `intimate_close`) while subtly staging cast members across the stereo panorama ($r \ge 0.85$).
 - **Master Timeline Ledger ([`audiobook_factory/orchestrator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestrator.py))**:
   - Standardized Gate 4.5 ledger written canonically to `scripts/chapter_XXX_timeline_ledger.json` and mirrored to `soundscapes/chapter_XXX_timeline_ledger.json` for reliable downstream validation.
 
@@ -142,9 +156,9 @@ flowchart TB
 
 - **Cinema Audio Engine ([`audiobook_factory/cinema_audio_engine.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py))**:
   - Renders and preserves **5 discrete stems** standardized to 48,000 Hz 16-bit stereo PCM:
-    1. **`stem_DX.wav`**: Dialogue & Voice Acting
+    1. **`stem_DX.wav`**: Dialogue & Voice Acting (preserving full dynamic range for grunts, whispers, and visceral shouts)
     2. **`stem_MX.wav`**: Musical Score & Cues (with isolated 2.2kHz notch)
-    3. **`stem_FX.wav`**: Physical Foley & SFX
+    3. **`stem_FX.wav`**: Physical Foley & SFX (tactile tavern and combat impacts)
     4. **`stem_AMB.wav`**: Environmental Background Ambience
     5. **`stem_ME.wav`**: Combined Music & Effects
   - Generates the unified **`chapter_XXX_stem_ledger.json`** recording duration, integrated LUFS, and true peak across every stem.
@@ -161,9 +175,9 @@ The system bridges all 7 critical producer-consumer metadata silos:
 
 | Silo # | Metadata Produced | Upstream Producer | Downstream Consumer | How It Is Bridged in v4.0 |
 |:---:|---|---|---|---|
-| **S1** | `pause_after_ms`<br>`pre_roll_breath_ms` | `script_builder.py` | `mastering.py` | Passed to `concatenate_and_master_chapter`, generating micro-silence & organic breath intake pauses. |
-| **S2** | `intensity_level`<br>(`low`, `medium`, `explosive`) | `script_builder.py` | `mastering.py` | Explosive lines trigger True Peak ceiling -2.0 dBTP and limiter 0.82; whisper lines tighten LRA to 6.0. |
-| **S3** | `spatial.pan`<br>`spatial.proximity` | `script_builder.py` | `mastering.py` | `spatial_staging=True` renders constant-power stereo panning (Narrator center 0.0, cast panned). |
+| **S1** | `pause_after_ms`<br>`pre_roll_breath_ms` | `script_builder.py` | `mastering.py` | Passed to `concatenate_and_master_chapter`, generating micro-silence, 1000–1400ms Grunt Engine pauses, & 200–250ms ASMR breath intake pre-rolls. |
+| **S2** | `intensity_level`<br>(`low`, `medium`, `explosive`) | `script_builder.py` | `mastering.py` | Explosive combat lines trigger True Peak ceiling -2.0 dBTP and limiter 0.82; whisper/erotic lines (`low`) tighten LRA to 6.0 LU. |
+| **S3** | `spatial.pan`<br>`spatial.proximity` | `script_builder.py` | `mastering.py` | `spatial_staging=True` renders constant-power stereo panning (Narrator & `intimate_close` ASMR dead-center 0.0, cast dynamically panned). |
 | **S4** | `acoustic_env`<br>IR Presets | `script_builder.py` | `manifest_renderer.py` | Dynamic reverb presets (`cathedral`, `bedroom`, `open_road`) adapt decay and wet mix. |
 | **S5** | `SceneSoundscapeManifest` (4 Layers) | `scene_acoustics.py` | `cinema_audio_engine.py` | Multi-scene sequential compositor layers environmental beds across chapter timelines. |
 | **S6** | Character Leitmotifs | `sonic_bible.py` | `agent_director.py` | Loaded via `project_dir / "sound_bible.json"` and bound to Pass 2 music cues. |

@@ -16,6 +16,7 @@ from typing import Dict, Any, List, Optional
 
 
 DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
+ADULT_LITERARY_MODE = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
 
 from audiobook_factory.key_manager import get_persistent_key_pool
@@ -169,8 +170,9 @@ def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str,
 def generate_book_glossary(sample_chapter_text: str, book_metadata: Dict[str, Any]) -> Dict[str, Any]:
     """Pass 1: Extract character names, Hindi spellings, honorific relationships, and terms."""
     system_prompt = (
-        "You are an expert literary translation director for audiobooks. "
-        "Analyze this opening book passage and output a comprehensive JSON glossary for English-to-Hindi translation."
+        "You are an expert literary translation director and casting dramaturge for dark-fantasy audiobooks. "
+        "Analyze this opening book passage and output a comprehensive JSON glossary for English-to-Hindi translation.\n"
+        "Assign each major character a subtle Hindustani sociolect archetype to drive vocal variety without cartoonish caricature."
     )
 
     prompt = f"""Book Title: {book_metadata.get('title', 'Unknown')}
@@ -184,10 +186,12 @@ Sample Chapter Text:
 Produce a JSON object with:
 1. "characters": List of objects with:
    - "english_name": string
-   - "hindi_name": Devanagari spelling (e.g. "हैरी पॉटर")
+   - "hindi_name": Devanagari spelling (e.g. "नायक")
    - "gender": "male" | "female" | "other"
    - "voice_style": brief description of speech tone (e.g. "gruff, calm, authoritative")
    - "recommended_pronoun_level": default how others address them ("aap", "tum", or "tu")
+   - "hindustani_archetype": "COLD_CYNIC" | "CAUSTIC_ARISTOCRAT" | "THARKI_BARD" | "KHAANTI_GOON" | "MAKKAR_DALAL" | "GRUFF_SOLDIER" | "NEUTRAL"
+   - "speech_quirks": brief takiya-kalam or cadence style (e.g. "dry laconic sarcasm with heavy grunts", "theatrical Lucknowi flattery", "foul-mouthed Purvanchal street threats")
 2. "relationships": List of pairs describing who addresses whom as "aap", "tum", or "tu".
 3. "locations_and_terms": Map of English terms to their consistent Hindi Devanagari or translated equivalent.
 4. "general_tone": Description of narrative tone (e.g. "dark fantasy, dramatic, contemporary Hindustani").
@@ -212,28 +216,60 @@ def _translate_single_block(
     block_title: str = "",
     preceding_context: str = "",
     model: str = DEFAULT_MODEL,
+    adult_mode: Optional[bool] = None,
 ) -> str:
-    system_prompt = (
-        "You are a master literary translator and audio drama director adapting mature, grimdark fantasy "
-        "and adult literature (in the unapologetic tradition of Andrzej Sapkowski, George R.R. Martin, and Saadat Hasan Manto) "
-        "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
-        "Strict Translation Invariants:\n"
-        "1. LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat, "
-        "dark tavern banter, gritty curses, or mature sensual/romantic intimacy. The source material is gritty adult literature, "
-        "not a sanitized children's broadcast. Bowdlerization destroys dramatic truth.\n"
-        "2. PERIOD TAVERN GRIT & PROFANITY: Translate medieval insults and raw curses into authentic, earthy Hindustani equivalents "
-        "(e.g., 'हरामी', 'कमीने', 'रंडी की औलाद', 'दल्ले', 'सूअर', 'जहन्नुम में जा'). NEVER replace them with polite TV-serial substitutions "
-        "(do NOT turn 'bastard' into 'दुष्ट' or 'whore' into 'बुरी स्त्री').\n"
-        "3. VISCERAL COMBAT & GORE: Depict blade strikes, bone fractures, blood spray, and wounds with visceral literary realism "
-        "('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा').\n"
-        "4. SENSUAL & EMOTIONAL INTIMACY: Render passionate and intimate scenes with deep poetic tension, sensory immersion, "
-        "and somatic resonance ('तपती हुई कमर', 'बेकाबू सांसें', 'कांपती उंगलियां', 'गर्म सांसें') rather than prudish understatement.\n"
-        "5. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
-        "subtext, humor, and emotional depth for professional voice actors. Use flowing, cinematic Hindustani rather than overly stiff, textbook Sanskritized Hindi.\n"
-        "6. ADHERE TO GLOSSARY & PRONOUNS: Strictly adhere to the provided Character Glossary for proper noun spellings and honorific dynamics ('Aap' vs 'Tum' vs 'Tu').\n"
-        "7. PRESERVE FORMATTING & ZERO CHATTER: Keep headings and dialogue quotation marks intact. Output ONLY the translated passage in Devanagari Markdown "
-        "without any meta-commentary, notes, disclaimers, or conversational introductions."
-    )
+    if adult_mode is None:
+        adult_mode = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
+
+    if adult_mode:
+        system_prompt = (
+            "You are a master literary translator and audio drama director adapting mature, grimdark fantasy "
+            "and adult literature (in the unapologetic tradition of Andrzej Sapkowski, George R.R. Martin, Anurag Kashyap, and Saadat Hasan Manto) "
+            "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
+            "Strict Translation Invariants:\n"
+            "1. LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat, "
+            "dark tavern banter, gritty curses, or mature sensual/erotic intimacy. The source material is gritty adult literature, "
+            "not a sanitized children's broadcast. Bowdlerization destroys dramatic truth.\n"
+            "2. THE 70/30 ANTI-PARODY INVARIANT: Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio. "
+            "Never replace European dark-fantasy lore, proper nouns, monster classifications (demons, cursed beasts, mythical specters), or "
+            "geographic names (ancient keeps, empires, border realms) with Indian mythology or tapori spoofs. "
+            "Restrict Desi/Hindustani adaptation strictly to organic tavern grit, authentic rustic profanity, dynamic honorific power shifts, "
+            "and Manto-grade somatic physical descriptions.\n"
+            "3. PERIOD TAVERN GRIT & RAW PROFANITY: Translate medieval insults and curses into authentic, earthy Hindustani equivalents. "
+            "Use 'गांड' (never 'चूतड़' or 'नितंब'), 'भोसड़ीके', 'लंड', 'रांड / रंडी', 'भड़वा / दल्ला', 'मादरचोद', 'बकचोदी', 'सूअर का पेशाब', "
+            "'अंडकोष बधिया करना'. NEVER replace them with polite TV-serial substitutions (do NOT turn 'bastard' into 'दुष्ट' or 'whore' into 'बुरी स्त्री').\n"
+            "4. THE 19-TO-21 AMPLIFICATION RULE: When source English dialogue is mild or toned down (19), elevate it to authentic Desi 21 "
+            "for visceral gut-punch impact (e.g. 'plough yourself' -> 'गांड मरा' / 'जा अपनी मां चुदा', 'damn you' -> 'तेरी मां की...').\n"
+            "5. DESI MUHAVARE & IDIOMS: Transpose English idioms into organic UP/Bihar/Chambal street idioms rather than literal word-for-word "
+            "(e.g. 'bite off more than you can chew' -> 'गांड में दम नहीं और चले आसमान चीरने', 'playing with fire' -> 'सांप के बिल में हाथ डालना').\n"
+            "6. TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant thugs start with dismissive "
+            "'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
+            "7. URDU KA TARKA ('Aate me Namak'): Infuse a calibrated 10-15% of atmospheric, noir, and sensual Urdu "
+            "('जिस्म', 'हवस', 'क़यामत', 'वहशी', 'रूह', 'सन्नाटा', 'ख़ंजर', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक') to give dark-fantasy existential weight.\n"
+            "8. SOMATIC INTIMACY & EROTICA (HBO / MANTO STANDARD): Render passionate, intimate, or erotic scenes with deep somatic realism: "
+            "- STRICTLY BANNED: Clinical forensic lab words ('योनि', 'लिंग', 'स्तन', 'नितंब', 'संभोग') and cheap roadside smut.\n"
+            "- MANDATED: Somatic touch, heat, skin friction, breath, and clothing physics ('तपती कमर', 'पसलियों की लचक', 'कांपती उंगलियां', "
+            "'बेकाबू सांसें', 'रूह तक उतरना', 'होंठों की तपिश', 'चमड़े की तंग पेटी खोलना', 'सीने पर नाखूनों का धंसना'). "
+            "Distinguish between Deep Romantic Passion, Raw Primal Friction, and Seductive Power-Plays.\n"
+            "9. VISCERAL COMBAT & GORE: Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism "
+            "('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा').\n"
+            "10. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
+            "subtext, humor, and emotional depth for professional voice actors. Use flowing, cinematic Hindustani.\n"
+            "11. ADHERE TO GLOSSARY & ZERO CHATTER: Strictly adhere to the provided Character Glossary for proper noun spellings. "
+            "Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions."
+        )
+    else:
+        system_prompt = (
+            "You are a master literary translator and audio drama director adapting classic literature "
+            "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
+            "Strict Translation Invariants:\n"
+            "1. SENSE-FOR-SENSE SPOKEN DIALOGUE: Translate sense-for-sense, preserving drama, subtext, humor, "
+            "and emotional depth for professional voice actors. Use flowing, natural Hindustani.\n"
+            "2. ADHERE TO GLOSSARY & PRONOUNS: Strictly adhere to the provided Character Glossary for proper noun spellings "
+            "and honorific dynamics ('Aap' vs 'Tum' vs 'Tu').\n"
+            "3. PRESERVE FORMATTING & ZERO CHATTER: Keep headings and dialogue quotation marks intact. Output ONLY the translated "
+            "passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions."
+        )
 
     glossary_str = json.dumps(glossary, ensure_ascii=False, indent=2)
 

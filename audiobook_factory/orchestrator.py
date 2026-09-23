@@ -82,6 +82,7 @@ class PipelineOrchestrator:
         workers: int = 3,
         duck_db: float = -16.0,
         spatial_staging: bool = False,
+        adult_literary_mode: bool = True,
     ) -> Path:
         """
         Executes the complete 6-stage autonomous novel pipeline:
@@ -97,11 +98,14 @@ class PipelineOrchestrator:
         if not input_file.exists():
             raise FileNotFoundError(f"Input novel file not found: {input_file}")
 
+        os.environ["ADULT_LITERARY_MODE"] = "true" if adult_literary_mode else "false"
+
         logger.info("=======================================================")
         logger.info("   AUTONOMOUS STUDIO AUDIOBOOK PRODUCTION PIPELINE   ")
         logger.info(f"   Target Book: {input_file.name}")
         logger.info(f"   Mode       : {'Literary Hindi' if hindi else 'Original Language'}")
         logger.info(f"   Style      : {'Full-Cast Dramatized' if dramatized else 'Single Narrator'}")
+        logger.info(f"   Adult Mode : {'Active (GOW / Manto Unfiltered)' if adult_literary_mode else 'Standard'}")
         logger.info(f"   Voice Lead : {voice}")
         logger.info("=======================================================\n")
 

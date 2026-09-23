@@ -124,3 +124,28 @@ class TestSanitizer(unittest.TestCase):
         self.assertIsNotNone(res_s)
         self.assertIn("[shouting]", res_s["text"])
         self.assertNotIn("[sword clash]", res_s["text"])
+
+    def test_adult_vocal_tags_and_raw_profanity_retention(self):
+        # Expanded performance tags must be preserved natively
+        tags_to_test = [
+            ("[growl] हूँ... बकचोदी बंद कर।", "[growl]", "बकचोदी"),
+            ("[groan] आह... साले ने पसली तोड़ दी।", "[groan]", "साले"),
+            ("[spits] थू! तेरी गांड में दम नहीं है।", "[spits]", "गांड"),
+            ("[bellowing rage] चीर के रख देंगे भोसड़ीके!", "[bellowing rage]", "भोसड़ीके"),
+            ("[breathless exhaustion] बहुत... खून बह रहा है...", "[breathless exhaustion]", "खून"),
+            ("[mocking chuckle] क्या बकवास है ये?", "[mocking chuckle]", "बकवास"),
+            ("[intimate, breathy] रुकना मत... मेरी जान...", "[intimate, breathy]", "मेरी जान"),
+        ]
+        for idx, (raw_text, exp_tag, exp_word) in enumerate(tags_to_test, 10):
+            seg = {
+                "index": idx,
+                "type": "dialogue",
+                "speaker": "Geralt",
+                "text": raw_text,
+                "emotion": "neutral",
+                "pause_after_ms": 600,
+            }
+            res = sanitize_screenplay_segment(seg, is_hindi=True)
+            self.assertIsNotNone(res, f"Segment unexpectedly dropped for {raw_text}")
+            self.assertIn(exp_tag, res["text"])
+            self.assertIn(exp_word, res["text"])
