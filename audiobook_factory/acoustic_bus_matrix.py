@@ -6,6 +6,7 @@ voice concurrency limiting (priority stealing), and formant spectral pocketing.
 """
 
 from __future__ import annotations
+import re
 import logging
 from typing import Dict, Any, List, Optional, Literal, Union
 
@@ -21,12 +22,12 @@ class DuckingProfile(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
-    profile_name: Literal["intimate_dialogue", "standard_speech", "combat_shouting", "heavy_impact"] = Field(
+    profile_name: Literal["intimate_dialogue", "standard_speech", "combat_shouting", "heavy_impact", "combat_shock"] = Field(
         ..., description="Dramatic voice level profile"
     )
     attenuation_db: float = Field(default=-16.0, ge=-40.0, le=-3.0, description="Music/ambience attenuation gain while dialogue speaks in dB")
     attack_ms: int = Field(default=15, ge=1, le=200, description="Compressor attack time in milliseconds")
-    release_ms: int = Field(default=350, ge=50, le=2500, description="Compressor release time in milliseconds")
+    release_ms: int = Field(default=350, ge=50, le=5000, description="Compressor release time in milliseconds")
     spectral_carve_hz: int = Field(default=2400, ge=800, le=5000, description="Center frequency for vocal formant notch pocket in Hz")
     spectral_carve_depth_db: float = Field(default=-6.0, ge=-18.0, le=-1.0, description="Notch attenuation gain in dB")
 
@@ -65,18 +66,29 @@ DUCKING_PRESETS: Dict[str, DuckingProfile] = {
         spectral_carve_hz=1500,
         spectral_carve_depth_db=-10.0,
     ),
+    "combat_shock": DuckingProfile(
+        profile_name="combat_shock",
+        attenuation_db=-24.0,
+        attack_ms=8,
+        release_ms=4000,
+        spectral_carve_hz=2600,
+        spectral_carve_depth_db=-10.0,
+    ),
 }
 
 PROFILE_INTIMATE = DUCKING_PRESETS["intimate_dialogue"]
 PROFILE_STANDARD = DUCKING_PRESETS["standard_speech"]
 PROFILE_COMBAT = DUCKING_PRESETS["combat_shouting"]
 PROFILE_HEAVY_IMPACT = DUCKING_PRESETS["heavy_impact"]
+PROFILE_COMBAT_SHOCK = DUCKING_PRESETS["combat_shock"]
 
 
 def get_ducking_profile(name_or_scene_type: str) -> DuckingProfile:
     """Resolves ducking profile by name or dramatic scene mood/intensity."""
     q = (name_or_scene_type or "").lower().strip()
-    if "combat" in q or "battle" in q or "fight" in q or "action" in q:
+    if "shock" in q or "tinnitus" in q or "concussion" in q:
+        return PROFILE_COMBAT_SHOCK
+    elif "combat" in q or "battle" in q or "fight" in q or "action" in q:
         return PROFILE_COMBAT
     elif "intimate" in q or "whisper" in q or "emotional" in q or "quiet" in q:
         return PROFILE_INTIMATE
@@ -89,11 +101,15 @@ def get_ducking_profile(name_or_scene_type: str) -> DuckingProfile:
 UCS_RULES = [
     (("sword", "blade", "parry", "clash", "sheathe", "draw"), "WEAPSwd"),
     (("knife", "dagger"), "WEAPKnf"),
-    (("bow", "arrow"), "WEAPBow"),
+    (("plate", "armor", "cuirass", "chainmail", "iron_shield"), "WEAPMtl"),
+    (("mace", "warhammer", "blunt", "club"), "WEAPBlun"),
+    (("bow", "arrow", "whipcrack", "flyby", "arrow_whistle"), "WEAPBow"),
     (("punch", "kick", "fist", "strike"), "FGHFPun"),
+    (("bone", "snap", "flesh", "cartilage", "blood", "squelch", "tear"), "GOREAnat"),
     (("footstep", "walk", "run", "gravel", "boots"), "FOLEFoot"),
-    (("cloth", "armor", "chainmail", "belt", "leather"), "FOLEMov"),
+    (("cloth", "belt", "leather"), "FOLEMov"),
     (("body", "fall", "thud", "collapse"), "IMPTBody"),
+    (("sub_drop", "lfe", "thump", "solar_plexus", "shockwave"), "LFEDrop"),
     (("metal", "clank", "chain", "anvil"), "IMPTMtl"),
     (("wood", "timber", "floor"), "IMPTWod"),
     (("door", "gate", "latch"), "DOORWood"),
@@ -102,6 +118,7 @@ UCS_RULES = [
     (("wind", "gale", "blizzard", "breeze"), "WNDDAmbi"),
     (("rain", "storm", "thunder"), "RAINStr"),
     (("monster", "beast", "striga", "ghoul", "wolf", "roar", "snarl", "howl"), "CREAVoc"),
+    (("grunt", "groan", "battlecry", "pant", "choke", "gasp", "spits"), "VOXExrt"),
     (("tavern", "crowd", "murmur", "chatter"), "CROWGen"),
 ]
 
@@ -113,7 +130,7 @@ def derive_ucs_category(action_verb_or_cue: str, exciter: str = "") -> str:
     """
     text = f"{action_verb_or_cue} {exciter}".lower()
     for keywords, ucs_code in UCS_RULES:
-        if any(kw in text for kw in keywords):
+        if any(re.search(rf"\b{re.escape(kw)}", text) for kw in keywords):
             return ucs_code
     return "MISCGnl"
 

@@ -154,7 +154,7 @@ class SceneSource(BaseModel):
 class ActingInstructions(BaseModel):
     """Voice acting delivery directives for TTS synthesis."""
     model_config = ConfigDict(extra="ignore")
-    delivery_style: str = Field(default="neutral", description="Style of line delivery (e.g. 'whispered_threat', 'ironic')")
+    delivery_style: str = Field(default="neutral", description="Style of line delivery (e.g. 'whispered_threat', 'ironic', 'breathless_exhaustion', 'bellowing_rage', 'combat_strain', 'slow_motion')")
     pacing: float = Field(default=1.0, ge=0.5, le=2.0, description="Speed pacing multiplier")
 
 
@@ -468,6 +468,10 @@ class FoleyCue(BaseModel):
     start_ms: Optional[int] = Field(default=0, ge=0, description="Absolute timeline offset in milliseconds")
     duration_ms: Optional[int] = Field(default=0, ge=0, description="Duration of cue in milliseconds")
     ucs_category: Optional[str] = Field(default="MISCGnl", description="Universal Category System (UCS) 7-character Category ID")
+    is_lfe_sub_drop: bool = Field(default=False, description="Triggers 50Hz sub-bass physical impact weight")
+    trajectory: Literal["static", "left_to_right", "right_to_left", "center_zoom"] = Field(
+        default="static", description="Spatial vector panning trajectory for projectiles or swings"
+    )
 
     @field_validator("azimuth_pan")
     @classmethod

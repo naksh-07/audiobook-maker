@@ -62,9 +62,16 @@ SUPPORTED_TTS_TAG_PATTERNS = [
     r"very\s+(?:fast|slow)",
     r"growl",
     r"groan",
-    r"spits?",
+    r"spits?(?:\s+blood)?",
     r"bellowing\s+rage",
+    r"bellowing\s+battlecry",
     r"breathless[\s_]+exhaustion",
+    r"combat[\s_]+strain",
+    r"diaphragm[\s_]+strain",
+    r"choked\s+gasp",
+    r"guttural\s+grunt(?:\s+on\s+blade\s+deflect)?",
+    r"ragged\s+heaving\s+pant",
+    r"slow[\s_]+motion",
     r"mocking\s+chuckle",
 ]
 COMPILED_TTS_TAG_RE = re.compile(rf"^\[\s*(?:{'|'.join(SUPPORTED_TTS_TAG_PATTERNS)})\s*\]$", re.IGNORECASE)

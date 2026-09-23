@@ -113,17 +113,26 @@ def render_foley_bus_reel_chunked(
                 cue_start_ms = max(0, int(cue.start_ms))
                 cue_gain = 10.0 ** (float(getattr(cue, "gain_dbfs", -15.0)) / 20.0)
                 pan = float(getattr(cue, "azimuth_pan", 0.0))
+                trajectory = str(getattr(cue, "trajectory", "static")).lower()
 
-                # Handle panning if non-zero, safely formatting to stereo first for mono inputs
-                if abs(pan) > 0.05:
+                # Handle trajectory vector or static azimuth panning safely
+                if trajectory == "left_to_right":
+                    pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,pan=stereo|c0=0.85*c0|c1=0.15*c1,"
+                elif trajectory == "right_to_left":
+                    pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,pan=stereo|c0=0.15*c0|c1=0.85*c1,"
+                elif abs(pan) > 0.05:
                     left_gain = max(0.0, min(1.0, (1.0 - pan)))
                     right_gain = max(0.0, min(1.0, (1.0 + pan)))
                     pan_filter = f"aformat=sample_rates=48000:channel_layouts=stereo,pan=stereo|c0={left_gain:.2f}*c0|c1={right_gain:.2f}*c1,"
                 else:
                     pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,"
 
+                extra_fx = ""
+                if getattr(cue, "is_lfe_sub_drop", False):
+                    extra_fx = "lowpass=f=120,equalizer=f=52:t=q:w=2.0:g=6.0,"
+
                 filters.append(
-                    f"[{i+1}:a]{pan_filter}volume={cue_gain:.3f},adelay={cue_start_ms}|{cue_start_ms}[cue_{i}]"
+                    f"[{i+1}:a]{extra_fx}{pan_filter}volume={cue_gain:.3f},adelay={cue_start_ms}|{cue_start_ms}[cue_{i}]"
                 )
 
             mix_ins = "[0:a]" + "".join(f"[cue_{i}]" for i in range(len(sub_cues)))

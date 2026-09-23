@@ -165,15 +165,20 @@ def _parse_dramatized_chunk_llm(
         "Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' when spoken by the character.\n"
         "3. NEURAL VOCAL TAGS: Gemini 3.1 Flash TTS is steered using inline English audio tags in square brackets. Prepend vocal tags directly inside the 'text' field "
         "when dialogue or dramatic narration demands it: `[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, "
-        "`[gasp]`, `[growl]`, `[groan]`, `[spits]`, `[bellowing rage]`, `[breathless_exhaustion]`, `[mocking chuckle]`. Do NOT emit non-vocal action tags in text.\n"
+        "`[gasp]`, `[growl]`, `[groan]`, `[spits]`, `[bellowing rage]`, `[bellowing battlecry]`, `[combat strain]`, `[guttural grunt on blade deflect]`, "
+        "`[choked gasp]`, `[ragged heaving pant]`, `[breathless_exhaustion]`, `[slow motion]`, `[mocking chuckle]`. Do NOT emit non-vocal action tags in text.\n"
         "4. CYNICAL PROTAGONIST GRUNT ENGINE & PROSODY: When a brooding, cynical protagonist reacts with skepticism, weary resignation, or menacing brevity, "
         "prepend `[growl] हूँ...` or `[sighs] हम्म...` and set 'pause_after_ms' to 1000-1400ms to enforce the iconic 1.2s pregnant pause prosody.\n"
         "5. DURAANGI ZUBAAN (INNER MONOLOGUES): When a character thinks an unfiltered thought or aside (contrasting with polite outward speech), "
         "tag the text with `[whispers] (मन में: ...)` and set spatial.proximity: 'intimate_close' and acoustic_env: 'binaural_whisper'.\n"
         "6. INTIMATE SCENES & ASMR STAGING: For romantic, sensual, or passionate scenes, set spatial.proximity: 'intimate_close', spatial.pan: 0.0, "
         "intensity_level: 'low', pre_roll_breath_ms: 200-250, and music.ducking_db: -22.0 ('The Erotic Silence'). Use ellipses ('...') for breathless pauses.\n"
-        "7. TAVERN SHOCK BEAT & COMBAT IMPACT: When a climactic death threat or filthy curse drops in a tavern, set pause_after_ms: 800-1200ms with a solitary "
-        "coin_clink or tankard_slam cue for an acoustic shock drop. For physical combat, emit dedicated segments with type: 'action', speaker: 'Foley', text: '[ACTION]'.\n"
+        "7. TAVERN SHOCK BEAT & COMBAT CHOREOGRAPHY: When a climactic death threat or filthy curse drops in a tavern, set pause_after_ms: 800-1200ms "
+        "with a solitary coin_clink or tankard_slam cue for an acoustic shock drop. "
+        "For physical combat (sword parries, shield bashes, bone crunches, body slams), emit dedicated segments with type: 'action', speaker: 'Foley', text: '[ACTION]' "
+        "and set 'pause_after_ms' to 800-1500ms to allocate speech-free acoustic real estate for the 3-layer combat impact. "
+        "DUAL-PERSPECTIVE SPATIAL STAGING: Pan Attacker actions/vocals Left (-0.6), Defender parries/vocals Right (+0.6), and Clash points / fatal strikes Dead Center (0.0). "
+        "Set intensity_level: 'explosive' for heavy lethal strikes or concussion shockwaves.\n"
         "8. For EVERY segment, assign audio direction: acting delivery & pacing, spatial stereo panning, acoustic environment, inline Foley SFX cues, and musical mood."
     )
 
@@ -202,15 +207,15 @@ Output JSON: A list of objects where each object has:
 - "speaker": character name (e.g. "Alice", "Bob"), "Narrator", or "Foley" (for action segments)
 - "text": speech text (clean spoken content in {"Devanagari Hindi" if is_hindi else "English"}, with optional inline vocal tags like [whispers], [shouting], [cold menace] where emotionally appropriate, or "[ACTION]" for action segments)
 - "emotion": "neutral" | "angry" | "whispering" | "sad" | "excited" | "growl" | "calm_raspy"
-- "intensity_level": "low" | "medium" | "high" | "explosive" (DSP dynamic headroom: "low" for whispered/intimate, "medium" for standard dialogue/narration, "high" for intense confrontation/shouts, "explosive" for climactic battle cries)
+- "intensity_level": "low" | "medium" | "high" | "explosive" (DSP dynamic headroom: "low" for whispered/intimate, "medium" for standard dialogue/narration, "high" for intense confrontation/shouts, "explosive" for climactic battle cries and fatal strikes)
 - "pre_roll_breath_ms": int (150 to 250 for intimate/terrified lines, 0 for standard delivery)
-- "pause_after_ms": int (300 to 800)
+- "pause_after_ms": int (300 to 800 for normal dialogue, 800 to 1500 for action impacts)
 - "acting": {{
-    "delivery_style": "whispering_fear" | "cold_menace" | "breathless_exhaustion" | "ironic_mockery" | "bellowing_rage" | "calm_authoritative" | "gentle_tender" | "neutral",
+    "delivery_style": "whispering_fear" | "cold_menace" | "breathless_exhaustion" | "ironic_mockery" | "bellowing_rage" | "combat_strain" | "slow_motion" | "calm_authoritative" | "gentle_tender" | "neutral",
     "pacing": float (0.88 to 1.15, e.g. 0.92 for slow/bassy/deliberate, 1.0 for normal, 1.10 for fast action)
   }}
 - "spatial": {{
-    "pan": float (-0.4 to 0.4, e.g. 0.0 for Narrator, -0.22 for protagonist, +0.22 for other speakers),
+    "pan": float (-0.6 to 0.6, e.g. 0.0 for Narrator / clash point, -0.6 for attacker, +0.6 for defender),
     "proximity": "intimate_close" | "normal_room" | "distant"
   }}
 - "acoustic_env": "tavern_interior" | "stone_crypt" | "royal_hall" | "damp_dungeon" | "dense_forest_night" | "quiet_chamber" | "open_road"

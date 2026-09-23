@@ -136,6 +136,8 @@ class FoleyCue(BaseModel):
     reverb_send: float = 0.15           # Send level to shared reverb
     start_ms: Optional[int] = 0
     duration_ms: Optional[int] = 0
+    is_lfe_sub_drop: bool = False       # Triggers 50Hz sub-bass physical impact weight
+    trajectory: str = "static"          # 'static', 'left_to_right', 'right_to_left', 'center_zoom'
 ```
 
 ### 5. `AmbienceScene` & `MasteringConfig`
@@ -444,6 +446,22 @@ class SoundBank:
 
     def get_stats(self) -> Dict[str, Any]:
         """Returns track counts, durations, and category distribution."""
+```
+
+### `AcousticBusMatrix` ([`audiobook_factory.acoustic_bus_matrix`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/acoustic_bus_matrix.py))
+*Dynamic ducking profiles, UCS category resolution, and formant pocketing.*
+
+```python
+class DuckingProfile(BaseModel):
+    profile_name: Literal["intimate_dialogue", "standard_speech", "combat_shouting", "heavy_impact", "combat_shock"]
+    attenuation_db: float = -16.0
+    attack_ms: int = 15
+    release_ms: int = 350
+    spectral_carve_hz: int = 2400
+    spectral_carve_depth_db: float = -6.0
+
+def get_ducking_profile(name_or_scene_type: str) -> DuckingProfile: ...
+def derive_ucs_category(action_verb_or_cue: str, exciter: str = "") -> str: ...
 ```
 
 ### `UniversalSoundBankIngester` ([`audiobook_factory.sound_bank_ingest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank_ingest.py))

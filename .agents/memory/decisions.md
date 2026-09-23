@@ -241,3 +241,16 @@
   4. **Breathless Prosody Formatting**: Breaks sentences into fragmented, breathless phrases using ellipses and vocal acting tags (`[whispers]`, `[intimate, breathy]`, `[gasp]`, `[sighs]`).
   5. **Erotic Acoustic Silence**: Fades background music to -22dB or warm sub-bass drone, spotlighting isolated tactile foley (`fire_crackle_soft`, `bedsheet_rustle`, intimate breathing loops).
 - **Rationale:** Creates authentic, heart-pounding somatic erotic realism with Hollywood audio-drama production values.
+
+## ADR-017: Hollywood & AAA-Game Combat Sound Design & Action Architecture
+- **Context:** Action and combat scenes in audiobooks frequently collapse into an indistinct "audio soup" where wall-to-wall 160 BPM percussion, shouting voices, and uncalibrated sword clangs cause severe spectral masking (DMR < +12 dB) and mono phase cancellation (r < 0.85).
+- **Decision:**
+  1. **Anti-Overengineering Invariant**: Rejected runtime procedural FFmpeg Doppler math (`pan=t`) and timeline-stretching DSP. Delegated spatial flybys to pre-baked sound assets and slow-motion to the TTS generation layer (`acting.pacing=0.5`, `acting.delivery_style="slow_motion"`).
+  2. **Action-Beat Splitting (Temporal Isolation)**: Major kinetic impacts (lethal strikes, bone fractures, shield bashes) must never occur over spoken words. Screenplay builder splits action beats into dedicated 0.8s - 1.5s speech-free intervals (`pause_after_ms: 800-1500`, `speaker: "Foley"`).
+  3. **Dual-Perspective Spatial Staging**: Attacker actions/vocals pan Left (-0.6), Defender parries/vocals pan Right (+0.6), and Clash points / fatal strikes land Dead Center (0.0), maintaining full stereo separation without single-ear fatigue.
+  4. **The 3-Layer Combat Sandwich**: Composite impacts across 3 frequency bands: Layer 1 Transient Bite (2.0k-7.5kHz blade/armor edge), Layer 2 Anatomical Body (180-1.4kHz bone/flesh weight), and Layer 3 LFE Sub-Thump (45-85Hz tuned 52Hz solar plexus shockwave).
+  5. **Strict Mono Sub-Bass Anchor (< 90Hz)**: All LFE drops, body slams, and warhammer pulses are centered at pan 0.0 and summed to mono to guarantee mean phase correlation $r \ge 0.85$.
+  6. **Dynamic Ducking & Tinnitus Shockwave**: Added `PROFILE_COMBAT_SHOCK` (-24dB attenuation, 4000ms release) and `PROFILE_COMBAT` (-22dB attenuation, 250ms release) in `acoustic_bus_matrix.py`. Heavy concussion impacts trigger the shock profile and pre-produced tinnitus assets.
+  7. **Staccato Combat Prose & Neural Tags**: Enhanced translation prompt for rapid 2-4 word clauses ('कदम पीछे। तलवार का पैंतरा। वार। चूक गया!') and expanded `sanitizer.py` with combat vocal tags (`[bellowing battlecry]`, `[combat strain]`, `[diaphragm strain]`, `[guttural grunt on blade deflect]`, `[spits blood]`, `[choked gasp]`, `[ragged heaving pant]`).
+  8. **4-Phase Combat Curve & "The Smother Cut"**: Standoff (80 BPM, 75% silence) -> First Blows (125 BPM, 50% silence) -> Bloodlust (160 BPM, 35% silence) -> Fatal Kill (Hard Mute 150-250ms digital silence before lethal strike).
+- **Rationale:** Delivers heart-stopping Hollywood combat impact with crystal-clear dialogue intelligibility and strict broadcast compliance.
