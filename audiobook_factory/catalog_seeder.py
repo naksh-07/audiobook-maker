@@ -155,7 +155,7 @@ def derive_virtual_metadata(filename: str, folder_category: str, folder_subcat: 
     mood = "default"
 
     # Refine subcategory & category
-    if any(k in stem for k in ("sword", "chop", "blade", "slash", "knife", "metal", "armor", "mace", "parry", "clash", "flesh", "bone", "blood", "sub", "lfe")):
+    if any(k in stem for k in ("sword", "chop", "blade", "slash", "knife", "metal", "armor", "mace", "parry", "clash", "flesh", "bone", "blood", "sub_drop", "sub_bass", "subwoofer", "subboom", "lfe")):
         subcat = "Combat"
         cat = "FOL"
         mood = "tense"

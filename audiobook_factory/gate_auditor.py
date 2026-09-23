@@ -319,7 +319,9 @@ def audit_gate4_ledger(
                     missing_chunks.append(seg_l.audio_file)
             else:
                 missing_chunks.append(seg_l.audio_file)
-        elif chunk_path.stat().st_size <= 1000:
+        elif chunk_path.stat().st_size <= 44:
+            missing_chunks.append(f"{seg_l.audio_file} (empty)")
+        elif chunk_path.stat().st_size <= 1000 and getattr(seg_l, "speaker", "").lower() not in ("foley", "action") and "[action]" not in getattr(seg_l, "text", "").lower():
             missing_chunks.append(f"{seg_l.audio_file} (empty)")
 
         prev_end_ms = seg_l.end_ms
@@ -785,16 +787,16 @@ def audit_gate3_5_acoustic_feasibility(
         asset_ref = getattr(cue, "asset_path", "") or getattr(cue, "asset_name", "") or str(getattr(cue, "asset_id", ""))
         if not asset_ref:
             continue
-        is_direct_file = any(asset_ref.lower().endswith(ext) for ext in (".wav", ".mp3", ".flac", ".ogg", ".aiff", ".m4a")) or ("/" in asset_ref or "\\" in asset_ref)
+        resolved = None
         try:
             resolved = bank.resolve_asset_path(asset_ref)
         except Exception:
-            if not is_direct_file:
-                try:
-                    resolved = bank.resolve_sound(asset_ref, category="SFX")
-                except Exception:
-                    resolved = None
-            else:
+            pass
+
+        if not resolved or not resolved.exists():
+            try:
+                resolved = bank.resolve_sound(asset_ref, category="SFX") or bank.resolve_sound(asset_ref)
+            except Exception:
                 resolved = None
 
         if not resolved or not resolved.exists():

@@ -46,14 +46,20 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **216 passing unit tests** across all modules with a zero-regression invariant (100% OK, 0 failures, 0 errors).
+The codebase maintains **232 passing unit tests** across all modules with a zero-regression invariant (100% OK, 0 failures, 0 errors).
 
 ### Running Dedicated Phase Test Suites
 ```powershell
-# Hollywood & AAA Combat Audio Drama Suite
+# Forensic Audit Remediation & Hardening Suite (ADR-020 - 13 Defects)
+python -m unittest tests/test_forensic_audit_remediation.py
+
+# 4-Stem Decoupled Scene Acoustics, Stochastic Generator & Occlusion Suite (ADR-018)
+python -m unittest tests/test_scene_acoustics_and_stochastic.py
+
+# Hollywood & AAA Combat Audio Drama Suite (ADR-017)
 python -m unittest tests/test_combat_audio_drama_fidelity.py
 
-# Adult Literary Fidelity & HBO Intimacy Suite
+# Adult Literary Fidelity & HBO Intimacy Suite (ADR-016 & ADR-019)
 python -m unittest tests/test_adult_literary_fidelity.py
 
 # Audit Remediation & Hardening Sprint (P0-P3 showstoppers)
@@ -111,6 +117,13 @@ The `UniversalSoundBankIngester` will:
 3. Generate FTS5 full-text search indexes on tags and filenames.
 4. Commit assets to `audiobooks/sound_bank/catalog.db`.
 
+### Offline Foley & Magic Composite Asset Baking
+To avoid runtime FFmpeg filter graph bloat for complex, multi-phase magic spells and tactile foley:
+```bash
+python scripts/bake_foley_composites.py
+```
+This renders composite assets (`magic_lumos_light.wav`, `magic_expelliarmus_kinetic.wav`, `tactile_parchment_quill_scratch.wav`) and indexes them directly into the SQLite FTS5 catalog.
+
 ---
 
 ## 🩺 Diagnostics & Troubleshooting
@@ -124,3 +137,10 @@ The `UniversalSoundBankIngester` will:
 | `FFmpeg packaging failed: Invalid audio stream copy` | Uncompressed WAV (`pcm_s16le`) was passed to M4B packager with `-c:a copy`. | The packager now automatically validates `is_all_aac` and transcodes non-AAC/WAV stems to AAC 192k with `+faststart`. |
 | `HTTP 400 Bad Request on Gemini API Key` | Key in `.env` was enclosed in quotes (e.g. `GEMINI_API_KEY="AIza..."`). | Fixed automatically in `key_manager.py` by `.strip("'\"")`. Remove surrounding quotes if overriding via external environment variables. |
 | `TTS Quota rapidly depleted by background tasks` | Text prompts (mood detection, dramaturgy) were sharing the TTS key pool. | Quota isolation now explicitly routes text prompts through `global_key_pool.get_key(service="text")`, shielding the scarce 10 RPD Gemini TTS quota. |
+| `Gemini Flash TTS censorship false-positives on mature literature` | Harm categories triggered safety block. | Fixed permanently in `tts_dispatcher.py` by setting explicit `safetySettings: [BLOCK_NONE]` across all 4 categories (`HARASSMENT`, `HATE_SPEECH`, `SEXUALLY_EXPLICIT`, `DANGEROUS_CONTENT`). |
+| `StemLedger reports dmr_compliant: false` | Background stems ($ME$) within 10dB of vocal dialogue ($DX$). | Check `chapter_XXX_manifest.json` ducking parameters or decrease background bed gain to guarantee $DMR \ge 10.0$ dB. |
+| `AttributeError: 'dict' object has no attribute 'generate_stochastic_cues'` | Pydantic JSON deserialization parsed `scene_acoustics` as raw dict. | Fixed in `contracts.py` with `@model_validator(mode="after")` on `CreativeManifest` to rehydrate into `SceneSoundscapeManifest`. |
+| `GateAuditError: Gate 3.5 Failed: Asset not found for asset with .wav extension` | Cue path had extension but was stored in Sound Bank without full path. | Fixed in `gate_auditor.py` to fall back unconditionally to SQLite FTS5 `bank.resolve_sound()`. |
+| `GateAuditError: Gate 4.5 Failed: Missing or empty audio chunks (size <= 1000)` | Silent action beat chunks (<1000B) failed legacy size threshold. | Lowered floor to 44B (WAV header) and exempted `[ACTION]` / `Foley` segments in `gate_auditor.py`. |
+| `FFmpeg process crash: Command line too long (Windows 8191 limit)` | Ambient soundscape filter complex exceeded maximum command argument length. | Fixed in `cinema_audio_engine.py` by automatically piping filters > 6000 chars into `-filter_complex_script`. |
+| `Multiple take concatenation in chapter audio master` | Segments with multiple takes were all globbed into chapter master. | Fixed in `audiobook_cli.py` (`cmd_master`) by deduplicating segments using regex `_s(\d{4})_` and latest `st_mtime`. |

@@ -563,6 +563,14 @@ class CreativeManifest(BaseModel):
                 data["silence_percentage"] = 100.0
         return data
 
+    @model_validator(mode="after")
+    def parse_scene_acoustics(self) -> "CreativeManifest":
+        """Rehydrate scene_acoustics dictionary into SceneSoundscapeManifest upon JSON load."""
+        if isinstance(self.scene_acoustics, dict):
+            from audiobook_factory.scene_acoustics import SceneSoundscapeManifest
+            self.scene_acoustics = SceneSoundscapeManifest.model_validate(self.scene_acoustics)
+        return self
+
     @field_validator("silence_percentage")
     @classmethod
     def validate_silence_rule(cls, v: float) -> float:

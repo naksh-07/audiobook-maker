@@ -41,18 +41,29 @@ def get_audio_duration_ms(file_path: Path) -> int:
         return 0
 
 
+def _escape_ffmetadata(val: Any) -> str:
+    """Escape special characters (=, ;, #, \\) for FFMETADATA1 specification."""
+    s = str(val or "")
+    s = s.replace("\\", "\\\\")
+    for char in ("=", ";", "#"):
+        s = s.replace(char, f"\\{char}")
+    return s.replace("\n", " ").strip()
+
+
 def generate_ffmetadata(
     metadata: Dict[str, Any],
     chapter_durations: List[Dict[str, Any]],
     output_file: Path,
 ) -> Path:
     """Generate standard FFMETADATA1 file with title, author, and chapter timestamps."""
+    t = _escape_ffmetadata(metadata.get("title", "Audiobook"))
+    a = _escape_ffmetadata(metadata.get("author", "Unknown Author"))
     lines = [
         ";FFMETADATA1",
-        f"title={metadata.get('title', 'Audiobook')}",
-        f"artist={metadata.get('author', 'Unknown Author')}",
-        f"album_artist={metadata.get('author', 'Unknown Author')}",
-        f"album={metadata.get('title', 'Audiobook')}",
+        f"title={t}",
+        f"artist={a}",
+        f"album_artist={a}",
+        f"album={t}",
         "genre=Audiobook",
         "date=2026",
         "",
@@ -62,7 +73,7 @@ def generate_ffmetadata(
     for chap in chapter_durations:
         dur = chap.get("duration_ms", 0)
         end = current_start + dur
-        title = chap.get("title", f"Chapter {chap.get('number', 1)}")
+        title = _escape_ffmetadata(chap.get("title", f"Chapter {chap.get('number', 1)}"))
 
         lines.append("[CHAPTER]")
         lines.append("TIMEBASE=1/1000")

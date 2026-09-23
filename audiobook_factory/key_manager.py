@@ -265,18 +265,12 @@ class PersistentKeyPool:
                         conn.commit()
                         return chosen["api_key"]
 
-                    # If no active keys for TTS, check status breakdown
+                    # If no active keys, check status breakdown
                     if service == "tts":
                         exhausted_today = conn.execute("""
                             SELECT count(*) as count FROM key_quota_ledger
                             WHERE status = 'EXHAUSTED_TODAY' AND exhausted_date = ?;
                         """, (today,)).fetchone()["count"]
-
-                        temp_backoff_keys = conn.execute("""
-                            SELECT backoff_until FROM key_quota_ledger
-                            WHERE status = 'TEMP_BACKOFF'
-                            ORDER BY backoff_until ASC;
-                        """).fetchall()
 
                         total_valid_keys = conn.execute(
                             "SELECT count(*) as count FROM key_quota_ledger WHERE status != 'INVALID';"
@@ -288,18 +282,24 @@ class PersistentKeyPool:
                                 f"System is safely paused until midnight quota reset. (Text translation models remain usable)."
                             )
 
-                        if temp_backoff_keys:
-                            first_expiry = temp_backoff_keys[0]["backoff_until"]
-                            try:
-                                expiry_dt = datetime.fromisoformat(first_expiry)
-                                sleep_dur = max(1.0, min(20.0, (expiry_dt - datetime.now()).total_seconds() + 0.5))
-                            except Exception:
-                                sleep_dur = 3.0
+                    temp_backoff_keys = conn.execute("""
+                        SELECT backoff_until FROM key_quota_ledger
+                        WHERE status = 'TEMP_BACKOFF'
+                        ORDER BY backoff_until ASC;
+                    """).fetchall()
+
+                    if temp_backoff_keys:
+                        first_expiry = temp_backoff_keys[0]["backoff_until"]
+                        try:
+                            expiry_dt = datetime.fromisoformat(first_expiry)
+                            sleep_dur = max(1.0, min(20.0, (expiry_dt - datetime.now()).total_seconds() + 0.5))
+                        except Exception:
+                            sleep_dur = 3.0
 
             # If keys are cooling down, sleep OUTSIDE the lock and connection, then loop (no recursion)
             if sleep_dur > 0:
                 from audiobook_factory.logger import logger
-                logger.info(f"  [KEY POOL] All active TTS keys cooling down. Waiting {sleep_dur:.1f}s for backoff expiry...")
+                logger.info(f"  [KEY POOL] All active {service.upper()} keys cooling down. Waiting {sleep_dur:.1f}s for backoff expiry...")
                 time.sleep(sleep_dur)
                 continue  # Iterate instead of recurse — prevents RecursionError
 

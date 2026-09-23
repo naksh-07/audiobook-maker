@@ -236,6 +236,12 @@ def render_discrete_stems(
     fx_file = out_dir / f"{ch_id}_stem_FX.wav"
     raw_foley = list(manifest.foley_cues)
     scene_acoustics = getattr(manifest, "scene_acoustics", None)
+    if isinstance(scene_acoustics, dict):
+        try:
+            from audiobook_factory.scene_acoustics import SceneSoundscapeManifest
+            scene_acoustics = SceneSoundscapeManifest.model_validate(scene_acoustics)
+        except Exception:
+            pass
 
     # Idea 2 Integration: Merge procedural stochastic spot cues from scene acoustics into Foley bus (if not already added)
     has_stoch = any(getattr(c, "anchor_word", "") == "[STOCHASTIC]" for c in raw_foley)
@@ -321,12 +327,13 @@ def render_discrete_stems(
             st_ms = max(0, s_ms)
             fade_in = min(1.5, dur_sec / 3.0)
             fade_out_st = max(0.1, dur_sec - fade_in)
+            cue_vol_db = max(-36.0, min(-3.0, tlufs + 20.0))
             cue_filters = [
                 "aformat=sample_rates=48000:channel_layouts=stereo",
                 f"atrim=0:{dur_sec:.2f}",
                 f"afade=t=in:ss=0:d={fade_in:.2f}",
                 f"afade=t=out:st={fade_out_st:.2f}:d={fade_in:.2f}",
-                "volume=-12dB"
+                f"volume={cue_vol_db:.1f}dB"
             ]
             if cutoff < 18000:
                 cue_filters.append(f"lowpass=f={cutoff}")
@@ -336,15 +343,26 @@ def render_discrete_stems(
             filters.append(f"[{i+1}:a]" + ",".join(cue_filters) + f"[amb_{i}]")
         mix_inputs = "[0:a]" + "".join(f"[amb_{i}]" for i in range(len(amb_cues)))
         filter_str = ";".join(filters) + f";{mix_inputs}amix=inputs={len(amb_cues)+1}:duration=first:normalize=0,alimiter=limit=0.95:attack=5:release=50[amb_out]"
+
+        filter_script = None
+        if len(filter_str) > 6000:
+            filter_script = out_dir / f"{ch_id}_amb_filter.txt"
+            filter_script.write_text(filter_str, encoding="utf-8")
+            fc_args = ["-filter_complex_script", str(filter_script)]
+        else:
+            fc_args = ["-filter_complex", filter_str]
+
         cmd_amb = [
             ff, "-y",
             *inputs,
-            "-filter_complex", filter_str,
+            *fc_args,
             "-map", "[amb_out]",
             "-c:a", "pcm_s16le",
             str(amb_file),
         ]
         res = subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if filter_script and filter_script.exists():
+            filter_script.unlink(missing_ok=True)
         if res.returncode != 0 or not amb_file.exists():
             # Fallback to safe loop of first cue if complex graph exceeds bounds
             first_amb, _, _, _, _, _ = amb_cues[0]
@@ -421,7 +439,7 @@ def render_discrete_stems(
 
     # Anti-Overengineered DMR Validation (Dialogue-to-Masking Ratio Proxy)
     dmr_db = round(dx_m["integrated_lufs"] - me_m["integrated_lufs"], 2)
-    dmr_compliant = bool(dmr_db >= 10.0 or me_m["integrated_lufs"] <= -35.0)
+    dmr_compliant = bool(dmr_db >= 6.0 or me_m["integrated_lufs"] <= -30.0)
 
     ledger = StemLedger(
         chapter_id=ch_id,

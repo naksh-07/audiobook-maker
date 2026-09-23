@@ -21,6 +21,8 @@ In legacy audiobook production, music often drowns out whispers, abrupt volume s
 | **Loudness Range (LRA)** | `7.0 LU` (Standard)<br/>`6.0 LU` (Whisper scenes) | Balances dramatic dynamic range with intelligibility in noisy environments (cars, commutes). |
 | **Acoustic Silence Mandate** | $\ge 60.0\%$ | Prevents listener fatigue by ensuring music is surgical, not a constant wall of sound. |
 | **Dialogue-to-Music Ratio (DMR)** | $\ge +12.0\text{ dB}$ | Dialogue must always overpower music in the vocal corridor ($300\text{ Hz} - 3.5\text{ kHz}$). |
+| **Dialogue-to-Masking Ratio (DMR Proxy)** | $\ge +10.0\text{ dB}$ | Dialogue stem ($DX$) must overpower the combined background bed ($ME$) by at least 10 dB. |
+| **Dynamic Ducking Profiles** | Standard: $-16\text{ dB}$<br/>Intimate: $-22\text{ dB}$<br/>Combat Shock: $-24\text{ dB}$ | Calibrated ducking depths across standard dialogue, ASMR bedroom intimacy, and heavy concussive impacts. |
 | **Stereo Phase Correlation** | $r \ge +0.85$ (Dialogue)<br/>$r \ge +0.20$ (Full mix) | Prevents acoustic cancellation when stereo audio is collapsed to mono smart speakers. |
 
 ---
@@ -149,3 +151,90 @@ def get_reverb_filter_string(preset: str = "room") -> Tuple[str, float]:
 - **Separation of Concerns**:
   - **Creative Intelligence**: Autonomous AI agents (`AgentDirector`) decide *what* plays, *when* it plays, *how loud* it is, and *where* it sits in the soundstage via the `CreativeManifest`.
   - **Deterministic Execution**: The DSP layer deterministically compiles and renders the manifest instructions into sample-accurate, phase-aligned, broadcast-compliant audio.
+
+---
+
+### 9. Hollywood & AAA-Game Combat Sound Design & Action Acoustics (ADR-017)
+In AAA video games (God of War, The Witcher 3) and Hollywood action films, combat audio is never an unstructured din of loud sound effects playing simultaneously over shouting characters. Such an approach causes severe acoustic masking (DMR < +12 dB) and mono phase collapse ($r < 0.85$).
+
+Audiobook Maker implements a five-pillar action acoustic architecture:
+
+#### A. The 3-Layer Combat Sandwich
+Every major physical impact (blade deflection, shield bash, bone crush, warhammer strike) is assembled across 3 discrete frequency layers:
+1. **Layer 1: Transient Bite ($2.0\text{ kHz} - 7.5\text{ kHz}$):** High-frequency metallic scrape, blade ring, arrow release, or armor scrape. Delivers perceptual clarity and spatial pinpointing.
+2. **Layer 2: Anatomical Body ($180\text{ Hz} - 1.4\text{ kHz}$):** Mid-frequency organic weight—flesh tearing, rib fracture, leather compression, or heavy body thud.
+3. **Layer 3: LFE Sub-Thump ($45\text{ Hz} - 85\text{ Hz}$):** Tuned 52Hz sine or sub-harmonic burst, delivering solar plexus visceral impact on subwoofers and headphones.
+
+#### B. Strict Mono Sub-Bass Anchor (< 90Hz)
+- All low-frequency effects (`is_lfe_sub_drop=True`), sub-drops, and ground smashes are strictly centered at azimuth $pan = 0.0$ and summed to mono.
+- This invariant guarantees that high-excursion bass energy does not suffer out-of-phase stereo cancellation when played on mono mobile devices or smart speakers ($r \ge 0.85$).
+
+#### C. Temporal Action-Beat Splitting
+- Lethal strikes, shield bashes, and skull-crushing blows **never play directly over vocal lines**.
+- The screenplay director automatically splits combat action into dedicated $800\text{ ms} - 1500\text{ ms}$ speech-free intervals (`speaker: "Foley"`, `text: "[ACTION]"`). This provides an unmasked acoustic canvas for the 3-layer combat sandwich.
+
+#### D. Dual-Perspective Spatial Staging
+- Combat staging employs dual-perspective azimuth coordinates across the stereo panorama:
+  - **Attacker Strikes & Shouts:** Panned Left ($-0.6$).
+  - **Defender Parries & Grunts:** Panned Right ($+0.6$).
+  - **Lethal Impacts & Weapon Clashes:** Anchored Dead Center ($0.0$).
+- This provides deep acoustic spatial orientation, allowing the listener to perceive combat geometry clearly without single-ear fatigue.
+
+#### E. Dynamic Combat Ducking & "The Smother Cut"
+- **`PROFILE_COMBAT_SHOCK`**: Concussive blasts, flashbangs, or near-fatal strikes trigger deep $-24\text{ dB}$ attenuation with a prolonged $4000\text{ ms}$ release curve, accompanied by high-frequency tinnitus ringing beds.
+- **The Smother Cut**: Screenplay direction injects $150\text{ ms} - 250\text{ ms}$ of hard digital silence immediately before a fatal strike lands, magnifying the explosive perceived impact of the subsequent strike.
+
+---
+
+### 10. Harry Potter / Pottermore Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
+To achieve the spatial immersion of BBC Radio 4 and Pottermore audio dramas, Audiobook Maker decouples environmental ambience into 4 independent stems per scene:
+
+```text
+Scene Ambience Manifest (SceneSoundscapeManifest)
+├── Stem 1: Base Room Tone / Acoustic Hull (-34 to -36 LUFS) ────► Stereo Width: 1.35
+├── Stem 2: Weather & Macro Elements (-30 to -32 LUFS) ──────────► Barrier Occlusion Lowpass (< 18kHz)
+├── Stem 3: Social & Life Wallah (-28 to -30 LUFS) ──────────────► Stereo Width: 1.30
+└── Stem 4: Stochastic Spot Transients (-22 to -26 dBFS) ────────► Dialogue Pause Gaps (>= 600ms)
+```
+
+#### A. Acoustic Barrier Occlusion
+- When a scene takes place indoors (stone hall, tavern, bedroom, crypt), exterior macro elements (thunderstorms, howling wind, torrential rain) are filtered through a dynamic low-pass barrier occlusion filter ($1200\text{ Hz} - 1500\text{ Hz}$).
+- When an action beat opens a window or door, the occlusion filter sweeps smoothly to $18\text{ kHz}$, delivering natural spatial realism.
+
+#### B. Zero-Token Local Stochastic Transient Generator
+- Continuous ambient loops feel repetitive and artificial over 20-minute chapters.
+- The `generate_stochastic_cues` algorithm analyzes the `TimelineLedger` to identify pause slots between dialogue lines ($\ge 600\text{ ms}$).
+- It scatters subtle Layer 4 micro-events (distant owls, candle sparks, floor creaks, ticking clocks, water drops) strictly during dialogue pauses.
+- **Anti-Bloat Invariant**: Operates 100% locally with zero LLM token consumption.
+
+#### C. Voice Limiter & Priority Stealing
+- To prevent transient buildup and acoustic clutter when multiple Foley events collide, `filter_concurrency_window` enforces a $200\text{ ms}$ sliding window with a maximum concurrency of 3 simultaneous cues. Lower-priority cues are gracefully dropped.
+
+#### D. Dialogue-to-Masking Ratio (DMR) Validation
+- In `CinemaAudioEngine`, every chapter render computes the Dialogue-to-Masking Ratio proxy:
+  $$\text{DMR} = \text{LUFS}_{\text{DX}} - \text{LUFS}_{\text{ME}} \ge +10.0\text{ dB}$$
+- If the combined Music, Foley, and Ambience bed ($ME$) encroaches within 10 dB of the vocal dialogue track ($DX$), the render reports a DMR violation in `chapter_XXX_stem_ledger.json`.
+
+#### E. Pre-Baked Multi-Phase Composite Asset Baker
+- Multi-phase sound effects (e.g. Harry Potter magic spells: Phase A Gesture Pre-roll $0-100\text{ ms}$ $\rightarrow$ Phase B Arcane Exciter $100-300\text{ ms}$ $\rightarrow$ Phase C Sub-Bass Dissipation $40-60\text{ Hz}$) are pre-rendered offline using [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py).
+- Pre-baked assets (`magic_lumos_light.wav`, `magic_expelliarmus_kinetic.wav`, `tactile_parchment_quill_scratch.wav`) are indexed directly into the SQLite FTS5 Sound Bank, ensuring zero runtime FFmpeg filter graph bloat.
+
+---
+
+### 11. Production DSP Reliability & Windows Graph Scaling (ADR-020)
+
+#### A. Dynamic Filter Complex Script Piping (>6000 Chars)
+In complex 4-stem scene acoustics where a chapter contains dozens of weather crossfades, crowd wallah loops, and Layer 4 stochastic spots, the resulting FFmpeg `-filter_complex` string can easily exceed 6,000 characters.
+- **The Windows 8191-Character Boundary:** The Windows shell command interpreter (`cmd.exe` / `CreateProcessW`) imposes a strict 8,191-character limit on the entire command line. Passing an oversized filter string inline results in silent process termination or exit code 1.
+- **Dynamic Script Execution:** In [`CinemaAudioEngine.render_discrete_stems`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py), the engine measures `len(filter_str)`. If the filter complex exceeds 6,000 characters, it writes the graph to `{chapter_id}_amb_filter.txt` and supplies it to FFmpeg via `-filter_complex_script [path]`, ensuring indefinite scalability regardless of scene complexity. The script file is automatically unlinked upon completion.
+
+#### B. Atomic Speech Audio Generation & In-Memory SNR Audit
+To protect final chapters from acoustic defects (clipping distortion, faint low-RMS output, DC offset corruption, or mid-sentence stutters):
+- Raw speech chunks from Gemini Flash Cloud TTS are written to a temporary destination (`.tmp.wav`).
+- A 6-point forensic audit inspects the temporary file:
+  - Peak amplitude ($\le 32700$, headroom against 0 dBFS clipping)
+  - RMS floor ($\ge 30$, prevents faint/silent dropouts)
+  - DC offset mean ($< 500$, eliminates transducer pop)
+  - Inter-word silence ceiling
+- If any defect is detected, the temporary file is unlinked immediately (`tmp_file.unlink(missing_ok=True)`) and retry logic is invoked. Only audio that passes 100% of checks is promoted atomically via `.replace(output_file)`, guaranteeing that defective WAVs never enter the multitrack mix.
+

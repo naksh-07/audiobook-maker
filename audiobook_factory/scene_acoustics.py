@@ -192,6 +192,7 @@ class SceneSoundscapeManifest(BaseModel):
                 continue
 
             scene_dur_sec = max(1.0, (sc.end_ms - sc.start_ms) / 1000.0)
+            scene_used_timestamps: Set[int] = set()
 
             # Discover pause slots in this scene from timeline_ledger if available
             pause_slots: List[int] = []
@@ -203,7 +204,7 @@ class SceneSoundscapeManifest(BaseModel):
                         # Place spot transient 150ms into pause
                         pause_slots.append(segs[i].end_ms + 150)
 
-            for layer in spot_layers:
+            for l_idx, layer in enumerate(spot_layers):
                 interval_sec = layer.stochastic_interval_sec or 30.0
                 num_cues = max(1, int(scene_dur_sec / interval_sec))
 
@@ -230,7 +231,12 @@ class SceneSoundscapeManifest(BaseModel):
                 if pause_slots:
                     stride = max(1, len(pause_slots) // num_cues)
                     for k in range(min(num_cues, len(pause_slots))):
-                        used_timestamps.append(pause_slots[(k * stride) % len(pause_slots)])
+                        slot_idx = (k * stride + l_idx) % len(pause_slots)
+                        base_ts = pause_slots[slot_idx]
+                        while base_ts in scene_used_timestamps:
+                            base_ts += 250
+                        scene_used_timestamps.add(base_ts)
+                        used_timestamps.append(base_ts)
                 else:
                     scene_len = max(100, sc.end_ms - sc.start_ms)
                     step_ms = int(scene_len / (num_cues + 1))
@@ -238,13 +244,19 @@ class SceneSoundscapeManifest(BaseModel):
                     max_jitter = max(20, min(300, step_ms // 3))
 
                     for k in range(num_cues):
-                        jitter = int(((seed + k * 17) % 11 - 5) / 5.0 * max_jitter)
+                        jitter = int(((seed + l_idx * 37 + k * 17) % 11 - 5) / 5.0 * max_jitter)
                         ts = sc.start_ms + step_ms * (k + 1) + jitter
                         # Safe clamping respecting scene duration
                         if sc.end_ms - sc.start_ms > 2 * margin_ms:
                             ts = max(sc.start_ms + margin_ms, min(sc.end_ms - margin_ms, ts))
                         else:
                             ts = sc.start_ms + int(scene_len / 2)
+                        while any(abs(ts - existing) < 250 for existing in scene_used_timestamps):
+                            ts += 300
+                            if sc.end_ms - sc.start_ms > 2 * margin_ms and ts > sc.end_ms - margin_ms:
+                                ts = sc.start_ms + margin_ms + (l_idx * 250)
+                                break
+                        scene_used_timestamps.add(ts)
                         used_timestamps.append(ts)
 
                 used_timestamps.sort()

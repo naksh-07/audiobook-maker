@@ -262,6 +262,8 @@ class PipelineOrchestrator:
 
         with open(script_file, "r", encoding="utf-8") as f:
             script_data = json.load(f)
+        if isinstance(script_data, dict):
+            script_data = script_data.get("segments", script_data)
 
         chap_stem = script_file.stem.replace("_script", "")
 

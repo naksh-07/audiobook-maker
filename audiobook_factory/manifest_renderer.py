@@ -117,9 +117,9 @@ def render_foley_bus_reel_chunked(
 
                 # Handle trajectory vector or static azimuth panning safely
                 if trajectory == "left_to_right":
-                    pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,pan=stereo|c0=0.85*c0|c1=0.15*c1,"
+                    pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,apulsator=mode=sine:hz=0.5:amount=0.8:offset_l=0:offset_r=0.5,"
                 elif trajectory == "right_to_left":
-                    pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,pan=stereo|c0=0.15*c0|c1=0.85*c1,"
+                    pan_filter = "aformat=sample_rates=48000:channel_layouts=stereo,apulsator=mode=sine:hz=0.5:amount=0.8:offset_l=0.5:offset_r=0,"
                 elif abs(pan) > 0.05:
                     left_gain = max(0.0, min(1.0, (1.0 - pan)))
                     right_gain = max(0.0, min(1.0, (1.0 + pan)))
@@ -524,9 +524,32 @@ def render_manifest_soundscape(
             manifest.music_cues, vocal_dur, music_bus, bank, ffmpeg
         )
 
-        # 3. Compile Ambience Bus
+        # 3. Compile Ambience Bus (with automatic fallback to scene_acoustics if present)
+        amb_scenes = list(manifest.ambience_scenes) if manifest.ambience_scenes else []
+        if not amb_scenes and getattr(manifest, "scene_acoustics", None):
+            sc_ac = manifest.scene_acoustics
+            if isinstance(sc_ac, dict):
+                try:
+                    from audiobook_factory.scene_acoustics import SceneSoundscapeManifest
+                    sc_ac = SceneSoundscapeManifest.model_validate(sc_ac)
+                except Exception:
+                    sc_ac = None
+            if sc_ac and hasattr(sc_ac, "scenes"):
+                from audiobook_factory.contracts import AmbienceScene
+                for s_i, sc in enumerate(sc_ac.scenes):
+                    for l in sc.layers:
+                        if getattr(l, "layer_type", "") != "spot_stochastic":
+                            amb_scenes.append(AmbienceScene(
+                                scene_id=s_i + 1,
+                                start_ms=sc.start_ms,
+                                end_ms=sc.end_ms,
+                                asset_path=l.asset_path,
+                                target_lufs=getattr(l, "target_lufs", -32.0),
+                                reverb_preset=getattr(sc, "ir_preset", "room"),
+                            ))
+
         has_amb = render_ambience_bus(
-            manifest.ambience_scenes, vocal_dur, ambience_bus, bank, ffmpeg
+            amb_scenes, vocal_dur, ambience_bus, bank, ffmpeg
         )
 
         # 4. Master Multitrack Mix & EBU R128 Mastering

@@ -185,6 +185,7 @@ python audiobook_cli.py synthesize <BOOK_SLUG> [OPTIONS]
 ### Output Artifacts
 - Segment audio files: `audiobooks/projects/<BOOK_SLUG>/audio_chunks/cXXX_sYYYY_voice.wav`
 - 24kHz mono 16-bit uncompressed PCM speech segments.
+- Dispatched with explicit `safetySettings: [BLOCK_NONE]` across all 4 harm categories to prevent false-positive censorship blocks on mature/gritty dialogue.
 
 ---
 
@@ -391,6 +392,12 @@ Performs high-performance multi-threaded batch ingestion of an audio folder via 
 python audiobook_cli.py bank ingest /path/to/raw_sounds/ --workers 4
 ```
 
+#### Offline Composite Foley & Magic Asset Baking
+Pre-renders composite multi-phase tactile and magical audio assets (wand flick whoosh + electric ionization + 52Hz sub-bass thump) and auto-indexes them into SQLite FTS5:
+```bash
+python scripts/bake_foley_composites.py
+```
+
 ---
 
 ## ⚙️ Environment Variables Reference
@@ -410,9 +417,10 @@ Configure these in your [`.env`](file:///c:/Users/Suraj/Documents/Antigravity/Au
 | `DEBUG` | `0` | If set to `1`, prints full Python tracebacks on exceptions. |
 
 > [!TIP]
-> **Key Sanitization & Quota Isolation**:
+> **Key Sanitization, Quota Isolation & Safety**:
 > - **Quote Stripping**: The `.env` fallback loader automatically strips surrounding quotes (`'` or `"`) from API keys, preventing header corruption and HTTP 400 errors.
 > - **Quota Routing**: Soundscape mood analysis and auxiliary dramaturgy route explicitly to `service="text"`, ensuring text requests never consume scarce 10 RPD Gemini TTS quota allocations.
+> - **Permanent TTS Safety Unlock**: Speech requests pass `safetySettings: [BLOCK_NONE]` across all 4 categories, permanently preventing censorship blocks on mature dialogue.
 
 ---
 

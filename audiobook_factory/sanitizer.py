@@ -209,16 +209,24 @@ def sanitize_screenplay_segment(segment: Dict[str, Any], is_hindi: bool = True) 
     # Collapse excessive character repeats to max 2 (e.g. "आहhhhh" -> "आहhh", "हूँ...." -> "हूँ..")
     text = re.sub(r"([a-zA-Z\u0900-\u097F])\1{2,}", r"\1\1", text)
     text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return None
 
     # Drop segment if it matches refusal / commentary patterns
     for pat in COMPILED_META_PATTERNS:
         if pat.search(text):
             return None
 
+    # Strip bracketed tags temporarily for linguistic checks
+    # (vocal tags like [whispers] or [bellowing battlecry] must not count as Latin words)
+    text_no_tags = re.sub(r"\[[^\]]+\]", "", text).strip()
+    if not text_no_tags:
+        return None
+
     # If Hindi screenplay, drop pure English conversational sentences
     if is_hindi:
-        eng_words = count_latin_words(text)
-        dev_chars = count_devanagari_chars(text)
+        eng_words = count_latin_words(text_no_tags)
+        dev_chars = count_devanagari_chars(text_no_tags)
 
         # Drop segments that are pure English paragraphs
         if eng_words >= 6 and dev_chars < 5:

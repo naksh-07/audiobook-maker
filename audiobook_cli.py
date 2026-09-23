@@ -6,6 +6,7 @@ Orchestrates the entire 3-pillar production pipeline from raw book to final M4B 
 
 import os
 import sys
+import re
 import argparse
 from pathlib import Path
 
@@ -103,11 +104,20 @@ def cmd_master(args):
         chap_stem = sf.stem.replace("_script", "")
         m = re.search(r"chapter_(\d+)", sf.stem)
         ch_num = int(m.group(1)) if m else 1
-        # Find audio segments for this chapter
-        segments = sorted(audio_dir.glob(f"c{ch_num:03d}_*.wav"))
-        if not segments:
+        # Find audio segments for this chapter, deduplicating multiple takes per segment
+        raw_segments = sorted(audio_dir.glob(f"c{ch_num:03d}_*.wav"))
+        if not raw_segments:
             print(f"[!] Warning: No audio segments found for chapter {ch_num}, skipping.")
             continue
+
+        seg_dict = {}
+        for p in raw_segments:
+            m_s = re.search(r"_s(\d{4})_", p.name)
+            if m_s:
+                s_idx = int(m_s.group(1))
+                if s_idx not in seg_dict or p.stat().st_mtime > seg_dict[s_idx].stat().st_mtime:
+                    seg_dict[s_idx] = p
+        segments = [seg_dict[k] for k in sorted(seg_dict.keys())] if seg_dict else raw_segments
 
         out_file = mastered_dir / f"{chap_stem}_mastered.m4a"
         concatenate_and_master_chapter(segments, out_file)
@@ -160,6 +170,8 @@ def cmd_bgm(args):
         if cand_scripts:
             with open(cand_scripts[0], "r", encoding="utf-8") as f:
                 script_data = json.load(f)
+        if isinstance(script_data, dict):
+            script_data = script_data.get("segments", script_data)
 
         manifest_file = manifests_dir / f"{chap_stem}_manifest.json"
         if manifest_file.exists():

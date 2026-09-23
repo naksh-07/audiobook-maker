@@ -126,6 +126,26 @@ The [`CatalogSeeder`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/aud
 python audiobook_cli.py bank seed
 ```
 
+### Pre-Baked Composite Asset Baker (ADR-018)
+Multi-phase sound design events (such as Harry Potter wand spells or complex tactile props) require multiple acoustic stages:
+1. **Phase A (Gesture Pre-Roll):** Air whoosh or wand flick ($0 - 100\text{ ms}$).
+2. **Phase B (Arcane Exciter):** Electric ionization spark or high chime ($100 - 300\text{ ms}$).
+3. **Phase C (Diegetic Impact / Dissipation):** Tuned 52Hz sub-bass thump and acoustic reverb tail.
+
+Rather than synthesizing these dynamically inside runtime FFmpeg graphs during chapter mastering (which risks filter graph overflows and process stalls), the offline composite baker pre-renders them:
+```bash
+python scripts/bake_foley_composites.py
+```
+This utility:
+- Renders high-fidelity composites using FFmpeg lavfi synthesizers (`magic_lumos_light.wav`, `magic_expelliarmus_kinetic.wav`, `tactile_parchment_quill_scratch.wav`).
+- Automatically ingests and indexes them into the local SQLite FTS5 Sound Bank catalog with tags (`magic`, `tactile`, `composite`, `lumos`, `quill`).
+- Guarantees sub-millisecond retrieval latency with zero runtime filter graph bloat.
+
+### Layer 4 Stochastic Spot Transients
+Environmental realism requires subtle, non-repetitive micro-events (distant owls, candle sparks, floor creaks, clock ticks, dripping water).
+- These assets are cataloged under the `FOL` and `AMB` categories with dedicated UCS tags (e.g. `DOORWood`, `WATRDrip`, `ANMLBird`).
+- The `generate_stochastic_cues` algorithm in `SceneSoundscapeManifest` queries the Sound Bank for candidate assets and strategically places them during speech pauses ($\ge 600\text{ ms}$) without consuming LLM tokens.
+
 ---
 
 ## 🔍 Querying the Sound Bank

@@ -225,8 +225,17 @@ def synthesize_gemini_tts(
             try:
                 with urllib.request.urlopen(req, timeout=90.0) as resp:
                     resp_json = json.loads(resp.read().decode("utf-8"))
+                    candidates = resp_json.get("candidates", [])
+                    if not candidates:
+                        fb = resp_json.get("promptFeedback", {})
+                        raise ValueError(f"Gemini TTS blocked generation (promptFeedback: {fb})")
+                    candidate = candidates[0]
+                    finish_reason = candidate.get("finishReason")
+                    if finish_reason in ("SAFETY", "RECITATION", "BLOCKLIST"):
+                        raise ValueError(f"Gemini TTS generation blocked by finishReason: {finish_reason}")
+
                     inline_data = {}
-                    parts = resp_json.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                    parts = candidate.get("content", {}).get("parts", [])
                     for p in parts:
                         if "inlineData" in p:
                             inline_data = p["inlineData"]
@@ -236,9 +245,10 @@ def synthesize_gemini_tts(
                         raise ValueError(f"No audio data found in Gemini response parts: {[p.get('text', '')[:40] for p in parts]}")
                     raw_pcm = base64.b64decode(b64_audio)
 
-                    # Convert 24kHz raw PCM to WAV
+                    # Convert 24kHz raw PCM to temporary WAV before SNR inspection
                     output_file.parent.mkdir(parents=True, exist_ok=True)
-                    with wave.open(str(output_file), "wb") as wf:
+                    tmp_file = output_file.with_suffix(".tmp.wav")
+                    with wave.open(str(tmp_file), "wb") as wf:
                         wf.setnchannels(1)
                         wf.setsampwidth(2)
                         wf.setframerate(24000)
@@ -292,6 +302,7 @@ def synthesize_gemini_tts(
 
                     has_defect = (is_clipped or is_silent_faint or is_dc_corrupted or is_stutter or is_empty or has_long_silence)
                     if has_defect:
+                        tmp_file.unlink(missing_ok=True)
                         reasons = []
                         if is_clipped: reasons.append("Clipping Distortion (Peak >= 0 dBFS)")
                         if is_silent_faint: reasons.append(f"Faint Audio (RMS {rms:.1f} < 30)")
@@ -312,6 +323,9 @@ def synthesize_gemini_tts(
                                 f"SNR Gatekeeper rejected segment audio after 3 failed attempts: {reason_str} "
                                 f"(dur={dur_sec:.1f}s, words={word_count}, peak={peak_amp}, rms={rms:.1f})"
                             )
+
+                    # Atomically promote verified audio to target destination
+                    tmp_file.replace(output_file)
 
                     # Record success in persistent key pool
                     pool.record_success(api_key)
@@ -472,7 +486,7 @@ class TTSDispatcher:
             action_hash = hashlib.md5(cache_key).hexdigest()[:8]
             out_file = self.audio_dir / f"c{chapter_num:03d}_s{seg_num:04d}_{action_hash}.wav"
 
-            if not (out_file.exists() and out_file.stat().st_size > 1000):
+            if not (out_file.exists() and out_file.stat().st_size > 44):
                 out_file.parent.mkdir(parents=True, exist_ok=True)
                 sample_rate = 24000
                 num_frames = int(round(sample_rate * dur))

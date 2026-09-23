@@ -55,6 +55,7 @@ class CreativeManifest(BaseModel):
     silence_percentage: float = 100.0  # Mandate: Must be >= 60.0%
     mastering: MasteringConfig = MasteringConfig()
     ambience_scenes: List[AmbienceScene] = []
+    scene_acoustics: Optional[Any] = None  # Decoupled 4-stem SceneSoundscapeManifest
     music_cues: List[MusicCue] = []
     foley_cues: List[FoleyCue] = []
     total_duration_ms: Optional[int] = 0
@@ -62,6 +63,10 @@ class CreativeManifest(BaseModel):
 
     def validate_acoustic_rules(self, total_duration_ms: Optional[int] = None) -> None:
         """Enforces the >= 60.0% acoustic silence mandate against music cue durations."""
+
+    @model_validator(mode="after")
+    def parse_scene_acoustics(self) -> "CreativeManifest":
+        """Rehydrates raw scene_acoustics dictionary into typed SceneSoundscapeManifest upon JSON load."""
 
     def to_dict(self) -> Dict[str, Any]: ...
     def to_json(self, indent: int = 2) -> str: ...
@@ -136,6 +141,7 @@ class FoleyCue(BaseModel):
     reverb_send: float = 0.15           # Send level to shared reverb
     start_ms: Optional[int] = 0
     duration_ms: Optional[int] = 0
+    ucs_category: Optional[str] = "MISCGnl" # Universal Category System (UCS) Category ID
     is_lfe_sub_drop: bool = False       # Triggers 50Hz sub-bass physical impact weight
     trajectory: str = "static"          # 'static', 'left_to_right', 'right_to_left', 'center_zoom'
 ```
@@ -162,7 +168,55 @@ class MasteringConfig(BaseModel):
     spectral_carve_gain_db: float = -5.5
 ```
 
-### 6. `TimelineSegment` & `TimelineLedger`
+### 6. `SceneSoundscapeManifest`, `SceneAcousticProfile` & `AmbienceLayer`
+*Decoupled 4-stem scene acoustics, spatial barrier occlusion, and stochastic spot transient configuration.*
+
+```python
+class AmbienceLayer(BaseModel):
+    layer_type: Literal["base_room_tone", "weather_elements", "crowd_wallah", "spot_stochastic"]
+    asset_path: str                     # Asset filename or path in sound bank
+    target_lufs: float = -32.0          # Loudness target (-60.0 to -15.0 LUFS)
+    stereo_width: float = 1.0           # Stereo spread factor (1.0 = native stereo)
+    azimuth_pan: float = 0.0            # Spatial pan coordinate (-1.0 to +1.0)
+    high_pass_hz: Optional[int] = None  # Low-cut filter frequency in Hz
+    low_pass_hz: Optional[int] = None   # High-cut distance damping frequency in Hz
+    loop: bool = True                   # Seamlessly loop across scene
+    stochastic_interval_sec: Optional[float] = None # Period for spot triggers (e.g. 35.0s)
+
+class SceneAcousticProfile(BaseModel):
+    scene_id: str                       # e.g. 'sc_001_great_hall'
+    act_index: int = 1                  # Dramatic act grouping
+    start_ms: int = 0                   # Timeline start in ms
+    end_ms: int = 0                     # Timeline end in ms
+    environment_id: str = "default"     # WorldAcousticProfile ID
+    ir_preset: str = "room"             # Reverberation impulse response preset
+    layers: List[AmbienceLayer] = []    # Up to 4 decoupled ambient stems
+    transition_in: Literal["cut", "crossfade", "fade_from_silence"] = "crossfade"
+    transition_out: Literal["cut", "crossfade", "fade_to_silence"] = "crossfade"
+    crossfade_ms: int = 2500            # Crossfade duration in ms
+    occlusion_cutoff_hz: int = 18000    # Low-pass barrier occlusion frequency (e.g. 1400Hz indoor)
+
+class SceneSoundscapeManifest(BaseModel):
+    schema_version: str = "2.0"
+    chapter_id: str
+    scenes: List[SceneAcousticProfile] = []
+    metadata: Dict[str, Any] = {}
+
+    def add_scene(self, scene: SceneAcousticProfile) -> None: ...
+    def save_to_disk(self, target_path: Union[str, Path]) -> Path: ...
+    @classmethod
+    def load_from_disk(cls, source_path: Union[str, Path]) -> SceneSoundscapeManifest: ...
+    def audit_scene_acoustics_integrity(self, sound_bank: Optional[Any] = None) -> Dict[str, Any]: ...
+    def generate_stochastic_cues(
+        self,
+        timeline_ledger: Optional[Any] = None,
+        sound_bank: Optional[Any] = None,
+        seed: int = 42,
+    ) -> List[Any]:
+        """Procedurally places Layer 4 stochastic spot transients in pause gaps (>= 600ms)."""
+```
+
+### 7. `TimelineSegment` & `TimelineLedger`
 *Gate 4.5 sample-accurate transcript and millisecond timeline ledger.*
 
 ```python
@@ -196,7 +250,7 @@ class TimelineLedger(BaseModel):
     def from_file(cls, path: str | Path) -> TimelineLedger: ...
 ```
 
-### 7. `BookMasterManifest` & Macro Contracts
+### 8. `BookMasterManifest` & Macro Contracts
 *Macro-tier book-level contracts aggregating voice roster, lore bible, TOC, and packaging.*
 
 ```python
@@ -385,6 +439,15 @@ class TTSDispatcher:
     ) -> List[Path]:
         """Synthesizes all segments in a chapter script with token-bucket rate limiting."""
 
+def synthesize_gemini_tts(
+    text: str,
+    voice_name: str,
+    api_key: str,
+    model_id: str = "gemini-3.1-flash-tts-preview",
+    rate_limit_pause: float = 0.5,
+) -> bytes:
+    """Synthesizes PCM audio chunk with explicit safetySettings: [BLOCK_NONE] across all 4 categories."""
+
 def probe_key_health(api_key: str) -> bool:
     """Verifies API key validity and active quota with Google AI Studio."""
 ```
@@ -460,8 +523,17 @@ class DuckingProfile(BaseModel):
     spectral_carve_hz: int = 2400
     spectral_carve_depth_db: float = -6.0
 
+PROFILE_COMBAT_SHOCK = DuckingProfile(profile_name="combat_shock", attenuation_db=-24.0, release_ms=4000)
+PROFILE_COMBAT = DuckingProfile(profile_name="combat_shouting", attenuation_db=-22.0, release_ms=250)
+
 def get_ducking_profile(name_or_scene_type: str) -> DuckingProfile: ...
 def derive_ucs_category(action_verb_or_cue: str, exciter: str = "") -> str: ...
+def filter_concurrency_window(
+    foley_cues: List[FoleyCue],
+    window_ms: int = 200,
+    max_concurrency: int = 3,
+) -> List[FoleyCue]:
+    """Applies voice limiter & priority stealing to prevent transient clumping within 200ms."""
 ```
 
 ### `UniversalSoundBankIngester` ([`audiobook_factory.sound_bank_ingest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank_ingest.py))
@@ -539,6 +611,33 @@ def package_m4b_audiobook(
     enforce_gate6: bool = False,
 ) -> Path:
     """Validates AAC streams (is_all_aac); automatically transcodes uncompressed WAV or non-AAC chapters to AAC 192k."""
+
+def _escape_ffmetadata(val: Any) -> str:
+    """Escapes special characters (=, ;, #, \\) for FFMETADATA1 specification."""
+
+def generate_ffmetadata(
+    metadata: Dict[str, Any],
+    chapter_durations: List[Dict[str, Any]],
+    output_file: Path,
+) -> Path:
+    """Generates standard FFMETADATA1 file with escaped title, artist, and chapter timestamps."""
+```
+
+### `Foley & Magic Composite Baker` ([`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py))
+*Offline pre-rendering of multi-phase Harry Potter magic spells and tactile props, indexed into SQLite FTS5.*
+
+```python
+def bake_composite(
+    output_path: Path,
+    filter_complex: str,
+    inputs: List[str],
+    duration_sec: float = 2.0,
+    ffmpeg: str = "ffmpeg",
+) -> bool:
+    """Renders a single pre-baked composite asset via FFmpeg with zero runtime filter graph bloat."""
+
+def bake_all_magic_and_foley_composites() -> None:
+    """Pre-bakes the core Harry Potter & fantasy tactile composite sound set and indexes them into Sound Bank."""
 ```
 
 ---
