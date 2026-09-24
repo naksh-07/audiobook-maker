@@ -49,6 +49,33 @@ FORBIDDEN_CHARACTERS = {
     "keira",
 }
 
+# Devanagari transliterations of forbidden characters to close multi-script blind spots
+FORBIDDEN_CHARACTERS_DEVANAGARI = {
+    "गेराल्ट",
+    "डैंडेलियन",
+    "निवेलेन",
+    "ब्रुक्सा",
+    "येनेफ़र",
+    "फॉलटेस्ट",
+    "सिरी",
+    "नेनेके",
+    "वेलेराड",
+    "कैलांथे",
+    "पावेत्ता",
+    "डन्नी",
+    "रेन्फ्री",
+    "स्ट्रेगोबोर",
+    "रोच",
+    "वेसेमिर",
+    "एस्केल",
+    "लैम्बर्ट",
+    "राडोविद",
+    "एम्हिर",
+    "डाइक्स्ट्रा",
+    "फिलिपा",
+    "कीरा",
+}
+
 # Known hardcoded soundtrack track bases (covers snake_case, title case, and numbered tracks)
 FORBIDDEN_SOUNDTRACK_BASES = {
     "the trail",
@@ -102,16 +129,17 @@ CORE_ENGINE_FILES = {
 
 def _split_into_word_tokens(text: str) -> Set[str]:
     """
-    Splits text into individual normalized word tokens, handling:
+    Splits text into individual normalized word tokens across Latin and Indic (Devanagari) scripts:
     - snake_case (e.g. 'meet_bruxa' -> 'meet', 'bruxa')
     - kebab-case (e.g. 'meet-bruxa' -> 'meet', 'bruxa')
     - camelCase / PascalCase (e.g. 'meetBruxa' -> 'meet', 'bruxa')
     - numbered prefixes (e.g. '001_geralt' -> '001', 'geralt')
+    - Devanagari words (e.g. 'नमस्ते, गेराल्ट' -> 'नमस्ते', 'गेराल्ट')
     """
     # First split camelCase: insert space before uppercase preceded by lowercase
     expanded = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
-    # Split non-alphanumeric
-    words = re.split(r"[^a-zA-Z0-9]+", expanded.lower())
+    # Split non-alphanumeric (splits on _, -, spaces, punctuation, preserving alphanumeric and Devanagari)
+    words = re.split(r"[^a-zA-Z0-9\u0900-\u097F]+", expanded.lower())
     return {w for w in words if w}
 
 
@@ -129,8 +157,9 @@ def scan_for_forbidden_characters(py_file_path: Path, tree: ast.AST) -> List[Tup
 
     def check_text(text: str, node_type: str, lineno: int):
         words = _split_into_word_tokens(text)
-        matched = words & FORBIDDEN_CHARACTERS
-        for m in matched:
+        matched_latin = words & FORBIDDEN_CHARACTERS
+        matched_dev = words & FORBIDDEN_CHARACTERS_DEVANAGARI
+        for m in (matched_latin | matched_dev):
             violations.append((lineno, node_type, m))
 
     for node in ast.walk(tree):
@@ -369,6 +398,8 @@ class TestZeroHardcodingContracts(unittest.TestCase):
 def process_scene():
     hero = "Geralt"
     sidekick = "Dandelion"
+    dev_hero = "सलाम, गेराल्ट"
+    dev_bard = "डैंडेलियन"
     def meet_bruxa():
         pass
     def meetBruxa():
@@ -382,6 +413,8 @@ def process_scene():
         self.assertIn("dandelion", found_chars)
         self.assertIn("bruxa", found_chars)
         self.assertIn("yennefer", found_chars)
+        self.assertIn("गेराल्ट", found_chars)
+        self.assertIn("डैंडेलियन", found_chars)
 
         # 2. Test chapter branching condition detection
         bad_branch_codes = [

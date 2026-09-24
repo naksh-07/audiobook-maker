@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Cloud AI Semantic Profiler & Sonic Genome Synthesizer.
-Consumes scratch/witcher3_dsp_profiles.json, prompts Gemini Flash via the Key Pool,
-synthesizes Russell valence/arousal, 5 functional archetypes, Slavic instruments,
+Consumes scratch/bgm_dsp_profiles.json, prompts Gemini Flash via the Key Pool,
+synthesizes Russell valence/arousal, 5 functional archetypes, instruments,
 and story triggers, then updates sound_bank.db with full Sonic Genome JSON and indices.
 """
 
@@ -23,8 +23,8 @@ logger = logging.getLogger("enrich_sonic_genome")
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT_DIR / "audiobooks" / "sound_bank" / "sound_bank.db"
-INPUT_DSP_JSON = ROOT_DIR / "scratch" / "witcher3_dsp_profiles.json"
-OUTPUT_GENOMES_JSON = ROOT_DIR / "scratch" / "witcher3_sonic_genomes_complete.json"
+INPUT_DSP_JSON = ROOT_DIR / "scratch" / "bgm_dsp_profiles.json"
+OUTPUT_GENOMES_JSON = ROOT_DIR / "scratch" / "bgm_sonic_genomes_complete.json"
 
 
 def ensure_db_schema(conn: sqlite3.Connection):
@@ -62,7 +62,7 @@ def build_prompt_for_batch(batch: List[Dict[str, Any]]) -> str:
         meta = item.get("id3_metadata", {})
         ac = item.get("acoustic", {})
         title = meta.get("title", item.get("filename", ""))
-        artist = meta.get("artist", "Marcin Przybyłowicz")
+        artist = meta.get("artist", "Unknown Artist")
         dur = meta.get("duration_sec", 0.0)
         bpm = ac.get("bpm", 90.0)
         vocal_risk = ac.get("vocal_clash_risk", "LOW")
@@ -75,8 +75,8 @@ def build_prompt_for_batch(batch: List[Dict[str, Any]]) -> str:
             "vocal_clash_risk": vocal_risk,
         })
 
-    prompt = f"""You are the Master Music Supervisor and Lead Audio Drama Director for The Witcher universe.
-Analyze the following soundtrack tracks from The Witcher 3: Wild Hunt (Composed by Marcin Przybyłowicz, Mikolai Stroinski, and Percival Schuttenbach).
+    prompt = f"""You are the Master Music Supervisor and Lead Audio Drama Director for cinematic audiobook production.
+Analyze the following soundtrack tracks for dramatic scoring and emotional alignment.
 
 For each track, return a structured JSON object keyed by the string track_id containing:
 - valence: float between -1.0 (grim, despair, tragic death) and +1.0 (triumphant victory, joyful tavern merriment)

@@ -551,7 +551,7 @@ def clean_screenplay_pass2(
         elif speaker_lower.replace(" ", "_") in alias_map:
             speaker = alias_map[speaker_lower.replace(" ", "_")]
         else:
-            # Check parenthetical annotations e.g. "Geralt (Witcher)" or "विचर (गेराल्ट)"
+            # Check parenthetical annotations e.g. "Hero (Warrior)" or "नायक (योद्धा)"
             m = re.search(r"\(([^)]+)\)", speaker)
             if m:
                 inner = m.group(1).strip().lower()

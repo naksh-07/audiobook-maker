@@ -351,11 +351,11 @@ class SoundBank:
         tokens = re.findall(r"[a-z0-9]+", name_lower + " " + " ".join(parts[-3:]))
         combined_text = name_lower + " " + " ".join(parts[-3:])
         semantic_expansions = {
-            "igni": ["igni", "fire", "flame", "whoosh", "burst", "combustion", "spell", "magic", "blaze", "heat", "pyromancy", "witcher"],
-            "aard": ["aard", "shockwave", "blast", "concussive", "telekinetic", "push", "force", "air", "wave", "kinetic", "impact", "witcher"],
-            "quen": ["quen", "shield", "barrier", "protection", "forcefield", "hum", "resonance", "armor", "defense", "ward", "witcher"],
-            "axii": ["axii", "hypnotic", "chime", "charm", "psychic", "mind", "control", "stun", "daze", "calm", "suggestion", "witcher"],
-            "yrden": ["yrden", "trap", "glyph", "arcane", "circle", "spark", "electric", "zap", "binding", "slow", "rune", "witcher"],
+            "igni": ["igni", "fire", "flame", "whoosh", "burst", "combustion", "spell", "magic", "blaze", "heat", "pyromancy"],
+            "aard": ["aard", "shockwave", "blast", "concussive", "telekinetic", "push", "force", "air", "wave", "kinetic", "impact"],
+            "quen": ["quen", "shield", "barrier", "protection", "forcefield", "hum", "resonance", "armor", "defense", "ward"],
+            "axii": ["axii", "hypnotic", "chime", "charm", "psychic", "mind", "control", "stun", "daze", "calm", "suggestion"],
+            "yrden": ["yrden", "trap", "glyph", "arcane", "circle", "spark", "electric", "zap", "binding", "slow", "rune"],
             "striga": ["striga", "monster", "beast", "roar", "screech", "demonic", "creature", "horror", "growl", "predator", "curse"],
             "ghoul": ["ghoul", "monster", "creature", "snarl", "growl", "necrophage", "scavenge", "flesh", "tear", "bite", "alghoul"],
             "wolf": ["wolf", "wolves", "howl", "howling", "canine", "pack", "wild", "beast", "predator", "forest", "night"],

@@ -8,7 +8,7 @@
       "gate_id": "T0",
       "gate_name": "Source Text Integrity & Word Count Sanity",
       "status": "PASS",
-      "details": "Source: 513 words | Target: 582 words",
+      "details": "Source: 513 words | Target: 583 words",
       "warnings": [],
       "failures": []
     },
@@ -17,28 +17,7 @@
       "gate_name": "Terminology & Entity Consistency",
       "status": "PASS",
       "details": "Forbidden variants: 0",
-      "warnings": [
-        "Expected canonical term 'Geralt' for 'Geralt' was not explicitly matched in target text.",
-        "Expected canonical term 'Are' for 'Are' was not explicitly matched in target text.",
-        "Expected canonical term 'Do' for 'Do' was not explicitly matched in target text.",
-        "Expected canonical term 'You' for 'You' was not explicitly matched in target text.",
-        "Expected canonical term 'Who' for 'Who' was not explicitly matched in target text.",
-        "Expected canonical term 'No' for 'No' was not explicitly matched in target text.",
-        "Expected canonical term 'Dandilion' for 'Dandilion' was not explicitly matched in target text.",
-        "Expected canonical term 'That' for 'That' was not explicitly matched in target text.",
-        "Expected canonical term 'As' for 'As' was not explicitly matched in target text.",
-        "Expected canonical term 'Your' for 'Your' was not explicitly matched in target text.",
-        "Expected canonical term 'And' for 'And' was not explicitly matched in target text.",
-        "Expected canonical term 'So' for 'So' was not explicitly matched in target text.",
-        "Expected canonical term 'Ah' for 'Ah' was not explicitly matched in target text.",
-        "Expected canonical term 'This' for 'This' was not explicitly matched in target text.",
-        "Expected canonical term 'Not' for 'Not' was not explicitly matched in target text.",
-        "Expected canonical term 'Something' for 'Something' was not explicitly matched in target text.",
-        "Expected canonical term 'But' for 'But' was not explicitly matched in target text.",
-        "Expected canonical term 'To' for 'To' was not explicitly matched in target text.",
-        "Expected canonical term 'Gulet' for 'Gulet' was not explicitly matched in target text.",
-        "Expected canonical term 'दुनिया का छोर' for 'The Edge of the World' was not explicitly matched in target text."
-      ],
+      "warnings": [],
       "failures": []
     },
     "T2_semantic_fidelity": {

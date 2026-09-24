@@ -7,16 +7,12 @@
       "beat_id": "scene_002_b001",
       "paragraph_idx": 0,
       "source_sentence": "Because  it  was  us,  human  beings,  who  were  the  intruders  here.",
-      "actors": [
-        "Who"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "Who"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -25,19 +21,12 @@
       "beat_id": "scene_002_b002",
       "paragraph_idx": 0,
       "source_sentence": "This  land was ruled by dragons, manticores, griffins and amphisboenas, vampires and werewolves, striga, kikimoras, chimera and flying drakes.",
-      "actors": [
-        "And"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "This"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "And",
-        "This"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -46,21 +35,12 @@
       "beat_id": "scene_002_b003",
       "paragraph_idx": 0,
       "source_sentence": "And this land had to be taken from them bit by bit, every valley, every mountain pass, every forest and every meadow.",
-      "actors": [
-        "And"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "This",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "And",
-        "This",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -69,22 +49,15 @@
       "beat_id": "scene_002_b004",
       "paragraph_idx": 0,
       "source_sentence": "And we didn't manage that without the invaluable help of witchers.",
-      "actors": [
-        "That"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And"
-      ],
+      "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "didn't",
         "without"
       ],
-      "key_entities": [
-        "That",
-        "And"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -97,14 +70,11 @@
         "Geralt"
       ],
       "action": "",
-      "recipients": [
-        "But"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
       "key_entities": [
-        "Geralt",
-        "But"
+        "Geralt"
       ],
       "key_objects": [],
       "is_dialogue": false,
@@ -114,29 +84,18 @@
       "beat_id": "scene_002_b006",
       "paragraph_idx": 0,
       "source_sentence": "The baron won't allow a fork-tail to be killed because it's the last draconid for a thousand miles and no longer gives rise to fear but rather to compassion and nostalgia for times passed.",
-      "actors": [
-        "No"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And",
-        "But",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "won't",
         "no"
       ],
-      "key_entities": [
-        "No",
-        "And",
-        "But",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "No"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b007",
@@ -156,21 +115,14 @@
       "beat_id": "scene_002_b008",
       "paragraph_idx": 1,
       "source_sentence": "He's  not  a  monster  used  to  frighten  children.",
-      "actors": [
-        "Not"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "not"
       ],
-      "key_entities": [
-        "Not",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -179,19 +131,12 @@
       "beat_id": "scene_002_b009",
       "paragraph_idx": 1,
       "source_sentence": "He's  a  relic  and  a  local attraction — and  a  useful  one  at  that.",
-      "actors": [
-        "That"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "That",
-        "And"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -200,16 +145,12 @@
       "beat_id": "scene_002_b010",
       "paragraph_idx": 1,
       "source_sentence": "And  chimera,  manticores  and amphisboenas?",
-      "actors": [
-        "And"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "And"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -218,16 +159,12 @@
       "beat_id": "scene_002_b011",
       "paragraph_idx": 1,
       "source_sentence": "They dwell in virgin forests and inaccessible mountains — \"",
-      "actors": [
-        "And"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "And"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -236,16 +173,12 @@
       "beat_id": "scene_002_b012",
       "paragraph_idx": 2,
       "source_sentence": "\"So I was right.",
-      "actors": [
-        "So"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "So"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -254,19 +187,12 @@
       "beat_id": "scene_002_b013",
       "paragraph_idx": 2,
       "source_sentence": "Something is coming to an end.",
-      "actors": [
-        "Something"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "Something",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -275,70 +201,46 @@
       "beat_id": "scene_002_b014",
       "paragraph_idx": 2,
       "source_sentence": "Whether you like it or not, something's coming to an end.\"",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "Not",
-        "Something",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "not"
       ],
-      "key_entities": [
-        "You",
-        "Not",
-        "Something",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "You"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b015",
       "paragraph_idx": 3,
       "source_sentence": "\"I don't like you mouthing banal platitudes.",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "don't"
       ],
-      "key_entities": [
-        "You"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "You"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b016",
       "paragraph_idx": 3,
       "source_sentence": "I don't like your expression when you do it.",
-      "actors": [
-        "Do"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "You",
-        "Your"
-      ],
+      "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "don't"
       ],
-      "key_entities": [
-        "Do",
-        "You",
-        "Your"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -347,19 +249,12 @@
       "beat_id": "scene_002_b017",
       "paragraph_idx": 3,
       "source_sentence": "What's happening to you?",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -372,16 +267,13 @@
         "Geralt"
       ],
       "action": "",
-      "recipients": [
-        "You"
-      ],
+      "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "don't"
       ],
       "key_entities": [
-        "Geralt",
-        "You"
+        "Geralt"
       ],
       "key_objects": [],
       "is_dialogue": false,
@@ -391,21 +283,12 @@
       "beat_id": "scene_002_b019",
       "paragraph_idx": 3,
       "source_sentence": "Ah, plague on it, let's go south as soon as possible, to those wild countries.",
-      "actors": [
-        "As"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "Ah",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "As",
-        "Ah",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -414,21 +297,12 @@
       "beat_id": "scene_002_b020",
       "paragraph_idx": 3,
       "source_sentence": "As soon  as  you've  cut  down  a  couple  of  monsters,  your  blues  will  disappear.",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "As",
-        "Your"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "As",
-        "Your"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -437,19 +311,12 @@
       "beat_id": "scene_002_b021",
       "paragraph_idx": 4,
       "source_sentence": "And there's supposed to be a fair number of monsters down there.",
-      "actors": [
-        "And"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "And",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -472,21 +339,12 @@
       "beat_id": "scene_002_b023",
       "paragraph_idx": 5,
       "source_sentence": "that when an old woman's tired of life, she goes alone and weaponless into the  woods  to  collect  brushwood.",
-      "actors": [
-        "That"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "That",
-        "And",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -495,16 +353,12 @@
       "beat_id": "scene_002_b024",
       "paragraph_idx": 5,
       "source_sentence": "The  consequences  are  guaranteed.",
-      "actors": [
-        "Are"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "Are"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -513,19 +367,12 @@
       "beat_id": "scene_002_b025",
       "paragraph_idx": 5,
       "source_sentence": "You should go and settle there for good.\"",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "And"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -548,21 +395,17 @@
       "beat_id": "scene_002_b027",
       "paragraph_idx": 6,
       "source_sentence": "But I won't.\"",
-      "actors": [
-        "But"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "won't"
       ],
-      "key_entities": [
-        "But"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "But"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b028",
@@ -582,19 +425,15 @@
       "beat_id": "scene_002_b029",
       "paragraph_idx": 7,
       "source_sentence": "It's easier for a witcher to make money there.\"",
-      "actors": [
-        "To"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "To"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b030",
@@ -604,14 +443,11 @@
         "Geralt"
       ],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
       "key_entities": [
-        "Geralt",
-        "To"
+        "Geralt"
       ],
       "key_objects": [],
       "is_dialogue": true,
@@ -621,19 +457,12 @@
       "beat_id": "scene_002_b031",
       "paragraph_idx": 8,
       "source_sentence": "\"But harder to spend it.",
-      "actors": [
-        "But"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "But",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -642,24 +471,17 @@
       "beat_id": "scene_002_b032",
       "paragraph_idx": 8,
       "source_sentence": "And on top of that, they eat pearl barley and millet, the beer tastes like piss, the girls don't wash and the mosquitoes bite.\"",
-      "actors": [
-        "That"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And"
-      ],
+      "recipients": [],
       "has_negation": true,
       "negation_keywords": [
         "don't"
       ],
-      "key_entities": [
-        "That",
-        "And"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "That"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b033",
@@ -669,14 +491,11 @@
         "Dandilion"
       ],
       "action": "",
-      "recipients": [
-        "And"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
       "key_entities": [
-        "Dandilion",
-        "And"
+        "Dandilion"
       ],
       "key_objects": [],
       "is_dialogue": false,
@@ -686,16 +505,12 @@
       "beat_id": "scene_002_b034",
       "paragraph_idx": 10,
       "source_sentence": "\"Millet and mosquitoes!",
-      "actors": [
-        "And"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "And"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -704,19 +519,12 @@
       "beat_id": "scene_002_b035",
       "paragraph_idx": 10,
       "source_sentence": "That reminds me of our first expedition together to the edge of the world,\" he said.",
-      "actors": [
-        "That"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "That",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -725,19 +533,12 @@
       "beat_id": "scene_002_b036",
       "paragraph_idx": 10,
       "source_sentence": "\"Do you remember?",
-      "actors": [
-        "Do"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "You"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "Do",
-        "You"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -746,21 +547,12 @@
       "beat_id": "scene_002_b037",
       "paragraph_idx": 10,
       "source_sentence": "We met at the fête in Gulet and you persuaded me — \"",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And",
-        "Gulet"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "And",
-        "Gulet"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -769,16 +561,12 @@
       "beat_id": "scene_002_b038",
       "paragraph_idx": 11,
       "source_sentence": "\"You  persuaded  me!",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -787,28 +575,15 @@
       "beat_id": "scene_002_b039",
       "paragraph_idx": 11,
       "source_sentence": "You  had  to  flee  from  Gulet  as  fast  as  your  horse could  carry  you  because  the  girl  you'd  knocked  up  under  the  musicians'",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "As",
-        "Your",
-        "To",
-        "Gulet"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "As",
-        "Your",
-        "To",
-        "Gulet"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "You"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b040",
@@ -828,21 +603,12 @@
       "beat_id": "scene_002_b041",
       "paragraph_idx": 12,
       "source_sentence": "They were looking for you all over town, threatening to geld you and cover you in pitch and sawdust.",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "And",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "And",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -851,46 +617,26 @@
       "beat_id": "scene_002_b042",
       "paragraph_idx": 12,
       "source_sentence": "That's why you hung on to me then.\"",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "That",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "That",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": true,
-      "speaker": "You"
+      "speaker": null
     },
     {
       "beat_id": "scene_002_b043",
       "paragraph_idx": 13,
       "source_sentence": "\"And  you  almost  jumped  out  of  your  pants  with  joy  to  have  a companion.",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "Your",
-        "And",
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "Your",
-        "And",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -899,19 +645,12 @@
       "beat_id": "scene_002_b044",
       "paragraph_idx": 13,
       "source_sentence": "Until  then,  you  only  had  your  horse  for  company.",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "Your"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "Your"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -920,21 +659,12 @@
       "beat_id": "scene_002_b045",
       "paragraph_idx": 13,
       "source_sentence": "But  you're right; it was as you say.",
-      "actors": [
-        "You"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "As",
-        "But"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "You",
-        "As",
-        "But"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -943,19 +673,12 @@
       "beat_id": "scene_002_b046",
       "paragraph_idx": 13,
       "source_sentence": "I did have to disappear for a while, and the Valley of Flowers seemed just right for my purpose.",
-      "actors": [
-        "And"
-      ],
+      "actors": [],
       "action": "",
-      "recipients": [
-        "To"
-      ],
+      "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "And",
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null
@@ -964,16 +687,12 @@
       "beat_id": "scene_002_b047",
       "paragraph_idx": 13,
       "source_sentence": "It was, after all, supposed to be  the  edge  of  the  inhabited  world,  the  last  outpost  of  civilization,  the furthest point on the border of two worlds...Remember?\"",
-      "actors": [
-        "To"
-      ],
+      "actors": [],
       "action": "",
       "recipients": [],
       "has_negation": false,
       "negation_keywords": [],
-      "key_entities": [
-        "To"
-      ],
+      "key_entities": [],
       "key_objects": [],
       "is_dialogue": false,
       "speaker": null

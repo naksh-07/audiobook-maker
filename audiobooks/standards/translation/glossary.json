@@ -1,0 +1,62 @@
+{
+  "characters": [
+    {
+      "english_name": "Geralt",
+      "hindi_name": "गेराल्ट",
+      "gender": "other",
+      "voice_style": "laconic mutant monster hunter",
+      "recommended_pronoun_level": "tum",
+      "hindustani_archetype": "COLD_CYNIC"
+    },
+    {
+      "english_name": "Dandilion",
+      "hindi_name": "डैंडेलियन",
+      "gender": "other",
+      "voice_style": "flamboyant bard and poet",
+      "recommended_pronoun_level": "tum",
+      "hindustani_archetype": "WITTY_POET"
+    },
+    {
+      "english_name": "Nenneke",
+      "hindi_name": "नेनेके",
+      "gender": "other",
+      "voice_style": "mother superior of Melitele temple",
+      "recommended_pronoun_level": "tum",
+      "hindustani_archetype": "AUTHORITATIVE_MATRON"
+    },
+    {
+      "english_name": "Roderick de Novembre",
+      "hindi_name": "रोड्रिक डी नोवम्ब्रे",
+      "gender": "other",
+      "voice_style": "chronicler and historian",
+      "recommended_pronoun_level": "tum",
+      "hindustani_archetype": "HISTORIAN"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "Geralt",
+      "to": "Dandilion",
+      "level": "tum"
+    },
+    {
+      "from": "Geralt",
+      "to": "Nenneke",
+      "level": "aap"
+    },
+    {
+      "from": "Dandilion",
+      "to": "Nenneke",
+      "level": "tu"
+    }
+  ],
+  "locations_and_terms": {
+    "Melitele": "मेलीतेले",
+    "Ellander": "एलैंडर",
+    "Buina": "बुइना",
+    "Gulet": "गुलेट",
+    "Valley of Flowers": "फूलों की घाटी",
+    "Witcher": "विचर"
+  },
+  "general_tone": "gritty third-person cinematic fantasy"
+}

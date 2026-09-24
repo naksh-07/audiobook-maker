@@ -19,24 +19,64 @@ from audiobook_factory.gate_auditor import (
 )
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-PROJECT_DIR = ROOT_DIR / "audiobooks" / "projects" / "witcher1"
 
 
 class TestMultiGateAuditor(unittest.TestCase):
-    def test_chapter_5_full_audit(self):
-        """Verify Chapter 5 passes all gates with 0 collisions and 100% coverage."""
-        if not PROJECT_DIR.exists():
-            self.skipTest("witcher1 project directory not present (project completed and retired).")
-        active_cast = ["Narrator", "Geralt", "Nenneke", "Falwick", "Tailles"]
-        report = audit_chapter_gates(PROJECT_DIR, chapter_num=5, active_speakers=active_cast)
+    def test_chapter_gates_full_audit_synthetic(self):
+        """Verify multi-gate chapter auditor validates end-to-end against a canonical project structure."""
+        import tempfile
+        import json
 
-        self.assertEqual(report["gate_0"]["status"], "PASS")
-        self.assertEqual(report["gate_1"]["status"], "PASS")
-        self.assertEqual(report["gate_2"]["status"], "PASS")
-        self.assertEqual(report["gate_3"]["status"], "PASS")
-        self.assertEqual(report["overall_status"], "ALL GATES 100% PASSED")
-        self.assertEqual(report["gate_2"]["total_segments"], 49)
-        self.assertEqual(report["gate_3"]["total_acts"], 4)
+        with tempfile.TemporaryDirectory() as td:
+            pdir = Path(td)
+            ext_dir = pdir / "extracted"
+            trans_dir = pdir / "translation"
+            scripts_dir = pdir / "scripts"
+            ext_dir.mkdir(parents=True, exist_ok=True)
+            trans_dir.mkdir(parents=True, exist_ok=True)
+            scripts_dir.mkdir(parents=True, exist_ok=True)
+
+            ch_str = "chapter_001"
+            (ext_dir / f"{ch_str}.md").write_text(
+                "The hero walked through the mist into the ancient mountain fortress. The cold winds howled fiercely across the stone walls.\n" * 2,
+                encoding="utf-8"
+            )
+            (trans_dir / f"{ch_str}_hi.md").write_text(
+                "नायक कोहरे के बीच से प्राचीन पहाड़ी किले में दाखिल हुआ। ठंडी हवाएं पत्थर की दीवारों से टकराकर सनसना रही थीं।\n" * 2,
+                encoding="utf-8"
+            )
+
+            roster_data = {
+                "characters": {
+                    "Narrator": {"voice_persona": "Aoede", "gender": "female"},
+                    "Hero": {"voice_persona": "Fenrir", "gender": "male"}
+                }
+            }
+            (pdir / "character_roster.json").write_text(json.dumps(roster_data), encoding="utf-8")
+
+            reg_data = {
+                "Narrator": {"voice": "Aoede", "pitch": 1.0, "speed": 1.0},
+                "Hero": {"voice": "Fenrir", "pitch": 1.0, "speed": 1.0}
+            }
+            (pdir / "voice_registry.json").write_text(json.dumps(reg_data), encoding="utf-8")
+
+            script_data = {
+                "chapter_num": 1,
+                "segments": [
+                    {"index": 1, "type": "narration", "speaker": "Narrator", "text": "नायक कोहरे के बीच से प्राचीन पहाड़ी किले में दाखिल हुआ।"},
+                    {"index": 2, "type": "dialogue", "speaker": "Hero", "text": "कोई है यहाँ?"}
+                ]
+            }
+            (scripts_dir / f"{ch_str}_hi_script.json").write_text(json.dumps(script_data), encoding="utf-8")
+
+            report = audit_chapter_gates(pdir, chapter_num=1, active_speakers=["Narrator", "Hero"])
+
+            self.assertEqual(report["gate_0"]["status"], "PASS")
+            self.assertEqual(report["gate_1"]["status"], "PASS")
+            self.assertEqual(report["gate_2"]["status"], "PASS")
+            self.assertEqual(report["gate_3"]["status"], "PASS")
+            self.assertEqual(report["overall_status"], "ALL GATES 100% PASSED")
+            self.assertEqual(report["gate_2"]["total_segments"], 2)
 
     def test_voice_collision_detection(self):
         """Verify Gate 1 catches deliberate voice collisions."""
@@ -82,11 +122,22 @@ class TestMultiGateAuditor(unittest.TestCase):
 
     def test_audit_gate2_screenplay_tags(self):
         """Verify Gate 2 Screenplay Tags Auditor validates prosody and vocal tags."""
-        script_path = PROJECT_DIR / "scripts" / "chapter_005_hi_script.json"
-        if script_path.exists():
+        import tempfile
+        import json
+
+        with tempfile.TemporaryDirectory() as td:
+            script_path = Path(td) / "script.json"
+            script_data = {
+                "chapter_num": 1,
+                "segments": [
+                    {"index": 1, "type": "narration", "speaker": "Narrator", "text": "नायक ने देखा।", "tags": ["[calm]"]},
+                    {"index": 2, "type": "dialogue", "speaker": "Hero", "text": "चलो चलें।", "tags": ["[whispering]"]}
+                ]
+            }
+            script_path.write_text(json.dumps(script_data), encoding="utf-8")
             res = audit_gate2_screenplay_tags(script_path)
             self.assertEqual(res["status"], "PASS")
-            self.assertGreater(res["total_segments"], 0)
+            self.assertEqual(res["total_segments"], 2)
             self.assertIn("prosody_coverage_pct", res)
 
         # Non-existent script raises GateAuditError

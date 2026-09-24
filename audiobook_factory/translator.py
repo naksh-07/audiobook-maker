@@ -12,11 +12,11 @@ import json
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 
 DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
-MODEL_CANDIDATES = ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash")
+MODEL_CANDIDATES = ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite")
 ADULT_LITERARY_MODE = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
 
@@ -39,7 +39,7 @@ def get_api_key() -> str:
 def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_MODEL, json_mode: bool = False, max_retries: int = 4) -> str:
     """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback."""
     candidate_models = [model]
-    for m in ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"):
+    for m in MODEL_CANDIDATES:
         if m not in candidate_models:
             candidate_models.append(m)
 
@@ -481,3 +481,28 @@ def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Pat
 
     print(f"[DONE] All chapters translated into Hindi successfully -> {trans_dir}")
     return trans_dir
+
+
+def translate_chapter_intelligent(
+    chapter_text: str,
+    project_dir: Path,
+    chapter_num: int = 1,
+    chapter_title: str = "Chapter",
+    model: str = DEFAULT_MODEL,
+    use_cache: bool = True,
+) -> Tuple[str, List[Any]]:
+    """
+    Executes Pillar 2 Literary Translation Intelligence Pipeline on a chapter.
+    Integrates Book Bible, Entity Discovery, Transition-Driven Scene Planning,
+    Dedicated Evaluators (Gates T0-T11), and Tiered Self-Healing Repair.
+    """
+    from audiobook_factory.translation import IntelligentTranslationPipeline
+    pipeline = IntelligentTranslationPipeline(project_dir=project_dir, model=model)
+    return pipeline.translate_chapter(
+        chapter_text=chapter_text,
+        chapter_num=chapter_num,
+        chapter_title=chapter_title,
+        call_llm_fn=call_gemini,
+        use_cache=use_cache,
+    )
+

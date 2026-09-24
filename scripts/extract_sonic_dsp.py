@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Offline High-Performance DSP Scanner for Witcher 3 OST Tracks.
+Offline High-Performance DSP Scanner for Sound Bank BGM Tracks.
 Extracts physical acoustic invariants (LUFS, True Peak, Speech Corridor Density,
 Transient Drop Seconds, Intro Bed Boundaries, and ID3 Tags) with 0 network bandwidth.
-Saves intermediate acoustic profiles to scratch/witcher3_dsp_profiles.json.
+Saves intermediate acoustic profiles to scratch/bgm_dsp_profiles.json.
 """
 
 import io
@@ -25,7 +25,7 @@ logger = logging.getLogger("extract_sonic_dsp")
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT_DIR / "audiobooks" / "sound_bank" / "sound_bank.db"
 SCRATCH_DIR = ROOT_DIR / "scratch"
-OUTPUT_JSON = SCRATCH_DIR / "witcher3_dsp_profiles.json"
+OUTPUT_JSON = SCRATCH_DIR / "bgm_dsp_profiles.json"
 
 
 def extract_id3_tags(filepath: Path) -> Dict[str, Any]:
@@ -43,10 +43,10 @@ def extract_id3_tags(filepath: Path) -> Dict[str, Any]:
             dur = float(data.get("duration", 0.0) or 0.0)
             return {
                 "title": tags.get("title") or tags.get("TITLE") or filepath.stem,
-                "artist": tags.get("artist") or tags.get("ARTIST") or "Marcin Przybyłowicz",
-                "album": tags.get("album") or tags.get("ALBUM") or "The Witcher 3: Wild Hunt",
+                "artist": tags.get("artist") or tags.get("ARTIST") or "Unknown Artist",
+                "album": tags.get("album") or tags.get("ALBUM") or "Cinematic Soundtrack",
                 "track": tags.get("track") or tags.get("TRACK") or "",
-                "date": tags.get("date") or tags.get("DATE") or "2015",
+                "date": tags.get("date") or tags.get("DATE") or "",
                 "genre": tags.get("genre") or tags.get("GENRE") or "Soundtrack",
                 "duration_sec": dur,
             }
@@ -54,8 +54,8 @@ def extract_id3_tags(filepath: Path) -> Dict[str, Any]:
         logger.debug(f"ID3 extraction failed for {filepath}: {e}")
     return {
         "title": filepath.stem,
-        "artist": "Marcin Przybyłowicz",
-        "album": "The Witcher 3: Wild Hunt",
+        "artist": "Unknown Artist",
+        "album": "Cinematic Soundtrack",
         "duration_sec": 0.0,
     }
 
@@ -222,13 +222,13 @@ def main():
     rows = c.execute("""
         SELECT id, filename, filepath, duration_sec 
         FROM sound_catalog 
-        WHERE filepath LIKE '%witcher3_ost%' 
+        WHERE category = 'BGM' 
         ORDER BY id
     """).fetchall()
     conn.close()
 
     total = len(rows)
-    logger.info(f"Starting Offline DSP Extraction across {total} Witcher 3 OST tracks...")
+    logger.info(f"Starting Offline DSP Extraction across {total} BGM soundtrack tracks...")
     start_time = time.time()
 
     profiles: Dict[str, Any] = {}

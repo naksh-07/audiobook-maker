@@ -1,0 +1,131 @@
+{
+  "schema_version": "2.0.0",
+  "book_title": "The Witcher: The Last Wish",
+  "author": "Andrzej Sapkowski",
+  "narrative_voice": "gritty third-person cinematic fantasy",
+  "characters": {
+    "Geralt": {
+      "canonical_id": "geralt",
+      "english_name": "Geralt",
+      "hindi_name": "गेराल्ट",
+      "aliases": [
+        "Geralt of Rivia"
+      ],
+      "category": "character",
+      "gender": null,
+      "description": "laconic mutant monster hunter",
+      "first_appearance_chapter": 1,
+      "pronunciation_hint": "",
+      "sociolect_archetype": "COLD_CYNIC",
+      "language_profile": null,
+      "is_canonical": true,
+      "confidence": 1.0
+    },
+    "Dandilion": {
+      "canonical_id": "dandilion",
+      "english_name": "Dandilion",
+      "hindi_name": "डैंडेलियन",
+      "aliases": [
+        "Dandelion"
+      ],
+      "category": "character",
+      "gender": null,
+      "description": "flamboyant bard and poet",
+      "first_appearance_chapter": 1,
+      "pronunciation_hint": "",
+      "sociolect_archetype": "WITTY_POET",
+      "language_profile": null,
+      "is_canonical": true,
+      "confidence": 1.0
+    },
+    "Nenneke": {
+      "canonical_id": "nenneke",
+      "english_name": "Nenneke",
+      "hindi_name": "नेनेके",
+      "aliases": [],
+      "category": "character",
+      "gender": null,
+      "description": "mother superior of Melitele temple",
+      "first_appearance_chapter": 1,
+      "pronunciation_hint": "",
+      "sociolect_archetype": "AUTHORITATIVE_MATRON",
+      "language_profile": null,
+      "is_canonical": true,
+      "confidence": 1.0
+    },
+    "Roderick de Novembre": {
+      "canonical_id": "roderick_de_novembre",
+      "english_name": "Roderick de Novembre",
+      "hindi_name": "रोड्रिक डी नोवम्ब्रे",
+      "aliases": [],
+      "category": "character",
+      "gender": null,
+      "description": "chronicler and historian",
+      "first_appearance_chapter": 1,
+      "pronunciation_hint": "",
+      "sociolect_archetype": "HISTORIAN",
+      "language_profile": null,
+      "is_canonical": true,
+      "confidence": 1.0
+    }
+  },
+  "locations": {
+    "Melitele": "मेलीतेले",
+    "Ellander": "एलैंडर",
+    "Buina": "बुइना",
+    "Gulet": "गुलेट",
+    "Valley of Flowers": "फूलों की घाटी"
+  },
+  "organizations": {},
+  "creatures": {},
+  "objects": {},
+  "titles": {},
+  "terminology": {
+    "Witcher": "विचर"
+  },
+  "terminology_variants": {
+    "\\bविचरर\\b": "विचर"
+  },
+  "relationships": [
+    {
+      "from_entity": "Geralt",
+      "to_entity": "Dandilion",
+      "default_pronoun": "tum",
+      "current_pronoun": "tum",
+      "respect_level": 3,
+      "intimacy_level": 2,
+      "hostility_level": 0,
+      "authority_level": 0,
+      "notes": "",
+      "evidence_log": []
+    },
+    {
+      "from_entity": "Geralt",
+      "to_entity": "Nenneke",
+      "default_pronoun": "tum",
+      "current_pronoun": "aap",
+      "respect_level": 3,
+      "intimacy_level": 2,
+      "hostility_level": 0,
+      "authority_level": 0,
+      "notes": "",
+      "evidence_log": []
+    },
+    {
+      "from_entity": "Dandilion",
+      "to_entity": "Nenneke",
+      "default_pronoun": "tum",
+      "current_pronoun": "tu",
+      "respect_level": 3,
+      "intimacy_level": 2,
+      "hostility_level": 0,
+      "authority_level": 0,
+      "notes": "",
+      "evidence_log": []
+    }
+  ],
+  "world_rules": [],
+  "flagged_conflicts": [],
+  "candidate_entities": [],
+  "metadata": {}
+}

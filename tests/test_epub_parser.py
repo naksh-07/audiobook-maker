@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Unit and Integration Tests for Forensic Structural EPUB Parser.
-Tests both synthetic structural EPUBs and real-world fixture (witcher1.epub).
+Tests synthetic structural EPUBs, NCX navigation, and spine fallbacks.
 """
 
 import io
@@ -159,28 +159,6 @@ class TestForensicEPUBParser(unittest.TestCase):
             self.assertEqual(meta["title"], "Synthetic Test Novel")
             self.assertEqual(meta["author"], "Jane Doe")
             self.assertEqual(len(chapters), 2)
-
-    def test_real_world_witcher_fixture(self):
-        witcher_path = Path(r"C:\Users\Suraj\Documents\Antigravity\witcher1.epub")
-        if not witcher_path.exists():
-            self.skipTest("witcher1.epub fixture not present on workstation.")
-
-        parser = ForensicEPUBParser(witcher_path)
-        book, legacy_items = parser.parse()
-
-        self.assertEqual(book.title, "The Last Wish: Introducing The Witcher")
-        self.assertEqual(book.author, "Andrzej Sapkowski")
-        self.assertEqual(len(book.chapters), 13)
-
-        # Verify first and last chapters
-        self.assertIn("VOICE OF REASON", book.chapters[0].title.upper())
-        self.assertIn("WITCHER", book.chapters[1].title.upper())
-        self.assertIn("VOICE OF REASON", book.chapters[12].title.upper())
-
-        # Verify quality report
-        self.assertEqual(book.quality_report.gate_status, "PASS")
-        self.assertEqual(book.quality_report.overall_confidence, "HIGH")
-        self.assertGreater(book.quality_report.total_words, 80000)
 
 
 if __name__ == "__main__":
