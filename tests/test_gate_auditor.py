@@ -25,6 +25,8 @@ PROJECT_DIR = ROOT_DIR / "audiobooks" / "projects" / "witcher1"
 class TestMultiGateAuditor(unittest.TestCase):
     def test_chapter_5_full_audit(self):
         """Verify Chapter 5 passes all gates with 0 collisions and 100% coverage."""
+        if not PROJECT_DIR.exists():
+            self.skipTest("witcher1 project directory not present (project completed and retired).")
         active_cast = ["Narrator", "Geralt", "Nenneke", "Falwick", "Tailles"]
         report = audit_chapter_gates(PROJECT_DIR, chapter_num=5, active_speakers=active_cast)
 
