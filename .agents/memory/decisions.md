@@ -313,3 +313,31 @@
      - Guaranteed 100% backward compatibility for downstream translation and screenplay stages via [`project_legacy_extracted()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L214-L230).
 - **Rationale:** Ensures zero data loss and uncompromised structural fidelity at the document ingestion boundary, blocks corrupted text from wasting generative AI API quota, provides instant provenance traceability, and maintains seamless backward compatibility across the entire production pipeline.
 
+---
+
+## ADR-030: Literary Translation Intelligence Engine, Multi-Gate Certification (Gates T0-T11) & Novel-Agnostic Hardening
+- **Status:** Accepted
+- **Date:** 2026-04-06
+- **Context:**
+  1. Legacy single-pass chunk-based translation (`translator.py`) split chapters at arbitrary 4,000-character boundaries with a fragile 500-character tail buffer, causing mid-scene dialogue severing, pronoun honorific drift (`आप`/`तुम`/`तू`), negation flips, and silent beat omissions.
+  2. Enforcing a rigid numeric quota for Urdu vocabulary produced unnatural stuffing rather than organic Hindustani literary prose, while calqued English idioms (*"golden girl" $\rightarrow$ "सुनहरी लड़की"*) and modern clinical loanwords (*डिप्रेशन, ट्रॉमा, स्ट्रेस*) degraded literary immersion.
+  3. Novel-specific character names and Devanagari spelling fixes had crept into core library scripts, violating novel-agnostic architecture.
+- **Decision:**
+  1. **Persistent Canonical Book Bible & Entity Discovery (`book_bible.py`, `entity_discovery.py`):**
+     - Created [`BookBible`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/book_bible.py) (`v2.0.0`) stored at `<project_dir>/book_bible.json` with deterministic 16-char SHA-256 `get_version_hash()`, decoupled `terminology_variants`, and backward-compatible `export_legacy_glossary()`.
+     - Built [`EntityDiscoveryEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/entity_discovery.py) with 130+ `ENGLISH_NON_ENTITY_STOPWORDS` defense and positional confidence scoring (`0.85` auto-commit vs `0.50` sentence-starter hold).
+  2. **Contextual Hindustani Register, Character Profiles & 7D Relationship Engine (`hindustani_register.py`, `character_profile.py`, `relationship_state.py`, `intensity_model.py`):**
+     - Replaced rigid Urdu quotas with [`HindustaniRegisterEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/hindustani_register.py) (*"Aate mein Namak jitni Urdu"*) across 4 contextual domains (`atmosphere_words`, `passion_and_somatics`, `combat_and_grit`, `scholastic_and_courtly`).
+     - Created 8 novel-agnostic [`UNIVERSAL_ARCHETYPE_PRESETS`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_profile.py) and [`RelationshipStateEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/relationship_state.py) to dynamically resolve Hindi pronouns (`आप`, `तुम`, `तू`) across 7 interpersonal dimensions.
+     - Built [`LiteraryIntensityVector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/intensity_model.py) enforcing the **"Nothing Above Source"** maturity principle ($\pm 0.75$ soft `WARN`, $> 2.0$ hard `FAIL`).
+  3. **Transition-Driven Scene Planning & Frozen Semantic Map (`scene_planner.py`, `source_semantic_map.py`, `narrative_state.py`):**
+     - Replaced arbitrary character chunking with [`ScenePlanner.plan_chapter()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/scene_planner.py) (detecting temporal, spatial, and markdown scene transitions) and [`SourceSemanticMapEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/source_semantic_map.py) (freezing per-beat actors, dialogue speakers, and negation markers).
+  4. **12-Gate Independent Certification & Tiered Self-Healing Repair (`certification.py`, `repair_engine.py`, `provenance.py`):**
+     - Implemented [`TranslationCertifier.certify_scene()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/certification.py) executing Gates `T0`–`T11` (word sanity, terminology/entity audit, deterministic negation & LLM semantic fidelity, dialogue quote parity & omission detection, addition detection, character voice/pronouns, 7D intensity, literary naturalness, Hindustani balance, and 6-part SHA-256 provenance cache sealing).
+     - Implemented [`TieredRepairEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/repair_engine.py) escalating from Tier 1 (0ms deterministic regex & SQLite Advisory Lexicon repair) $\rightarrow$ Tier 2 (surgical single-paragraph LLM rewrite, max 2 attempts) $\rightarrow$ Tier 3 (full scene retranslation, max 1 attempt).
+  5. **World & Character Memory 2.0 (`audiobook_factory/translation/memory/`):**
+     - Built a 10-module event-driven epistemic continuity engine with `TemporalMode` isolation (`PRESENT` vs `FLASHBACK`), `HARD_CANON` vs `SOFT_STATE` delta tracking, `CharacterKnowledgeEngine` (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`), 7 `MemoryValidator` guardrails, and a 7-tier narrative-salience `MemoryRetriever`.
+  6. **Chapter 9 Benchmark Standard & Multi-Script Zero-Hardcoding Enforcement:**
+     - Established read-only calibration standards in `audiobooks/standards/` (`chapter_009_hi_old_canonical.md` vs `chapter_009_hi_standard.md` and `chapter_009_benchmark_comparison.md`).
+     - Purged 37 legacy novel-specific utility scripts and enforced a multi-script (Latin + Devanagari `FORBIDDEN_CHARACTERS_DEVANAGARI`) AST Zero-Hardcoding contract in [`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py).
+- **Rationale:** Transforms literary translation from a brittle single-pass prompt into a self-auditing, context-aware, novel-agnostic studio engine with provable semantic fidelity, natural Hindustani cadence, and cryptographic cache provenance.

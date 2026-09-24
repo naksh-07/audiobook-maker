@@ -748,3 +748,216 @@ def audit_gate6d_packaging_specs(cover_image: Optional[Path], specs: Optional[Bo
 def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Optional[List[str]] = None) -> Dict[str, Any]: ...
 def audit_book_master(project_dir: Path, strict: bool = False) -> Dict[str, Any]: ...
 ```
+
+---
+
+## 🧠 Literary Translation Intelligence & Memory 2.0 ([`audiobook_factory.translation`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/))
+
+*(See full architectural manual: [`docs/LITERARY_TRANSLATION_INTELLIGENCE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md))*
+
+### 1. `BookBible` & `BookEntity` ([`audiobook_factory.translation.book_bible`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/book_bible.py))
+*Persistent canonical repository (`book_bible.json`) with SHA-256 versioning and one-way legacy glossary projection.*
+
+```python
+class BookEntity(BaseModel):
+    canonical_en: str
+    canonical_hi: str
+    category: Literal["character", "location", "organization", "creature", "object", "title"] = "character"
+    gender: Literal["male", "female", "neutral", "unknown"] = "unknown"
+    aliases_en: List[str] = []
+    aliases_hi: List[str] = []
+    forbidden_variants: List[str] = []
+    social_class: str = "standard"
+    archetype: str = "NEUTRAL"
+    speech_register: str = "standard_literary"
+    voice_notes: str = ""
+    first_seen_chapter: int = 1
+    confidence: float = 1.0
+    locked: bool = False
+
+class BookBible(BaseModel):
+    schema_version: str = "2.0.0"
+    book_title: str = ""
+    genre: str = "fantasy"
+    tone_signature: str = "literary_dramatic"
+    characters: Dict[str, BookEntity] = {}
+    locations: Dict[str, BookEntity] = {}
+    organizations: Dict[str, BookEntity] = {}
+    creatures: Dict[str, BookEntity] = {}
+    objects: Dict[str, BookEntity] = {}
+    titles: Dict[str, BookEntity] = {}
+    terminology: Dict[str, str] = {}
+    terminology_variants: Dict[str, str] = {}  # Forbidden regex -> Canonical Devanagari
+    relationships: List[DynamicRelationship] = []
+    world_rules: List[WorldRule] = []
+    flagged_conflicts: List[FlaggedConflict] = []
+
+    def get_version_hash(self) -> str:
+        """Returns a deterministic 16-char SHA-256 digest of all canonical entities and variants."""
+
+    def propose_new_entity(self, entity: BookEntity, chapter_num: int = 1, context_snippet: str = "") -> bool:
+        """Auto-commits non-conflicting entities with confidence >= 0.80; logs FlaggedConflict on mismatch."""
+
+    def export_legacy_glossary(self, output_path: Optional[Path] = None) -> Dict[str, str]:
+        """Projects canonical entities into flat translation/glossary.json format."""
+
+    @classmethod
+    def load(cls, path: Path) -> "BookBible": ...
+    def save(self, path: Path) -> None: ...
+```
+
+### 2. `HindustaniRegisterEngine`, `CharacterLanguageProfile` & `RelationshipStateEngine`
+*Contextual Urdu seasoning, sociolect archetypes, and 7D pronoun honorific resolution (`आप` / `तुम` / `तू`).*
+
+```python
+# audiobook_factory/translation/hindustani_register.py
+class HindustaniRegisterEngine:
+    @classmethod
+    def from_genre(cls, genre: str) -> "HindustaniRegisterEngine": ...
+    def build_prompt_directive(self, scene_intensity: Optional[Dict[str, float]] = None) -> str: ...
+    def audit_text(self, hindi_text: str) -> HindustaniAuditResult: ...
+
+# audiobook_factory/translation/character_profile.py
+class CharacterLanguageProfile(BaseModel):
+    character_name: str
+    archetype: str = "NEUTRAL"
+    sociolect: str = "standard_literary"
+    sentence_tempo: Literal["clipped", "measured", "melodic", "hurried"] = "measured"
+    discourse_markers_hi: List[str] = []
+    signature_expressions_hi: List[str] = []
+
+# audiobook_factory/translation/relationship_state.py
+class DynamicRelationshipState(BaseModel):
+    speaker: str
+    listener: str
+    respect: float = 0.0                # [-5.0, +5.0]
+    familiarity: float = 0.0            # [0.0, 5.0]
+    hostility: float = 0.0              # [0.0, 5.0]
+    intimacy: float = 0.0               # [0.0, 5.0]
+    authority_differential: float = 0.0 # [-5.0, +5.0]
+    fear: float = 0.0                   # [0.0, 5.0]
+    trust: float = 0.0                  # [-5.0, +5.0]
+
+class RelationshipStateEngine:
+    @staticmethod
+    def resolve_pronoun_level(state: DynamicRelationshipState) -> Literal["aap", "tum", "tu"]: ...
+    @staticmethod
+    def apply_relationship_mutation(
+        state: DynamicRelationshipState,
+        interaction_type: str,
+        event_id: str,
+        chapter_num: int,
+    ) -> DynamicRelationshipState: ...
+```
+
+### 3. `LiteraryIntensityVector`, `ScenePlanner` & `SourceSemanticMap`
+*7D maturity vector ("Nothing Above Source"), transition-driven scene segmentation, and frozen proposition maps.*
+
+```python
+# audiobook_factory/translation/intensity_model.py
+class LiteraryIntensityVector(BaseModel):
+    profanity: float = 0.0              # [0.0, 5.0]
+    sexual_intimacy: float = 0.0        # [0.0, 5.0]
+    violence: float = 0.0               # [0.0, 5.0]
+    emotional_intensity: float = 1.0    # [0.0, 5.0]
+    formality: float = 2.5              # [0.0, 5.0]
+    urdu_register: float = 2.0          # [0.0, 5.0]
+    colloquiality: float = 2.0          # [0.0, 5.0]
+
+class IntensityEvaluator:
+    SOFT_WARN_DELTA: float = 0.75       # Non-blocking calibration notice
+    HARD_FAIL_DELTA: float = 2.00       # Hard Gate T8 rejection threshold
+
+    @classmethod
+    def compare_vectors(cls, source: LiteraryIntensityVector, target: LiteraryIntensityVector) -> Dict[str, Any]: ...
+
+# audiobook_factory/translation/scene_planner.py
+class ScenePlanner:
+    @classmethod
+    def plan_chapter(cls, chapter_text: str, chapter_num: int, known_characters: Optional[List[str]] = None) -> ChapterPlan: ...
+
+# audiobook_factory/translation/source_semantic_map.py
+class SourceSemanticMapEngine:
+    @classmethod
+    def extract_semantic_map(cls, scene_id: str, chapter_num: int, source_text: str, known_entities: Optional[List[str]] = None) -> SourceSemanticMap: ...
+```
+
+### 4. `TranslationCertifier`, `TieredRepairEngine` & `IntelligentTranslationPipeline`
+*12-Gate independent certification (`Gates T0–T11`), 3-tier self-healing repair, and end-to-end chapter orchestration.*
+
+```python
+# audiobook_factory/translation/certification.py
+class TranslationCertifier:
+    def certify_scene(
+        self,
+        scene_plan: ScenePlan,
+        source_text: str,
+        translated_text: str,
+        semantic_map: SourceSemanticMap,
+        provenance_record: Optional[SceneProvenanceRecord] = None,
+        run_llm_audits: bool = True,
+    ) -> SceneCertificationReport:
+        """Executes Gates T0 through T11 and returns a complete SceneCertificationReport."""
+
+# audiobook_factory/translation/repair_engine.py
+class TieredRepairEngine:
+    MAX_PARAGRAPH_ATTEMPTS: int = 2
+    MAX_SCENE_ATTEMPTS: int = 1
+
+    def repair_scene(
+        self,
+        scene_plan: ScenePlan,
+        source_text: str,
+        translated_text: str,
+        semantic_map: SourceSemanticMap,
+        cert_report: SceneCertificationReport,
+        retranslate_scene_fn: Optional[Callable[[str, str], str]] = None,
+    ) -> Tuple[str, SceneCertificationReport, List[str]]:
+        """Escalates Tier 1 (0ms Regex/Advisory DB) -> Tier 2 (Surgical Paragraph LLM) -> Tier 3 (Full Scene)."""
+
+# audiobook_factory/translation/pipeline.py
+class IntelligentTranslationPipeline:
+    def __init__(
+        self,
+        project_dir: Path,
+        book_bible: Optional[BookBible] = None,
+        policy: Optional[TranslationPolicyConfig] = None,
+        genre: str = "fantasy",
+        enable_llm_audits: bool = True,
+    ): ...
+
+    def translate_chapter(
+        self,
+        chapter_text: str,
+        chapter_num: int,
+        chapter_title: str = "",
+        force_retranslate: bool = False,
+    ) -> str:
+        """Executes full Pillar 2 scene planning, Memory 2.0 retrieval, drafting, T0-T11 certification, and repair."""
+```
+
+### 5. World & Character Memory 2.0 ([`audiobook_factory.translation.memory`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/))
+*Event-driven epistemic continuity, temporal mode isolation (`PRESENT` vs. `FLASHBACK`), and 7 continuity guardrails.*
+
+```python
+class MemoryStore:
+    def __init__(self, store_path: Path): ...
+    def commit_events_and_deltas(self, events: List[StoryEvent], deltas: List[StateDelta], chapter_num: int) -> None: ...
+    def rollback_to_chapter(self, target_chapter: int) -> None: ...
+
+class MemoryValidator:
+    def validate_deltas(self, deltas: List[StateDelta], store: MemoryStore, temporal_mode: TemporalMode) -> Tuple[List[StateDelta], List[ContinuityConflict]]:
+        """Enforces 7 continuity guardrails (canon, timeline, epistemic knowledge, relationship jump, physical, dead character, world rule)."""
+
+class MemoryRetriever:
+    def retrieve_scene_context(
+        self,
+        store: MemoryStore,
+        chapter_num: int,
+        scene_id: str,
+        active_characters: List[str],
+        location: str = "",
+        max_tokens: int = 1200,
+    ) -> MemoryContext:
+        """Assembles token-budgeted 7-tier + narrative salience MemoryContext for translation prompt injection."""
+```

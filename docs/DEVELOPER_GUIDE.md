@@ -46,10 +46,19 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **243 passing unit tests** across all 34 test suites with a zero-regression invariant (100% OK, 0 failures, 0 errors in ~95s).
+The codebase maintains **319+ passing unit tests** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# Literary Translation Intelligence & Memory 2.0 Suites (Pillar 2 - ADR-030)
+python -m unittest discover tests/translation -p "test_*.py"
+
+# Multi-Script (Latin + Devanagari) Zero-Hardcoding AST Contract Suite (ADR-030)
+python -m unittest tests/test_zero_hardcoding_contracts.py
+
+# Forensic Document Ingestion & Canonical AST Suite (Pillar 1 - ADR-029)
+python -m unittest tests/test_book_ingestion_pillar1.py
+
 # Zero-Voice-Drift Hardening & Deterministic Speaker Attribution (ADR-021)
 python -m unittest tests/test_zero_voice_drift_adr021.py
 
@@ -105,6 +114,8 @@ python -m unittest discover tests -p "test_*.py"
    All file paths in development handoffs and internal documentation must use markdown file links (`[file.py](file:///path/to/file.py)`).
 6. **Strict Agent Creative Mandate**:
    Creative decisions (character casting, emotion tags, dramaturgy, silence carving, leitmotif assignment, and Foley placement) belong exclusively to autonomous AI agents ([`AgentDirector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)). Downstream execution layers ([`CinemaAudioEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py), [`ManifestRenderer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/manifest_renderer.py), and DSP mastering) are 100% deterministic compilation and execution runtimes and must NEVER override agent creative intent.
+7. **Multi-Script Novel-Agnostic Zero-Hardcoding Contract (ADR-030)**:
+   Core engine modules inside `audiobook_factory/` must remain 100% novel-agnostic. Hardcoding book-specific character names, locations, project slugs, or Devanagari spelling variants (`FORBIDDEN_CHARACTERS_DEVANAGARI`) into Python source files is strictly forbidden and enforced by [`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py). All book-specific lore belongs exclusively in `<project_dir>/book_bible.json`.
 
 ---
 
