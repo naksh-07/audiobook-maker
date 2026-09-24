@@ -182,11 +182,15 @@ def process_book_file(
 
     # 1. Preserve Raw Source
     raw_copy_path = raw_dir / f"source_original{ext}"
+    raw_copied = False
     if not raw_copy_path.exists():
         try:
             shutil.copy2(input_file, raw_copy_path)
-        except Exception:
-            pass
+            raw_copied = True
+        except Exception as copy_err:
+            print(f"[!] WARNING: Failed to archive raw source to '{raw_copy_path}': {copy_err}")
+    else:
+        raw_copied = True
 
     source_manifest = {
         "book_id": book_slug,
@@ -194,6 +198,7 @@ def process_book_file(
         "source_format": ext.lstrip("."),
         "file_size_bytes": file_size_bytes,
         "sha256": file_sha256,
+        "archived_copy": str(raw_copy_path) if raw_copied else None,
         "ingested_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     with open(raw_dir / "source_manifest.json", "w", encoding="utf-8") as f:
@@ -245,11 +250,12 @@ def process_book_file(
                         reading_order=len(blocks) + 1,
                         extraction_method="pdf_pypdf_selective",
                     )
+                    norm_para, _ = normalize_block_text(para_clean)
                     block = CanonicalBlock(
                         id=f"b-ch{len(canonical_chapters)+1:03d}-{p_block_idx:04d}",
                         type=b_type,
                         raw_text=para_clean,
-                        normalized_text=para_clean,
+                        normalized_text=norm_para,
                         provenance=prov,
                     )
                     blocks.append(block)
@@ -306,6 +312,7 @@ def process_book_file(
             else:
                 splits = [{"title": title, "content": content, "words": words}]
 
+            char_cursor = 0
             for part in splits:
                 p_title = part["title"]
                 p_content = part["content"]
@@ -321,13 +328,16 @@ def process_book_file(
                         source_file=str(input_file),
                         source_type=ext.lstrip("."),
                         reading_order=len(blocks) + 1,
+                        char_offset=char_cursor,
                         extraction_method="text_parser",
                     )
+                    char_cursor += len(para) + 2
+                    norm_para, _ = normalize_block_text(para_clean)
                     block = CanonicalBlock(
                         id=f"b-ch{len(canonical_chapters)+1:03d}-{p_block_idx:04d}",
                         type=b_type,
                         raw_text=para_clean,
-                        normalized_text=para_clean,
+                        normalized_text=norm_para,
                         provenance=prov,
                     )
                     blocks.append(block)

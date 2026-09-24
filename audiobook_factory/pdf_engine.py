@@ -17,7 +17,7 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, Set
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from audiobook_factory.book_model import (
     CanonicalBlock,
@@ -30,6 +30,8 @@ from audiobook_factory.normalizer import clean_book_text, normalize_block_text
 
 class PageQualityAudit(BaseModel):
     """Quality diagnostic for a single PDF page."""
+    model_config = ConfigDict(extra="ignore")
+
     page_number: int
     status: ConfidenceLevel = "HIGH"
     word_count: int = 0

@@ -573,6 +573,7 @@ def cmd_auto(args):
     input_file = Path(args.file)
     cover = Path(args.cover) if args.cover else None
     workers = getattr(args, "workers", 3)
+    force_gate = getattr(args, "force_gate", False)
 
     orchestrator = PipelineOrchestrator(PROJECTS_DIR)
     orchestrator.run_autonomous_pipeline(
@@ -582,6 +583,7 @@ def cmd_auto(args):
         voice=args.voice,
         cover_image=cover,
         workers=workers,
+        force_gate=force_gate,
     )
 
 
@@ -647,6 +649,7 @@ def main():
     p_auto.add_argument("--dramatized", action="store_true", help="Multi-voice dramatization")
     p_auto.add_argument("--cover", default=None, help="Cover art image path")
     p_auto.add_argument("--workers", default=3, type=int, help="Number of concurrent TTS synthesis workers (default: 3)")
+    p_auto.add_argument("--force-gate", action="store_true", help="Bypass Extraction Quality Gate REVIEW failure and force production")
 
     # produce
     p_produce = subparsers.add_parser("produce", help="Produce cinematic chapters with 5-track standard & timeline ledger")

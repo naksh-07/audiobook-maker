@@ -153,12 +153,15 @@ class EPUBStructuralHTMLParser(HTMLParser):
         metadata: Optional[Dict[str, Any]] = None,
     ):
         self.block_index += 1
+        line_num, col_offset = self.getpos()
         prov = SourceProvenance(
             source_file=self.source_file,
             source_type="epub",
             spine_item=self.spine_item,
             html_tag=tag,
             html_id=self.current_anchor,
+            line_start=line_num,
+            char_offset=col_offset,
             reading_order=self.base_reading_order + self.block_index,
             extraction_method="epub_dom",
         )
@@ -361,12 +364,8 @@ class ForensicEPUBParser:
                     )
                     parser.feed(chunk_html)
                     blocks = parser.finalize()
-
-                    # Strip anchor header fragments and duplicate chapter title block if present
-                    if blocks and blocks[0].type == "heading" and blocks[0].normalized_text.lower() == title.lower():
-                        pass  # Keep structural heading intact
                     
-                    # Generate chapter text
+                    # Generate chapter text from parsed blocks
                     clean_text = "\n\n".join(b.normalized_text for b in blocks if b.normalized_text.strip())
                     clean_text = re.sub(r'^(?:id|name)=["\'][^"\']+["\']>\s*', '', clean_text).strip()
                     clean_text = re.sub(r'^' + re.escape(title) + r'\s*', '', clean_text, flags=re.IGNORECASE).strip()

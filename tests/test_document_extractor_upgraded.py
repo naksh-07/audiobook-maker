@@ -230,6 +230,30 @@ A woman in a hooded cloak watched the witcher from across the fountain.
             self.assertLessEqual(meta["chapters"][0]["words"], 12000)
             self.assertLessEqual(meta["chapters"][1]["words"], 12000)
 
+    def test_05_source_manifest_and_orchestrator_force_gate(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            novel_txt = tmp_path / "test_book.txt"
+            novel_txt.write_text("Chapter 1: The Beginning\n\nIt was a dark and stormy night.", encoding="utf-8")
+            projects_dir = tmp_path / "projects"
+
+            meta = process_book_file(novel_txt, projects_dir)
+            book_dir = projects_dir / meta["book_id"]
+            manifest_file = book_dir / "raw" / "source_manifest.json"
+            self.assertTrue(manifest_file.exists())
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                manifest_data = json.load(f)
+            self.assertIn("archived_copy", manifest_data)
+            self.assertTrue(Path(manifest_data["archived_copy"]).exists())
+
+            # Test orchestrator signature accepts force_gate
+            from audiobook_factory.orchestrator import PipelineOrchestrator
+            import inspect
+            orch = PipelineOrchestrator(projects_dir)
+            sig = inspect.signature(orch.run_autonomous_pipeline)
+            self.assertIn("force_gate", sig.parameters)
+            self.assertEqual(sig.parameters["force_gate"].default, False)
+
 
 if __name__ == "__main__":
     unittest.main()
