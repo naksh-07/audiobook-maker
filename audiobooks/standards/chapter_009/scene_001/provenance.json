@@ -1,9 +1,9 @@
 {
   "scene_id": "scene_001",
-  "composite_key": "acc68bd62520892faf154ba9",
-  "bible_version_hash": "a3834584f9c88042",
+  "composite_key": "f98190dded00152208d20ba9",
+  "bible_version_hash": "d2ed99ca0767f4af",
   "policy_version": "1.0.0",
   "model": "Antigravity-Gemini-3.8-Flash-High",
   "word_count": 2190,
-  "timestamp": 1790275846.6758235
+  "timestamp": 1790280231.489878
 }

@@ -55,12 +55,9 @@ wheels/
 *.sqlite
 *.sqlite3
 
-# Audiobooks Project Caches & Raw Books
-audiobooks/projects/*/audio_chunks/
-audiobooks/projects/*/audio_chunks_*/
-audiobooks/projects/*/mastered/
-audiobooks/projects/*/soundscapes/
-audiobooks/projects/sample_story/
+# Audiobooks Project Directories & Workspace Caches (NEVER COMMIT)
+audiobooks/projects/
+projects/
 audiobooks/inputs/
 audiobooks/output/
 audiobooks/outputs/

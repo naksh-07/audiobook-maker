@@ -167,6 +167,18 @@ class LiteraryAdvisoryDB:
                 mapping[banned] = rec_hint
         return mapping
 
+    def get_candidates_for_concept(self, source_concept: str) -> List[str]:
+        """Returns contextual candidate alternatives for a given English concept."""
+        with self._connection() as conn:
+            row = conn.execute("""
+                SELECT recommended_vocabulary FROM literary_advisory_rules
+                WHERE LOWER(source_concept) LIKE LOWER(?) OR LOWER(?) LIKE '%' || LOWER(source_concept) || '%'
+                LIMIT 1;
+            """, (f"%{source_concept}%", source_concept)).fetchone()
+            if row:
+                return json.loads(row["recommended_vocabulary"])
+        return []
+
     def list_rules(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
         """Returns all literary rules or rules filtered by category."""
         with self._connection() as conn:

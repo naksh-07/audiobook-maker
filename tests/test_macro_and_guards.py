@@ -52,34 +52,34 @@ class TestContractsAndBackwardCompatibility(unittest.TestCase):
 
     def test_legacy_character_roster_deserialization(self):
         legacy_roster_json = {
-            "project_id": "witcher1",
+            "project_id": "demo_project",
             "characters": [
                 {
                     "character_uuid": "c-001",
-                    "display_name": "Geralt",
+                    "display_name": "Protagonist",
                     "gender": "male",
                     "assigned_voice_id": "Fenrir",
                 }
             ],
         }
         roster = CharacterRoster.model_validate(legacy_roster_json)
-        self.assertEqual(roster.project_id, "witcher1")
+        self.assertEqual(roster.project_id, "demo_project")
         self.assertEqual(len(roster.characters), 1)
-        self.assertEqual(roster.characters[0].display_name, "Geralt")
+        self.assertEqual(roster.characters[0].display_name, "Protagonist")
         self.assertEqual(roster.pronunciation_overrides, {})
 
     def test_character_roster_with_pronunciation_overrides(self):
         roster_data = {
-            "project_id": "witcher1",
+            "project_id": "demo_project",
             "characters": [],
             "pronunciation_overrides": {
-                "Geralt": "गेराल्ट",
-                "Blaviken": "ब्लावीकेन",
+                "Protagonist": "नायक",
+                "CapitalCity": "राजधानी",
             },
         }
         roster = CharacterRoster.model_validate(roster_data)
-        self.assertEqual(roster.pronunciation_overrides["Geralt"], "गेराल्ट")
-        self.assertEqual(roster.pronunciation_overrides["Blaviken"], "ब्लावीकेन")
+        self.assertEqual(roster.pronunciation_overrides["Protagonist"], "नायक")
+        self.assertEqual(roster.pronunciation_overrides["CapitalCity"], "राजधानी")
         serialized = roster.model_dump()
         self.assertIn("pronunciation_overrides", serialized)
 
@@ -119,13 +119,13 @@ class TestContractsAndBackwardCompatibility(unittest.TestCase):
                     "index": 1,
                     "type": "narration",
                     "speaker": "Narrator",
-                    "text": "The Witcher arrived in Blaviken.",
+                    "text": "The Hero arrived in the City.",
                 }
             ],
-            "pronunciation_overrides": {"Witcher": "विचर"},
+            "pronunciation_overrides": {"Hero": "नायक"},
         }
         script = ScreenplayScript.model_validate(script_data)
-        self.assertEqual(script.pronunciation_overrides.get("Witcher"), "विचर")
+        self.assertEqual(script.pronunciation_overrides.get("Hero"), "नायक")
 
     def test_ambience_and_mastering_acoustic_ir(self):
         legacy_ambience = {
@@ -158,26 +158,26 @@ class TestContractsAndBackwardCompatibility(unittest.TestCase):
 
     def test_macro_tier_book_master_manifest_roundtrip(self):
         manifest = BookMasterManifest(
-            title="The Last Wish",
-            author="Andrzej Sapkowski",
+            title="The Chronicles of Eldoria",
+            author="Author Person",
             narrator="Charon",
-            series_title="Witcher Saga",
+            series_title="Eldoria Chronicles",
             book_number=1,
             total_duration_ms=3600000,
             voice_roster=BookVoiceRoster(
-                character_voices={"Geralt": "Fenrir", "Yennefer": "Aoede"},
+                character_voices={"Protagonist": "Fenrir", "Sorceress": "Aoede"},
                 narrator_voice="Charon",
             ),
             lore_bible=GlobalLoreBible(
-                lexicon={"Geralt": "गेराल्ट", "Blaviken": "ब्लावीकेन"},
-                series_title="Witcher Saga",
+                lexicon={"Protagonist": "नायक", "CapitalCity": "राजधानी"},
+                series_title="Eldoria Chronicles",
                 book_number=1,
             ),
             toc=BookTableOfContents(
                 chapters=[
                     BookChapterMarker(
                         chapter_index=1,
-                        title="Chapter 1: The Voice of Reason",
+                        title="Chapter 1: The Beginning",
                         start_ms=0,
                         end_ms=1800000,
                         duration_ms=1800000,
@@ -186,7 +186,7 @@ class TestContractsAndBackwardCompatibility(unittest.TestCase):
                     ),
                     BookChapterMarker(
                         chapter_index=2,
-                        title="Chapter 2: The Witcher",
+                        title="Chapter 2: The Journey",
                         start_ms=1800000,
                         end_ms=3600000,
                         duration_ms=1800000,
@@ -206,9 +206,9 @@ class TestContractsAndBackwardCompatibility(unittest.TestCase):
 
         json_str = manifest.to_json()
         deserialized = BookMasterManifest.from_json(json_str)
-        self.assertEqual(deserialized.title, "The Last Wish")
-        self.assertEqual(deserialized.voice_roster.character_voices["Geralt"], "Fenrir")
-        self.assertEqual(deserialized.lore_bible.lexicon["Blaviken"], "ब्लावीकेन")
+        self.assertEqual(deserialized.title, "The Chronicles of Eldoria")
+        self.assertEqual(deserialized.voice_roster.character_voices["Protagonist"], "Fenrir")
+        self.assertEqual(deserialized.lore_bible.lexicon["CapitalCity"], "राजधानी")
         self.assertEqual(len(deserialized.toc.chapters), 2)
         self.assertEqual(deserialized.packaging_specs.codec, "aac")
 
@@ -266,16 +266,16 @@ class TestDevanagariLexiconNormalizer(unittest.TestCase):
     def test_nested_glossary_support(self):
         nested_glossary = {
             "characters": [
-                {"english_name": "Yennefer", "hindi_name": "येनेफ़र"},
-                {"english_name": "Ciri", "hindi_name": "सिरी"},
+                {"english_name": "Elena", "hindi_name": "एलेना"},
+                {"english_name": "Aria", "hindi_name": "आरिया"},
             ],
             "locations_and_terms": {
-                "Witcher": "विचर",
+                "Sorcerer": "जादूगर",
             },
         }
-        text = "Yennefer trained Ciri to become a Witcher."
+        text = "Elena trained Aria to become a Sorcerer."
         normalized = normalize_translated_lexicon(text, nested_glossary)
-        self.assertEqual(normalized, "येनेफ़र trained सिरी to become a विचर.")
+        self.assertEqual(normalized, "एलेना trained आरिया to become a जादूगर.")
 
     def test_preserves_word_boundaries(self):
         glossary = {"Cat": "बिल्ली"}

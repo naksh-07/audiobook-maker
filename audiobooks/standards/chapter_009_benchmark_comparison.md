@@ -3,9 +3,9 @@
 ## Executive Summary
 - **Source Text**: Andrzej Sapkowski - *The Voice of Reason 5* (`chapter_009.md`, 2278 words)
 - **Old Pipeline (Canonical)**: `chapter_009_hi.md` (2774 words)
-- **New Pipeline (Literary Intelligence)**: `chapter_009_hi.new.md` (2772 words)
+- **New Pipeline (Literary Intelligence)**: `chapter_009_hi.new.md` (2773 words)
 - **Canonical Invariant**: `chapter_009_hi.md` remains **100% UNTOUCHED** (read-only reference).
-- **Artifact Package**: Verified and stored in `audiobooks/projects/witcher1/translation/chapter_009/`
+- **Artifact Package**: Verified and stored in `audiobooks/standards/chapter_009/`
 
 ---
 
@@ -49,7 +49,7 @@
 
 ### Scene `scene_001`: Overall Status = `PASS` (Certified: True)
 - **[T0] Source Text Integrity & Word Count Sanity**: `GateStatus.PASS` — Source: 1765 words | Target: 2190 words
-- **[T5] Terminology & Entity Consistency**: `GateStatus.PASS` *(Warnings: 27)* — Forbidden variants: 0
+- **[T5] Terminology & Entity Consistency**: `GateStatus.PASS` — Forbidden variants: 0
 - **[T2] Semantic Fidelity & Action Integrity**: `GateStatus.PASS` — Deterministic semantic validation passed.
 - **[T3] Omission Detection**: `GateStatus.PASS` — Deterministic omission check passed.
 - **[T4] Addition & Hallucination Detection**: `GateStatus.PASS` — Addition validation passed.
@@ -58,8 +58,8 @@
 - **[T9] Hindi / Hindustani Literary Naturalness**: `GateStatus.PASS` — Deterministic literary register check completed.
 
 ### Scene `scene_002`: Overall Status = `PASS` (Certified: True)
-- **[T0] Source Text Integrity & Word Count Sanity**: `GateStatus.PASS` — Source: 513 words | Target: 582 words
-- **[T5] Terminology & Entity Consistency**: `GateStatus.PASS` *(Warnings: 20)* — Forbidden variants: 0
+- **[T0] Source Text Integrity & Word Count Sanity**: `GateStatus.PASS` — Source: 513 words | Target: 583 words
+- **[T5] Terminology & Entity Consistency**: `GateStatus.PASS` — Forbidden variants: 0
 - **[T2] Semantic Fidelity & Action Integrity**: `GateStatus.PASS` — Deterministic semantic validation passed.
 - **[T3] Omission Detection**: `GateStatus.PASS` — Deterministic omission check passed.
 - **[T4] Addition & Hallucination Detection**: `GateStatus.PASS` — Addition validation passed.

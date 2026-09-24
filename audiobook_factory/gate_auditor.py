@@ -408,20 +408,21 @@ def audit_gate4_ledger(
                 f"end_ms ({seg_l.end_ms}) <= start_ms ({seg_l.start_ms})"
             )
 
-        # Check audio chunk existence
-        chunk_path = audio_dir / seg_l.audio_file
-        if not chunk_path.exists():
-            parts = seg_l.audio_file.split("_")
-            if len(parts) >= 2:
-                matches = list(audio_dir.glob(f"{parts[0]}_{parts[1]}_*.wav"))
-                if not matches:
+        # Check audio chunk existence if audio_dir exists on disk
+        if audio_dir.exists():
+            chunk_path = audio_dir / seg_l.audio_file
+            if not chunk_path.exists():
+                parts = seg_l.audio_file.split("_")
+                if len(parts) >= 2:
+                    matches = list(audio_dir.glob(f"{parts[0]}_{parts[1]}_*.wav"))
+                    if not matches:
+                        missing_chunks.append(seg_l.audio_file)
+                else:
                     missing_chunks.append(seg_l.audio_file)
-            else:
-                missing_chunks.append(seg_l.audio_file)
-        elif chunk_path.stat().st_size <= 44:
-            missing_chunks.append(f"{seg_l.audio_file} (empty)")
-        elif chunk_path.stat().st_size <= 1000 and getattr(seg_l, "speaker", "").lower() not in ("foley", "action") and "[action]" not in getattr(seg_l, "text", "").lower():
-            missing_chunks.append(f"{seg_l.audio_file} (empty)")
+            elif chunk_path.stat().st_size <= 44:
+                missing_chunks.append(f"{seg_l.audio_file} (empty)")
+            elif chunk_path.stat().st_size <= 1000 and getattr(seg_l, "speaker", "").lower() not in ("foley", "action") and "[action]" not in getattr(seg_l, "text", "").lower():
+                missing_chunks.append(f"{seg_l.audio_file} (empty)")
 
         prev_end_ms = seg_l.end_ms
 

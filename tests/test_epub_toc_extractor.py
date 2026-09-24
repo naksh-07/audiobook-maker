@@ -6,6 +6,7 @@ and fallback for legacy EPUBs.
 """
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -13,32 +14,26 @@ WORKSPACE_DIR = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_DIR) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_DIR))
 
-from audiobook_factory.extractor import extract_epub, process_book_file
+from audiobook_factory.extractor import extract_epub
+from tests.test_epub_parser import create_synthetic_epub
 
 
 class TestEpubTocExtractor(unittest.TestCase):
 
-    def test_01_witcher_toc_extraction(self):
-        """Verify Witcher 1 EPUB extracts all 13 canonical stories cleanly."""
-        epub_path = Path(r"C:\Users\Suraj\Documents\Antigravity\witcher1.epub")
-        if not epub_path.exists():
-            self.skipTest(f"Witcher EPUB not found at {epub_path}")
+    def test_01_synthetic_toc_extraction(self):
+        """Verify synthetic EPUB extracts canonical TOC chapters cleanly."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            epub_path = Path(tmp_dir) / "synthetic.epub"
+            create_synthetic_epub(epub_path)
 
-        meta, chaps = extract_epub(epub_path)
-        self.assertEqual(meta["title"], "The Last Wish: Introducing The Witcher")
-        self.assertEqual(meta["author"], "Andrzej Sapkowski")
-        self.assertEqual(len(chaps), 13)
-
-        # First chapter: 1: THE VOICE OF REASON
-        self.assertIn("VOICE OF REASON", chaps[0]["title"].upper())
-        # Second chapter: THE WITCHER
-        self.assertIn("WITCHER", chaps[1]["title"].upper())
-        # Sixth chapter: THE LESSER EVIL
-        self.assertIn("LESSER EVIL", chaps[5]["title"].upper())
-        self.assertGreater(chaps[5]["words"], 10000)
-
-        total_words = sum(c["words"] for c in chaps)
-        self.assertGreater(total_words, 90000)
+            meta, chaps = extract_epub(epub_path)
+            self.assertEqual(meta["title"], "Synthetic Test Novel")
+            self.assertEqual(meta["author"], "Jane Doe")
+            self.assertEqual(len(chaps), 2)
+            self.assertIn("THE GATHERING", chaps[0]["title"].upper())
+            self.assertIn("THE CROSSROADS", chaps[1]["title"].upper())
+            self.assertGreater(chaps[0]["words"], 10)
+            self.assertGreater(chaps[1]["words"], 10)
 
 
 if __name__ == "__main__":
