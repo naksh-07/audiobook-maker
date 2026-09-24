@@ -47,7 +47,8 @@ from audiobook_factory.orchestrator import PipelineOrchestrator
 
 def cmd_extract(args):
     input_file = Path(args.file)
-    meta = process_book_file(input_file, PROJECTS_DIR)
+    force_gate = getattr(args, "force_gate", False)
+    meta = process_book_file(input_file, PROJECTS_DIR, force_gate=force_gate)
     print(f"\n[OK] Project created: '{meta['book_id']}' at {PROJECTS_DIR / meta['book_id']}")
 
 
@@ -594,6 +595,7 @@ def main():
     # extract
     p_extract = subparsers.add_parser("extract", help="Extract and segment book file into clean Markdown chapters")
     p_extract.add_argument("file", help="Input book path (.epub, .pdf, .txt, .md)")
+    p_extract.add_argument("--force-gate", action="store_true", help="Bypass Extraction Quality Gate REVIEW failure and force production")
 
     # translate
     p_translate = subparsers.add_parser("translate", help="Translate extracted chapters into literary Hindi")

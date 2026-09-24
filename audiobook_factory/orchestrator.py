@@ -130,9 +130,11 @@ class PipelineOrchestrator:
             # Inline Gate 0: Translation Coverage Verification
             extracted_dir = project_dir / "extracted"
             translation_dir = project_dir / "translation"
-            ext_files = sorted(extracted_dir.glob("chapter_*.txt"))
+            ext_files = sorted(extracted_dir.glob("chapter_*.md"))
             for ef in ext_files:
-                tf = translation_dir / ef.name
+                tf = translation_dir / f"{ef.stem}_hi.md"
+                if not tf.exists():
+                    tf = translation_dir / ef.name
                 if tf.exists():
                     try:
                         g0_res = audit_gate0_translation(ef, tf)
