@@ -1,0 +1,101 @@
+{
+  "chapter_num": 9,
+  "scene_id": "scene_001",
+  "overall_status": "PASS",
+  "certified": true,
+  "gates": {
+    "T0_source_integrity": {
+      "gate_id": "T0",
+      "gate_name": "Source Text Integrity & Word Count Sanity",
+      "status": "PASS",
+      "details": "Source: 1765 words | Target: 2190 words",
+      "warnings": [],
+      "failures": []
+    },
+    "T5_terminology": {
+      "gate_id": "T5",
+      "gate_name": "Terminology & Entity Consistency",
+      "status": "PASS",
+      "details": "Forbidden variants: 0",
+      "warnings": [
+        "Expected canonical term 'Geralt' for 'Geralt' was not explicitly matched in target text.",
+        "Expected canonical term 'Are' for 'Are' was not explicitly matched in target text.",
+        "Expected canonical term 'Roderick de Novembre' for 'Roderick de Novembre' was not explicitly matched in target text.",
+        "Expected canonical term 'Yes' for 'Yes' was not explicitly matched in target text.",
+        "Expected canonical term 'Do' for 'Do' was not explicitly matched in target text.",
+        "Expected canonical term 'You' for 'You' was not explicitly matched in target text.",
+        "Expected canonical term 'Who' for 'Who' was not explicitly matched in target text.",
+        "Expected canonical term 'No' for 'No' was not explicitly matched in target text.",
+        "Expected canonical term 'Dandilion' for 'Dandilion' was not explicitly matched in target text.",
+        "Expected canonical term 'That' for 'That' was not explicitly matched in target text.",
+        "Expected canonical term 'As' for 'As' was not explicitly matched in target text.",
+        "Expected canonical term 'Your' for 'Your' was not explicitly matched in target text.",
+        "Expected canonical term 'Well' for 'Well' was not explicitly matched in target text.",
+        "Expected canonical term 'And' for 'And' was not explicitly matched in target text.",
+        "Expected canonical term 'So' for 'So' was not explicitly matched in target text.",
+        "Expected canonical term 'Ah' for 'Ah' was not explicitly matched in target text.",
+        "Expected canonical term 'Greetings' for 'Greetings' was not explicitly matched in target text.",
+        "Expected canonical term 'How' for 'How' was not explicitly matched in target text.",
+        "Expected canonical term 'History' for 'History' was not explicitly matched in target text.",
+        "Expected canonical term 'This' for 'This' was not explicitly matched in target text.",
+        "Expected canonical term 'Not' for 'Not' was not explicitly matched in target text.",
+        "Expected canonical term 'Buina' for 'Buina' was not explicitly matched in target text.",
+        "Expected canonical term 'Something' for 'Something' was not explicitly matched in target text.",
+        "Expected canonical term 'But' for 'But' was not explicitly matched in target text.",
+        "Expected canonical term 'If' for 'If' was not explicitly matched in target text.",
+        "Expected canonical term 'To' for 'To' was not explicitly matched in target text.",
+        "Expected canonical term 'Become' for 'Become' was not explicitly matched in target text."
+      ],
+      "failures": []
+    },
+    "T2_semantic_fidelity": {
+      "gate_id": "T2",
+      "gate_name": "Semantic Fidelity & Action Integrity",
+      "status": "PASS",
+      "details": "Deterministic semantic validation passed.",
+      "warnings": [],
+      "failures": []
+    },
+    "T3_omission": {
+      "gate_id": "T3",
+      "gate_name": "Omission Detection",
+      "status": "PASS",
+      "details": "Deterministic omission check passed.",
+      "warnings": [],
+      "failures": []
+    },
+    "T4_addition": {
+      "gate_id": "T4",
+      "gate_name": "Addition & Hallucination Detection",
+      "status": "PASS",
+      "details": "Addition validation passed.",
+      "warnings": [],
+      "failures": []
+    },
+    "T7_character_voice": {
+      "gate_id": "T7",
+      "gate_name": "Character Language Profile Alignment",
+      "status": "PASS",
+      "details": "Character voice profiles verified.",
+      "warnings": [],
+      "failures": []
+    },
+    "T8_intensity": {
+      "gate_id": "T8",
+      "gate_name": "Mature Register & Intensity Preservation",
+      "status": "PASS",
+      "details": "Max delta: 0.3",
+      "warnings": [],
+      "failures": []
+    },
+    "T9_naturalness": {
+      "gate_id": "T9",
+      "gate_name": "Hindi / Hindustani Literary Naturalness",
+      "status": "PASS",
+      "details": "Deterministic literary register check completed.",
+      "warnings": [],
+      "failures": []
+    }
+  },
+  "summary": "Certification completed for scene_001: PASS (Gates Passed: 8/8)"
+}
