@@ -4,20 +4,16 @@
 # Active Context: Audiobook Maker Core Engine & Production
 
 ## Live Sprint State
-- **Branch**: `translator` (Active Sprint: Literary Translation Intelligence Engine).
-- **Core Pillars**:
-  - Book Bible canonical store with legacy `glossary.json` projection.
-  - Contextual Hindustani register ("Aate mein Namak jitni Urdu" - no arbitrary quota).
-  - Narrative transition-driven Scene Segmentation & Structured Narrative State.
-  - Stable Persistent Source Semantic Map per scene/chapter.
-  - Multi-Pass Dedicated Independent Evaluators (Gates T0-T11) with deterministic pre-validation.
-  - Soft ±0.75 intensity evaluation heuristic ("Nothing Above Source", no universal hard rejection).
-  - Tiered Self-Healing Repair (max 2 paragraph rewrites -> 1 scene retranslation).
-  - Non-destructive Witcher Chapter 9 Benchmark Milestone (`chapter_009_hi.new.md` vs canonical).
-- **Sprint Status**:
-  - Independent forensic audit completed; all 4 findings remediated (UNCONDITIONAL PASS).
-  - Leaky entity stopwords hardened; Devanagari multi-script zero-hardcoding contract enforced.
-  - Terminology variants decoupled into Book Bible; anachronisms synced.
-  - Standards package in `audiobooks/standards/` fully verified; Gate T5 false-positive warnings reduced to 0.
-  - `audiobooks/projects/` and `projects/` added to `.gitignore`; 37 one-off `witcher1` scripts purged; engine & tests 100% novel-agnostic.
+- **Branch**: `main` (PR #1 `book_extractor` + PR #2 & PR #3 `translator` MERGED TO `main`, commit `2ff94a6`).
+- **Forensic Ingestion Engine (Pillar 1, PR #1)**:
+  - Canonical `CanonicalBook` AST (`canonical/book.json`), structural EPUB/PDF parsers, Meso-tier 12k splitting, fail-closed quality gates.
+- **Literary Translation Intelligence Engine (Pillar 2, PR #3)**:
+  - Canonical `BookBible` store with legacy `glossary.json` projection & decoupled `terminology_variants`.
+  - Contextual Hindustani register ("Aate mein Namak jitni Urdu") & soft $\pm 0.75$ heuristic intensity model ("Nothing Above Source").
+  - Narrative transition-driven Scene Segmentation, rolling `NarrativeContinuityState`, & Persistent Source Semantic Map.
+  - Multi-Pass Independent Evaluators (Gates T0–T11) with deterministic pre-validation & Tiered Self-Healing Repair.
+  - Chapter 9 Benchmark Standard (`audiobooks/standards/`).
+- **Repo Hygiene & Novel-Agnostic Hardening**:
+  - Independent audit remediated (UNCONDITIONAL PASS); multi-script Devanagari/Latin zero-hardcoding contract (`tests/test_zero_hardcoding_contracts.py`).
+  - `audiobooks/projects/` and `projects/` gitignored; 37 one-off `witcher1` scripts purged; 319/319 tests passing.
 - **Quality Standards**: EBU R128 (-19 LUFS), zero hardcoding, fail-closed gates with provenance ledgering.
