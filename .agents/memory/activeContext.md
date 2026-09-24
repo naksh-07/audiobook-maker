@@ -4,12 +4,16 @@
 # Active Context: Audiobook Maker Core Engine & Production
 
 ## Live Sprint State
-- **Witcher 1 Full M4B Packaging ('The Last Wish'):** COMPLETE & VERIFIED.
-  - All 13 mastered chapters assembled into unified, broadcast-grade `.m4b` container ([The_Last_Wish_Introducing_The_Witcher.m4b](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/output/The_Last_Wish_Introducing_The_Witcher.m4b)).
-  - Total Duration: 10h 36m 36s (636.6 mins), Size: 852.78 MB.
-  - Stream specification: AAC LC 48,000 Hz, 2-channel Stereo, 192 kbps, `+faststart`.
-  - Embedded bilingual TOC (13 chapters with Devanagari titles) and original high-res cover art.
-  - Gate 6 Pre-flight verification (Voice, Loudness at -18.9 LUFS, TOC, Specs) 100% PASS.
-- **Forensic Document Ingestion Engine (Pillar 1 Upgrade):** COMPLETE & CERTIFIED.
-  - Strongly typed `CanonicalBook` AST, sacred raw source preservation, single-pass structural EPUB parser.
-- **Status:** Complete 13-chapter Witcher 1 audiobook mastered, packaged, and synced.
+- **Forensic Document Ingestion Engine (Pillar 1 Upgrade):** MERGED TO `main` via PR #1.
+  - Strongly typed `CanonicalBook` AST (`canonical/book.json`) with block-level provenance (`SourceProvenance`).
+  - Sacred raw source preservation (`raw/` archive with SHA256 checksums).
+  - Single-pass structural EPUB parser (DOM preservation, TOC/Nav anchor precision, 2x faster).
+  - Lightweight layout-aware PDF analyzer (density heuristics, multi-column, repeated header/footer stripping, selective escalation).
+  - Non-destructive normalization & multi-tier chapter detection with 12k-word Meso-tier semantic splitting.
+  - Independent Quality Gate (`PASS`/`WARN`/`REVIEW`) with fail-closed protection and `--force-gate` override.
+  - 100% backward compatibility for downstream stages (`extracted/chapter_XXX.md`).
+- **Production Pipelines (Witcher Ch 10-13):** COMPLETE & CERTIFIED.
+  - Chapters 10-13 translated, screenplay-gated, CUDA forced-aligned, and mastered to EBU R128 (-19 LUFS).
+- **Standalone Pipeline (Two-System Lean Runner):** COMPLETE & TESTED.
+  - Offline screenplay parser + Gemini 3.8 Flash TTS integration with configurable director style.
+- **Pull Request Status:** PR #1 merged into `main` (commit `db40770`), `book_extractor` branch retained, all tests green.
