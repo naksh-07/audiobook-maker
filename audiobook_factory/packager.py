@@ -41,6 +41,33 @@ def get_audio_duration_ms(file_path: Path) -> int:
         return 0
 
 
+def probe_audio_stream(file_path: Path) -> Dict[str, Any]:
+    """Get audio stream parameters (codec, sample_rate, channels, duration_ms) via ffprobe."""
+    ffprobe = shutil.which("ffprobe") or "/usr/bin/ffprobe"
+    cmd = [
+        ffprobe,
+        "-v", "error",
+        "-show_entries", "stream=codec_name,sample_rate,channels:format=duration",
+        "-of", "json",
+        str(file_path),
+    ]
+    try:
+        res = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        data = json.loads(res.stdout) if res.stdout else {}
+        streams = data.get("streams", [])
+        fmt = data.get("format", {})
+        if streams:
+            return {
+                "codec": streams[0].get("codec_name"),
+                "sample_rate": int(streams[0].get("sample_rate", 0)),
+                "channels": int(streams[0].get("channels", 0)),
+                "duration_ms": int(float(fmt.get("duration", 0)) * 1000),
+            }
+    except Exception:
+        pass
+    return {"codec": None, "sample_rate": 0, "channels": 0, "duration_ms": 0}
+
+
 def _escape_ffmetadata(val: Any) -> str:
     """Escape special characters (=, ;, #, \\) for FFMETADATA1 specification."""
     s = str(val or "")
@@ -123,8 +150,15 @@ def package_m4b_audiobook(
 
     title = (manifest.title if manifest else None) or metadata.get("title", project_dir.name.replace("_", " ").title())
     author = (manifest.author if manifest else None) or metadata.get("author", "Unknown Author")
-    if not cover_image and manifest and manifest.packaging_specs and manifest.packaging_specs.cover_art_path:
-        cover_image = manifest.packaging_specs.cover_art_path
+    if not cover_image:
+        if manifest and manifest.packaging_specs and manifest.packaging_specs.cover_art_path:
+            cover_image = manifest.packaging_specs.cover_art_path
+        else:
+            for ext in ("cover.jpg", "cover.jpeg", "cover.png", "cover.webp"):
+                cand_cover = project_dir / ext
+                if cand_cover.exists():
+                    cover_image = cand_cover
+                    break
 
     if not output_filename:
         safe_name = "".join(c for c in title if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
@@ -153,10 +187,16 @@ def package_m4b_audiobook(
                 # 3. Fall back to any file with chapter number
                 candidates = sorted(mastered_dir.glob(f"*chapter_{c_num:03d}.*")) or sorted(mastered_dir.glob(f"*chapter_{c_num}.*"))
             if candidates:
-                chapter_audio_files.append(candidates[0])
+                for cand in candidates:
+                    if cand.exists() and cand.stat().st_size > 1000 and get_audio_duration_ms(cand) > 0:
+                        chapter_audio_files.append(cand)
+                        break
     else:
         # Fallback to general sorting if no chapter numbers detected
-        chapter_audio_files = sorted(mastered_dir.glob("*_cinematic.m4a")) or sorted(mastered_dir.glob("*_mastered.m4a")) or sorted(all_audio)
+        candidates = sorted(mastered_dir.glob("*_cinematic.m4a")) or sorted(mastered_dir.glob("*_mastered.m4a")) or sorted(all_audio)
+        for cand in candidates:
+            if cand.exists() and cand.stat().st_size > 1000 and get_audio_duration_ms(cand) > 0:
+                chapter_audio_files.append(cand)
 
     if not chapter_audio_files:
         raise FileNotFoundError(f"No mastered chapter files found in {mastered_dir}")
@@ -180,14 +220,59 @@ def package_m4b_audiobook(
 
     print(f"[*] Packaging {len(chapter_audio_files)} mastered chapters into M4B audiobook...")
 
+    # Audio Stream Consistency & Standardization Layer
+    target_sr = 48000
+    target_ch = 2
+    target_codec = "aac"
+
+    probed_streams = [probe_audio_stream(cf) for cf in chapter_audio_files]
+    needs_standardization = any(
+        s["sample_rate"] != target_sr or s["channels"] != target_ch or s["codec"] != target_codec
+        for s in probed_streams
+    )
+
+    staging_dir = output_dir / "staging_standardized"
+    ready_chapter_files = []
+
+    if needs_standardization:
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        print(f"[*] Standardizing audio streams to uniform broadcast spec ({target_sr}Hz, {target_ch}ch, 192k AAC)...")
+
+        def standardize_chapter(args):
+            idx, src_path, s_info = args
+            dest_path = staging_dir / f"chapter_{idx:03d}_std.m4a"
+            if s_info["sample_rate"] == target_sr and s_info["channels"] == target_ch and s_info["codec"] == target_codec:
+                return dest_path, src_path, False
+
+            std_cmd = [
+                ffmpeg, "-y",
+                "-i", str(src_path),
+                "-ar", str(target_sr),
+                "-ac", str(target_ch),
+                "-c:a", "aac",
+                "-b:a", "192k",
+                str(dest_path),
+            ]
+            subprocess.run(std_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return dest_path, dest_path, True
+
+        from concurrent.futures import ThreadPoolExecutor
+        tasks = [(i + 1, cf, probed_streams[i]) for i, cf in enumerate(chapter_audio_files)]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            results = list(executor.map(standardize_chapter, tasks))
+
+        for _, active_path, _ in results:
+            ready_chapter_files.append(active_path)
+    else:
+        ready_chapter_files = list(chapter_audio_files)
+
     # Calculate timestamps and durations
     chapter_durations = []
     total_ms = 0
     concat_list = output_dir / "m4b_concat.txt"
-    is_all_aac = all(f.suffix.lower() in (".m4a", ".aac") for f in chapter_audio_files)
 
     with open(concat_list, "w", encoding="utf-8") as f:
-        for idx, cf in enumerate(chapter_audio_files, 1):
+        for idx, cf in enumerate(ready_chapter_files, 1):
             dur_ms = get_audio_duration_ms(cf)
             safe_path = str(cf.resolve()).replace("\\", "/").replace("'", "'\\''")
             f.write(f"file '{safe_path}'\n")
@@ -210,7 +295,6 @@ def package_m4b_audiobook(
 
     # Assemble M4B directly from concat demuxer with +faststart
     has_cover = cover_image and Path(cover_image).exists()
-    audio_codec_args = ["-c:a", "copy"] if is_all_aac else ["-c:a", "aac", "-b:a", "192k"]
 
     pack_cmd = [
         ffmpeg,
@@ -224,10 +308,10 @@ def package_m4b_audiobook(
     if has_cover:
         pack_cmd.extend(["-i", str(cover_image)])
         pack_cmd.extend(["-map", "0:a", "-map", "2:v", "-map_metadata", "1"])
-        pack_cmd.extend(audio_codec_args + ["-c:v", "mjpeg", "-disposition:v", "attached_pic"])
+        pack_cmd.extend(["-c:a", "copy", "-c:v", "mjpeg", "-disposition:v", "attached_pic"])
     else:
         pack_cmd.extend(["-map", "0:a", "-map_metadata", "1"])
-        pack_cmd.extend(audio_codec_args)
+        pack_cmd.extend(["-c:a", "copy"])
 
     pack_cmd.extend(["-movflags", "+faststart"])
     pack_cmd.append(str(final_m4b))
@@ -237,7 +321,7 @@ def package_m4b_audiobook(
     except subprocess.CalledProcessError:
         # Fallback to two-step intermediate concatenation if single-pass demuxer metadata mapping fails
         temp_concat = output_dir / "temp_full.m4a"
-        concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list)] + audio_codec_args + [str(temp_concat)]
+        concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c:a", "copy", str(temp_concat)]
         subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         fb_pack_cmd = [ffmpeg, "-y", "-i", str(temp_concat), "-i", str(meta_txt)]
@@ -255,6 +339,8 @@ def package_m4b_audiobook(
     finally:
         if concat_list.exists():
             concat_list.unlink()
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
 
     # Sync to configured output directory or shared storage
     configured_out = os.environ.get("AUDIO_OUTPUT_DIR")

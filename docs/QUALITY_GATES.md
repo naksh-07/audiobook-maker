@@ -4,11 +4,12 @@
 
 A core pillar of **Audiobook Maker v4.0** is the **Multi-Gate Independent Verification Protocol**. In production audio engineering, catching defects early prevents expensive downstream rework and saves generative AI API quota.
 
-The verification system spans **Gates 0 through 6D**, auditing every artifact from raw translated text to final chapterized `.m4b` delivery.
+The verification system spans **Gates 0.1 through 6D**, auditing every artifact from raw source documents and canonical AST models to final chapterized `.m4b` delivery.
 
 ```mermaid
 flowchart LR
-    G0["Gate 0:<br/>Translation"] --> G1["Gate 1:<br/>Voice Roster"]
+    G01["Gate 0.1:<br/>Forensic Ingestion"] --> G0["Gate 0:<br/>Translation"]
+    G0 --> G1["Gate 1:<br/>Voice Roster"]
     G1 --> G2["Gate 2:<br/>Screenplay"]
     G2 --> G3["Gate 3 / 3.5:<br/>Manifest Feasibility"]
     G3 --> G45["Gate 4.5:<br/>Timeline Ledger"]
@@ -24,6 +25,22 @@ flowchart LR
 ---
 
 ## 📋 Comprehensive Quality Gate Specifications
+
+### Gate 0.1: Forensic Document Extraction Quality Gate (Pillar 1)
+- **Function**: `ExtractionQualityAuditor.audit(book: CanonicalBook, force_gate: bool = False) -> ExtractionQualityReport`
+- **Module**: [`audiobook_factory/quality_gate.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/quality_gate.py)
+- **Data Models**: [`CanonicalBook`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L182-L262), [`ExtractionQualityReport`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L123-L180), [`ExtractionGateAuditError`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L33-L43)
+- **Pipeline Stage**: Executed immediately during Stage 1 (`process_book_file`) before canonical serialization and markdown projection.
+- **Audit Rules**:
+  - **Document Completeness**: Verifies at least one chapter was detected ($total\_chapters \ge 1$).
+  - **Minimum Text Coverage Floor**: Total extracted words must exceed $50$ words for EPUB and PDF documents.
+  - **Empty Chapter Guard**: Flags any chapter containing fewer than $5$ words as a critical defect.
+  - **Page Layout & OCR Defect Ratio**: Analyzes PDF page audits (`PDFQualityAnalyzer`). If suspicious pages (low density, OCR noise ratio $> 8\%$, Unicode replacement `\ufffd`, multi-column line wrap) exceed $25\%$ of total pages ($\frac{\text{suspicious}}{\text{total}} > 0.25$), fails closed.
+  - **Status Resolution**: Resolves audit to `PASS` (clean), `WARN` (minor issues $< 25\%$ healed or non-fatal), or `REVIEW` (critical defects present).
+- **Fail Condition**: Raises [`ExtractionGateAuditError`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L33-L43) with an actionable diagnostic report (affected chapters/pages and remediation options) if status is `REVIEW`.
+- **Operator Override**: Bypassed when `--force-gate` is supplied to `extract` or `auto`.
+
+---
 
 ### Gate 0: Source Text & Translation Coverage
 - **Function**: `audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dict[str, Any]`
@@ -176,9 +193,15 @@ flowchart LR
 
 ## 🏃 Running Quality Gate Audits via CLI
 
-You can audit any active project directory directly using the unified CLI:
+You can audit any active project directory or document extraction directly using the unified CLI:
 
 ```bash
+# Ingestion extraction audit with fail-closed Gate 0.1 enforcement
+python audiobook_cli.py extract books/the_witcher.epub
+
+# Ingestion extraction with Gate 0.1 override (bypass REVIEW failure)
+python audiobook_cli.py extract books/the_witcher.epub --force-gate
+
 # Full project master certification (Gates 6A, 6B, 6C, 6D)
 python audiobook_cli.py audit audiobooks/projects/witcher1
 

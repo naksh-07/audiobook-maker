@@ -273,3 +273,43 @@
      - Sequenced FFmpeg `adeclick` -> `afftdn=nr=8:nf=-52` -> `highpass=40` -> `lowpass=11200` -> `deesser` -> `agate` on all master dialogue tracks.
 - **Rationale:** Eliminates 100% of residual vocoder tails, C2PA static bursts, and digital clicks without clipping Hindi phonetic endings or drifting timeline markers. Silence pause peak amplitude dropped from 32,768 to 0.0000. Verified across test suites and fully rendered in Chapter 12 master (`chapter_012_cinematic.m4a`, 182.32 MB, -18.7 LUFS).
 
+## ADR-029: Forensic Literary Document Ingestion, Canonical AST & Dual-Layer Quality Gates
+- **Context:** Ingesting complex literary documents (EPUB, PDF, TXT, Markdown) into Audiobook Maker revealed significant structural defects in legacy extraction:
+  1. Destructive string-splitting and naive regex stripping flattened scene breaks (`* * *`), section headings, and blockquotes, discarding document hierarchy.
+  2. Complete lack of forensic provenance: downstream translation and screenplay errors could not be traced back to original document locations (spine item, anchor, or PDF page).
+  3. PDF extraction was vulnerable to silent OCR noise, broken line wraps, running headers/footers, and corrupted scanned pages leaking into downstream LLM translation and TTS stages.
+  4. EPUB anchor slicing frequently severed HTML opening tags (`id="..."`), corrupting text.
+  5. Giant monolithic chapters ($> 12,000$ words) overflowed LLM context windows, causing silent truncation.
+  6. Absence of an upfront quality gate allowed corrupted documents to proceed deep into the pipeline, burning generative AI API quota.
+- **Decision:**
+  1. **Canonical Book Model & Forensic Provenance (`audiobook_factory/book_model.py`):**
+     - Established strongly typed Pydantic v2 data models: [`CanonicalBook`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L182-L262), [`CanonicalChapter`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L80-L122), [`CanonicalBlock`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L64-L79), and [`SourceProvenance`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L44-L63).
+     - Preserves sacred, unmutated raw text alongside speech-normalized text.
+     - Granular block-level forensic provenance tracking: `source_file`, `source_type`, `page_number`, `spine_item`, `html_tag`, `html_id`, `line_start`, `char_offset`, and `reading_order`.
+  2. **Non-Destructive Literary Normalizer (`audiobook_factory/normalizer.py`):**
+     - Applied Unicode NFC normalization and zero-width hygiene (`\u200b`, `\u200c`, `\u200d`, `\ufeff`, `\u2060`).
+     - Healed hyphenated linebreaks across line wraps in both Latin and Devanagari scripts (`"impor-\ntant"` -> `"important"`).
+     - Standardized typographic quotes and spaced dashes while offering a `preserve_literary_quotes` option.
+     - Stripped footnote citation brackets (`[1]`, `[23]`) and stripped recurring running headers/footers.
+  3. **Single-Pass Structural EPUB Parser (`audiobook_factory/epub_parser.py`):**
+     - Implemented single-pass OPF and spine traversal ([`ForensicEPUBParser`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/epub_parser.py#L184-L463)) to eliminate redundant unzipping.
+     - Added DOM-aware structural block parsing ([`EPUBStructuralHTMLParser`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/epub_parser.py#L34-L182)) preserving headings, blockquotes, and scene breaks.
+     - Implemented opening angle-bracket (`<`) backtracking during Nav/NCX anchor slicing to prevent severed HTML tags.
+  4. **Layout-Aware PDF Engine & Quality Analyzer (`audiobook_factory/pdf_engine.py`):**
+     - Fast local digital text extraction via `pypdf>=5.0`.
+     - 4-signal heuristic page quality analysis ([`PDFQualityAnalyzer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/pdf_engine.py#L44-L140)): interior low density, OCR symbol noise ratio ($> 8\%$), Unicode replacement glyphs (`\ufffd`), and multi-column line wrap anomalies.
+     - Filtered recurring running headers/footers appearing across $\ge 3$ pages.
+     - Added selective single-page multimodal vision escalation ([`GeminiVisionPDFExtractor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/pdf_engine.py#L150-L220) via `gemini-3.8-flash`) strictly on flagged suspicious pages.
+  5. **Multi-Tier Chapter Segmentation & Meso-Tier Semantic Splitter (`audiobook_factory/chapter_segmenter.py`):**
+     - Comprehensive regex heading detection across English, Devanagari/Hindi, Roman numerals, word numbers, and story landmarks.
+     - Conservative false-positive validator ([`is_valid_heading_candidate`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/chapter_segmenter.py#L36-L61)) protecting against uppercase dialogue and shouting.
+     - Implemented a 12,000-word Meso-tier semantic splitter ([`split_large_chapter_on_semantic_boundary`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/chapter_segmenter.py#L149-L241)) with a 5-tier priority hierarchy (Scene break -> Section heading -> Paragraph boundary -> Sentence boundary -> Emergency word split) preventing LLM context overflow.
+  6. **Independent Ingestion Quality Gate (Gate 0.1) (`audiobook_factory/quality_gate.py`):**
+     - Implemented [`ExtractionQualityAuditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/quality_gate.py#L21-L111) evaluating extraction completeness, word count floors ($> 50$ words), non-empty chapters ($> 5$ words), and suspicious page ratios ($< 25\%$).
+     - Fails closed on status `REVIEW`, raising [`ExtractionGateAuditError`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L33-L43) with actionable terminal diagnostics and remediation guidance.
+     - Provided `--force-gate` CLI flag override for intentional operator bypasses.
+  7. **Dual-Layer Architecture & Universal Facade (`audiobook_factory/extractor.py`):**
+     - Created isolated project workspace: `raw/` (SHA-256 manifest and source copy), `canonical/` (`book.json` and `quality_report.json`), and `extracted/` (`chapter_XXX.md`).
+     - Guaranteed 100% backward compatibility for downstream translation and screenplay stages via [`project_legacy_extracted()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L214-L230).
+- **Rationale:** Ensures zero data loss and uncompromised structural fidelity at the document ingestion boundary, blocks corrupted text from wasting generative AI API quota, provides instant provenance traceability, and maintains seamless backward compatibility across the entire production pipeline.
+

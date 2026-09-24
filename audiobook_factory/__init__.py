@@ -35,7 +35,17 @@ _load_env_file()
 from .extractor import (
     process_book_file,
     extract_chapters,
+    extract_epub,
+    clean_book_text,
     split_large_chapter_on_semantic_boundary,
+)
+from .book_model import (
+    CanonicalBook,
+    CanonicalChapter,
+    CanonicalBlock,
+    SourceProvenance,
+    ExtractionQualityReport,
+    ExtractionGateAuditError,
 )
 from .translator import (
     translate_book_project,

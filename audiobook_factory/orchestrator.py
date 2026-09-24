@@ -83,6 +83,7 @@ class PipelineOrchestrator:
         duck_db: float = -16.0,
         spatial_staging: bool = False,
         adult_literary_mode: bool = True,
+        force_gate: bool = False,
     ) -> Path:
         """
         Executes the complete 6-stage autonomous novel pipeline:
@@ -113,7 +114,7 @@ class PipelineOrchestrator:
         # Stage 1: Document Extraction
         # -------------------------------------------------------------
         logger.info("[Stage 1/6] Ingesting document and extracting chapters...")
-        meta = process_book_file(input_file, self.projects_dir)
+        meta = process_book_file(input_file, self.projects_dir, force_gate=force_gate)
         book_slug = meta["book_id"]
         project_dir = self.projects_dir / book_slug
         ledger = ProjectStateLedger(project_dir)
@@ -130,9 +131,11 @@ class PipelineOrchestrator:
             # Inline Gate 0: Translation Coverage Verification
             extracted_dir = project_dir / "extracted"
             translation_dir = project_dir / "translation"
-            ext_files = sorted(extracted_dir.glob("chapter_*.txt"))
+            ext_files = sorted(extracted_dir.glob("chapter_*.md"))
             for ef in ext_files:
-                tf = translation_dir / ef.name
+                tf = translation_dir / f"{ef.stem}_hi.md"
+                if not tf.exists():
+                    tf = translation_dir / ef.name
                 if tf.exists():
                     try:
                         g0_res = audit_gate0_translation(ef, tf)

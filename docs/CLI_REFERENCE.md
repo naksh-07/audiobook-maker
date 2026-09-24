@@ -58,15 +58,22 @@ python audiobook_cli.py auto <FILE> [OPTIONS]
 | `--dramatized` | Flag | `False` | Multi-voice character casting vs single narrator reading. |
 | `--cover` | Path | `None` | Path to cover artwork image (JPEG/PNG, min $1400 \times 1400$ px). |
 | `--workers` | Integer | `3` | Number of concurrent TTS synthesis worker threads. |
+| `--force-gate` | Flag | `False` | Bypass Extraction Quality Gate (Gate 0.1) `REVIEW` failure and force production. |
 
 ### Example
 ```bash
+# Standard autonomous production:
 python audiobook_cli.py auto books/the_witcher.epub \
   --hindi \
   --dramatized \
   --voice Charon \
   --cover covers/witcher.jpg \
   --workers 4
+
+# Autonomous production overriding Quality Gate REVIEW failure:
+python audiobook_cli.py auto books/unorthodox_layout.epub \
+  --voice Aoede \
+  --force-gate
 ```
 
 ---
@@ -104,23 +111,39 @@ python audiobook_cli.py produce witcher1 --all --duck-db -16.0
 
 ## 3. Universal Document Extraction (`extract`)
 
-Ingests raw book files and segments them into structured, clean Markdown chapters.
+Ingests raw book files (EPUB, PDF, TXT, MD) using the **Pillar 1 Forensic Ingestion Engine**. Builds a strongly typed Pydantic v2 AST, preserves sacred raw source files, evaluates the independent fail-closed Quality Gate (Gate 0.1), and projects clean Markdown chapters.
 
 ```bash
-python audiobook_cli.py extract <FILE>
+python audiobook_cli.py extract <FILE> [OPTIONS]
 ```
 
 ### Positional Arguments
 - `FILE`: Input file path (`.epub`, `.pdf`, `.txt`, `.md`).
 
+### Options
+| Flag | Type | Default | Description |
+|---|:---:|:---:|---|
+| `--force-gate` | Flag | `False` | Bypass Extraction Quality Gate (Gate 0.1) `REVIEW` failure and force file projection. |
+
 ### Output Artifacts
-- Creates project folder: `audiobooks/projects/<BOOK_SLUG>/`
-- Clean chapter files: `audiobooks/projects/<BOOK_SLUG>/extracted/chapter_XXX.md`
-- Metadata state: `audiobooks/projects/<BOOK_SLUG>/project_state.json`
+Each extraction run generates an isolated project workspace under `audiobooks/projects/<BOOK_SLUG>/`:
+- `raw/source_original.<ext>`: Bit-for-bit verbatim copy of the input document.
+- `raw/source_manifest.json`: Cryptographic SHA-256 verification hash, original path, and ingestion timestamp.
+- `canonical/book.json`: Strongly typed [`CanonicalBook`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L182-L262) AST with block-level forensic provenance.
+- `canonical/quality_report.json`: Machine-readable [`ExtractionQualityReport`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L123-L180) containing Gate 0.1 status and page diagnostics.
+- `extracted/chapter_XXX.md`: Backward-compatible projected Markdown chapters for downstream translation and screenplay stages.
+- `metadata.json`: Legacy project metadata summary including chapter word counts and estimated durations.
 
 ### Example
 ```bash
+# Standard extraction with fail-closed Gate 0.1 enforcement:
 python audiobook_cli.py extract books/dune.epub
+
+# PDF extraction with automatic layout analysis & selective vision escalation:
+python audiobook_cli.py extract books/dracula.pdf
+
+# Bypassing Quality Gate REVIEW failure (operator override):
+python audiobook_cli.py extract books/scanned_book.pdf --force-gate
 ```
 
 ---
