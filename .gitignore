@@ -63,6 +63,7 @@ audiobooks/projects/*/soundscapes/
 audiobooks/projects/sample_story/
 audiobooks/inputs/
 audiobooks/output/
+audiobooks/outputs/
 audiobooks/workspace/
 audiobooks/samples/
 audiobooks/sound_bank/

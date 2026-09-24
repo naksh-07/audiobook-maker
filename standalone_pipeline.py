@@ -78,6 +78,15 @@ DEFAULT_TTS_MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
 DEFAULT_OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "qwen/qwen3.8-27b:free")
 DEFAULT_LLM_ENGINE = os.environ.get("SCREENPLAY_ENGINE", "offline")
 
+# =============================================================================
+# GEMINI 3.8 FLASH TTS - GLOBAL DIRECTOR STYLE PROMPT
+# Edit this string to customize the narration acting, mood, and pace!
+# =============================================================================
+DEFAULT_DIRECTOR_STYLE = os.environ.get(
+    "TTS_DIRECTOR_STYLE",
+    "Game of Thrones and gritty Netflix period drama style; deep cinematic gravitas, breathy intimate tension, restrained emotional power, slow deliberate cadence with pregnant pauses, raw visceral character modulations, and intimate atmospheric suspense",
+)
+
 CANDIDATE_TEXT_MODELS = [
     "gemini-3.5-flash",
     "gemini-3-flash-preview",
@@ -840,6 +849,7 @@ def build_narrator_superchunks(
     text: str,
     is_hindi: bool = False,
     max_words: int = 550,
+    style: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Quota-Efficient Narrator Super-Chunking Engine.
@@ -942,7 +952,7 @@ def build_narrator_superchunks(
             "speaker": "Narrator",
             "text": cleaned,
             "emotion": "neutral",
-            "style": "master cinematic audiobook narration with expressive emotional dialogue modulations and atmospheric suspense",
+            "style": style or DEFAULT_DIRECTOR_STYLE,
             "pause_after_ms": pause_ms,
         })
 
@@ -961,6 +971,7 @@ def parse_literature_offline(
     mode: str = "narrator",
     max_chunk_words: int = 550,
     character_roster: Optional[Dict[str, Any]] = None,
+    style: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     100% OFFLINE Screenplay Generator.
@@ -981,7 +992,7 @@ def parse_literature_offline(
     mode = (mode or "narrator").lower()
 
     if mode in ("narrator", "superchunk", "auto"):
-        return build_narrator_superchunks(clean_text, is_hindi=is_hindi, max_words=max_chunk_words)
+        return build_narrator_superchunks(clean_text, is_hindi=is_hindi, max_words=max_chunk_words, style=style)
 
     if mode == "screenplay":
         print("[*] [OFFLINE PARSER] Parsing formatted screenplay script lines (100% offline)...")
@@ -1490,7 +1501,7 @@ def synthesize_screenplay_round_robin(
             elif emotion == "reassuring":
                 style_instruction = "warm comforting delivery with gentle reassuring cadence"
             else:
-                style_instruction = "master cinematic audiobook narration with expressive emotional dialogue shifts and natural atmospheric pacing"
+                style_instruction = DEFAULT_DIRECTOR_STYLE
 
         part_payload: Dict[str, Any] = {
             "text": text,
@@ -1667,6 +1678,7 @@ def run_standalone_pipeline(
     offline: bool = False,
     offline_mode: str = "narrator",
     max_chunk_words: int = 550,
+    director_style: Optional[str] = None,
     llm_engine: str = DEFAULT_LLM_ENGINE,
     openrouter_model: str = DEFAULT_OPENROUTER_MODEL,
     openrouter_key: Optional[str] = None,
@@ -1744,6 +1756,7 @@ def run_standalone_pipeline(
                 is_hindi=is_hindi,
                 mode=offline_mode,
                 max_chunk_words=max_chunk_words,
+                style=director_style or DEFAULT_DIRECTOR_STYLE,
             )
         elif llm_engine == "openrouter":
             print(f"\n{'='*80}\n  STAGE 1: LITERATURE -> SCREENPLAY JSON (OpenRouter: {openrouter_model} -> Gemini 3.8 Flash TTS Calibrated)\n{'='*80}")
@@ -1866,6 +1879,7 @@ def main():
     parser.add_argument("--offline", action="store_true", help="Generate screenplay JSON 100%% offline without calling any LLM API (zero keys, instant)")
     parser.add_argument("--offline-mode", type=str, default="narrator", choices=["narrator", "dialogue", "screenplay"], help="Offline parser mode: 'narrator' (max-density single-voice superchunks, minimum requests), 'dialogue' (multi-cast character splitting), 'screenplay' (line-by-line script)")
     parser.add_argument("--max-chunk-words", type=int, default=550, help="Maximum word count per TTS request in narrator mode (default: 550 words, ~3.5 mins of audio)")
+    parser.add_argument("--style", type=str, default=DEFAULT_DIRECTOR_STYLE, help=f"Gemini 3.8 Flash TTS director style prompt for acting and tone (default: '{DEFAULT_DIRECTOR_STYLE}')")
     parser.add_argument("--pool-status", action="store_true", help="Print KeyPool status and exit")
     parser.add_argument("--reset-keys", action="store_true", help="Reset all keys in KeyPool back to ACTIVE for today and exit")
     parser.add_argument("--check-models", action="store_true", help="Probe and display live status of candidate Gemini models and exit")
@@ -1924,6 +1938,7 @@ def main():
         offline=args.offline,
         offline_mode=args.offline_mode,
         max_chunk_words=args.max_chunk_words,
+        director_style=args.style,
         llm_engine=args.llm_engine,
         openrouter_model=args.openrouter_model,
         openrouter_key=args.openrouter_key or None,

@@ -12,6 +12,8 @@
   - SOTA unabridged translation (3,802 Devanagari words) in [`chapter_013_hi.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/translation/chapter_013_hi.md).
   - Gate 2 audited screenplay (152 segments across 8 characters) in [`chapter_013_hi_script.json`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/scripts/chapter_013_hi_script.json).
   - Final Master Audio [`chapter_013_cinematic.m4a`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/mastered/chapter_013_cinematic.m4a): 39.43 MB (41,345,991 bytes), 28m 30.5s, -18.8 LUFS (EBU R128 standard).
-  - ADR-028 dual-layer forensic cleaning, 5 Witcher 3 score cues, 2 ambience beds, zero noise/clicks.
-- **Status:** Chapter 12 and Chapter 13 (*The Last Wish* book finale) fully produced and certified broadcast-ready.
-
+- **Standalone Pipeline (Two-System Lean Runner):** COMPLETE & TESTED.
+  - 100% Offline Screenplay Parser (0.00s execution, 500-550 words/chunk superchunks, minimum API calls).
+  - Gemini 3.8 Flash TTS integration via `speech_metadata.style` and native `<whisper>`, `<sigh>`, `<gasp>`, `<short pause>`.
+  - Configurable style via top-level `DEFAULT_DIRECTOR_STYLE`, `.env` (`TTS_DIRECTOR_STYLE`), or CLI `--style`.
+- **Status:** Standalone pipeline calibrated and verified with dry-run tests.
