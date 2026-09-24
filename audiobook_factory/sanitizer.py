@@ -73,6 +73,11 @@ SUPPORTED_TTS_TAG_PATTERNS = [
     r"ragged\s+heaving\s+pant",
     r"slow[\s_]+motion",
     r"mocking\s+chuckle",
+    r"clears?\s+throat",
+    r"coughs?",
+    r"snickers?",
+    r"panting",
+    r"(?:short|long)\s+pause",
 ]
 COMPILED_TTS_TAG_RE = re.compile(rf"^\[\s*(?:{'|'.join(SUPPORTED_TTS_TAG_PATTERNS)})\s*\]$", re.IGNORECASE)
 
@@ -235,3 +240,45 @@ def sanitize_screenplay_segment(segment: Dict[str, Any], is_hindi: bool = True) 
     cleaned_seg = dict(segment)
     cleaned_seg["text"] = text
     return cleaned_seg
+
+
+def audit_literary_register(text: str) -> Tuple[bool, str, List[str]]:
+    """
+    Meso-Tier Literary Register Guard:
+    Scans generated Hindi text against the dynamic Literary Advisory DB for robotic literalisms,
+    inappropriate modern slang, or immersion-breaking textbook vocabulary.
+    Returns (is_clean, cleaned_text, detected_warnings).
+    """
+    if not text:
+        return True, text, []
+
+    from audiobook_factory.advisory_lexicon import get_advisory_db
+    advisory_db = get_advisory_db()
+    antipatterns = advisory_db.get_banned_antipatterns_map()
+
+    warnings: List[str] = []
+    cleaned_text = text
+
+    # Contextual replacement map for robotic antipatterns
+    replacements = {
+        r"सुनहरी\s+लड़की": "गोरी-चिट्टी लड़की",
+        r"सोने\s+की\s+लड़की": "गोरी-निखरी लड़की",
+        r"कुंवारी\s+चोटी": "कमसिन की चोटी",
+        r"नमस्ते[,\s]+गेराल्ट": "सलाम, गेराल्ट",
+        r"नमस्ते[,\s]+डैंडेलियन": "सलाम, डैंडेलियन",
+        r"(?<![\u0900-\u097F])नमस्ते(?![\u0900-\u097F])": "सलाम",
+        r"(?<![\u0900-\u097F])राम-राम(?![\u0900-\u097F])": "सलाम",
+        r"(?<![\u0900-\u097F])नमस्कार(?![\u0900-\u097F])": "आदाब",
+        r"(बेर|शराब|मदिरा|वाइन|जाम)\s*की\s*दारू": r"\1 की शराब",
+        r"दारू\s+की\s+(सुराही|बोतल)": r"शराब की \1",
+        r"(?<![\u0900-\u097F])दारू(?![\u0900-\u097F])": "शराब",
+    }
+
+    for pattern, replacement in replacements.items():
+        if re.search(pattern, cleaned_text):
+            matches = re.findall(pattern, cleaned_text)
+            warnings.append(f"Antipattern detected: {matches[0]} -> normalized to '{replacement}'")
+            cleaned_text = re.sub(pattern, replacement, cleaned_text)
+
+    is_clean = len(warnings) == 0
+    return is_clean, cleaned_text, warnings

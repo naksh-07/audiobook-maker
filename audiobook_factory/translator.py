@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 
-DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
+DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
+MODEL_CANDIDATES = ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash")
 ADULT_LITERARY_MODE = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
 
 from audiobook_factory.key_manager import get_persistent_key_pool
 from audiobook_factory.cadence import get_stealth_sdk_headers
+from audiobook_factory.advisory_lexicon import get_advisory_db
 
 pool = get_persistent_key_pool()
 
@@ -35,9 +37,9 @@ def get_api_key() -> str:
 
 
 def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_MODEL, json_mode: bool = False, max_retries: int = 4) -> str:
-    """Send request to Gemini API with automatic key rotation, retry and model fallback."""
+    """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback."""
     candidate_models = [model]
-    for m in ("gemini-flash-latest", "gemini-3.6-flash", "gemini-flash-lite-latest"):
+    for m in ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"):
         if m not in candidate_models:
             candidate_models.append(m)
 
@@ -101,11 +103,15 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
             except urllib.error.HTTPError as e:
                 err_msg = e.read().decode("utf-8", errors="ignore")
                 last_error = f"HTTP {e.code}: {err_msg}"
-                if e.code == 429:
-                    pool.mark_temporary_backoff(api_key, 15.0, "RPM rate limit in translator")
+                if e.code in (429, 503, 500):
+                    pool.mark_temporary_backoff(api_key, 10.0, f"HTTP {e.code} in translator")
+                if e.code == 503:
+                    if attempt >= 1:
+                        print(f"    [MODEL OVERLOAD] {curr_model} overloaded (503). Skipping to next candidate model immediately.", flush=True)
+                        break
                 if e.code in (503, 500, 429) and attempt < max_retries - 1:
-                    wait_sec = 2.0 * (attempt + 1)
-                    print(f"    [WAIT] Gemini API HTTP {e.code}. Cooling off {wait_sec:.1f}s before retry...", flush=True)
+                    wait_sec = 1.0 * (attempt + 1)
+                    print(f"    [WAIT] Gemini API {curr_model} HTTP {e.code}. Key backed off, cooling off {wait_sec:.1f}s before next key/retry...", flush=True)
                     time.sleep(wait_sec)
                     continue
                 break
@@ -222,6 +228,7 @@ def _translate_single_block(
         adult_mode = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
     if adult_mode:
+        advisory_guidance = get_advisory_db().get_formatted_prompt_guidelines()
         system_prompt = (
             "You are a master literary translator and audio drama director adapting mature, grimdark fantasy "
             "and adult literature (in the unapologetic tradition of Andrzej Sapkowski, George R.R. Martin, Anurag Kashyap, and Saadat Hasan Manto) "
@@ -236,7 +243,7 @@ def _translate_single_block(
             "Restrict Desi/Hindustani adaptation strictly to organic tavern grit, authentic rustic profanity, dynamic honorific power shifts, "
             "and Manto-grade somatic physical descriptions.\n"
             "3. PERIOD TAVERN GRIT & RAW PROFANITY: Translate medieval insults and curses into authentic, earthy Hindustani equivalents. "
-            "Use 'गांड' (never 'चूतड़' or 'नितंब'), 'भोसड़ीके', 'लंड', 'रांड / रंडी', 'भड़वा / दल्ला', 'मादरचोद', 'बकचोदी', 'सूअर का पेशाब', "
+            "Use 'गांड' (never 'चूतड़' or 'नितंब'), 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने', 'रंडी की औलाद', "
             "'अंडकोष बधिया करना'. NEVER replace them with polite TV-serial substitutions (do NOT turn 'bastard' into 'दुष्ट' or 'whore' into 'बुरी स्त्री').\n"
             "4. THE 19-TO-21 AMPLIFICATION RULE: When source English dialogue is mild or toned down (19), elevate it to authentic Desi 21 "
             "for visceral gut-punch impact (e.g. 'plough yourself' -> 'गांड मरा' / 'जा अपनी मां चुदा', 'damn you' -> 'तेरी मां की...').\n"
@@ -245,24 +252,24 @@ def _translate_single_block(
             "6. TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant thugs start with dismissive "
             "'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
             "7. URDU KA TARKA ('Aate me Namak'): Infuse a calibrated 10-15% of atmospheric, noir, and sensual Urdu "
-            "('जिस्म', 'हवस', 'क़यामत', 'वहशी', 'रूह', 'सन्नाटा', 'ख़ंजर', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक') to give dark-fantasy existential weight.\n"
-            "8. SOMATIC INTIMACY, DIRTY BANTER & RAW EROTICA (UNFILTERED HBO / MANTO STANDARD): "
+            "('जिस्म', 'हवस', 'क़यामत', 'वहशी', 'रूह', 'सन्नाटा', 'ख़ंजर', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक', 'सलाम', 'शराब', 'कमसिन') to give dark-fantasy existential weight.\n"
+            "8. SOMATIC INTIMACY & PASSION (UNFILTERED HBO / MANTO STANDARD): "
             "Render passionate, sensual, intimate, or erotic scenes with visceral realism and authentic passion:\n"
             "- STRICTLY BANNED: Sterile, clinical biology-textbook words ('योनि', 'लिंग') that sound like high-school exams or hospital autopsies.\n"
-            "- MANDATED & AUTHORIZED: Raw Desi dirty talk, visceral erotic vocabulary, and somatic friction ('लंड', 'चूत', 'गांड', 'चोदना', 'मसलना', "
-            "'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश', 'चमड़े की तंग पेटी खोलना', 'सीने पर नाखूनों का धंसना') "
+            "- MANDATED & AUTHORIZED: Visceral romantic and sensual friction ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश', 'चमड़े की तंग पेटी खोलना', 'सीने पर नाखूनों का धंसना') "
             "whenever the scene presents passionate encounters, bedroom dialogue, or sexual intimacy.\n"
             "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Never invent penetrative intercourse out of thin air if characters "
-            "are merely conversing or brushing shoulders. But whenever the source novel contains sexual tension, nudity, physical passion, or intercourse, "
-            "elevate it with the 19-to-21 Amplification Rule into full, unapologetic Desi passion and dirty talk without prudish TV-serial censorship.\n"
+            "are merely conversing or brushing shoulders. But whenever the source novel contains sexual tension, nudity, physical passion, or intimacy, "
+            "elevate it with the 19-to-21 Amplification Rule into full, unapologetic Desi passion without prudish TV-serial censorship.\n"
             "9. VISCERAL COMBAT, GORE & STACCATO RHYTHM: Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism "
             "('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा', 'दांतों के टूटने और तालू के फटने की खट्टी नमकीन बदबू'). "
             "During intense fight scenes, fracture narrative into rapid STACCATO clauses (2-4 words per beat: 'कदम पीछे। तलवार का पैंतरा। वार। चूक गया!'). "
-            "Capture adrenaline tunnel vision, muscle strain, and raw battlefield profanity ('तेरी मां की... गिर साले!', 'काट के फेंक दूंगा भोसड़ीके!').\n"
+            "Capture adrenaline tunnel vision, muscle strain, and raw battlefield profanity.\n"
             "10. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
             "subtext, humor, and emotional depth for professional voice actors. Use flowing, cinematic Hindustani.\n"
             "11. ADHERE TO GLOSSARY & ZERO CHATTER: Strictly adhere to the provided Character Glossary for proper noun spellings. "
-            "Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions."
+            "Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions.\n\n"
+            f"{advisory_guidance}"
         )
     else:
         system_prompt = (
@@ -291,10 +298,15 @@ def _translate_single_block(
 \"\"\"
 """
     raw = call_gemini(prompt, system_instruction=system_prompt, model=model, json_mode=False).strip()
-    from audiobook_factory.sanitizer import validate_and_sanitize_translation
+    from audiobook_factory.sanitizer import validate_and_sanitize_translation, audit_literary_register
     is_valid, cleaned, reason = validate_and_sanitize_translation(raw, is_hindi=True)
     if not is_valid:
         raise RuntimeError(f"Translation guardrail triggered for {block_title}: {reason}")
+    _, cleaned, warnings = audit_literary_register(cleaned)
+    if warnings:
+        from audiobook_factory.logger import logger
+        for w in warnings:
+            logger.info(f"    [LITERARY LINTER] {w}")
     return cleaned
 
 

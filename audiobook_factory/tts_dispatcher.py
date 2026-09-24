@@ -7,6 +7,7 @@ transaction-safe SQLite segment ledgering, and multi-worker parallelism.
 
 import os
 import sys
+import io
 import time
 import json
 import re
@@ -18,11 +19,13 @@ import hashlib
 import threading
 import urllib.request
 import urllib.error
+import subprocess
 import concurrent.futures
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
 from audiobook_factory.logger import logger
+from audiobook_factory.restoration import extract_clean_pcm_from_gemini_container
 from audiobook_factory.state import ProjectStateLedger
 from audiobook_factory.key_manager import (
     get_persistent_key_pool,
@@ -34,12 +37,22 @@ from audiobook_factory.cadence import (
     get_human_cadence_controller,
     probe_key_health,
 )
+from audiobook_factory.contracts import (
+    BatchPlanItem,
+    BatchDispatchManifest,
+    ScreenplaySegment,
+)
+from audiobook_factory.batch_planner import BatchDispatchPlanner
+from audiobook_factory.forced_aligner import WorkstationForcedAligner
 
 
 # Default Configuration from Environment
 DEFAULT_BACKEND = os.environ.get("TTS_PRIMARY_BACKEND", "gemini_tts")
 DEFAULT_VOICE = os.environ.get("GEMINI_DEFAULT_VOICE", "Aoede")
-DEFAULT_MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-3.1-flash-tts-preview")
+DEFAULT_MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
+DEFAULT_BATCHING_ENABLED = os.environ.get("TTS_BATCHING_ENABLED", "true").lower() in ("true", "1", "yes")
+DEFAULT_FORCED_ALIGNMENT_ENABLED = os.environ.get("TTS_FORCED_ALIGNMENT_ENABLED", "true").lower() in ("true", "1", "yes")
+DEFAULT_DECLICK_FADE_MS = float(os.environ.get("TTS_DECLICK_FADE_MS", "5.0"))
 ENABLE_EMERGENCY_FALLBACK = os.environ.get("ENABLE_EMERGENCY_FALLBACK", "false").lower() in ("true", "1", "yes")
 # Enforce strictly 1 worker for authentic human studio cadence and complete anti-clustering protection
 DEFAULT_WORKERS = 1
@@ -147,12 +160,42 @@ NUMERAL_NORMALIZATION = {
 }
 
 
+def resolve_speech_metadata_style(acting: Any, emotion: str = "neutral", intensity: str = "medium") -> str:
+    """
+    Transforms Pydantic screenplay acting directives and emotion into a concise,
+    expressive natural language style descriptor for Gemini speechMetadata.style.
+    """
+    descriptors = []
+
+    style_val = getattr(acting, "delivery_style", None) if acting else None
+    if not style_val and isinstance(acting, dict):
+        style_val = acting.get("delivery_style")
+
+    if style_val and str(style_val).lower() not in ("neutral", "standard"):
+        descriptors.append(str(style_val).replace("_", " "))
+
+    if emotion and emotion.lower() not in ("neutral", "standard"):
+        descriptors.append(emotion.lower().replace("_", " "))
+
+    if intensity == "explosive":
+        descriptors.append("extreme intensity")
+    elif intensity == "low":
+        descriptors.append("subdued")
+
+    if not descriptors:
+        return "neutral"
+
+    return ", ".join(descriptors)
+
+
 def synthesize_gemini_tts(
     text: str,
     output_file: Path,
     voice: str = DEFAULT_VOICE,
     model: str = DEFAULT_MODEL,
     emotion: str = "neutral",
+    acting: Any = None,
+    intensity: str = "medium",
     max_retries: int = 4,
     rate_limiter: Optional[TokenBucketRateLimiter] = None,
 ) -> Tuple[Path, float]:
@@ -164,8 +207,13 @@ def synthesize_gemini_tts(
     elif clean_text in NUMERAL_NORMALIZATION:
         text = NUMERAL_NORMALIZATION[clean_text]
 
+    part_payload: Dict[str, Any] = {"text": text}
+    style_desc = resolve_speech_metadata_style(acting, emotion, intensity)
+    if style_desc and style_desc.lower() not in ("neutral", "standard"):
+        part_payload["speechMetadata"] = {"style": style_desc}
+
     payload = {
-        "contents": [{"parts": [{"text": text}]}],
+        "contents": [{"parts": [part_payload]}],
         "generationConfig": {
             "responseModalities": ["AUDIO"],
             "speechConfig": {
@@ -243,7 +291,8 @@ def synthesize_gemini_tts(
                     b64_audio = inline_data.get("data", "")
                     if not b64_audio:
                         raise ValueError(f"No audio data found in Gemini response parts: {[p.get('text', '')[:40] for p in parts]}")
-                    raw_pcm = base64.b64decode(b64_audio)
+                    raw_bytes = base64.b64decode(b64_audio)
+                    raw_pcm, sample_rate, frames = extract_clean_pcm_from_gemini_container(raw_bytes)
 
                     # Convert 24kHz raw PCM to temporary WAV before SNR inspection
                     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -251,12 +300,11 @@ def synthesize_gemini_tts(
                     with wave.open(str(tmp_file), "wb") as wf:
                         wf.setnchannels(1)
                         wf.setsampwidth(2)
-                        wf.setframerate(24000)
+                        wf.setframerate(sample_rate)
                         wf.writeframes(raw_pcm)
 
                     # Compute duration & raw PCM metrics
-                    frames = len(raw_pcm) // 2
-                    dur_sec = frames / 24000.0
+                    dur_sec = frames / float(sample_rate)
                     word_count = max(len(text.split()), 1)
                     ratio = dur_sec / word_count
 
@@ -275,10 +323,20 @@ def synthesize_gemini_tts(
                         rms = 0.0
                         dc_offset = 0.0
 
-                    is_clipped = peak_amp >= 32760
-                    faint_limit = 8.0 if ("[whispers]" in text.lower() or "whisper" in emotion.lower() or "tender" in emotion.lower()) else 30.0
+                    # True flat-top clipping requires >= 6 consecutive samples pinned at rail
+                    consec = 0
+                    max_consec = 0
+                    for s in samples:
+                        if abs(s) >= 32760:
+                            consec += 1
+                            if consec > max_consec:
+                                max_consec = consec
+                        else:
+                            consec = 0
+                    is_clipped = (max_consec >= 6)
+                    faint_limit = 8.0 if ("[whispers]" in text.lower() or "whisper" in emotion.lower() or "tender" in emotion.lower()) else 20.0
                     is_silent_faint = (peak_amp > 0 and word_count >= 3 and rms < faint_limit)
-                    is_dc_corrupted = (peak_amp > 0 and dc_offset > 800.0)
+                    is_dc_corrupted = (peak_amp > 0 and dur_sec >= 2.0 and dc_offset > 1500.0)
                     is_stutter = (word_count > 3 and ratio > 3.2 and dur_sec >= 15.0)
                     is_empty = (dur_sec < 0.20 and word_count >= 3)
 
@@ -304,9 +362,9 @@ def synthesize_gemini_tts(
                     if has_defect:
                         tmp_file.unlink(missing_ok=True)
                         reasons = []
-                        if is_clipped: reasons.append("Clipping Distortion (Peak >= 0 dBFS)")
-                        if is_silent_faint: reasons.append(f"Faint Audio (RMS {rms:.1f} < 30)")
-                        if is_dc_corrupted: reasons.append(f"DC Offset Anomaly ({dc_offset:.1f} > 800)")
+                        if is_clipped: reasons.append(f"Clipping Distortion (Consec Rail {max_consec} >= 6)")
+                        if is_silent_faint: reasons.append(f"Faint Audio (RMS {rms:.1f} < {faint_limit})")
+                        if is_dc_corrupted: reasons.append(f"DC Offset Anomaly ({dc_offset:.1f} > 1500)")
                         if is_stutter: reasons.append(f"Stutter Loop (Ratio {ratio:.2f}s/w)")
                         if is_empty: reasons.append("Empty Audio Truncation")
                         if has_long_silence: reasons.append("Excessive Dead Air (>= 4s internal silence)")
@@ -399,6 +457,406 @@ def synthesize_gemini_tts(
             pool.mark_temporary_backoff(api_key, 25.0, "3 consecutive transient errors")
 
 
+
+
+def synthesize_gemini_multispeaker_batch(
+    batch: BatchPlanItem,
+    output_file: Path,
+    voice_map: Dict[str, str],
+    model: str = DEFAULT_MODEL,
+    rate_limiter: Optional[TokenBucketRateLimiter] = None,
+) -> Tuple[Path, float]:
+    """
+    Synthesizes a multi-speaker dialogue batch using Gemini 3.8 Flash TTS
+    with multiSpeakerVoiceConfig and per-part speechMetadata.
+    """
+    speakers = list(batch.speakers)
+    if len(speakers) != 2:
+        raise ValueError(
+            f"multiSpeakerVoiceConfig strictly requires exactly 2 speakers, got {len(speakers)}: {speakers}"
+        )
+
+    spk_configs = []
+    for spk in speakers:
+        v_name = voice_map.get(spk, "Aoede")
+        spk_configs.append({
+            "speaker": spk,
+            "voiceConfig": {
+                "prebuiltVoiceConfig": {
+                    "voiceName": v_name
+                }
+            }
+        })
+
+    parts = []
+    for seg in batch.segments:
+        clean_text = seg.text.strip() if hasattr(seg, "text") else seg.get("text", "").strip()
+        stripped = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
+        if stripped in NUMERAL_NORMALIZATION:
+            clean_text = NUMERAL_NORMALIZATION[stripped]
+        elif clean_text in NUMERAL_NORMALIZATION:
+            clean_text = NUMERAL_NORMALIZATION[clean_text]
+
+        spk = seg.speaker if hasattr(seg, "speaker") else seg.get("speaker", "Narrator")
+        acting = getattr(seg, "acting", None) if hasattr(seg, "acting") else seg.get("acting")
+        emotion = getattr(seg, "emotion", "neutral") if hasattr(seg, "emotion") else seg.get("emotion", "neutral")
+        intensity = getattr(seg, "intensity_level", "medium") if hasattr(seg, "intensity_level") else seg.get("intensity_level", "medium")
+
+        style_desc = resolve_speech_metadata_style(acting, emotion, intensity)
+        parts.append({
+            "text": clean_text,
+            "speechMetadata": {
+                "speaker": spk,
+                "style": style_desc
+            }
+        })
+
+    payload = {
+        "contents": [{
+            "role": "user",
+            "parts": parts
+        }],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {
+                "multiSpeakerVoiceConfig": {
+                    "speakerVoiceConfigs": spk_configs
+                }
+            },
+            "temperature": round(random.uniform(0.685, 0.715), 3)
+        },
+        "safetySettings": [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ],
+    }
+
+    data = json.dumps(payload).encode("utf-8")
+    cadence = get_human_cadence_controller()
+    pool = get_persistent_key_pool()
+
+    MAX_KEY_ROTATIONS = 15
+    rotation_count = 0
+
+    while True:
+        rotation_count += 1
+        if rotation_count > MAX_KEY_ROTATIONS:
+            raise RuntimeError(
+                f"Multi-speaker batch TTS failed after {MAX_KEY_ROTATIONS} key rotations."
+            )
+
+        api_key = pool.get_key(service="tts")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        key_exhausted_or_invalid = False
+
+        for network_attempt in range(3):
+            if rate_limiter:
+                rate_limiter.acquire()
+
+            req = urllib.request.Request(
+                url,
+                data=data,
+                headers=get_stealth_sdk_headers(api_key),
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=120.0) as resp:
+                    resp_json = json.loads(resp.read().decode("utf-8"))
+                    candidates = resp_json.get("candidates", [])
+                    if not candidates:
+                        fb = resp_json.get("promptFeedback", {})
+                        raise ValueError(f"Gemini TTS blocked generation (promptFeedback: {fb})")
+                    candidate = candidates[0]
+                    finish_reason = candidate.get("finishReason")
+                    if finish_reason in ("SAFETY", "RECITATION", "BLOCKLIST"):
+                        raise ValueError(f"Gemini TTS generation blocked by finishReason: {finish_reason}")
+
+                    inline_data = {}
+                    cand_parts = candidate.get("content", {}).get("parts", [])
+                    for p in cand_parts:
+                        if "inlineData" in p:
+                            inline_data = p["inlineData"]
+                            break
+                    b64_audio = inline_data.get("data", "")
+                    if not b64_audio:
+                        raise ValueError("No audio data found in Gemini multi-speaker response parts")
+
+                    raw_bytes = base64.b64decode(b64_audio)
+                    raw_pcm, sample_rate, frames = extract_clean_pcm_from_gemini_container(raw_bytes)
+                    dur_sec = frames / float(sample_rate)
+                    word_count = max(batch.total_words, 1)
+                    ratio = dur_sec / word_count
+
+                    # Audio Quality & SNR Gatekeeper (Mathematical PCM Probe)
+                    import struct
+                    import math
+                    sample_count = len(raw_pcm) // 2
+                    if sample_count > 0:
+                        samples = struct.unpack(f"<{sample_count}h", raw_pcm)
+                        peak_amp = max(abs(s) for s in samples)
+                        sum_sq = sum(s * s for s in samples)
+                        rms = math.sqrt(sum_sq / sample_count)
+                        dc_offset = abs(sum(samples) / sample_count)
+                    else:
+                        peak_amp = 0
+                        rms = 0.0
+                        dc_offset = 0.0
+
+                    # True flat-top clipping requires >= 6 consecutive samples pinned at rail
+                    consec = 0
+                    max_consec = 0
+                    for s in samples:
+                        if abs(s) >= 32760:
+                            consec += 1
+                            if consec > max_consec:
+                                max_consec = consec
+                        else:
+                            consec = 0
+                    is_clipped = (max_consec >= 6)
+
+                    # For batches, check reasonable RMS floor (faint audio detection)
+                    is_silent_faint = (peak_amp > 0 and word_count >= 3 and rms < 15.0)
+                    is_dc_corrupted = (peak_amp > 0 and dur_sec >= 2.0 and dc_offset > 1500.0)
+                    is_stutter = (word_count > 3 and ratio > 3.2 and dur_sec >= 15.0)
+                    is_empty = (dur_sec < 0.20 and word_count >= 3)
+
+                    # Dead air / internal silence gap detector (4s+ silence run)
+                    has_long_silence = False
+                    if dur_sec >= 6.0 and sample_count > 0:
+                        window = 24000
+                        silent_run = 0
+                        max_silent_run = 0
+                        for w_idx in range(0, sample_count, window):
+                            sub = samples[w_idx:w_idx + window]
+                            sub_rms = math.sqrt(sum(s * s for s in sub) / len(sub))
+                            if sub_rms < 15.0:
+                                silent_run += 1
+                                if silent_run > max_silent_run:
+                                    max_silent_run = silent_run
+                            else:
+                                silent_run = 0
+                        if max_silent_run >= 4:
+                            has_long_silence = True
+
+                    has_defect = (is_clipped or is_silent_faint or is_dc_corrupted or is_stutter or is_empty or has_long_silence)
+                    if has_defect:
+                        reasons = []
+                        if is_clipped: reasons.append(f"Clipping Distortion (Consec Rail {max_consec} >= 6)")
+                        if is_silent_faint: reasons.append(f"Faint Audio (RMS {rms:.1f} < 15)")
+                        if is_dc_corrupted: reasons.append(f"DC Offset Anomaly ({dc_offset:.1f} > 1500)")
+                        if is_stutter: reasons.append(f"Stutter Loop (Ratio {ratio:.2f}s/w)")
+                        if is_empty: reasons.append("Empty Audio Truncation")
+                        if has_long_silence: reasons.append("Excessive Dead Air (>= 4s internal silence)")
+                        reason_str = " | ".join(reasons)
+                        if network_attempt < 2:
+                            logger.warning(
+                                f"  [SNR GATEKEEPER BATCH: {reason_str}] Generated {dur_sec:.1f}s for {word_count} words. "
+                                f"Retrying batch (Attempt {network_attempt+1}/3)..."
+                            )
+                            time.sleep(2.0)
+                            continue
+                        else:
+                            raise ValueError(
+                                f"SNR Gatekeeper rejected batch audio after 3 failed attempts: {reason_str} "
+                                f"(dur={dur_sec:.1f}s, words={word_count}, peak={peak_amp}, rms={rms:.1f})"
+                            )
+
+                    output_file.parent.mkdir(parents=True, exist_ok=True)
+                    tmp_file = output_file.with_suffix(".tmp.wav")
+                    with wave.open(str(tmp_file), "wb") as wf:
+                        wf.setnchannels(1)
+                        wf.setsampwidth(2)
+                        wf.setframerate(sample_rate)
+                        wf.writeframes(raw_pcm)
+
+                    tmp_file.replace(output_file)
+                    pool.record_success(api_key)
+                    logger.info(
+                        f"  [MULTI-SPEAKER BATCH] Rendered {batch.batch_id} ({dur_sec:.1f}s, {batch.total_words} words) via key ...{api_key[-6:]}"
+                    )
+                    return output_file, dur_sec
+
+            except urllib.error.HTTPError as e:
+                err = ""
+                try:
+                    err = e.read().decode("utf-8")
+                except Exception:
+                    pass
+                category, wait_sec, reason = classify_gemini_error(e.code, err)
+                if category == "DAILY_QUOTA_EXHAUSTED":
+                    pool.mark_daily_quota_exhausted(api_key, err)
+                    cadence.wait_for_key_switch(api_key[-6:], "next_project")
+                    key_exhausted_or_invalid = True
+                    break
+                elif category == "INVALID_KEY":
+                    pool.mark_invalid(api_key, err)
+                    key_exhausted_or_invalid = True
+                    break
+                elif category == "RPM_RATE_LIMIT":
+                    pool.mark_temporary_backoff(api_key, wait_sec, err)
+                    if rate_limiter and hasattr(rate_limiter, "trigger_global_pause"):
+                        rate_limiter.trigger_global_pause(wait_sec)
+                    break
+                elif category == "TRANSIENT_SERVER_ERROR":
+                    pool.mark_temporary_backoff(api_key, wait_sec, err)
+                    time.sleep(wait_sec)
+                    continue
+                else:
+                    time.sleep(5.0)
+                    continue
+            except Exception as net_err:
+                time.sleep(6.0)
+                continue
+
+        if not key_exhausted_or_invalid:
+            pool.mark_temporary_backoff(api_key, 25.0, "3 consecutive transient errors in multi-speaker batch")
+
+
+def compute_canonical_segment_filename(
+    chapter_num: int,
+    seg_num: int,
+    text: str,
+    sp_cfg: Optional[Dict[str, Any]] = None,
+    default_voice: str = DEFAULT_VOICE,
+) -> str:
+    """Computes deterministic, reproducible audio chunk filename matching synthesis cache."""
+    cfg = sp_cfg or {}
+    voice = cfg.get("voice", default_voice)
+    speed = float(cfg.get("speed", 1.0))
+    pitch = float(cfg.get("pitch", 1.0))
+    bass_boost_db = float(cfg.get("bass_boost_db", 0.0))
+    clarity_cut_db = float(cfg.get("clarity_reduction_db", 0.0))
+    lowpass_hz = int(cfg.get("lowpass_hz", 0))
+    highpass_hz = int(cfg.get("highpass_hz", 0))
+    presence_boost_db = float(cfg.get("presence_boost_db", 0.0))
+    volume_gain_db = float(cfg.get("volume_gain_db", 0.0))
+    calib_str = f"{voice}:{speed:.2f}:{pitch:.2f}:{bass_boost_db:.1f}:{clarity_cut_db:.1f}:{lowpass_hz}:{highpass_hz}:{presence_boost_db:.1f}:{volume_gain_db:.1f}"
+    cache_key = f"{text}|{calib_str}".encode("utf-8")
+    text_hash = hashlib.md5(cache_key).hexdigest()[:8]
+    return f"c{chapter_num:03d}_s{seg_num:04d}_{text_hash}.wav"
+
+
+def slice_and_declick_batch(
+    raw_audio: Path,
+    batch: BatchPlanItem,
+    chapter_num: int,
+    output_dir: Path,
+    aligner: Optional[WorkstationForcedAligner] = None,
+    declick_fade_ms: float = DEFAULT_DECLICK_FADE_MS,
+    dispatcher: Optional[Any] = None,
+) -> List[Tuple[Path, float]]:
+    """
+    Slices a merged multi-speaker WAV into individual canonical segment WAV files.
+    Uses WorkstationForcedAligner on RTX 4050 GPU for sample-accurate boundaries,
+    and applies a 25Hz DC filter + 5ms cosine micro-fade + character DSP calibration at slice boundaries.
+    """
+    if aligner is None:
+        aligner = WorkstationForcedAligner()
+
+    boundaries = aligner.align_batch(raw_audio, batch.segments)
+    sliced_results: List[Tuple[Path, float]] = []
+    ffmpeg_bin = get_ffmpeg()
+
+    fade_sec = max(0.001, declick_fade_ms / 1000.0)
+
+    for seg, (start_ms, end_ms) in zip(batch.segments, boundaries):
+        dur_ms = max(200, end_ms - start_ms)
+        dur_sec = dur_ms / 1000.0
+        start_sec = start_ms / 1000.0
+
+        sp_cfg = dispatcher.get_speaker_config(seg.speaker, getattr(seg, "type", "dialogue")) if dispatcher else {}
+        voice_name = sp_cfg.get("voice") or batch.voice_map.get(seg.speaker, "Aoede")
+        if not sp_cfg:
+            sp_cfg = {"voice": voice_name}
+
+        out_filename = compute_canonical_segment_filename(chapter_num, seg.index, seg.text, sp_cfg, default_voice=voice_name)
+        out_wav = output_dir / out_filename
+
+        fade_out_start = max(0.0, dur_sec - fade_sec)
+        fade_sec = max(0.015, declick_fade_ms / 1000.0)
+        fade_out_start = max(0.0, dur_sec - fade_sec)
+        filter_parts = [
+            "highpass=f=30",
+            f"afade=t=in:ss=0:d={fade_sec:.3f}:curve=qsin",
+            f"afade=t=out:st={fade_out_start:.3f}:d={fade_sec:.3f}:curve=qsin",
+            "alimiter=limit=-1.2dB:attack=5:release=50:asc=true",
+        ]
+
+        if sp_cfg:
+            highpass_hz = int(sp_cfg.get("highpass_hz", 0))
+            bass_boost_db = float(sp_cfg.get("bass_boost_db", 0.0))
+            presence_boost_db = float(sp_cfg.get("presence_boost_db", 0.0))
+            volume_gain_db = float(sp_cfg.get("volume_gain_db", 0.0))
+            clarity_cut_db = float(sp_cfg.get("clarity_reduction_db", 0.0))
+            lowpass_hz = int(sp_cfg.get("lowpass_hz", 0))
+            softclip_tanh = bool(sp_cfg.get("softclip_tanh", False))
+            if highpass_hz > 25:
+                filter_parts.append(f"highpass=f={highpass_hz}")
+            if bass_boost_db > 0.1:
+                filter_parts.append(f"equalizer=f=100:t=q:w=1.2:g={bass_boost_db:.1f}")
+                filter_parts.append("equalizer=f=200:t=q:w=1.4:g=3.0")
+            elif bass_boost_db < -0.1:
+                filter_parts.append(f"equalizer=f=200:t=q:w=1.2:g={bass_boost_db:.1f}")
+            if presence_boost_db > 0.1:
+                filter_parts.append(f"equalizer=f=3200:t=q:w=1.4:g={presence_boost_db:.1f}")
+            if abs(volume_gain_db) > 0.1:
+                filter_parts.append(f"volume={volume_gain_db:+.1f}dB")
+            if clarity_cut_db > 0.1:
+                filter_parts.append(f"equalizer=f=3000:t=q:w=1.8:g=-{clarity_cut_db:.1f}")
+            if lowpass_hz > 1000:
+                filter_parts.append(f"lowpass=f={lowpass_hz}")
+            if softclip_tanh or ("[shouting]" in seg.text.lower()):
+                filter_parts.append("asoftclip=type=tanh:param=1.2")
+
+        filter_str = ",".join(filter_parts)
+
+        tmp_slice = out_wav.with_suffix(".tmp.wav")
+        cmd = [
+            ffmpeg_bin, "-y",
+            "-ss", f"{start_sec:.3f}",
+            "-t", f"{dur_sec:.3f}",
+            "-i", str(raw_audio),
+            "-af", filter_str,
+            "-c:a", "pcm_s16le",
+            str(tmp_slice),
+        ]
+
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Enforce exact zero-crossing endpoints on sliced chunk
+            try:
+                with wave.open(str(tmp_slice), "rb") as in_wf:
+                    p_params = in_wf.getparams()
+                    p_pcm = in_wf.readframes(in_wf.getnframes())
+                import numpy as _np
+                p_samples = _np.frombuffer(p_pcm, dtype=_np.int16).copy()
+                if len(p_samples) > 2:
+                    p_samples[0] = 0
+                    p_samples[-1] = 0
+                with wave.open(str(tmp_slice), "wb") as out_wf:
+                    out_wf.setparams(p_params)
+                    out_wf.writeframes(p_samples.tobytes())
+            except Exception:
+                pass
+            tmp_slice.replace(out_wav)
+            actual_dur = dur_sec
+            try:
+                with wave.open(str(out_wav), "rb") as wf:
+                    actual_dur = wf.getnframes() / float(wf.getframerate())
+            except Exception:
+                pass
+            sliced_results.append((out_wav, actual_dur))
+        except Exception as e:
+            logger.error(f"[!] Failed to slice segment {seg.index} from batch {batch.batch_id}: {e}")
+            if tmp_slice.exists():
+                tmp_slice.unlink(missing_ok=True)
+            raise RuntimeError(f"Acoustic slicing failed for segment {seg.index} in batch {batch.batch_id}: {e}") from e
+
+    return sliced_results
+
+
 class UnregisteredSpeakerError(KeyError):
     """Raised when a dialogue segment requests an unregistered character voice."""
     pass
@@ -432,6 +890,9 @@ class TTSDispatcher:
         self.voice_map = self._load_voice_registry()
         self.alias_map, self.gender_map = self._load_character_roster()
         self.ledger = ProjectStateLedger(self.project_dir)
+        self.batching_enabled = DEFAULT_BATCHING_ENABLED
+        self.forced_aligner = WorkstationForcedAligner() if DEFAULT_FORCED_ALIGNMENT_ENABLED else None
+        self.batch_planner = BatchDispatchPlanner()
 
     def _load_character_roster(self) -> Tuple[Dict[str, str], Dict[str, str]]:
         """Loads character aliases and gender mappings from character_roster.json."""
@@ -641,10 +1102,8 @@ class TTSDispatcher:
         softclip_tanh = bool(sp_cfg.get("softclip_tanh", False))
 
         # Checkpoint hash: includes text + voice + calibration parameters
-        calib_str = f"{voice}:{speed:.2f}:{pitch:.2f}:{bass_boost_db:.1f}:{clarity_cut_db:.1f}:{lowpass_hz}:{highpass_hz}:{presence_boost_db:.1f}:{volume_gain_db:.1f}"
-        cache_key = f"{text}|{calib_str}".encode("utf-8")
-        text_hash = hashlib.md5(cache_key).hexdigest()[:8]
-        out_file = self.audio_dir / f"c{chapter_num:03d}_s{seg_num:04d}_{text_hash}.wav"
+        out_filename = compute_canonical_segment_filename(chapter_num, seg_num, text, sp_cfg, default_voice=self.default_voice)
+        out_file = self.audio_dir / out_filename
 
         # Resume checkpoint: skip if exact hash file already exists and valid
         if out_file.exists() and out_file.stat().st_size > 1000:
@@ -658,13 +1117,16 @@ class TTSDispatcher:
                 dur = 1.0
             return out_file, dur
 
-        # Dispatch with VibeVoice-style emotion prosody
-        emotion = segment.get("emotion", "neutral")
+        # Dispatch with VibeVoice-style emotion prosody and Gemini 3.8 speechMetadata style
+        emotion = segment.get("emotion", "neutral") if isinstance(segment, dict) else getattr(segment, "emotion", "neutral")
+        intensity = segment.get("intensity_level", "medium") if isinstance(segment, dict) else getattr(segment, "intensity_level", "medium")
         out_path, dur = synthesize_gemini_tts(
             text=text,
             output_file=out_file,
             voice=voice,
             emotion=emotion,
+            acting=acting,
+            intensity=intensity,
             rate_limiter=self.rate_limiter,
         )
 
@@ -715,6 +1177,14 @@ class TTSDispatcher:
             post_filters.append(f"lowpass=f={lowpass_hz}")
 
         if post_filters:
+            # Enforce broadcast brickwall limiter and micro-fades to eliminate clipping and pops
+            post_filters.append("alimiter=limit=-1.2dB:attack=5:release=50:asc=true")
+            fade_dur_ms = 15.0
+            f_sec = fade_dur_ms / 1000.0
+            f_out_st = max(0.0, dur - f_sec)
+            post_filters.append(f"afade=t=in:ss=0:d={f_sec:.3f}:curve=qsin")
+            post_filters.append(f"afade=t=out:st={f_out_st:.3f}:d={f_sec:.3f}:curve=qsin")
+
             tmp_calib = out_file.with_suffix(".calib.wav")
             ffmpeg_bin = get_ffmpeg()
             cmd = [
@@ -727,6 +1197,21 @@ class TTSDispatcher:
             try:
                 import subprocess
                 subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                # Clamp exact zero endpoints on calibrated audio
+                try:
+                    with wave.open(str(tmp_calib), "rb") as in_wf:
+                        c_params = in_wf.getparams()
+                        c_pcm = in_wf.readframes(in_wf.getnframes())
+                    import numpy as _np
+                    c_samples = _np.frombuffer(c_pcm, dtype=_np.int16).copy()
+                    if len(c_samples) > 2:
+                        c_samples[0] = 0
+                        c_samples[-1] = 0
+                    with wave.open(str(tmp_calib), "wb") as out_wf:
+                        out_wf.setparams(c_params)
+                        out_wf.writeframes(c_samples.tobytes())
+                except Exception:
+                    pass
                 tmp_calib.replace(out_file)
                 with wave.open(str(out_file), "rb") as wf:
                     dur = wf.getnframes() / float(wf.getframerate())
@@ -774,9 +1259,105 @@ class TTSDispatcher:
         # Pre-allocate results array by index
         results: List[Optional[Path]] = [None] * total
 
+        # Batching Engine Optimization: If batching is enabled, group eligible dialogue into multi-speaker batches
+        if self.batching_enabled and total > 1:
+            try:
+                parsed_segments = []
+                for s in script:
+                    if isinstance(s, ScreenplaySegment):
+                        parsed_segments.append(s)
+                    elif isinstance(s, dict):
+                        parsed_segments.append(ScreenplaySegment.model_validate(s))
+
+                voice_map_for_batch = {}
+                for s in parsed_segments:
+                    spk = s.speaker
+                    if spk not in voice_map_for_batch:
+                        _, v = self.get_speaker_voice(spk, s.type)
+                        voice_map_for_batch[spk] = v
+
+                manifest = self.batch_planner.plan_chapter_batches(
+                    segments=parsed_segments,
+                    chapter_id=f"chapter_{chapter_num:03d}",
+                    chapter_num=chapter_num,
+                    voice_map=voice_map_for_batch,
+                )
+
+                manifest_file = self.audio_dir / f"c{chapter_num:03d}_batch_manifest.json"
+                with open(manifest_file, "w", encoding="utf-8") as f:
+                    f.write(manifest.model_dump_json(indent=2))
+
+                for batch in manifest.batches:
+                    if batch.strategy in ("multi_speaker_duo", "narrator_chunk"):
+                        all_exist = True
+                        for seg in batch.segments:
+                            existing = list(self.audio_dir.glob(f"c{chapter_num:03d}_s{seg.index:04d}_*.wav"))
+                            if not existing or existing[0].stat().st_size <= 1000:
+                                all_exist = False
+                                break
+
+                        if all_exist:
+                            for seg in batch.segments:
+                                existing = list(self.audio_dir.glob(f"c{chapter_num:03d}_s{seg.index:04d}_*.wav"))[0]
+                                dur = 1.0
+                                try:
+                                    with wave.open(str(existing), "rb") as wf:
+                                        dur = wf.getnframes() / float(wf.getframerate())
+                                except Exception:
+                                    pass
+                                results[seg.index - 1] = existing
+                                self.ledger.mark_segment_completed(existing.stem, str(existing), dur, chapter_num=chapter_num, seg_num=seg.index)
+                            continue
+
+                        batch_wav = self.audio_dir / f"{batch.batch_id}_raw.wav"
+                        try:
+                            cadence.wait_before_segment(" ".join(s.text for s in batch.segments[:2]), batch.segments[0].index, total)
+                            if batch.strategy == "multi_speaker_duo":
+                                synthesize_gemini_multispeaker_batch(
+                                    batch=batch,
+                                    output_file=batch_wav,
+                                    voice_map=batch.voice_map,
+                                    rate_limiter=self.rate_limiter,
+                                )
+                            else:
+                                # Narrator super-chunk: synthesize unified text via single voice
+                                narr_spk = batch.speakers[0] if batch.speakers else "Narrator"
+                                narr_voice = batch.voice_map.get(narr_spk, self.default_voice)
+                                combined_text = "  ".join(s.text.strip() for s in batch.segments)
+                                synthesize_gemini_tts(
+                                    text=combined_text,
+                                    output_file=batch_wav,
+                                    voice=narr_voice,
+                                    rate_limiter=self.rate_limiter,
+                                )
+
+                            sliced = slice_and_declick_batch(
+                                raw_audio=batch_wav,
+                                batch=batch,
+                                chapter_num=chapter_num,
+                                output_dir=self.audio_dir,
+                                aligner=self.forced_aligner,
+                                dispatcher=self,
+                            )
+                            for seg, (s_file, dur) in zip(batch.segments, sliced):
+                                results[seg.index - 1] = s_file
+                                self.ledger.mark_segment_completed(s_file.stem, str(s_file), dur, chapter_num=chapter_num, seg_num=seg.index)
+                                logger.info(f"  [{seg.index}/{total}] Batch Sliced: {seg.speaker} ({s_file.name}, {dur:.1f}s)")
+                        except AllKeysExhaustedTodayError as e:
+                            logger.critical(f"  [QUOTA PAUSE] All keys exhausted during batch {batch.batch_id}: {e}")
+                            break
+                        except Exception as e:
+                            logger.warning(f"  [!] Batch {batch.batch_id} fallback ({e}). Falling back to granular synthesis.")
+            except Exception as e:
+                logger.warning(f"[!] Batch planning notice: {e}. Falling back to standard pipeline.")
+
         # STEALTH HUMAN CADENCE EXECUTION (Strictly 1-worker sequential pipeline)
         keys_exhausted = False
         for idx, segment in enumerate(script, 1):
+            # If segment was already completed in batch execution, skip redundant single call
+            if results[idx - 1] is not None:
+                continue
+
             speaker = segment.get("speaker", "Narrator")
             text = segment.get("text", "")
 
@@ -791,10 +1372,16 @@ class TTSDispatcher:
             # If already cached on disk, fast-forward with zero sleep
             existing_matches = list(self.audio_dir.glob(f"c{chapter_num:03d}_s{idx:04d}_*.wav"))
             if existing_matches and existing_matches[0].stat().st_size > 1000:
-                audio_path, dur = self.synthesize_segment(segment, chapter_num, idx)
-                results[idx - 1] = audio_path
-                self.ledger.mark_segment_completed(audio_path.stem, str(audio_path), dur, chapter_num=chapter_num, seg_num=idx)
-                logger.info(f"  [{idx}/{total}] Cached {speaker} ({audio_path.name}, {dur:.1f}s)")
+                audio_file = existing_matches[0]
+                dur = 1.0
+                try:
+                    with wave.open(str(audio_file), "rb") as wf:
+                        dur = wf.getnframes() / float(wf.getframerate())
+                except Exception:
+                    pass
+                results[idx - 1] = audio_file
+                self.ledger.mark_segment_completed(audio_file.stem, str(audio_file), dur, chapter_num=chapter_num, seg_num=idx)
+                logger.info(f"  [{idx}/{total}] Cached {speaker} ({audio_file.name}, {dur:.1f}s)")
                 continue
 
             # Uncached segment: apply organic human reading & listening delay

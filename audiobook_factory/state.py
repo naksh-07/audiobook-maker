@@ -84,7 +84,7 @@ class ProjectStateLedger:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_chap ON segments(chapter_num);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_status ON segments(status);")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_chap_seg ON segments(chapter_num, seg_num);")
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_segments_chap_seg ON segments(chapter_num, seg_num);")
             # Auto-recover orphaned in-progress segments from previous crashes
             conn.execute("UPDATE segments SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE status = 'IN_PROGRESS';")
 
@@ -143,6 +143,13 @@ class ProjectStateLedger:
                 seg_hash = hashlib.md5(cache_key).hexdigest()[:8]
                 seg_id = f"c{chapter_num:03d}_s{seg_num:04d}_{seg_hash}"
 
+                existing_row = conn.execute(
+                    "SELECT id FROM segments WHERE chapter_num = ? AND seg_num = ?;",
+                    (chapter_num, seg_num)
+                ).fetchone()
+                if existing_row:
+                    continue
+
                 conn.execute(
                     "INSERT OR IGNORE INTO segments (id, chapter_num, seg_num, speaker, voice_persona, text_content, status) "
                     "VALUES (?, ?, ?, ?, ?, ?, 'PENDING');",
@@ -196,8 +203,8 @@ class ProjectStateLedger:
             if chapter_num is not None and seg_num is not None:
                 conn.execute(
                     "UPDATE segments SET status = 'IN_PROGRESS', updated_at = CURRENT_TIMESTAMP "
-                    "WHERE id = ? OR (chapter_num = ? AND seg_num = ?);",
-                    (segment_id, chapter_num, seg_num),
+                    "WHERE (chapter_num = ? AND seg_num = ?) OR id = ?;",
+                    (chapter_num, seg_num, segment_id),
                 )
             else:
                 conn.execute(
@@ -220,12 +227,20 @@ class ProjectStateLedger:
 
         with self._connection() as conn:
             if chapter_num is not None and seg_num is not None:
-                conn.execute(
+                cur = conn.execute(
                     "UPDATE segments SET id = ?, status = 'COMPLETED', audio_path = ?, duration_sec = ?, "
                     "error_message = NULL, updated_at = CURRENT_TIMESTAMP "
-                    "WHERE id = ? OR (chapter_num = ? AND seg_num = ?);",
-                    (segment_id, str(audio_path), duration_sec, segment_id, chapter_num, seg_num),
+                    "WHERE (chapter_num = ? AND seg_num = ?) OR id = ?;",
+                    (segment_id, str(audio_path), duration_sec, chapter_num, seg_num, segment_id),
                 )
+                if cur.rowcount == 0:
+                    conn.execute(
+                        "INSERT INTO segments (id, chapter_num, seg_num, speaker, voice_persona, text_content, status, audio_path, duration_sec) "
+                        "VALUES (?, ?, ?, 'Narrator', 'Aoede', '', 'COMPLETED', ?, ?) "
+                        "ON CONFLICT(chapter_num, seg_num) DO UPDATE SET "
+                        "id = excluded.id, status = 'COMPLETED', audio_path = excluded.audio_path, duration_sec = excluded.duration_sec, updated_at = CURRENT_TIMESTAMP;",
+                        (segment_id, chapter_num, seg_num, str(audio_path), duration_sec),
+                    )
             else:
                 conn.execute(
                     "UPDATE segments SET status = 'COMPLETED', audio_path = ?, duration_sec = ?, "
@@ -250,8 +265,8 @@ class ProjectStateLedger:
                 conn.execute(
                     "UPDATE segments SET status = 'FAILED', retry_count = retry_count + 1, "
                     "error_message = ?, updated_at = CURRENT_TIMESTAMP "
-                    "WHERE id = ? OR (chapter_num = ? AND seg_num = ?);",
-                    (error_message, segment_id, chapter_num, seg_num),
+                    "WHERE (chapter_num = ? AND seg_num = ?) OR id = ?;",
+                    (error_message, chapter_num, seg_num, segment_id),
                 )
             else:
                 conn.execute(

@@ -1,14 +1,17 @@
 # Active Context: Audiobook Maker Core Engine & Production
 
 ## Live Sprint State
-- **Audio Drama Sync, Foley Staging & Soundscape Remediation (ADR-022):** COMPLETE & VERIFIED.
-  - Eliminated cumulative timeline drift by synchronizing `pre_roll_breath_ms` across contracts, ledger, and director.
-  - Eradicated 50% dead-center Foley trap with bilingual anchor mapping (`BILINGUAL_ANCHOR_MAP`) and transient placement.
-  - Isolated domestic tableware (`DOMETabl`) & organic gore (`GOREAnat`) in UCS rules; prevented sword clashes on dinner plates.
-  - Upgraded BGM to Scene-Bound Underscore with `until_segment` duration calculation and 20s cue floor.
-  - Replaced 106-min flat monolithic ambience with dynamic multi-scene partitioning from `acoustic_env` shifts.
-- **Zero-Voice-Drift Hardening & Speaker Attribution (ADR-021):** COMPLETE & VERIFIED.
-- **Milestone v4.0.0-beta.1 (Latest Pre-Stable Beta):** TAGGED & RELEASED.
-  - Final pre-stable beta consolidating ADR-001 through ADR-022.
-  - 100% test pass rate across 243 tests (zero failures, zero errors).
-- **Next Horizon:** Production stress test on full novel batch and subsequent v4.0.0 stable release.
+- **Chapter 12 Production Pipeline ('The Last Wish' / 'आखिरी इच्छा'):** COMPLETE & VERIFIED.
+  - SOTA translation (31 chunks, 11,981 words) in [`chapter_012_hi.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/translation/chapter_012_hi.md).
+  - Screenplay Gate 2 audited (652 segments across 11 canonical characters).
+  - Multi-speaker batching & CUDA MMS_FA forced alignment: 652 chunks synthesized & sliced.
+  - Master audio [`chapter_012_cinematic.m4a`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/mastered/chapter_012_cinematic.m4a) rendered: 186.08 MB, 2h 13m 1.2s, -18.7 LUFS (EBU R128 standard).
+- **Multi-Voice Transient Noise & Discontinuity Shield (ADR-025):** COMPLETE & VERIFIED.
+  - Solved switching hiss & pops with Hann micro-fades (12ms/18ms), zero pinning, and -1.2dB brickwall limiter.
+- **Chapter 13 Production Pipeline ('The Voice of Reason 7' / 'तर्क की आवाज़ 7'):** COMPLETE & CERTIFIED.
+  - SOTA unabridged translation (3,802 Devanagari words) in [`chapter_013_hi.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/translation/chapter_013_hi.md).
+  - Gate 2 audited screenplay (152 segments across 8 characters) in [`chapter_013_hi_script.json`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/scripts/chapter_013_hi_script.json).
+  - Final Master Audio [`chapter_013_cinematic.m4a`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/projects/witcher1/mastered/chapter_013_cinematic.m4a): 39.43 MB (41,345,991 bytes), 28m 30.5s, -18.8 LUFS (EBU R128 standard).
+  - ADR-028 dual-layer forensic cleaning, 5 Witcher 3 score cues, 2 ambience beds, zero noise/clicks.
+- **Status:** Chapter 12 and Chapter 13 (*The Last Wish* book finale) fully produced and certified broadcast-ready.
+

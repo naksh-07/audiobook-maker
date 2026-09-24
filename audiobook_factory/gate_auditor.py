@@ -145,9 +145,9 @@ def audit_gate1_roster(
     voice_signatures: Dict[str, str] = {}
     collisions = []
 
-    # Known persona gender profiles for Gemini TTS / standard acoustic personas
-    FEMALE_PERSONAS = {"aoede", "kore", "leda", "zephyr"}
-    MALE_PERSONAS = {"charon", "fenrir", "puck", "zeus", "orpheus", "achilles"}
+    # Known persona gender profiles for Gemini TTS / standard acoustic personas (including Extended Voice Library)
+    FEMALE_PERSONAS = {"aoede", "kore", "leda", "zephyr", "achernar"}
+    MALE_PERSONAS = {"charon", "fenrir", "puck", "zeus", "orpheus", "achilles", "algenib", "algieba", "alnilam", "achird"}
 
     for role in active:
         if role in ("Foley", "SFX"):
@@ -386,6 +386,13 @@ def audit_gate4_ledger(
         if seg_l.speaker != seg_s.speaker:
             raise GateAuditError(
                 f"Gate 4.5 Failed: Speaker mismatch at segment {seg_l.segment_index}: {seg_l.speaker} != {seg_s.speaker}"
+            )
+        # Enforce UID lineage if present on script segment
+        s_uid = getattr(seg_s, "uid", None)
+        l_uid = getattr(seg_l, "uid", None)
+        if s_uid and l_uid and s_uid != l_uid:
+            raise GateAuditError(
+                f"Gate 4.5 Failed: UID lineage mismatch at segment {seg_l.segment_index}: ledger '{l_uid}' != script '{s_uid}'"
             )
         if seg_l.text.strip() != seg_s.text.strip():
             text_mismatches.append((seg_l.segment_index, seg_l.text[:30], seg_s.text[:30]))

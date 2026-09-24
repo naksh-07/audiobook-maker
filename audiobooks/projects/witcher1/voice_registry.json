@@ -6,12 +6,12 @@
   },
   "Geralt": {
     "backend": "gemini_tts",
-    "voice": "Charon",
+    "voice": "algenib",
     "speed": 0.98,
     "pitch": 1.0,
-    "highpass_hz": 80,
-    "bass_boost_db": -3.5,
-    "presence_boost_db": 3.2,
+    "highpass_hz": 75,
+    "bass_boost_db": -2.0,
+    "presence_boost_db": 2.5,
     "volume_gain_db": 2.5,
     "clarity_reduction_db": 0.0,
     "lowpass_hz": 0,
@@ -20,12 +20,12 @@
   },
   "Geralt of Rivia": {
     "backend": "gemini_tts",
-    "voice": "Charon",
+    "voice": "algenib",
     "speed": 0.98,
     "pitch": 1.0,
-    "highpass_hz": 80,
-    "bass_boost_db": -3.5,
-    "presence_boost_db": 3.2,
+    "highpass_hz": 75,
+    "bass_boost_db": -2.0,
+    "presence_boost_db": 2.5,
     "volume_gain_db": 2.5,
     "clarity_reduction_db": 0.0,
     "lowpass_hz": 0,
@@ -34,12 +34,12 @@
   },
   "गेराल्ट": {
     "backend": "gemini_tts",
-    "voice": "Charon",
+    "voice": "algenib",
     "speed": 0.98,
     "pitch": 1.0,
-    "highpass_hz": 80,
-    "bass_boost_db": -3.5,
-    "presence_boost_db": 3.2,
+    "highpass_hz": 75,
+    "bass_boost_db": -2.0,
+    "presence_boost_db": 2.5,
     "volume_gain_db": 2.5,
     "clarity_reduction_db": 0.0,
     "lowpass_hz": 0,
@@ -48,12 +48,12 @@
   },
   "रिविया का गेराल्ट": {
     "backend": "gemini_tts",
-    "voice": "Charon",
+    "voice": "algenib",
     "speed": 0.98,
     "pitch": 1.0,
-    "highpass_hz": 80,
-    "bass_boost_db": -3.5,
-    "presence_boost_db": 3.2,
+    "highpass_hz": 75,
+    "bass_boost_db": -2.0,
+    "presence_boost_db": 2.5,
     "volume_gain_db": 2.5,
     "clarity_reduction_db": 0.0,
     "lowpass_hz": 0,
@@ -62,12 +62,12 @@
   },
   "विचर": {
     "backend": "gemini_tts",
-    "voice": "Charon",
+    "voice": "algenib",
     "speed": 0.98,
     "pitch": 1.0,
-    "highpass_hz": 80,
-    "bass_boost_db": -3.5,
-    "presence_boost_db": 3.2,
+    "highpass_hz": 75,
+    "bass_boost_db": -2.0,
+    "presence_boost_db": 2.5,
     "volume_gain_db": 2.5,
     "clarity_reduction_db": 0.0,
     "lowpass_hz": 0,
@@ -552,6 +552,201 @@
     "backend": "gemini_tts",
     "voice": "Puck",
     "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Alderman": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0
+  },
+  "Nettly": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "Dhun": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.98
+  },
+  "Old_Woman": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.95
+  },
+  "Torque": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.02
+  },
+  "Toruviel": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 1.0
+  },
+  "Galarr": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "Filavandrel": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.96
+  },
+  "Villager": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.0
+  },
+  "Chireadan": {
+    "backend": "gemini_tts",
+    "voice": "algieba",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "चिरेडन": {
+    "backend": "gemini_tts",
+    "voice": "algieba",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Chiredan": {
+    "backend": "gemini_tts",
+    "voice": "algieba",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Chiridan": {
+    "backend": "gemini_tts",
+    "voice": "algieba",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Shiradan": {
+    "backend": "gemini_tts",
+    "voice": "algieba",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Krepp": {
+    "backend": "gemini_tts",
+    "voice": "alnilam",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Krep": {
+    "backend": "gemini_tts",
+    "voice": "alnilam",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Priest": {
+    "backend": "gemini_tts",
+    "voice": "alnilam",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "क्रेप": {
+    "backend": "gemini_tts",
+    "voice": "alnilam",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Neville": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.02,
+    "pitch": 0.96
+  },
+  "Mayor_Neville": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.02,
+    "pitch": 0.96
+  },
+  "नेविल": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.02,
+    "pitch": 0.96
+  },
+  "Erdil": {
+    "backend": "gemini_tts",
+    "voice": "achird",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Eredil": {
+    "backend": "gemini_tts",
+    "voice": "achird",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Beau_Barent": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.05,
+    "pitch": 0.98
+  },
+  "बो बारेंट": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.05,
+    "pitch": 0.98
+  },
+  "Guard": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Gatekeeper": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Door_Guard": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Vratimir": {
+    "backend": "gemini_tts",
+    "voice": "Puck",
+    "speed": 1.02,
+    "pitch": 1.04
+  },
+  "Velerad": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "King_Foltest": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Nenneke": {
+    "backend": "gemini_tts",
+    "voice": "Kore",
+    "speed": 0.98,
+    "pitch": 1.0
+  },
+  "Falwick": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 1.0,
+    "pitch": 1.0
+  },
+  "Vesemir": {
+    "backend": "gemini_tts",
+    "voice": "Fenrir",
+    "speed": 0.95,
     "pitch": 1.0
   }
 }

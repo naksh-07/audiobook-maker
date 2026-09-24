@@ -180,6 +180,7 @@ class ScreenplaySegment(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
+    uid: str = Field(default="", description="Unique deterministic segment identifier")
     index: int = Field(..., ge=1, description="1-indexed sequence number")
     type: Literal["dialogue", "narration", "chapter_header", "action"] = Field(..., description="Segment narrative type")
     speaker: str = Field(default="Narrator", description="Canonical English character name matching CharacterRoster or 'Foley'")
@@ -211,6 +212,11 @@ class ScreenplaySegment(BaseModel):
                     data["speaker"] = "Foley"
                 if not data.get("text"):
                     data["text"] = "[ACTION]"
+            if not data.get("uid"):
+                idx = data.get("index", 1)
+                spk = str(data.get("speaker", "narrator")).lower().replace(" ", "_")
+                txt_part = hashlib.sha256(str(data.get("text", "")).encode("utf-8")).hexdigest()[:6]
+                data["uid"] = f"s{idx:04d}_{spk}_{txt_part}"
         return data
 
     @field_validator("sfx_cues", mode="before")
@@ -227,6 +233,32 @@ class ScreenplaySegment(BaseModel):
             elif isinstance(item, str) and item.strip():
                 res.append(item.strip())
         return res
+
+
+class BatchPlanItem(BaseModel):
+    """Execution unit representing one TTS synthesis API call (single or batched)."""
+    model_config = ConfigDict(extra="ignore")
+    batch_id: str = Field(..., description="Unique batch identifier, e.g. b001_duo_speaker1_speaker2")
+    strategy: Literal["multi_speaker_duo", "narrator_chunk", "single_isolated"] = Field(
+        ..., description="Batch synthesis strategy"
+    )
+    uids: List[str] = Field(default_factory=list, description="Ordered list of segment UIDs in this batch")
+    speakers: List[str] = Field(default_factory=list, description="Unique speaker names in this batch")
+    voice_map: Dict[str, str] = Field(default_factory=dict, description="Speaker to Gemini voice mapping")
+    segments: List[ScreenplaySegment] = Field(default_factory=list, description="Constituent screenplay segments")
+    total_words: int = Field(default=0, description="Total word count in batch")
+    raw_audio_path: Optional[str] = Field(default=None, description="Path to rendered raw multi-speaker WAV")
+
+
+class BatchDispatchManifest(BaseModel):
+    """Complete manifest tracking all synthesis batches for a chapter."""
+    model_config = ConfigDict(extra="ignore")
+    chapter_id: str = Field(..., description="Chapter identifier, e.g. chapter_001")
+    chapter_num: int = Field(default=1, description="1-indexed chapter number")
+    total_segments: int = Field(default=0, description="Total input segments")
+    total_batches: int = Field(default=0, description="Total planned batches (API calls)")
+    quota_savings_ratio: float = Field(default=0.0, description="Estimated API quota savings percentage")
+    batches: List[BatchPlanItem] = Field(default_factory=list, description="Planned synthesis batches")
 
 
 class ScreenplayScript(BaseModel):
@@ -254,6 +286,8 @@ class TimelineSegment(BaseModel):
     Preserves the full Devanagari/Hindi transcript text without truncation.
     """
     model_config = ConfigDict(extra="ignore")
+
+    uid: Optional[str] = Field(default=None, description="Matching ScreenplaySegment UID")
 
     segment_index: int = Field(..., ge=1, description="1-indexed sequence number matching ScreenplaySegment")
     speaker: str = Field(..., description="Canonical English character name matching CharacterRoster")
@@ -427,6 +461,7 @@ class MusicCue(BaseModel):
             "BGM": "EMOTIONAL_UNDERSCORE",
             "CLIMACTIC_COMBAT": "CLIMACTIC_ACTION_CUE",
             "COMBAT": "CLIMACTIC_ACTION_CUE",
+            "ACTION_TENSION": "CLIMACTIC_ACTION_CUE",
             "UNDERSCORE": "EMOTIONAL_UNDERSCORE",
             "TRANSITION": "TRANSITION_BRIDGE",
         }

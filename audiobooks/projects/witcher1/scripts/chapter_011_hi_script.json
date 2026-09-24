@@ -3,344 +3,1867 @@
     "index": 1,
     "type": "narration",
     "speaker": "Narrator",
-    "text": "विचर ने अपनी कमीज़ के बंद खोले और गर्दन से चिपका गीला कपड़ा बदन से उतारा। गुफ़ा के भीतर काफ़ी गर्मी थी, बल्कि उमस इतनी थी कि हवा भारी और नम महसूस हो रही थी। काई से ढकी चट्टानों और दीवारों के बेसाल्ट पत्थरों पर नमी की बूंदें जम रही थीं।",
+    "text": "विचर ने अपनी कमीज़ के बंद खोले और अपनी गर्दन से चिपके उस भीगे हुए लिनन को झटके से अलग किया। गुफ़ा में भीषण उमस थी, हवा भारी और नमी से लदी हुई, जो पत्थर की दीवारों पर जमी काई और बेसाल्ट के टुकड़ों पर बूंदों की शक्ल में रिस रही थी।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "water_dripping_echo"
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 2,
     "type": "narration",
     "speaker": "Narrator",
-    "text": "वहां चारों तरफ़ वनस्पतियां ही वनस्पतियां थीं। चट्टानी ज़मीन को काटकर बनाए गए गड्ढों में खाद भरी गई थी, जिनमें ये पौधे लहलहा रहे थे; कुछ विशाल बक्सों में थे, तो कुछ नाद और गमलों में। वे पत्थरों पर, लकड़ी के ढांचों और खूंटों पर चढ़े हुए थे। गेराल्ट ने उन्हें दिलचस्पी से देखा और कुछ दुर्लभ प्रजातियों को पहचान लिया—ये वही जड़ी-बूटियां थीं जिनसे विचरों की दवाइयां और जादुई काढ़े तैयार होते थे, और जादूगरों के अर्क भी। कुछ पौधे तो इतने दुर्लभ थे कि वह सिर्फ़ उनके गुणों का अंदाज़ा ही लगा सकता था। कुछ के बारे में तो उसने कभी सुना भी नहीं था। उसने 'मेलिलोट' की तारों जैसी पत्तियों वाली झाड़ियां देखीं, गमलों से बाहर झांकते 'पफ़हेड्स' के गोल गुच्छे देखे, और 'एरेनेरिया' की टहनियां देखीं जिन पर खून जैसे सुर्ख लाल फल लगे थे। उसने 'फास्टेम' की मांसल और नसों वाली पत्तियों को पहचाना, 'मेज़र-मी-नॉट्स' के सुर्ख-सुनहरे अंडाकार पत्तों और 'सॉकट्स' के गहरे तीर जैसे नुकीले हिस्सों को भी। पत्थरों से चिपकी 'पॉन्डब्लड' काई, 'रावन्स आई' की चमकती गांठे और 'माउस-टेल ऑर्किड' की बाघ जैसी धारियों वाली पंखुड़ियां भी उसकी नज़र से नहीं बचीं।",
+    "text": "नेनेके ने अपनी पुरोहिती लबादे की आस्तीनें ऊपर चढ़ाईं, टोकरी से कैंची और हड्डियों से बनी एक छोटी रेक निकाली और काम में जुट गईं। गेराल्ट गुफ़ा की छत में जड़े विशाल बिल्लौर के टुकड़ों से छनकर आती रोशनी के बीच एक बेंच पर बैठ गया।",
     "emotion": "neutral",
-    "pause_after_ms": 500
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "scissors_snip",
+      "metal_scraping"
+    ],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 3,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "गुफ़ा के अंधेरे हिस्से में 'से-वांट' खुम्भी के छत्ते उगे थे, जो मैदान में पड़े पत्थरों की तरह सलेटी थे। उनके पास ही 'रीचक्लस्टर' उगा था, जो दुनिया के हर ज्ञात ज़हर और विष की काट था। ज़मीन में धंसे बक्सों से झांकती मामूली सी पीली-सलेटी झाड़ियां 'स्कारिक्स' की थीं—एक ऐसी जड़ जिसमें गज़ब के औषधीय गुण होते हैं।",
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "गेराल्ट?",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 4,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "गुफ़ा के बीचों-बीच जलीय पौधे थे। गेराल्ट ने 'हॉर्नवॉर्ट' और 'टर्टल डकवीड' से भरे बड़े बर्तन देखे, और 'लिवरवॉर्ट' की मोटी परत से ढके टैंक देखे, जो परजीवी विशाल सीपों का भोजन थे। कांच के बर्तनों में मतिभ्रम पैदा करने वाली 'बिटिप' की गांठदार जड़ें थीं, गहरे हरे रंग की दुबली 'क्रिप्टोकोरीन' और 'नेमाटोड' के गुच्छे थे। कीचड़ भरी नादों में अनगिनत काई, शैवाल और दलदली फफूंद पनप रहे थे।",
-    "emotion": "neutral",
-    "pause_after_ms": 400
-  },
-  {
-    "index": 5,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "नेनेके ने अपनी पुजारिन वाली पोशाक की आस्तीनें ऊपर चढ़ाईं, टोकरी से कैंची और हड्डियों से बना एक छोटा सा रंभा निकाला और काम में जुट गई। गेराल्ट गुफ़ा की छत में लगे विशाल स्फटिक के पत्थरों से छनकर आ रही रोशनी के बीच एक बेंच पर बैठ गया।",
-    "emotion": "neutral",
-    "pause_after_ms": 400
-  },
-  {
-    "index": 6,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "पुजारिन अपने ही सुर में कुछ गुनगुनाती और बुदबुदाती रही। उसके हाथ बड़ी सफ़ाई से पत्तियों और टहनियों के बीच चल रहे थे, कैंची से वह खरपतवार काटती और टोकरी भरती जाती। कभी वह पौधों को सहारा देने वाले खूंटों को ठीक करती, तो कभी अपने छोटे रंभे से मिट्टी को ऊपर-नीचे करती। बीच-बीच में वह गुस्से में कुछ बड़बड़ाती और सूखे या सड़े हुए तनों को उखाड़कर खाद वाले बर्तनों में फेंक देती—उन सांप जैसे मुड़े हुए पौधों के खाने के लिए जिन्हें विचर पहचान नहीं पाया। उसे तो यह भी पक्का नहीं था कि वे पौधे थे भी या नहीं; उसे लगा कि वे चमकती हुई जड़ें ज़रा सी हिलीं और पुजारिन के हाथों की तरफ़ अपने बालों जैसे रेशे फैलाने लगीं।",
-    "emotion": "neutral",
-    "pause_after_ms": 400
-  },
-  {
-    "index": 7,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "गर्मी बहुत थी। बहुत ज़्यादा।",
-    "emotion": "neutral",
-    "pause_after_ms": 500
-  },
-  {
-    "index": 8,
-    "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "गेराल्ट?",
-    "emotion": "neutral",
-    "pause_after_ms": 400
-  },
-  {
-    "index": 9,
     "type": "dialogue",
     "speaker": "Geralt",
     "text": "जी?",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 5,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "अभी मत जाओ। रुक जाओ। कुछ दिन और।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
+  },
+  {
+    "index": 6,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "नहीं, नेनेके। अब मुझे निकलना होगा।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 7,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "इतनी जल्दी क्या है? हियर-वार्ड की चिंता छोड़ो। और उस आवारा डैंडिलियन को कहीं और जाकर अपनी गर्दन तुड़वाने दो। रुको, गेराल्ट।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
+  },
+  {
+    "index": 8,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "नहीं, नेनेके।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 9,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "क्या तुम मंदिर से इतनी जल्दी इसलिए भाग रहे हो क्योंकि तुम्हें डर है कि वह तुम्हें यहां ढूंढ लेगी?",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "scissors_snip"
+    ],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 10,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "उसने अपनी भारी होती पलकों को झटकते हुए जवाब दिया। नेनेके अपनी कैंची से खेलते हुए 'सैंड-स्परी फ्लाईबुश' की विशाल पत्तियों के पीछे से उसे देख रही थी।",
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "हाँ। आपने सही अंदाज़ा लगाया।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 11,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "अभी मत जाओ। रुक जाओ। कुछ दिन और।",
+    "speaker": "Nenneke",
+    "text": "यह कोई मुश्किल काम नहीं था। लेकिन फ़िक्र मत करो। येनेफ़र यहाँ आ चुकी है। दो महीने पहले। वह जल्दी वापस नहीं आएगी, क्योंकि हमारी अनबन हो गई थी। नहीं, तुम्हारी वजह से नहीं। उसने तुम्हारे बारे में कुछ नहीं पूछा।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 12,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "नहीं, नेनेके। अब मेरे निकलने का वक़्त हो गया है।",
+    "text": "उसने नहीं पूछा?",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 13,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "इतनी जल्दी क्या है? तुम्हें हेयर-वार्ड की चिंता करने की ज़रूरत नहीं है। और उस आवारा डैंडेलियन को जाने दो, वह अपनी गर्दन खुद तुड़वा लेगा। तुम रुक जाओ, गेराल्ट।",
+    "speaker": "Nenneke",
+    "text": "यहीं तो चोट पहुँचती है, है ना? तुम मर्द भी कितने अहंकारी हो। किसी की बेरुखी से बुरा और क्या हो सकता है, है ना? लेकिन हिम्मत मत हारो। मैं येनेफ़र को बहुत अच्छी तरह जानती हूँ। उसने भले ही कुछ नहीं पूछा, लेकिन उसने हर जगह गौर से देखा, तुम्हारे होने के निशान तलाशे। और वह तुमसे बेहद नाराज़ है, यह मैंने महसूस किया।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "light_chuckle"
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 14,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "नहीं, नेनेके।",
+    "text": "तुम लोगों में झगड़ा किस बात पर हुआ?",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 15,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "पुजारिन की कैंची फिर चलने लगी।",
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "ऐसी कोई बात नहीं जो तुम्हें दिलचस्पी दे।",
     "emotion": "neutral",
-    "pause_after_ms": 300
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 16,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "क्या तुम मंदिर से इतनी जल्दी इसलिए भागना चाहते हो क्योंकि तुम्हें डर है कि वह तुम्हें यहां ढूंढ लेगी?",
+    "speaker": "Geralt",
+    "text": "मुझे वैसे भी पता है।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 17,
     "type": "dialogue",
-    "speaker": "Geralt",
-    "text": "हां, आपने सही अंदाज़ा लगाया।",
-    "emotion": "sad",
-    "pause_after_ms": 400
+    "speaker": "Nenneke",
+    "text": "मुझे नहीं लगता। तुम उसे बहुत सतही तौर पर जानते हो। जैसे कि, वह तुम्हें जानती है। यह उस रिश्ते के लिए बहुत आम है जो तुम्हें जोड़ता है, या जोड़ता था। दोनों पक्ष परिणामों के भावनात्मक मूल्यांकन के अलावा कुछ और करने में सक्षम नहीं हैं, जबकि असल कारणों को पूरी तरह नज़रअंदाज़ कर देते हैं।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "rustling_plants"
+    ],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 18,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "अंदाज़ा लगाना कोई मुश्किल काम नहीं था। पर फिक्र मत करो। येनेफ़र यहां आ चुकी है। दो महीने पहले। वह इतनी जल्दी वापस नहीं आएगी, क्योंकि हमारा झगड़ा हो गया था। नहीं, तुम्हारी वजह से नहीं। उसने तुम्हारे बारे में कुछ नहीं पूछा।",
-    "emotion": "whispering",
-    "pause_after_ms": 400
+    "speaker": "Geralt",
+    "text": "वह इलाज की तलाश में आई थी। इसी बात पर झगड़ा हुआ था, मान लीजिए।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 19,
     "type": "dialogue",
-    "speaker": "Geralt",
-    "text": "उसने कुछ नहीं पूछा?",
-    "emotion": "sad",
-    "pause_after_ms": 400
+    "speaker": "Nenneke",
+    "text": "मैं कुछ नहीं मानूँगी।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 20,
-    "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "यहीं तो चोट लगी ना। तुम भी हर मर्द की तरह खुदग़र्ज़ हो। बेरुखी से बुरा और कुछ नहीं होता, है ना? पर दिल छोटा मत करो। मैं येनेफ़र को अच्छी तरह जानती हूं। उसने पूछा कुछ नहीं, पर उसकी नज़रें हर तरफ़ तुम्हें ही ढूंढ रही थीं। और वह तुमसे बहुत ज़्यादा नाराज़ है, इतना तो मैं महसूस कर सकती थी।",
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर उठा और गुफ़ा की छत में जड़ी एक बिल्लौर की पट्टियों के नीचे पूरी रोशनी में खड़ा हो गया।",
     "emotion": "neutral",
-    "pause_after_ms": 500
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "footsteps_on_stone"
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 21,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "आप दोनों का झगड़ा किस बात पर हुआ?",
+    "text": "इधर आइए, नेनेके। ज़रा इसे देखिए।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "leather_pouch_opening"
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 22,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "ऐसी कोई बात नहीं जिसमें तुम्हें दिलचस्पी हो।",
+    "speaker": "Geralt",
+    "text": "दो हीरे, एक माणिक, तीन सुंदर नेफ्राइट और एक दिलचस्प अकीक।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 23,
-    "type": "dialogue",
-    "speaker": "Geralt",
-    "text": "फिर भी, मुझे पता है।",
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "नेनेके हर चीज़ की परख रखती थीं।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 24,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "मुझे नहीं लगता। तुम उसे बहुत ऊपरी तौर पर जानते हो। वैसे ही, जैसे वह तुम्हें जानती है। तुम दोनों का रिश्ता ही ऐसा है—अजीब और उलझा हुआ। तुम दोनों ही सिर्फ़ जज़्बाती नतीजों को देखते हो, पर उनके पीछे की वजहों को नज़रअंदाज़ कर देते हो।",
+    "speaker": "Nenneke",
+    "text": "कितने में पड़े ये तुम्हें?",
     "emotion": "neutral",
-    "pause_after_ms": 500
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 25,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "वह इलाज ढूंढने आई थी। इसी बात पर झगड़ा हुआ होगा, मान लीजिए।",
+    "text": "ढाई हज़ार तेमेरियन ओरेन। विज़िमा की स्ट्रिगा को मारने का इनाम।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 26,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "मैं कुछ नहीं मानूंगी।",
+    "speaker": "Nenneke",
+    "text": "एक फटी हुई गर्दन के बदले। खैर, यह कीमत की बात है। लेकिन तुमने अच्छा किया जो नकद को इन रत्नों में बदल लिया। ओरेन की साख कम है और विज़िमा में पत्थरों की कीमत ज़्यादा नहीं है; वह महाकाम की बौनों की खदानों के बहुत नज़दीक है। अगर तुम इन्हें नोविग्राड में बेचोगे, तो तुम्हें कम से कम पांच सौ नोविग्राड क्राउन मिलेंगे, और क्राउन, इस वक़्त साढ़े छह ओरेन का है और लगातार चढ़ रहा है।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 27,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "विचर उठा और गुफ़ा की छत से गिरती रोशनी के नीचे आकर खड़ा हो गया।",
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं चाहता हूँ आप इन्हें रख लें।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 28,
     "type": "dialogue",
-    "speaker": "Geralt",
-    "text": "एक मिनट इधर आइए, नेनेके। इसे देखिए।",
+    "speaker": "Nenneke",
+    "text": "हिफ़ाज़त के लिए?",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 29,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "उसने अपनी बेल्ट की एक गुप्त जेब खोली, एक छोटी सी पोटली निकाली जो बकरी के चमड़े से बनी थी, और उसकी चीज़ें अपनी हथेली पर उलट दीं।",
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "नहीं। नेफ्राइट मंदिर के लिए रख लीजिए, मेलिटेले देवी को मेरी भेंट समझकर। और बाकी पत्थर... उसके लिए हैं। येनेफ़र के लिए। उसे दे दीजिएगा जब वह फिर से आपके पास आए, जो यकीनन जल्दी ही होगा।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 200
   },
   {
     "index": 30,
-    "type": "dialogue",
-    "speaker": "Geralt",
-    "text": "दो हीरे, एक माणिक, तीन सुंदर नेफ्राइट, और एक दिलचस्प अकीक।",
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "नेनेके ने सीधे उसकी आँखों में देखा।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 31,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "ये तुम्हें कितने के पड़े?",
+    "speaker": "Nenneke",
+    "text": "अगर मैं तुम्हारी जगह होती तो यह न करती। तुम उसे और भी ज़्यादा भड़का दोगे, अगर इससे ज़्यादा भड़कना मुमकिन है, तो मेरा यकीन मानो। चीज़ें जैसी हैं वैसी ही रहने दो, क्योंकि अब तुम ऐसी स्थिति में नहीं हो कि कुछ भी सुधार सको या ठीक कर सको। उससे भागकर, तुमने जो किया... खैर, कह सकते हैं कि एक परिपक्व पुरुष के लिए वह व्यवहार शोभा नहीं देता। और अपनी गलती को कीमती पत्थरों से पोंछने की कोशिश करके, तुम एक बहुत ही ज़्यादा 'अति-परिपक्व' आदमी की तरह व्यवहार कर रहे हो। मुझे समझ नहीं आता कि मुझे किस तरह का आदमी कम नापसंद है।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 200
   },
   {
     "index": 32,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "ढाई हज़ार तेमेरियाई ओरेन। विज़िम की स्ट्रिगा का काम तमाम करने का इनाम।",
-    "emotion": "neutral",
-    "pause_after_ms": 400
+    "text": "वह बहुत ज़्यादा अधिकार जताती थी। मैं बर्दाश्त नहीं कर सका। वह मेरे साथ ऐसे पेश आती थी जैसे—",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "whispering_fear",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 200
   },
   {
     "index": 33,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "एक फटी हुई गर्दन की कीमत। खैर, यह तो दाम की बात है। पर तुमने नकदी को इन गहनों में बदलकर अच्छा किया। ओरेन की कीमत गिर रही है और विज़िम में पत्थरों के दाम कम हैं; महाकाम की बौनों वाली खदानें पास में जो हैं। अगर तुम इन्हें नोविग्राड में बेचोगे, तो तुम्हें कम से कम पांच सौ नोविग्राड क्राउन मिल जाएंगे, और आजकल एक क्राउन साढ़े छह ओरेन के बराबर है और इसकी कीमत बढ़ ही रही है।",
-    "emotion": "neutral",
-    "pause_after_ms": 500
+    "speaker": "Nenneke",
+    "text": "बंद करो। मेरे कंधे पर सिर रखकर ये रोना-धोना बंद करो! मैं तुम्हारी माँ नहीं हूँ, और न ही तुम्हारी राज़दार बनने बैठी हूँ। मुझे रत्ती भर फ़र्क नहीं पड़ता कि उसने तुम्हारे साथ कैसा सुलूक किया, और इसकी तो मुझे ज़रा भी परवाह नहीं कि तुमने उसके साथ क्या किया! और मेरा इरादा कोई संदेशवाहक बनने का या उसे ये बेवकूफ़ाना गहने देने का बिल्कुल नहीं है। अगर तुम्हें बेवकूफ़ बनना ही है, तो मुझे बीच में घसीटे बिना बनो।",
+    "emotion": "angry",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "high",
+    "pre_roll_breath_ms": 250
   },
   {
     "index": 34,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "मैं चाहता हूं कि आप इन्हें रख लें।",
+    "text": "आप गलत समझ रही हैं। मेरा इरादा उसे मनाने या रिश्वत देने का नहीं है। लेकिन मैं उसका कर्जदार हूँ, और वह इलाज जो वह करवाना चाहती है, वह बहुत महंगा है। मैं बस उसकी मदद करना चाहता हूँ, और कुछ नहीं।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 35,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "संभाल कर रखने के लिए?",
-    "emotion": "neutral",
-    "pause_after_ms": 400
+    "speaker": "Nenneke",
+    "text": "तुम मेरी सोच से भी बड़े बेवकूफ़ हो! महंगा इलाज? मदद? गेराल्ट, ये तुम्हारे गहने उसके लिए ऐसी मामूली चीज़ें हैं जिन पर वह थूकेगी भी नहीं। क्या तुम जानते हो एक बड़ी रईस महिला का अनचाहा गर्भ गिराने के लिए येनेफ़र कितना कमा सकती है?",
+    "emotion": "angry",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "high",
+    "pre_roll_breath_ms": 200
   },
   {
     "index": 36,
     "type": "dialogue",
     "speaker": "Geralt",
-    "text": "नहीं। नेफ्राइट आप मंदिर के लिए रख लीजिए, देवी मेलीतेले के लिए मेरी तरफ़ से एक छोटी सी भेंट समझकर। और बाकी पत्थर... उसके लिए हैं। येनेफ़र के लिए। जब वह दोबारा आपसे मिलने आए, तो उसे दे दीजिएगा, और मुझे यकीन है कि वह जल्द ही आएगी।",
-    "emotion": "sad",
-    "pause_after_ms": 500
+    "text": "मुझे पता है। और यह भी कि बांझपन के इलाज के लिए वह इससे भी ज़्यादा कमाती है। अफ़सोस कि वह खुद अपनी मदद नहीं कर सकती। इसीलिए वह दूसरों से मदद मांग रही है—आप जैसी पुरोहिताइन से।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 37,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "नेनेके ने सीधे उसकी आंखों में देखा।",
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "कोई उसकी मदद नहीं कर सकता; यह नामुमकिन है। वह एक जादूगरनी है। ज़्यादातर जादूगरनियों की तरह, उसके अंडाशय सूख चुके हैं और यह प्रक्रिया अपरिवर्तनीय है। वह कभी माँ नहीं बन पाएगी।",
     "emotion": "neutral",
-    "pause_after_ms": 400
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 38,
     "type": "dialogue",
-    "speaker": "नेनेके",
-    "text": "अगर मैं तुम्हारी जगह होती, तो ऐसा नहीं करती। मेरा यकीन करो, इससे वह और भी भड़क जाएगी। जैसा है वैसा ही रहने दो, क्योंकि अब तुम कुछ भी सुधारने या बेहतर करने की स्थिति में नहीं हो। उससे दूर भागकर तुमने जो किया... वह किसी समझदार मर्द को शोभा नहीं देता। और अब इन कीमती पत्थरों से अपना गुनाह धोने की कोशिश करके, तुम किसी बहुत ही ज़्यादा 'समझदार' मर्द की तरह बर्ताव कर रहे हो। मुझे समझ नहीं आता कि मुझे किस तरह के मर्दों से ज़्यादा चिढ़ है।",
-    "emotion": "angry",
-    "pause_after_ms": 500
+    "speaker": "Geralt",
+    "text": "सारी जादूगरनियां इस मामले में अक्षम नहीं होतीं। मैं इसके बारे में कुछ जानता हूँ, और आप भी जानती हैं।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 39,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "\"वह बहुत ज़्यादा अधिकार जताने लगी थी,\" वह चेहरा फेरकर बुदबुदाया। \"मुझसे बर्दाश्त नहीं हुआ। वह मेरे साथ ऐसा बर्ताव करती थी जैसे—\" \"बस करो,\" उसने तीखे स्वर में कहा। \"मेरे कंधे पर सिर रखकर मत रोओ। मैं तुम्हारी मां नहीं हूं, और न ही तुम्हारी राज़दार बनना चाहती हूं। मुझे रत्ती भर भी फर्क नहीं पड़ता कि उसने तुम्हारे साथ क्या किया और उससे भी कम फर्क पड़ता है कि तुमने उसके साथ क्या किया। और मैं तुम दोनों के बीच बिचौलिया बनने या उसे ये बेवकूफी भरे जेवर देने का इरादा नहीं रखती। अगर तुम्हें बेवकूफ बनना है, तो मुझे बीच में लाए बिना बनो।\" \"आप गलत समझ रही हैं। मैं उसे मनाने या रिश्वत देने की नहीं सोच रहा हूं। पर मेरा उस पर कुछ उधार है, और जो इलाज वह करवाना चाहती है वह सुना है बहुत महंगा है। मैं बस उसकी मदद करना चाहता हूं।\" \"तुम मेरी सोच से भी बड़े बुद्धू हो।\" नेनेके ने ज़मीन से टोकरी उठाई। \"महंगा इलाज? मदद? गेराल्ट, येनेफ़र के लिए तुम्हारे ये पत्थर मामूली खिलौनों से ज़्यादा कुछ नहीं हैं। क्या तुम्हें पता है कि किसी अमीर खानदान की औरत का अनचाहा गर्भ गिराने के लिए येनेफ़र कितनी फीस लेती है?\" \"मुझे पता है। और यह भी पता है कि बांझपन के इलाज के लिए वह उससे भी ज़्यादा कमाती है। शर्म की बात है कि वह इस मामले में अपनी खुद की मदद नहीं कर सकती। इसीलिए वह दूसरों से मदद मांग रही है—जैसे आपसे।\" \"उसकी कोई मदद नहीं कर सकता; यह नामुमकिन है। वह एक जादूगरनी है। ज़्यादातर जादूगरनियों की तरह, उसके अंडाशय सूख चुके हैं और यह बदलाव अब बदला नहीं जा सकता। वह कभी मां नहीं बन पाएगी।\" \"हर जादूगरनी के साथ ऐसा नहीं होता। इसके बारे में मैं भी कुछ जानता हूं, और आप भी।\" नेनेके ने अपनी आंखें मूंद लीं। \"हां, मैं जानती हूं।\" \"अगर कोई अपवाद है, तो उसे नियम नहीं कहा जा सकता। और मेहरबानी करके मुझे वह घिसी-पिटी बात मत बताइएगा कि अपवाद ही नियम को साबित करते हैं। मुझे उन अपवादों के बारे में बताइए।\"",
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "हाँ, मुझे पता है।",
     "emotion": "neutral",
-    "pause_after_ms": 600
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 150
   },
   {
     "index": 40,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "\"अपवादों के बारे में,\" उसने ठंडेपन से कहा, \"सिर्फ़ एक ही बात कही जा सकती है। कि वे होते हैं। बस इतना ही। पर येनेफ़र... खैर, बदकिस्मती से, वह कोई अपवाद नहीं है। कम से कम इस कमी के मामले में तो बिल्कुल नहीं। बाकी मामलों में तो उसके जैसा अपवाद मिलना मुश्किल है।\" \"जादूगरों ने,\" गेराल्ट नेनेके की बेरुखी या उसके तंज से पीछे नहीं हटा, \"मुर्दों को ज़िंदा किया है। मैंने इसके पक्के सबूत देखे हैं। और मुझे लगता है कि मुर्दों को ज़िंदा करना किसी सूखे हुए अंग को ठीक करने से कहीं ज़्यादा मुश्किल काम है।\" \"तुम गलत हो। क्योंकि मैं एक भी ऐसा पक्का और पूरी तरह सफल मामला नहीं जानती जहां किसी सूखे हुए अंग या ग्रंथियों को दोबारा ज़िंदा किया गया हो। गेराल्ट, अब बहुत हुआ। यह किसी डॉक्टरी मशवरे जैसा लगने लगा है। तुम्हें इन चीज़ों की समझ नहीं है। मुझे है। और अगर मैं कह रही हूं कि येनेफ़र ने कुछ शक्तियों को पाने के लिए कुछ चीज़ें खोई हैं, तो बस यही सच है।\" \"अगर यह इतना साफ़ है, तो मुझे समझ नहीं आता कि वह बार-बार कोशिश क्यों—\" \"तुम्हें बहुत कम समझ आता है,\" पुजारिन ने उसे बीच में ही टोक दिया। \"बिल्कुल ज़रा सा। येनेफ़र की तकलीफों की चिंता छोड़ो और अपनी फिक्र करो। तुम्हारे शरीर में भी ऐसे बदलाव किए गए हैं जिन्हें बदला नहीं जा सकता। वह तुम्हें हैरान करती है, पर तुम्हारा क्या? तुम्हें भी यह साफ़ होना चाहिए कि तुम कभी इंसान नहीं बन पाओगे, फिर भी तुम इंसान बनने की कोशिश करते रहते हो। इंसानी गलतियां करते हो। ऐसी गलतियां जो एक विचर को नहीं करनी चाहिए।\" उसने गुफ़ा की दीवार से टेक लगा ली और अपने माथे का पसीना पोंछा।",
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "कोई नियम तब तक नियम नहीं होता जब तक उसके अपवाद न हों। और कृपया मुझे अपवादों के बारे में वो घिसी-पिटी बातें न सुनाएं कि 'अपवाद नियम को सिद्ध करते हैं'। मुझे बस अपवादों के बारे में ही कुछ बताइए।",
     "emotion": "neutral",
-    "pause_after_ms": 600
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 41,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "\"तुम जवाब नहीं दे रहे,\" नेनेके ने हल्की मुस्कान के साथ कहा। \"मुझे हैरानी नहीं है। तर्क की आवाज़ में बात करना आसान नहीं होता। तुम बीमार हो, गेराल्ट। तुम पूरी तरह ठीक नहीं हो। तुम काढ़ों पर सही से प्रतिक्रिया नहीं दे रहे। तुम्हारी नाड़ी तेज़ है, तुम्हारी आंखों की पुतलियां धीरे फैलती हैं, तुम्हारी फुर्ती कम हो गई है। तुम मामूली 'चिन्ह' (Sign) तक सही से नहीं बना पा रहे। और तुम सफ़र पर निकलना चाहते हो? तुम्हें इलाज की ज़रूरत है। तुम्हें थेरेपी चाहिए। और उससे पहले, एक 'दिव्य-निद्रा' (trance) की।\" \"क्या इसीलिए आपने इओला को मेरे पास भेजा था? थेरेपी के तौर पर? ताकि उस निद्रा में आसानी हो?\" \"तुम बेवकूफ हो!\" \"पर इतना भी नहीं।\" नेनेके दूसरी तरफ़ मुड़ गई और उन मांसल लताओं के बीच हाथ डाला जिन्हें विचर नहीं पहचानता था। \"खैर, जैसा तुम चाहो,\" उसने सहज भाव से कहा। \"हां, मैंने उसे तुम्हारे पास भेजा था। थेरेपी के तौर पर ही। और मैं तुम्हें बता दूं, इसने काम किया। अगले दिन तुम्हारी प्रतिक्रियाएं पहले से बेहतर थीं। तुम शांत थे। और इओला को भी थोड़ी थेरेपी की ज़रूरत थी। नाराज़ मत हो।\" \"मैं थेरेपी या इओला की वजह से नाराज़ नहीं हूं।\" \"बल्कि उस 'तर्क की आवाज़' से हो जो तुम सुन रहे हो?\" उसने कोई जवाब नहीं दिया। \"एक दिव्य-निद्रा ज़रूरी है,\" नेनेके ने अपनी गुफ़ा के बगीचे पर नज़र दौड़ते हुए दोहराया। \"इओला तैयार है। उसने तुम्हारे साथ शारीरिक और मानसिक संपर्क बना लिया है। अगर तुम जाना चाहते हो, तो आज रात ही यह करते हैं।\" \"नहीं। मैं नहीं चाहता। देखिए नेनेके, मुमकिन है कि उस निद्रा के दौरान इओला भविष्यवाणियां करने लगे। भविष्य देख ले।\" \"वही तो बात है।\" \"यही तो बात है। और मैं भविष्य नहीं जानना चाहता। अगर मुझे पता चल गया कि आगे क्या होने वाला है, तो मैं अपना काम कैसे कर पाऊंगा? वैसे भी, मुझे पता ही है कि क्या होगा।\"",
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "अपवादों के बारे में सिर्फ एक ही बात कही जा सकती है, कि वे होते हैं। बस इतना ही। लेकिन येनेफ़र... खैर, बदकिस्मती से, वह कोई अपवाद नहीं है। कम से कम उस कमी के मामले में तो नहीं जिसकी हम बात कर रहे हैं। बाकी चीज़ों में, उसे ढूँढना किसी और से बेहतर अपवाद मिलने जैसा है।",
     "emotion": "neutral",
-    "pause_after_ms": 600
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 200
   },
   {
     "index": 42,
-    "type": "narration",
-    "speaker": "Narrator",
-    "text": "\"क्या तुम्हें यकीन है?\" उसने जवाब नहीं दिया। \"ओह, खैर, ठीक है,\" उसने आह भरी। \"चलो चलें। और हां, गेराल्ट? मैं दखल नहीं देना चाहती पर बताओ... तुम दोनों कैसे मिले? तुम और येनेफ़र? यह सब शुरू कैसे हुआ?\" विचर मुस्कुराया। \"इसकी शुरुआत तब हुई जब मेरे और डैंडेलियन के पास नाश्ते के लिए कुछ नहीं था और हमने कुछ मछलियां पकड़ने का फैसला किया।\" \"तो क्या मैं यह समझूं कि मछली की जगह तुमने येनेफ़र को पकड़ लिया?\" \"मैं बताऊंगा कि क्या हुआ था। पर शायद रात के खाने के बाद। मुझे भूख लगी है।\" \"तो चलो फिर। मुझे जो चाहिए था मैंने ले लिया है।\" विचर बाहर निकलने के लिए मुड़ा और एक बार फिर उस गुफ़ा के बगीचे को देखा। \"नेनेके?\" \"हं?\" \"यहां आपके पास जो आधे पौधे हैं, वे अब कहीं और नहीं उगते। क्या मैं सही हूं?\" \"हां। आधे से भी ज़्यादा।\" \"ऐसा कैसे?\" \"अगर मैं कहूं कि यह देवी मेलीतेले की कृपा है, तो मुझे नहीं लगता कि तुम इतने से मान जाओगे, है ना?\" \"हां, नहीं मानूंगा।\" \"मैंने यही सोचा था।\" नेनेके मुस्कुराई। \"देखो गेराल्ट, हमारा यह सूरज अभी भी चमक रहा है, पर वैसा नहीं जैसा पहले चमकता था। चाहो तो महान किताबें पढ़ लो। पर अगर तुम वक़्त बर्बाद नहीं करना चाहते, तो शायद इस जवाब से खुश हो जाओगे कि स्फटिक की ये छत एक छननी (filter) का काम करती है। यह उन जानलेवा किरणों को रोक देती है जो सूरज की रोशनी में बढ़ती जा रही हैं। इसीलिए जो पौधे दुनिया में कहीं और नहीं उग पाते, वे यहां उगते हैं।\"",
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "जादूगरों ने मरे हुओं को जीवित किया है। मैं ऐसे प्रमाणित मामले जानता हूँ। और मुझे लगता है कि मरे हुओं को जीवित करना किसी अंग की विकृति को ठीक करने से कहीं ज़्यादा कठिन है।",
     "emotion": "neutral",
-    "pause_after_ms": 1000
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
   },
   {
     "index": 43,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "तुम गलत हो। क्योंकि मैं ऐसा एक भी, प्रमाणित और पूरी तरह सफल मामला नहीं जानती जहाँ किसी अंग की विकृति या अंतःस्रावी ग्रंथियों का पुनर्गठन हुआ हो। गेराल्ट, बहुत हुआ। ये किसी वैद्य के पास बैठे मरीज़ की चर्चा जैसी लग रही है। तुम इन चीज़ों के बारे में कुछ नहीं जानते। मैं जानती हूँ। और अगर मैं कह रही हूँ कि येनेफ़र ने कुछ उपहार पाने की कीमत दूसरे उपहार खोकर चुकाई है, तो यही सच है।",
+    "emotion": "angry",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 200
+  },
+  {
+    "index": 44,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "अगर यह इतना साफ़ है, तो मुझे समझ नहीं आता कि वह कोशिशें क्यों जारी रखती है—",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 45,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "तुम बहुत कम समझते हो। खाक समझते हो तुम! येनेफ़र की शिकायतों की चिंता छोड़ो और अपनी खुद की हालत के बारे में सोचो। तुम्हारा जिस्म भी ऐसे बदलावों से गुज़रा है जो अपरिवर्तनीय हैं। वह तुम्हें हैरान करती है, लेकिन तुम्हारा क्या? तुम्हें भी यह साफ़ होना चाहिए कि तुम कभी इंसान नहीं बन पाओगे, फिर भी तुम वही कोशिशें किए जा रहे हो। इंसानों जैसी गलतियाँ कर रहे हो। ऐसी गलतियाँ जो एक विचर को नहीं करनी चाहिए।",
+    "emotion": "angry",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "cold_menace",
+      "pacing": 1.1
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "high",
+    "pre_roll_breath_ms": 250
+  },
+  {
+    "index": 46,
     "type": "narration",
     "speaker": "Narrator",
-    "text": "\"मैं समझ गया।\" विचर ने सिर हिलाया। \"और हमारा क्या, नेनेके? हमारा क्या होगा? सूरज हम पर भी चमकता है। क्या हमें भी ऐसी ही किसी छत के नीचे पनाह नहीं लेनी चाहिए?\" \"सिद्धांत के तौर पर तो हां,\" पुजारिन ने आह भरी। \"लेकिन...\" \"लेकिन क्या?\" \"अब बहुत देर हो चुकी है।\"",
+    "text": "वह गुफ़ा की दीवार से टिक गया और माथे से पसीना पोंछा।",
     "emotion": "neutral",
-    "pause_after_ms": 1000
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 47,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "तुम जवाब नहीं दे रहे। मुझे हैरानी नहीं है। विवेक की आवाज़ सुनना आसान नहीं होता। तुम बीमार हो, गेराल्ट। तुम पूरी तरह ठीक नहीं हो। तुम पर जादुई काढ़े बुरा असर कर रहे हैं। तुम्हारी धड़कन तेज़ है, आँखों की पुतलियाँ धीरे फैल रही हैं, तुम्हारी प्रतिक्रियाओं में देरी है। तुम साधारण से साधारण संकेत भी सही से नहीं बना पा रहे। और तुम सफ़र पर निकलने की बात कर रहे हो? तुम्हें इलाज की ज़रूरत है। थेरेपी की। और उससे पहले, एक ट्रान्स की।",
+    "emotion": "neutral",
+    "pause_after_ms": 600,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 200
+  },
+  {
+    "index": 48,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "क्या इसीलिए आपने आयोला को मेरे पास भेजा था? थेरेपी के हिस्से के तौर पर? ताकि ट्रान्स आसान हो जाए?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 49,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "तुम बड़े बेवकूफ़ हो!",
+    "emotion": "angry",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
+  },
+  {
+    "index": 50,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "लेकिन इतना भी नहीं।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 51,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "नेनेके मुड़ी और उसने अपने हाथ उन मांसल लताओं के बीच डाल दिए जिन्हें विचर पहचान नहीं पाया था।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "rustling_leaves"
+    ],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 52,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "खैर, जैसा तुम चाहो। हाँ, मैंने उसे तुम्हारे पास भेजा था। थेरेपी के हिस्से के तौर पर। और मैं तुम्हें बता दूँ, इसका असर हुआ। अगले दिन तुम्हारी प्रतिक्रियाएँ कहीं बेहतर थीं। तुम शांत थे। और आयोला को भी थोड़ी थेरेपी की ज़रूरत थी। नाराज़ मत हो।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
+  },
+  {
+    "index": 53,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं थेरेपी या आयोला की वजह से नाराज़ नहीं हूँ।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 54,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "तो फिर उस विवेक की आवाज़ से नाराज़ हो जो तुम्हें सुनाई दे रही है?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 55,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "उसने कोई जवाब नहीं दिया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 56,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "ट्रान्स ज़रूरी है। आयोला तैयार है। उसने तुम्हारे साथ शारीरिक और मानसिक संपर्क बना लिया है। अगर तुम जाना चाहते हो, तो आज रात चलते हैं।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 57,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "नहीं। मैं नहीं चाहता। सुनो, नेनेके, ट्रान्स के दौरान आयोला शायद भविष्यवाणियाँ करने लगे। भविष्य पढ़ने लगे।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 58,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "बात तो वही है।",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 59,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "बिल्कुल। और मैं भविष्य नहीं जानना चाहता। अगर मुझे पता होता कि क्या होने वाला है, तो मैं वो काम कैसे कर पाता जो मैं करता हूँ? वैसे भी, मुझे वो पहले से पता है।",
+    "emotion": "neutral",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "mysterious",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 60,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "क्या तुम सच में निश्चित हो? ओह, खैर, ठीक है। चलो चलते हैं। और हाँ, गेराल्ट? मैं दखल नहीं देना चाहती, पर मुझे बताओ... तुम दोनों की मुलाक़ात कैसे हुई? तुम और येनेफ़र? सब कुछ कैसे शुरू हुआ?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
+  },
+  {
+    "index": 61,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "इसकी शुरुआत तब हुई जब मेरे और डैंडेलियन के पास नाश्ते के लिए कुछ नहीं था और हमने कुछ मछलियाँ पकड़ने का फैसला किया।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 62,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "क्या मुझे ये समझना चाहिए कि मछलियों की जगह तुमने येनेफ़र को पकड़ लिया?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 63,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं तुम्हें बताऊंगा कि क्या हुआ था। लेकिन शायद रात के खाने के बाद। मुझे भूख लगी है।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "emotional",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 64,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "तो चलो, चलते हैं। मेरे पास सब कुछ तैयार है।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 65,
+    "type": "narration",
+    "speaker": "Narrator",
+    "text": "विचर बाहर की ओर बढ़ा और एक बार फिर गुफ़ा की इस गर्म-गृह जैसी जगह को देखा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.0,
+      "proximity": "intimate_close"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [
+      "footsteps_echo"
+    ],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 66,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "नेनेके?",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 67,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "हूँ?",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 68,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "यहाँ मौजूद आधे से ज़्यादा पौधे अब दुनिया में कहीं और नहीं उगते। क्या मैं सही हूँ?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 69,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "हाँ। आधे से ज़्यादा।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 70,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "ऐसा क्यों?",
+    "emotion": "neutral",
+    "pause_after_ms": 300,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 71,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "अगर मैं कहूँ कि ये देवी मेलिटेले की कृपा है, तो मुझे यकीन है कि ये जवाब तुम्हारे लिए काफी नहीं होगा, है ना?",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "ironic_mockery",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 72,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मुझे यकीन है कि नहीं होगा।",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 73,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "मैंने यही सोचा था। देखो गेराल्ट, हमारा यह चमकता सूरज आज भी रोशनी दे रहा है, लेकिन वैसे नहीं जैसे पहले दिया करता था। अगर चाहो तो बड़ी-बड़ी किताबें पढ़ लो। लेकिन अगर समय बर्बाद नहीं करना चाहते, तो शायद तुम्हें यह स्पष्टीकरण पसंद आए कि ये बिल्लौर की पारदर्शी छत एक फिल्टर की तरह काम करती है। यह उन जानलेवा किरणों को रोक लेती है जो सूरज की रोशनी में लगातार बढ़ती जा रही हैं। इसीलिए यहाँ वो पौधे उगते हैं जो तुम्हें दुनिया में कहीं और जंगली रूप में नहीं दिखेंगे।",
+    "emotion": "calm_raspy",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "peaceful",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 150
+  },
+  {
+    "index": 74,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "मैं समझ गया। और हमारा क्या, नेनेके? हमारा क्या होगा? सूरज हम पर भी तो चमक रहा है। क्या हमें भी ऐसी छत के नीचे पनाह नहीं लेनी चाहिए?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 75,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "सिद्धांत रूप में, हाँ। लेकिन...",
+    "emotion": "sad",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "calm_authoritative",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 200
+  },
+  {
+    "index": 76,
+    "type": "dialogue",
+    "speaker": "Geralt",
+    "text": "लेकिन क्या?",
+    "emotion": "neutral",
+    "pause_after_ms": 400,
+    "acting": {
+      "delivery_style": "neutral",
+      "pacing": 1.0
+    },
+    "spatial": {
+      "pan": -0.2,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "low",
+    "pre_roll_breath_ms": 0
+  },
+  {
+    "index": 77,
+    "type": "dialogue",
+    "speaker": "Nenneke",
+    "text": "बहुत देर हो चुकी है।",
+    "emotion": "sad",
+    "pause_after_ms": 500,
+    "acting": {
+      "delivery_style": "gentle_tender",
+      "pacing": 0.9
+    },
+    "spatial": {
+      "pan": 0.25,
+      "proximity": "normal_room"
+    },
+    "acoustic_env": "temple_grotto",
+    "sfx_cues": [],
+    "music": {
+      "mood": "tense",
+      "ducking_db": -16.0
+    },
+    "intensity_level": "medium",
+    "pre_roll_breath_ms": 200
   }
 ]
