@@ -302,6 +302,74 @@ def audit_gate2_script(
     }
 
 
+def audit_gate2_5_dramatic_fidelity(
+    script_file: Path,
+    dramatic_plan_file: Optional[Path] = None,
+    source_file: Optional[Path] = None,
+    project_dir: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """
+    Audit Gate 2.5: Dramatic Fidelity & Character Arc Validator.
+    Verifies dramatic beat consistency, anti-emotional teleportation, character objectives,
+    and creative overreach guards on dramatized screenplay scripts.
+    """
+    from audiobook_factory.dramaturgy.dramatic_validator import DramaticValidator
+    from audiobook_factory.dramaturgy.contracts import DramaticPlan
+
+    script_file = Path(script_file).resolve()
+    if not script_file.exists():
+        raise GateAuditError(f"Gate 2.5 Failed: Script file missing at {script_file}")
+
+    script = ScreenplayScript.from_file(script_file)
+    segments = [s.model_dump() for s in script.segments]
+
+    d_plan = None
+    if dramatic_plan_file and Path(dramatic_plan_file).exists():
+        try:
+            d_plan = DramaticPlan.load_from_file(dramatic_plan_file)
+        except Exception as e:
+            logger.warning(f"  [GATE 2.5 NOTICE] Could not load dramatic plan {dramatic_plan_file}: {e}")
+
+    source_text = ""
+    if source_file and Path(source_file).exists():
+        try:
+            with open(source_file, "r", encoding="utf-8") as f:
+                source_text = f.read()
+        except Exception:
+            pass
+
+    known_chars = None
+    if project_dir:
+        pdir = Path(project_dir).resolve()
+        r_file = pdir / "character_roster.json"
+        if r_file.exists():
+            try:
+                with open(r_file, "r", encoding="utf-8") as f:
+                    r_data = json.load(f)
+                    known_chars = list(r_data.get("characters", {}).keys())
+            except Exception:
+                pass
+
+    val_res = DramaticValidator.validate_screenplay_and_plan(
+        segments=segments,
+        dramatic_plan=d_plan,
+        source_text=source_text,
+        known_characters=known_chars,
+    )
+
+    if not val_res.passed:
+        error_msgs = [i.message for i in val_res.issues if i.severity == "ERROR"]
+        raise GateAuditError(f"Gate 2.5 Dramatic Fidelity Failed: {'; '.join(error_msgs[:3])}")
+
+    return {
+        "status": val_res.status,
+        "total_segments": len(segments),
+        "total_issues": val_res.total_issues,
+        "warnings": [i.message for i in val_res.issues if i.severity == "WARNING"],
+        "summary": val_res.summary,
+    }
+
+
 def audit_gate3_scenes(scenes_file: Path, script_file: Path) -> Dict[str, Any]:
     """Audit Gate 3: Verifies dramatic scenes source continuity and coverage against the script."""
     scenes_file = Path(scenes_file).resolve()

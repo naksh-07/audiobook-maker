@@ -144,6 +144,7 @@ def _parse_dramatized_chunk_llm(
     api_key: str = "",
     model: str = "gemini-flash-lite-latest",
     max_retries: int = 3,
+    dramatic_context: str = "",
 ) -> List[Dict[str, Any]]:
     """Helper to parse a single chunk of chapter text into screenplay JSON."""
     import json
@@ -217,6 +218,7 @@ def _parse_dramatized_chunk_llm(
     prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 Preceding Scene Context / Characters Speaking:
 {preceding_context if preceding_context else "Beginning of scene."}
+{f"Dramatic Scene & Beat Context:\n{dramatic_context}" if dramatic_context else ""}
 {roster_hint}
 Current Scene Text:
 \"\"\"
@@ -229,6 +231,9 @@ Output JSON: A list of objects where each object has:
 - "speaker": character name (e.g. "Alice", "Bob"), "Narrator", or "Foley" (for action segments)
 - "text": speech text (clean spoken content in {"Devanagari Hindi" if is_hindi else "English"}, with optional inline vocal tags like [whispers], [shouting], [cold menace] where emotionally appropriate, or "[ACTION]" for action segments)
 - "emotion": "neutral" | "angry" | "whispering" | "sad" | "excited" | "growl" | "calm_raspy"
+- "actioning": "threaten" | "deflect" | "reassure" | "confess" | "plead" | "probe" | "comfort" | "test" | "intimidate" | "negotiate" | "challenge" | "mock" | "persuade" (transitive dramatic intent)
+- "subtext": string (optional unsaid psychological subtext if strongly justified by context, else "")
+- "underlying_emotion": string (optional concealed emotional state, else "")
 - "intensity_level": "low" | "medium" | "high" | "explosive" (DSP dynamic headroom: "low" for whispered/intimate, "medium" for standard dialogue/narration, "high" for intense confrontation/shouts, "explosive" for climactic battle cries and fatal strikes)
 - "pre_roll_breath_ms": int (150 to 250 for intimate/terrified lines, 0 for standard delivery)
 - "pause_after_ms": int (300 to 800 for normal dialogue, 800 to 1500 for action impacts)
@@ -391,16 +396,77 @@ def build_dramatized_script_llm(
     is_hindi: bool = False,
     character_roster: Optional[Dict[str, Any]] = None,
     memory_context: Optional[Any] = None,
-) -> List[Dict[str, Any]]:
+    chapter_num: int = 1,
+    chapter_id: str = "chapter_001",
+    return_dramatic_plan: bool = False,
+) -> Any:
     """
-    Dramatized Screenplay Mode with Sliding-Window Chunking:
-    Converts entire chapter of arbitrary length into screenplay JSON without truncation.
+    Dramatized Screenplay Mode with Dramatic Intelligence & Beat-Aligned Chunking:
+    Builds chapter dramatic plan, aligns chunks to dramatic beats, and enriches segments
+    with objectives, actioning verbs, subtext, tension curve, and epistemic bounds.
     """
+    import hashlib
     from audiobook_factory.key_manager import get_persistent_key_pool
+    from audiobook_factory.dramaturgy.scene_analyzer import SceneAnalyzer
+    from audiobook_factory.dramaturgy.beat_planner import BeatPlanner
+    from audiobook_factory.dramaturgy.contracts import DramaticPlan
+    from audiobook_factory.dramaturgy.dramatic_validator import DramaticValidator
+
+    known_chars = None
+    if character_roster and "characters" in character_roster:
+        chars = character_roster["characters"]
+        if isinstance(chars, dict):
+            known_chars = list(chars.keys())
+        elif isinstance(chars, list):
+            known_chars = [c.get("english_name", "") for c in chars if isinstance(c, dict) and c.get("english_name")]
+
+    # 1. Synthesize Holistic Chapter Dramatic Plan
+    scenes = SceneAnalyzer.segment_and_analyze_scenes(
+        chapter_text=chapter_text,
+        chapter_num=chapter_num,
+        chapter_title=f"Chapter {chapter_num}",
+        known_characters=known_chars,
+        memory_context=memory_context,
+    )
+    scenes = BeatPlanner.plan_chapter_beats(
+        chapter_text=chapter_text,
+        scenes=scenes,
+        known_characters=known_chars,
+        memory_context=memory_context,
+    )
+    total_beats = sum(len(s.beats) for s in scenes)
+    s_hash = hashlib.sha256(chapter_text.encode("utf-8")).hexdigest()
+    dramatic_plan = DramaticPlan(
+        chapter_id=chapter_id,
+        chapter_num=chapter_num,
+        scenes=scenes,
+        total_beats=total_beats,
+        source_hash=s_hash,
+    )
+
     pool = get_persistent_key_pool()
     api_key = pool.get_key(service="text")
     if not api_key:
-        return build_narrator_script(chapter_text, is_hindi)
+        script = build_narrator_script(chapter_text, is_hindi)
+        if memory_context is not None and hasattr(memory_context, "apply_performance_guidance_to_segment"):
+            script = [memory_context.apply_performance_guidance_to_segment(seg) for seg in script]
+        cleaned = clean_screenplay_pass2(
+            script,
+            is_hindi=is_hindi,
+            character_roster=character_roster,
+            memory_context=memory_context,
+            dramatic_plan=dramatic_plan,
+        )
+        val_res = DramaticValidator.validate_screenplay_and_plan(
+            segments=cleaned,
+            dramatic_plan=dramatic_plan,
+            source_text=chapter_text,
+            known_characters=known_chars,
+            memory_context=memory_context,
+        )
+        if return_dramatic_plan:
+            return cleaned, dramatic_plan, val_res
+        return cleaned
 
     model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-lite-latest")
     memory_prompt_str = (
@@ -409,8 +475,29 @@ def build_dramatized_script_llm(
         else ""
     )
 
-    # If chapter is within safe token budget (~7,500 chars), process directly
+    # 2. Process within safe token budget (~7,500 chars) directly
     if len(chapter_text) <= 7500:
+        dramatic_context_str = ""
+        if scenes:
+            primary_scene = scenes[0]
+            ctx_parts = [
+                f"Active Dramatic Scene: {primary_scene.scene_id} ({primary_scene.scene_type})",
+                f"Setting: {primary_scene.location} ({primary_scene.time_context})",
+                f"Dramatic Purpose: {primary_scene.dramatic_purpose}",
+                f"Scene Question: {primary_scene.scene_question}",
+                f"Stakes: {primary_scene.stakes}",
+                f"Primary Conflict: {primary_scene.primary_conflict}",
+            ]
+            if primary_scene.listener_knowledge_state:
+                ctx_parts.append(f"Audience Knowledge: {primary_scene.listener_knowledge_state}")
+            if primary_scene.beats:
+                ctx_parts.append("Planned Dramatic Beats:")
+                for b in primary_scene.beats:
+                    obj_s = f", Objective: '{b.objective.immediate_goal}'" if b.objective else ""
+                    act_s = f", Actioning: '{b.objective.actioning}'" if b.objective else ""
+                    ctx_parts.append(f"  - [{b.beat_id}] Function: {b.dramatic_function}{act_s}{obj_s}")
+            dramatic_context_str = "\n".join(ctx_parts)
+
         raw_items = _parse_dramatized_chunk_llm(
             chunk_text=chapter_text,
             preceding_context=memory_prompt_str,
@@ -418,45 +505,69 @@ def build_dramatized_script_llm(
             character_roster=character_roster,
             api_key="",
             model=model,
+            dramatic_context=dramatic_context_str,
         )
         if not raw_items:
-            return build_narrator_script(chapter_text, is_hindi)
+            fallback = build_narrator_script(chapter_text, is_hindi)
+            cleaned = clean_screenplay_pass2(
+                fallback,
+                is_hindi=is_hindi,
+                character_roster=character_roster,
+                memory_context=memory_context,
+                dramatic_plan=dramatic_plan,
+            )
+            val_res = DramaticValidator.validate_screenplay_and_plan(
+                segments=cleaned,
+                dramatic_plan=dramatic_plan,
+                source_text=chapter_text,
+                known_characters=known_chars,
+                memory_context=memory_context,
+            )
+            if return_dramatic_plan:
+                return cleaned, dramatic_plan, val_res
+            return cleaned
     else:
-        # Novel-Scale: Split into semantic ~1,500 word chunks on paragraph boundaries
-        paragraphs = chapter_text.split("\n\n")
-        chunks = []
-        cur_chunk = []
-        cur_words = 0
-
-        for p in paragraphs:
-            p = p.strip()
-            if not p:
-                continue
-            w = len(p.split())
-            cur_chunk.append(p)
-            cur_words += w
-            if cur_words >= 1200:
-                chunks.append("\n\n".join(cur_chunk))
-                cur_chunk = []
-                cur_words = 0
-        if cur_chunk:
-            chunks.append("\n\n".join(cur_chunk))
+        # 3. Novel-Scale Beat-Aligned Chunking (Confirmed /grill-me Solution)
+        chunks = BeatPlanner.slice_chapter_by_beats(
+            chapter_text=chapter_text,
+            dramatic_plan=dramatic_plan,
+            max_words=1200,
+        )
 
         raw_items = []
         rolling_context = memory_prompt_str
 
-        for c_idx, chunk_str in enumerate(chunks, 1):
+        for c_idx, chunk_info in enumerate(chunks, 1):
+            c_text = chunk_info["text"]
+            sc = dramatic_plan.get_scene(chunk_info["scene_id"])
+            c_dramatic_lines = []
+            if sc:
+                c_dramatic_lines.append(f"Dramatic Scene: {sc.scene_id} ({sc.scene_type}) - Setting: {sc.location}")
+                c_dramatic_lines.append(f"Scene Purpose: {sc.dramatic_purpose} | Stakes: {sc.stakes}")
+                c_dramatic_lines.append(f"Primary Conflict: {sc.primary_conflict}")
+                if sc.listener_knowledge_state:
+                    c_dramatic_lines.append(f"Audience Knowledge: {sc.listener_knowledge_state}")
+            if chunk_info.get("beat_ids"):
+                c_dramatic_lines.append("Active Dramatic Beats in this section:")
+                for bid in chunk_info["beat_ids"]:
+                    b = dramatic_plan.get_beat(bid)
+                    if b:
+                        obj_s = f", Objective: '{b.objective.immediate_goal}'" if b.objective else ""
+                        act_s = f", Actioning: '{b.objective.actioning}'" if b.objective else ""
+                        c_dramatic_lines.append(f"  * [{b.beat_id}] Function: {b.dramatic_function}{act_s}{obj_s}, Tension: {b.tension_before}->{b.tension_after}")
+            chunk_dramatic_ctx = "\n".join(c_dramatic_lines)
+
             chunk_items = _parse_dramatized_chunk_llm(
-                chunk_text=chunk_str,
+                chunk_text=c_text,
                 preceding_context=rolling_context,
                 is_hindi=is_hindi,
                 character_roster=character_roster,
                 api_key="",
                 model=model,
+                dramatic_context=chunk_dramatic_ctx,
             )
             if chunk_items:
                 raw_items.extend(chunk_items)
-                # Form rich rolling dialogue context from the last 3 exchanges (ADR-021)
                 tail_lines = []
                 for it in chunk_items[-3:]:
                     sp = it.get("speaker", "Narrator")
@@ -473,19 +584,46 @@ def build_dramatized_script_llm(
                     f"and pronouns (e.g. 'उसने', 'वह', 'he', 'she') to the correct character."
                 )
             else:
-                # Fallback on this chunk
-                fallback_chunk = build_narrator_script(chunk_str, is_hindi)
+                fallback_chunk = build_narrator_script(c_text, is_hindi)
                 raw_items.extend(fallback_chunk)
 
     if not raw_items:
-        return build_narrator_script(chapter_text, is_hindi)
+        fallback = build_narrator_script(chapter_text, is_hindi)
+        cleaned = clean_screenplay_pass2(
+            fallback,
+            is_hindi=is_hindi,
+            character_roster=character_roster,
+            memory_context=memory_context,
+            dramatic_plan=dramatic_plan,
+        )
+        val_res = DramaticValidator.validate_screenplay_and_plan(
+            segments=cleaned,
+            dramatic_plan=dramatic_plan,
+            source_text=chapter_text,
+            known_characters=known_chars,
+            memory_context=memory_context,
+        )
+        if return_dramatic_plan:
+            return cleaned, dramatic_plan, val_res
+        return cleaned
 
-    return clean_screenplay_pass2(
+    cleaned = clean_screenplay_pass2(
         raw_items,
         is_hindi=is_hindi,
         character_roster=character_roster,
         memory_context=memory_context,
+        dramatic_plan=dramatic_plan,
     )
+    val_res = DramaticValidator.validate_screenplay_and_plan(
+        segments=cleaned,
+        dramatic_plan=dramatic_plan,
+        source_text=chapter_text,
+        known_characters=known_chars,
+        memory_context=memory_context,
+    )
+    if return_dramatic_plan:
+        return cleaned, dramatic_plan, val_res
+    return cleaned
 
 
 def clean_screenplay_pass2(
@@ -493,13 +631,15 @@ def clean_screenplay_pass2(
     is_hindi: bool = False,
     character_roster: Optional[Dict[str, Any]] = None,
     memory_context: Optional[Any] = None,
+    dramatic_plan: Optional[Any] = None,
 ) -> List[Dict[str, Any]]:
     """
     Pass 2 (Alexandria Pattern): Two-pass pronoun disambiguation, alias resolution,
-    unknown speaker fallback, text normalization, and continuous 1-based indexing.
-
+    unknown speaker fallback, text normalization, continuous 1-based indexing,
+    and dramatic metadata enrichment from DramaticPlan.
     """
     import re
+    from typing import Tuple
     alias_map = {}
     gender_map = {}
     if character_roster and "characters" in character_roster:
@@ -637,6 +777,20 @@ def clean_screenplay_pass2(
             "recommended_pronoun",
             "recommended_register",
             "memory_vocal_constraint",
+            "scene_id",
+            "beat_id",
+            "dramatic_function",
+            "character_objective",
+            "actioning",
+            "subtext",
+            "subtext_confidence",
+            "surface_emotion",
+            "underlying_emotion",
+            "tension_before",
+            "tension_after",
+            "listener_knowledge_state",
+            "performance_priority",
+            "dramatic_provenance",
         ):
             if field in sanitized_item:
                 entry[field] = sanitized_item[field]
@@ -654,6 +808,47 @@ def clean_screenplay_pass2(
             )
 
         final_script.append(entry)
+
+    # Attach dramatic plan metadata if not already attached
+    if dramatic_plan and getattr(dramatic_plan, "scenes", None):
+        all_beats: List[Tuple[Any, Any]] = []
+        for sc in dramatic_plan.scenes:
+            for bt in sc.beats:
+                all_beats.append((sc, bt))
+
+        num_segs = len(final_script)
+        num_bts = len(all_beats)
+        if num_bts > 0 and num_segs > 0:
+            segs_per_beat = max(1, num_segs // num_bts)
+            for s_idx, entry in enumerate(final_script):
+                b_idx = min(s_idx // segs_per_beat, num_bts - 1)
+                sc, bt = all_beats[b_idx]
+                if not entry.get("scene_id"):
+                    entry["scene_id"] = sc.scene_id
+                if not entry.get("beat_id"):
+                    entry["beat_id"] = bt.beat_id
+                if not entry.get("dramatic_function"):
+                    entry["dramatic_function"] = bt.dramatic_function
+                if entry.get("speaker") not in ("Narrator", "Foley") and bt.objective:
+                    if not entry.get("character_objective"):
+                        entry["character_objective"] = bt.objective.immediate_goal
+                    if not entry.get("actioning"):
+                        entry["actioning"] = bt.objective.actioning
+                if not entry.get("surface_emotion"):
+                    entry["surface_emotion"] = entry.get("emotion") or bt.surface_emotion
+                if not entry.get("underlying_emotion") and bt.underlying_emotion:
+                    entry["underlying_emotion"] = bt.underlying_emotion
+                if not entry.get("subtext") and bt.subtext:
+                    entry["subtext"] = bt.subtext
+                    entry["subtext_confidence"] = bt.subtext_confidence
+                if entry.get("tension_before") is None:
+                    entry["tension_before"] = bt.tension_before
+                if entry.get("tension_after") is None:
+                    entry["tension_after"] = bt.tension_after
+                if not entry.get("listener_knowledge_state") and sc.listener_knowledge_state:
+                    entry["listener_knowledge_state"] = sc.listener_knowledge_state
+                if not entry.get("performance_priority") or entry.get("performance_priority") == "standard":
+                    entry["performance_priority"] = bt.performance_priority
 
     return final_script
 
@@ -709,6 +904,22 @@ def generate_project_scripts(
     except Exception:
         pass
 
+    if dramatized:
+        try:
+            from audiobook_factory.dramaturgy.performance_bible import PerformanceBibleGenerator
+            pb = PerformanceBibleGenerator.generate_bible_for_project(
+                project_dir=project_dir,
+                book_bible=bible,
+                roster_data=roster,
+            )
+            pb.save_to_file(project_dir / "performance_bible.json")
+        except Exception as e:
+            pass
+
+    dramaturgy_dir = project_dir / "dramaturgy"
+    if dramatized:
+        dramaturgy_dir.mkdir(parents=True, exist_ok=True)
+
     print(f"[*] Building audiobook scripts for {len(target_files)} chapters (Mode: {'Dramatized' if dramatized else 'Narrator'})...")
 
     for seq_idx, chap_file in enumerate(target_files, 1):
@@ -735,12 +946,20 @@ def generate_project_scripts(
                 mem_ctx = None
 
         if dramatized:
-            script = build_dramatized_script_llm(
+            script, d_plan, val_res = build_dramatized_script_llm(
                 content,
                 is_hindi=use_hindi,
                 character_roster=roster,
                 memory_context=mem_ctx,
+                chapter_num=seq_idx,
+                chapter_id=chap_file.stem,
+                return_dramatic_plan=True,
             )
+            try:
+                d_plan.save_to_file(dramaturgy_dir / f"{chap_file.stem}_dramatic_plan.json")
+                val_res.save_to_file(dramaturgy_dir / f"{chap_file.stem}_validation.json")
+            except Exception:
+                pass
         else:
             script = build_narrator_script(content, is_hindi=use_hindi)
             if mem_ctx is not None:

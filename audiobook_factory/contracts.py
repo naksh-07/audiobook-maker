@@ -198,6 +198,22 @@ class ScreenplaySegment(BaseModel):
     recommended_pronoun: Optional[str] = Field(default=None, description="Recommended Hindi pronoun from DynamicRelationshipState ('tu', 'tum', 'aap')")
     recommended_register: Optional[str] = Field(default=None, description="Recommended socio-linguistic register from DynamicRelationshipState")
 
+    # Stage 3: Dramatic Intelligence & Performance Adaptation Extensions (Optional & Defaulted)
+    scene_id: Optional[str] = Field(default=None, description="Enclosing dramatic scene identifier")
+    beat_id: Optional[str] = Field(default=None, description="Enclosing dramatic beat identifier")
+    dramatic_function: Optional[str] = Field(default=None, description="Dramatic beat function")
+    character_objective: Optional[str] = Field(default=None, description="Immediate beat objective of speaking character")
+    actioning: Optional[str] = Field(default=None, description="Active transitive verb / actioning intent")
+    subtext: Optional[str] = Field(default=None, description="Underlying unsaid subtext if justified")
+    subtext_confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Confidence in inferred subtext")
+    surface_emotion: Optional[str] = Field(default=None, description="Explicit surface emotional expression")
+    underlying_emotion: Optional[str] = Field(default=None, description="Concealed or underlying emotional state")
+    tension_before: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Dramatic tension entering segment")
+    tension_after: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Dramatic tension exiting segment")
+    listener_knowledge_state: Optional[str] = Field(default=None, description="Audience epistemic state (e.g. dramatic irony)")
+    performance_priority: Optional[str] = Field(default="standard", description="Performance attention priority")
+    dramatic_provenance: Optional[Dict[str, Any]] = Field(default=None, description="Provenance hash linking to dramatic plan")
+
     @model_validator(mode="before")
     @classmethod
     def set_action_defaults(cls, data: Any) -> Any:

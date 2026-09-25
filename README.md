@@ -7,7 +7,7 @@
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-6.0%2B%20%7C%208.0-red.svg)](https://ffmpeg.org/)
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.1%20Flash%20API-green.svg)](https://ai.google.dev/)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-368%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-408%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
@@ -31,7 +31,9 @@ flowchart TD
         AST --> Gate01["Gate 0.1: Extraction Quality Audit (Fail-Closed)"]
         Gate01 --> Chapters["Projected Chapter Markdown (extracted/)"]
         Chapters --> Translator["Literary Translation Intelligence Engine<br/>(BookBible v2.0 + ScenePlanner + Gates T0–T11 + Memory 2.0)"]
-        Translator --> ScriptBuilder["Sliding-Window Screenplay Builder (Pydantic v2)"]
+        Translator --> Dramaturgy["Stage 3: Dramaturgy & Screenplay Engine<br/>(SceneAnalyzer + BeatPlanner + Beat-Aligned Slicing)"]
+        Dramaturgy --> Gate25["Gate 2.5: Dramatic Fidelity Audit"]
+        Gate25 --> ScriptBuilder["Sliding-Window Screenplay Script (Pydantic v2)"]
         ScriptBuilder --> Dispatcher["Token-Bucket Gemini 3.1 Flash TTS Dispatcher"]
         Dispatcher --> AudioChunks["Audio Segments (24kHz Mono 16-bit PCM)"]
     end
@@ -63,6 +65,19 @@ flowchart TD
     Room4 --> Packager["FFMETADATA1 Chapter Generator & AAC Packager"]
     Packager --> M4B["Deliverable Audiobook (.m4b with FastStart Artwork)"]
 ```
+
+---
+
+### 🔄 The 6-Stage Autonomous Production Pipeline
+
+The architecture orchestrates an end-to-end 6-stage lifecycle from raw document ingestion to mastered M4B packaging:
+
+1. **Stage 1: Forensic Document Ingestion & Canonical AST** ([`docs/FORENSIC_DOCUMENT_INGESTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/FORENSIC_DOCUMENT_INGESTION.md)): Single-pass DOM traversal, layout-aware PDF reading order reconstruction, sacred raw archival, and fail-closed Gate 0.1 extraction audits.
+2. **Stage 2: Literary Translation Intelligence & Memory 2.0** ([`docs/LITERARY_TRANSLATION_INTELLIGENCE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md)): Persistent BookBible v2.0, dual semantic maps, contextual Hindustani register, 7D calibrated intensity, World & Character Memory 2.0 epistemic continuity, and Gates T0–T11 certification.
+3. **Stage 3: Dramatic Adaptation & Screenplay Engine** ([`docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)): Transforms flat prose into multi-cast dramatic screenplays via the **Dramaturgy Engine** (`audiobook_factory/dramaturgy/`). Deploys `SceneAnalyzer` for organic scene discovery and dramatic questions, `BeatPlanner` for Stanislavski tactical actioning and dual-layer emotions, **Beat-Aligned Chunk Slicing** (`slice_chapter_by_beats`) eliminating the historical 1,200-word cut boundary flaw without severing beats, `PerformanceBibleGenerator` for sociolect archetypes (`COLD_CYNIC`, `CAUSTIC_ARISTOCRAT`, `THARKI_BARD`), and fail-closed **Gate 2.5 Dramatic Fidelity** validation (**408/408 tests green**).
+4. **Stage 4: Autonomous Agentic Directing (`AgentDirector`)** ([`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)): Autonomous 3-pass workflow executing $\ge 60\%$ acoustic silence carving, SQLite FTS5 leitmotif music scoring, and bilingual anchor Foley staging. Emits `CreativeManifest v3.0`.
+5. **Stage 5: Acoustic Compositor & 5-Track DME Stem Mastering** ([`docs/AUDIO_ENGINEERING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)): Manifest rendering with whisper-safe sidechain ducking (-34.9 dBFS / 0.018 threshold), isolated 2.2kHz spectral notch, dynamic IR reverb, and discrete 5-track DME stem export audited by Gates 5, 5.2, and 5.3.
+6. **Stage 6: Master Packaging & M4B Delivery Container** ([`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)): Multi-chapter FFMETADATA1 generation, AAC safety auto-transcode, FastStart artwork embedding, and Gate 6A–6D master certification.
 
 ---
 
@@ -104,6 +119,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Gate 0:** Source Text & Translation Coverage Parity
 - **Gate 1:** Character Voice Casting & Collision Elimination
 - **Gate 2:** Screenplay Scripting Schema & Prosody (Pydantic v2)
+- **Gate 2.5:** Dramatic Fidelity & Character Arc Validator (5-pillar fail-closed audit across structural integrity, character epistemics/unknown secrets, anti-emotional teleportation, dialogue quote parity, and "Nothing Above Source" creative overreach guards)
 - **Gate 3 / 3.5:** Dynamic Manifest Feasibility Guard ($\ge 60\%$ acoustic silence mandate; accepts `CreativeManifest` & director-managed workflows)
 - **Gate 5 / 5.2 / 5.3:** EBU R128 Master (standardized $\pm 1.0\text{ LU}$ tolerance), Dialogue-to-Music Ratio ($\text{DMR} \ge +12\text{ dB}$), and Stereo Phase ($r \ge 0.85$)
 - **Gate 6A / 6B / 6C / 6D:** Cross-Chapter Voice Continuity, Inter-Chapter Loudness Consistency ($\le 1.0\text{ LU}$), TOC Monotonicity, and M4B Container Certification
@@ -195,6 +211,7 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 |---|---|
 | **[📜 Forensic Literary Ingestion (Pillar 1)](docs/FORENSIC_DOCUMENT_INGESTION.md)** | Authoritative guide to the CanonicalBook AST, sacred raw archival, structural EPUB/PDF engines, and Gate 0.1 extraction audits. |
 | **[🧠 Literary Translation Intelligence (Pillar 2)](docs/LITERARY_TRANSLATION_INTELLIGENCE.md)** | Complete guide to BookBible v2.0, Contextual Hindustani Register, 7D Relationship & Intensity models, Gates T0–T11, Tiered Repair, and Memory 2.0. |
+| **[🎭 Dramatic Adaptation & Screenplay (Stage 3)](docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Deep dive into the Stage 3 Dramaturgy Engine, SceneAnalyzer, BeatPlanner, beat-aligned chunk slicing, Performance Bible, and Gate 2.5 fidelity audits. |
 | **[🏛️ Architecture Blueprint](docs/ARCHITECTURE.md)** | In-depth breakdown of the 4 rooms, 5 stems, 8 metadata bridges, Adult Literary Mode pipeline integration, and strict agent creative mandate. |
 | **[🎬 Cinematic Sound Design & Adult Fidelity](docs/CINEMATIC_SOUND_DESIGN_AND_ADULT_FIDELITY.md)** | Authoritative guide to Hollywood 3-layer combat design (ADR-017), Pottermore 4-stem decoupled scene acoustics (ADR-018), and unfiltered adult intimacy (ADR-019). |
 | **[🎓 End-to-End Tutorial & Cookbook](docs/TUTORIAL_E2E.md)** | Step-by-step recipes: 1-click runs, English audio drama, manual directing, quota resume, and DAW stems. |
@@ -276,11 +293,18 @@ python audiobook_cli.py bank stats
 
 ## 🧪 Verification & Test Suite
 
-The codebase maintains **340 passed unit tests (17 subtests passed)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors):
+The codebase maintains **408 passed unit tests (100% green)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (408/408 passed, 0 failures, 0 errors):
 
 ```powershell
-# Run full regression suite across all test suites (340 tests)
+# Run full regression suite across all test suites (408 tests)
+pytest tests/
 python -m unittest discover tests -p "test_*.py"
+
+# Run Stage 3 Dramaturgy, Beat Planner & Dramatic Fidelity suites (6 test suites)
+pytest tests/dramaturgy/ -v
+
+# Run Crucial Benchmark Proof & 10 Golden Scenes suite
+pytest tests/dramaturgy/test_golden_scenes.py -v
 
 # Run World + Character Memory 2.0 test suites (7 test suites)
 python -m unittest discover tests/translation/memory -p "test_*.py"
