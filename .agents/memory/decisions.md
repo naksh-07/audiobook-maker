@@ -497,3 +497,41 @@
      - Triple expert audit panel (Systems Architect, QA Specialist, Security Auditor) awarded unanimous **Grade A+ (Production Pass)**.
 - **Rationale:** Transforms the screenplay pipeline from a text-segmentation tool into a dramatically intelligent storytelling engine supporting commercial audio drama performance while guaranteeing 100% backward compatibility and zero hardcoding.
 
+
+
+## ADR-031: Stage 3 Refined Dramatic Adaptation & 10 Capabilities Pass
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:**
+  - Following the initial Stage 3 implementation (ADR-030), a forensic audit revealed missing dramatic dimensions necessary for professional dramatic storytelling:
+    1. Beat Causality (disjoint beat lists lacking trigger-response-consequence chains).
+    2. Dramatic State Delta (absence of explicit scene entry vs exit net transformation).
+    3. Relationship Evolution (lack of beat-level interpersonal shifts).
+    4. Power + Information Dynamics (missing tactical leverage and dramatic irony preservation).
+    5. Meaningful Physical Blocking (absence of material physical staging).
+    6. Narrative Mode & Distance (inability to distinguish direct dialogue from internal monologues or reported speech).
+    7. Explicit Adaptation/Fidelity Policy (need for deterministic boundaries preventing fabricated plot lore).
+    8. Long-Range Story Connections (linking motifs and foreshadowing without a duplicate database).
+    9. Conversational Dynamics (turn-taking cutoffs, interruptions, hesitation, and strategy pivots).
+    10. Dramatic Silence Intent (narrative intent of pauses without premature audio DSP execution).
+  - Strict constraint: Zero architectural redesign, no downstream disruption to Stages 4-13, and 100% backward compatibility.
+- **Decision:**
+  1. **Additive Contract Enhancements (contracts.py & ScreenplaySegment):**
+     - Introduced DramaticStateDelta, RelationshipShift, PhysicalBlocking, StoryConnectionRecord, ConversationalDynamic, DramaticSilenceIntent, AdaptationFidelityPolicy.
+     - Extended DramaticBeat, SceneDramaticPlan, DramaticPlan, and ScreenplaySegment with optional, defaulted attributes.
+  2. **Scene & Beat Intelligence Upgrades (scene_analyzer.py, beat_planner.py):**
+     - Spliced South Park ('therefore' / 'but') causal chaining across contiguous beats.
+     - Quantified net state delta across knowledge, relationships, power, danger, decisions, and emotion.
+     - Preserved dramatic irony by mapping audience vs. character epistemic divergence.
+     - Mapped meaningful physical blocking and conversational turn-taking dynamics.
+  3. **Script Builder Pass 2 Refinement (script_builder.py):**
+     - Inferred narrative_mode (direct_dialogue, internal_monologue, reported_speech, narrator_exposition).
+     - Detected conversational interruptions (--, -) and hesitation pauses (...).
+  4. **Tiered Strictness Validation (dramatic_validator.py):**
+     - Hard FAIL on fabricated reveals and character epistemic breaches; soft WARNING on aesthetic inferences.
+  5. **Zero Disruption to Downstream Stages:**
+     - Stages 4-13 continue reading only standard fields; new attributes live passively as rich metadata in dramatic_plan.json and segment records.
+  6. **Verification:**
+     - Added 12 new comprehensive tests in test_dramatic_refinements.py and test_dramatic_contracts.py.
+     - Full project test suite passes at 420/420 tests green (17 subtests passing).
+- **Rationale:** Empowers Stage 3 to understand not only what happens in a scene, but why each beat happens, what changes because of it, how relationships evolve, what the listener knows, and what must remain faithful to source literature.

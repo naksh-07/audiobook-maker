@@ -62,6 +62,157 @@ SubtextClassification = Literal[
 
 PerformancePriority = Literal["background", "standard", "high_focus", "climactic"]
 
+CausalLinkType = Literal["therefore", "but", "meanwhile", "catalyst"]
+RelationshipDimension = Literal["trust", "hostility", "cooperation", "intimacy", "fear", "dominance", "respect", "estrangement"]
+RelationshipDirection = Literal["increased", "decreased", "inverted", "severed", "cemented"]
+
+NarrativeMode = Literal[
+    "direct_dialogue",
+    "narrator_exposition",
+    "internal_monologue",
+    "reported_speech",
+    "quoted_speech",
+    "stream_of_consciousness",
+    "choral_or_aside",
+]
+
+NarrativeDistance = Literal["objective_detached", "close_third_person", "first_person_intimate", "omniscient_editorial"]
+
+
+# -----------------------------------------------------------------------------
+# Enriched Dramatic Models
+# -----------------------------------------------------------------------------
+
+class RelationshipShift(BaseModel):
+    """
+    Relational movement between two characters triggered by a dramatic beat.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    source_character: str = Field(..., description="Character whose relational stance has transformed")
+    target_character: str = Field(..., description="Target character of the relational stance")
+    dimension: RelationshipDimension = Field(default="trust", description="Relational axis being shifted")
+    direction: RelationshipDirection = Field(default="increased", description="Directional movement")
+    description: str = Field(default="", description="Narrative rationale for the shift")
+
+
+class PhysicalBlocking(BaseModel):
+    """
+    Dramatically meaningful physical action materially altering leverage, proximity, or posture.
+    Filters out trivial fidgets; focuses on physical moments with dramatic weight.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    character: str = Field(..., description="Character executing physical action")
+    action_description: str = Field(..., description="Material physical action affecting dramatic situation")
+    dramatic_significance: Literal[
+        "power_assertion",
+        "barrier_creation",
+        "intimacy_seeking",
+        "concealment",
+        "territorial_control",
+        "threat_display",
+        "submission",
+        "revelation_trigger",
+    ] = Field(default="power_assertion")
+    spatial_intent: Optional[str] = Field(default=None, description="Resulting spatial or acoustic staging change")
+
+
+class StoryConnectionRecord(BaseModel):
+    """
+    Long-range narrative connection referencing setup, foreshadowing, callbacks, or motifs.
+    Reuses existing narrative context without building a separate redundant database.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    connection_type: Literal["setup", "foreshadowing", "callback", "motif_echo", "payoff", "thematic_anchor"] = Field(default="setup")
+    reference_target: str = Field(..., description="Target chapter, scene, or narrative element ID")
+    description: str = Field(..., description="Dramatic nature of the connection")
+    motif_name: Optional[str] = Field(default=None, description="Optional motif tag")
+    confidence: float = Field(default=0.85, ge=0.0, le=1.0)
+
+
+class ConversationalDynamic(BaseModel):
+    """
+    Rhetorical turn-taking dynamic capturing interruptions, hesitation, avoidance, and tactical shifts.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    dynamic_type: Literal[
+        "interruption",
+        "hesitation",
+        "escalation",
+        "deflection_avoidance",
+        "miscommunication",
+        "cross_talk",
+        "tactical_silence",
+        "strategy_shift",
+        "steady_exchange",
+    ] = Field(default="steady_exchange")
+    initiator: str = Field(..., description="Character driving the dynamic")
+    target: Optional[str] = Field(default=None, description="Recipient of the dynamic")
+    description: str = Field(default="", description="Conversational tactic in play")
+    strategy_before: Optional[str] = Field(default=None, description="Strategy prior to shift")
+    strategy_after: Optional[str] = Field(default=None, description="Strategy following shift")
+
+
+class DramaticSilenceIntent(BaseModel):
+    """
+    Dramatic layer identification of the narrative purpose of silence or pause.
+    NOTE: Stage 3 models narrative intent only; Stage 10 executes DSP audio timing.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    purpose: Literal[
+        "anticipation",
+        "shock",
+        "realization",
+        "grief",
+        "emotional_absorption",
+        "intimidation",
+        "hesitation",
+        "suspense",
+    ] = Field(..., description="Narrative purpose of silence")
+    affected_character: Optional[str] = Field(default=None, description="Character experiencing silence")
+    dramatic_rationale: str = Field(..., description="Why dramatic silence is narratively required")
+    listening_focus: Literal["character_reaction", "acoustic_space", "subtext_digestion"] = Field(
+        default="character_reaction",
+        description="Where listener attention should focus during silence",
+    )
+
+
+class DramaticStateDelta(BaseModel):
+    """
+    Net dramatic transformation between scene entry and scene exit.
+    Quantifies meaningful changes in knowledge, relationships, objectives, power, danger, and emotion.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    knowledge_delta: List[str] = Field(default_factory=list, description="New facts learned, disclosed, or disproven")
+    relationship_shifts: List[str] = Field(default_factory=list, description="Interpersonal movements across scene")
+    power_shift: Optional[str] = Field(default=None, description="Net directional shift in leverage/authority across scene")
+    danger_level_delta: Optional[Literal["escalated", "reduced", "latent", "unchanged"]] = Field(default="unchanged")
+    decisions_made: List[str] = Field(default_factory=list, description="Irreversible or binding choices made by characters")
+    emotional_trajectory: Optional[str] = Field(default=None, description="Entry-to-exit emotional movement")
+
+
+class AdaptationFidelityPolicy(BaseModel):
+    """
+    Rules of engagement defining what dramatic adaptation may enhance vs what must remain immutable.
+    Guarantees zero silent fabrication of plot events, character motivations, or false lore.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    preserve_plot_events: bool = Field(default=True, description="No added, deleted, or reordered plot events")
+    preserve_character_identities: bool = Field(default=True, description="No hallucinated characters or merged identities")
+    preserve_epistemic_facts: bool = Field(default=True, description="Strict adherence to character knowledge boundaries")
+    preserve_core_dialogue_intent: bool = Field(default=True, description="Spoken dialogue retains exact semantic intent")
+    preserve_narrative_pov: bool = Field(default=True, description="No unauthorized switches between 1st/3rd person")
+    allow_subtext_inference: bool = Field(default=True, description="Inference permitted with confidence score")
+    allow_conversational_turn_dynamics: bool = Field(default=True, description="Tagging hesitations/interruptions allowed")
+    disallow_fabricated_reveals: bool = Field(default=True, description="Forbids reveals not substantiated by source")
+    disallow_invented_conflicts: bool = Field(default=True, description="Forbids manufacturing ungrounded disputes")
+
 
 # -----------------------------------------------------------------------------
 # Beat-Level Contracts
@@ -85,6 +236,7 @@ class CharacterDramaticObjective(BaseModel):
 class DramaticBeat(BaseModel):
     """
     Atomic dramatic unit representing a meaningful change in state, leverage, or emotion.
+    Forms a continuous causal chain with preceding and succeeding beats.
     """
     model_config = ConfigDict(extra="ignore")
 
@@ -109,6 +261,35 @@ class DramaticBeat(BaseModel):
     information_revealed: List[str] = Field(default_factory=list, description="Facts disclosed in this beat")
     information_withheld: List[str] = Field(default_factory=list, description="Secrets deliberately concealed")
     performance_priority: PerformancePriority = Field(default="standard", description="Performance focus weighting")
+
+    # Capability 1: Beat Causality
+    causal_trigger: Optional[str] = Field(default=None, description="What event or action triggered this beat ('Because of...')")
+    character_response: Optional[str] = Field(default=None, description="How the reacting character responds to the trigger")
+    consequence: Optional[str] = Field(default=None, description="Direct dramatic consequence leading into the next beat ('Therefore...')")
+    causal_link_type: CausalLinkType = Field(default="therefore", description="Connective relationship from preceding beat")
+
+    # Capability 3: Relationship Evolution
+    relationship_shift: Optional[RelationshipShift] = Field(default=None, description="Relational movement occurring during this beat")
+
+    # Capability 4: Power + Information Dynamics
+    leverage_holder: Optional[str] = Field(default=None, description="Character holding tactical leverage in this beat")
+    vulnerable_character: Optional[str] = Field(default=None, description="Character in exposed or vulnerable position")
+    dramatic_irony: Optional[str] = Field(default=None, description="Specific irony where listener knows truth hidden from character")
+
+    # Capability 5: Meaningful Physical Blocking
+    blocking: Optional[PhysicalBlocking] = Field(default=None, description="Meaningful physical blocking action")
+
+    # Capability 7: Provenance Mode (Fidelity)
+    provenance_mode: Literal["SOURCE_DIRECT", "INFERRED_PERFORMANCE", "DRAMATIC_INTERPRETATION"] = Field(default="SOURCE_DIRECT")
+
+    # Capability 8: Long-Range Story Connections
+    story_connection: Optional[StoryConnectionRecord] = Field(default=None, description="Beat echoing or paying off long-range setup")
+
+    # Capability 9: Conversational Dynamics
+    conversational_dynamic: Optional[ConversationalDynamic] = Field(default=None, description="Turn-taking or rhetorical dynamic")
+
+    # Capability 10: Dramatic Silence Intent
+    silence_intent: Optional[DramaticSilenceIntent] = Field(default=None, description="Narrative purpose of pause or silence")
 
 
 # -----------------------------------------------------------------------------
@@ -145,6 +326,20 @@ class SceneDramaticPlan(BaseModel):
     beats: List[DramaticBeat] = Field(default_factory=list, description="Sequential dramatic beats")
     source_hash: str = Field(default="", description="SHA-256 hash of underlying source text")
 
+    # Capability 2: Dramatic State Delta
+    state_delta: Optional[DramaticStateDelta] = Field(default_factory=DramaticStateDelta, description="Net transformation between scene entry and exit")
+
+    # Capability 4: Power + Information Dynamics
+    epistemic_asymmetry: List[str] = Field(default_factory=list, description="Contrasts between listener knowledge and character ignorance")
+
+    # Capability 6: Narrative Mode & Perspective
+    narrative_pov: str = Field(default="third_person_limited", description="Dominant narrative point of view")
+    narrative_distance: NarrativeDistance = Field(default="close_third_person", description="Psychological distance of narration")
+    pov_character: Optional[str] = Field(default=None, description="Focalizing character for scene perspective")
+
+    # Capability 8: Long-Range Story Connections
+    story_connections: List[StoryConnectionRecord] = Field(default_factory=list, description="Long-range narrative connections linked to this scene")
+
 
 class DramaticPlan(BaseModel):
     """
@@ -158,8 +353,11 @@ class DramaticPlan(BaseModel):
     scenes: List[SceneDramaticPlan] = Field(default_factory=list, description="Constituent scene plans")
     overall_arc_summary: str = Field(default="", description="High-level narrative progression summary")
     total_beats: int = Field(default=0, ge=0, description="Total planned dramatic beats in chapter")
-    version: str = Field(default="1.0", description="Dramaturgy schema version")
+    version: str = Field(default="1.1", description="Dramaturgy schema version")
     source_hash: str = Field(default="", description="SHA-256 hash of full chapter source text")
+
+    # Capability 7: Explicit Adaptation & Fidelity Policy
+    adaptation_policy: AdaptationFidelityPolicy = Field(default_factory=AdaptationFidelityPolicy, description="Fidelity constraints governing adaptation")
 
     def get_scene(self, scene_id: str) -> Optional[SceneDramaticPlan]:
         """Lookup scene by identifier."""

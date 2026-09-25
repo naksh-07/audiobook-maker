@@ -20,6 +20,12 @@ from .contracts import (
     DramaticFunction,
     PerformancePriority,
     SubtextClassification,
+    RelationshipShift,
+    PhysicalBlocking,
+    ConversationalDynamic,
+    DramaticSilenceIntent,
+    StoryConnectionRecord,
+    CausalLinkType,
 )
 
 
@@ -97,6 +103,7 @@ class BeatPlanner:
         # Baseline tension initialization based on opening state
         initial_tension = cls._get_initial_tension(scene.scene_type)
         curr_tension = initial_tension
+        prev_consequence: Optional[str] = None
 
         for b_idx, fn in enumerate(function_seq, 1):
             beat_id = f"{scene.scene_id}_b{b_idx:03d}"
@@ -142,6 +149,59 @@ class BeatPlanner:
             elif next_tension <= 0.30:
                 intensity = "low"
 
+            # 1. Beat Causality
+            c_trigger, c_response, c_consequence, c_link = cls._derive_beat_causality(
+                fn=fn,
+                b_idx=b_idx,
+                speaker=speaker,
+                target=target,
+                action_verb=action_verb,
+                scene=scene,
+                prev_consequence=prev_consequence,
+            )
+            prev_consequence = c_consequence
+
+            # 3. Relationship Evolution
+            rel_shift = cls._derive_relationship_shift(
+                fn=fn,
+                speaker=speaker,
+                target=target,
+                scene_type=scene.scene_type,
+            )
+
+            # 4. Power & Information Dynamics
+            lev_holder, vuln_char, irony = cls._derive_power_dynamics(
+                fn=fn,
+                speaker=speaker,
+                target=target,
+                scene=scene,
+            )
+
+            # 5. Meaningful Physical Blocking
+            blocking_act = cls._derive_physical_blocking(
+                fn=fn,
+                speaker=speaker,
+                target=target,
+                scene_type=scene.scene_type,
+            )
+
+            # 8. Long-Range Story Connections
+            s_conn = scene.story_connections[0] if (scene.story_connections and b_idx == 1) else None
+
+            # 9. Conversational Dynamics
+            conv_dyn = cls._derive_conversational_dynamic(
+                fn=fn,
+                speaker=speaker,
+                target=target,
+            )
+
+            # 10. Dramatic Silence Intent
+            silence_intent = cls._derive_silence_intent(
+                fn=fn,
+                speaker=speaker,
+                target=target,
+            )
+
             beat = DramaticBeat(
                 beat_id=beat_id,
                 scene_id=scene.scene_id,
@@ -164,6 +224,19 @@ class BeatPlanner:
                 information_revealed=[f"Reveals motive during {fn}"] if fn == "reveal" else [],
                 information_withheld=[f"Conceals deeper intent"] if fn in ("approach", "resistance") else [],
                 performance_priority=priority,
+                causal_trigger=c_trigger,
+                character_response=c_response,
+                consequence=c_consequence,
+                causal_link_type=c_link,
+                relationship_shift=rel_shift,
+                leverage_holder=lev_holder,
+                vulnerable_character=vuln_char,
+                dramatic_irony=irony,
+                blocking=blocking_act,
+                provenance_mode="SOURCE_DIRECT" if fn in ("setup", "climax", "aftermath") else "INFERRED_PERFORMANCE",
+                story_connection=s_conn,
+                conversational_dynamic=conv_dyn,
+                silence_intent=silence_intent,
             )
             beats.append(beat)
             curr_tension = next_tension
@@ -316,6 +389,274 @@ class BeatPlanner:
             txt, conf, cls_val = subtext_templates[verb]
             return txt, conf, cls_val
         return None, 0.0, "SOURCE_SUPPORTED"
+
+    @classmethod
+    def _derive_beat_causality(
+        cls,
+        fn: str,
+        b_idx: int,
+        speaker: str,
+        target: Optional[str],
+        action_verb: str,
+        scene: SceneDramaticPlan,
+        prev_consequence: Optional[str] = None,
+    ) -> Tuple[str, str, str, CausalLinkType]:
+        """
+        Derives unbroken causal chain linking each beat to preceding and succeeding beats
+        using South Park ('therefore' / 'but') dramatic causality principles.
+        """
+        tgt = target or "counterpart"
+        if b_idx == 1:
+            trigger = f"Scene opens as {speaker} confronts {tgt} in {scene.location}"
+            response = f"{speaker} initiates tactical maneuver by choosing to {action_verb}"
+            consequence = f"{tgt} is forced to react, shifting immediate initiative"
+            link: CausalLinkType = "catalyst"
+            return trigger, response, consequence, link
+
+        # Subsequent beats inherit predecessor consequence as their causal trigger
+        trigger = prev_consequence or f"Preceding dramatic escalation in beat {b_idx - 1}"
+        response = f"{speaker} counters with {action_verb} to regain advantage"
+
+        if fn in ("resistance", "reversal", "threat"):
+            link = "but"
+            consequence = f"Expected progression is disrupted as {speaker} executes {fn}, putting {tgt} on the defensive"
+        elif fn in ("climax", "decision", "reveal"):
+            link = "therefore"
+            consequence = f"Irreversible dramatic transformation occurs; {tgt} must face immediate fallout"
+        else:
+            link = "therefore"
+            consequence = f"Situational stakes escalate, compelling subsequent response from {tgt}"
+
+        return trigger, response, consequence, link
+
+    @classmethod
+    def _derive_relationship_shift(
+        cls,
+        fn: str,
+        speaker: str,
+        target: Optional[str],
+        scene_type: str,
+    ) -> Optional[RelationshipShift]:
+        """Track interpersonal relational movement triggered by this beat."""
+        if not target:
+            return None
+
+        if fn in ("threat", "escalation"):
+            return RelationshipShift(
+                source_character=speaker,
+                target_character=target,
+                dimension="hostility",
+                direction="increased",
+                description=f"Hostility heightened between {speaker} and {target} under {fn}",
+            )
+        elif fn == "reversal":
+            return RelationshipShift(
+                source_character=speaker,
+                target_character=target,
+                dimension="dominance",
+                direction="inverted",
+                description=f"Relational dominance inverted between {speaker} and {target}",
+            )
+        elif fn in ("reveal", "confess"):
+            direction: Any = "cemented" if scene_type == "romance" else "severed"
+            return RelationshipShift(
+                source_character=speaker,
+                target_character=target,
+                dimension="trust",
+                direction=direction,
+                description=f"Disclosure forces irrevocable trust reassessment between {speaker} and {target}",
+            )
+        elif fn == "emotional_turn":
+            dim: Any = "intimacy" if scene_type == "romance" else "fear"
+            return RelationshipShift(
+                source_character=speaker,
+                target_character=target,
+                dimension=dim,
+                direction="increased",
+                description=f"Emotional boundary dropped between {speaker} and {target}",
+            )
+        elif fn == "resistance":
+            return RelationshipShift(
+                source_character=speaker,
+                target_character=target,
+                dimension="cooperation",
+                direction="decreased",
+                description=f"Cooperative alignment fractured as {speaker} actively resists {target}",
+            )
+        return None
+
+    @classmethod
+    def _derive_power_dynamics(
+        cls,
+        fn: str,
+        speaker: str,
+        target: Optional[str],
+        scene: SceneDramaticPlan,
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """Track tactical leverage holder, vulnerable character, and dramatic irony."""
+        lev_holder = None
+        vuln_char = None
+        irony = None
+
+        if fn in ("threat", "command", "escalation", "reversal"):
+            lev_holder = speaker
+            vuln_char = target
+        elif fn in ("resistance", "deflect"):
+            lev_holder = target
+            vuln_char = speaker
+
+        if scene.listener_knowledge_state and "irony" in scene.listener_knowledge_state.lower():
+            irony = f"Audience perceives hidden truth while {vuln_char or target or 'character'} remains oblivious"
+        elif scene.epistemic_asymmetry:
+            irony = scene.epistemic_asymmetry[0]
+
+        return lev_holder, vuln_char, irony
+
+    @classmethod
+    def _derive_physical_blocking(
+        cls,
+        fn: str,
+        speaker: str,
+        target: Optional[str],
+        scene_type: str,
+    ) -> Optional[PhysicalBlocking]:
+        """Preserve physical blocking actions that materially affect dramatic situation."""
+        tgt = target or "counterpart"
+        if fn == "threat":
+            return PhysicalBlocking(
+                character=speaker,
+                action_description=f"{speaker} closes physical distance and fixes posture aggressively toward {tgt}",
+                dramatic_significance="threat_display",
+                spatial_intent="intimate_close",
+            )
+        elif fn == "approach":
+            return PhysicalBlocking(
+                character=speaker,
+                action_description=f"{speaker} steps forward into the primary acoustic zone, establishing presence",
+                dramatic_significance="territorial_control",
+                spatial_intent="mid_stage",
+            )
+        elif fn == "resistance":
+            return PhysicalBlocking(
+                character=speaker,
+                action_description=f"{speaker} angles body away, creating an acoustic and physical barrier",
+                dramatic_significance="barrier_creation",
+                spatial_intent="defensive_offset",
+            )
+        elif fn == "climax":
+            return PhysicalBlocking(
+                character=speaker,
+                action_description=f"{speaker} commits to decisive physical action, collapsing remaining separation",
+                dramatic_significance="power_assertion",
+                spatial_intent="dynamic_center",
+            )
+        elif fn == "reveal":
+            return PhysicalBlocking(
+                character=speaker,
+                action_description=f"{speaker} freezes in stillness, locking eye contact with {tgt}",
+                dramatic_significance="revelation_trigger",
+                spatial_intent="static_focus",
+            )
+        return None
+
+    @classmethod
+    def _derive_conversational_dynamic(
+        cls,
+        fn: str,
+        speaker: str,
+        target: Optional[str],
+    ) -> Optional[ConversationalDynamic]:
+        """Capture turn-taking dynamics, interruptions, and rhetorical shifts."""
+        tgt = target or "counterpart"
+        if fn == "resistance":
+            return ConversationalDynamic(
+                dynamic_type="deflection_avoidance",
+                initiator=speaker,
+                target=target,
+                description=f"{speaker} sidesteps direct inquiry from {tgt}",
+            )
+        elif fn == "threat":
+            return ConversationalDynamic(
+                dynamic_type="interruption",
+                initiator=speaker,
+                target=target,
+                description=f"{speaker} forcefully cuts across {tgt}'s response with an ultimatum",
+            )
+        elif fn == "escalation":
+            return ConversationalDynamic(
+                dynamic_type="escalation",
+                initiator=speaker,
+                target=target,
+                description=f"{speaker} accelerates rhetorical tempo and heightens stakes against {tgt}",
+            )
+        elif fn == "reversal":
+            return ConversationalDynamic(
+                dynamic_type="strategy_shift",
+                initiator=speaker,
+                target=target,
+                description=f"{speaker} suddenly pivots conversational strategy from retreat to offensive counter",
+                strategy_before="guarded_defense",
+                strategy_after="aggressive_counter",
+            )
+        elif fn in ("question", "approach"):
+            return ConversationalDynamic(
+                dynamic_type="hesitation",
+                initiator=speaker,
+                target=target,
+                description=f"{speaker} hesitates briefly, weighing words before committing",
+            )
+        return ConversationalDynamic(
+            dynamic_type="steady_exchange",
+            initiator=speaker,
+            target=target,
+            description=f"Measured turn-taking exchange between {speaker} and {tgt}",
+        )
+
+    @classmethod
+    def _derive_silence_intent(
+        cls,
+        fn: str,
+        speaker: str,
+        target: Optional[str],
+    ) -> Optional[DramaticSilenceIntent]:
+        """Identify narrative purpose of silence or pause (anticipation, shock, grief, realization)."""
+        tgt = target or "counterpart"
+        if fn == "reveal":
+            return DramaticSilenceIntent(
+                purpose="shock",
+                affected_character=target,
+                dramatic_rationale=f"Allows revelation to detonate emotionally before {tgt} can formulate a response",
+                listening_focus="character_reaction",
+            )
+        elif fn == "realization":
+            return DramaticSilenceIntent(
+                purpose="realization",
+                affected_character=speaker,
+                dramatic_rationale=f"Cognitive digestion of irrevocable truth by {speaker}",
+                listening_focus="subtext_digestion",
+            )
+        elif fn == "aftermath":
+            return DramaticSilenceIntent(
+                purpose="grief",
+                affected_character=speaker,
+                dramatic_rationale="Acoustic space for emotional absorption in the wake of conflict",
+                listening_focus="acoustic_space",
+            )
+        elif fn == "threat":
+            return DramaticSilenceIntent(
+                purpose="intimidation",
+                affected_character=target,
+                dramatic_rationale=f"Weight of mortal peril hangs in heavy silence before {tgt}",
+                listening_focus="character_reaction",
+            )
+        elif fn == "approach":
+            return DramaticSilenceIntent(
+                purpose="anticipation",
+                affected_character=speaker,
+                dramatic_rationale="Suspenseful stillness prior to initiating confrontation",
+                listening_focus="subtext_digestion",
+            )
+        return None
 
     @classmethod
     def slice_chapter_by_beats(

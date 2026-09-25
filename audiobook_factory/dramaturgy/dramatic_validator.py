@@ -91,6 +91,24 @@ class DramaticValidator:
         if source_text:
             cls._audit_creative_overreach(segments, source_text, issues)
 
+        # ---------------------------------------------------------------------
+        # Pillar 6: Beat Causality & Continuous Chain Guard
+        # ---------------------------------------------------------------------
+        if dramatic_plan:
+            cls._audit_beat_causality(dramatic_plan, issues)
+
+        # ---------------------------------------------------------------------
+        # Pillar 7: Dramatic State Delta Audit
+        # ---------------------------------------------------------------------
+        if dramatic_plan:
+            cls._audit_state_delta(dramatic_plan, issues)
+
+        # ---------------------------------------------------------------------
+        # Pillar 8: Adaptation & Fidelity Policy (Gate 2.5 Strictness)
+        # ---------------------------------------------------------------------
+        if dramatic_plan and source_text:
+            cls._audit_adaptation_policy(dramatic_plan, segments, source_text, memory_context, issues)
+
         # Evaluate final status
         has_errors = any(i.severity == "ERROR" for i in issues)
         has_warnings = any(i.severity == "WARNING" for i in issues)
@@ -315,3 +333,110 @@ class DramaticValidator:
                                 segment_uid=seg.get("uid"),
                             )
                         )
+
+    @classmethod
+    def _audit_beat_causality(
+        cls,
+        dramatic_plan: DramaticPlan,
+        issues: List[DramaticValidationIssue],
+    ) -> None:
+        """Verify beat causality chains are continuous without broken causal links."""
+        for sc in dramatic_plan.scenes:
+            if len(sc.beats) > 1:
+                for idx, b in enumerate(sc.beats):
+                    if idx > 0 and not b.causal_trigger:
+                        issues.append(
+                            DramaticValidationIssue(
+                                code="BROKEN_BEAT_CAUSALITY",
+                                severity="WARNING",
+                                message=f"Beat '{b.beat_id}' in scene '{sc.scene_id}' lacks causal trigger from preceding beat.",
+                                scene_id=sc.scene_id,
+                                beat_id=b.beat_id,
+                            )
+                        )
+
+    @classmethod
+    def _audit_state_delta(
+        cls,
+        dramatic_plan: DramaticPlan,
+        issues: List[DramaticValidationIssue],
+    ) -> None:
+        """Verify high-stakes or complex scenes produce a meaningful dramatic transformation."""
+        for sc in dramatic_plan.scenes:
+            if sc.dramatic_complexity in ("HIGH", "CRITICAL"):
+                delta = sc.state_delta
+                has_meaningful_change = (
+                    delta is not None and (
+                        bool(delta.knowledge_delta) or
+                        bool(delta.relationship_shifts) or
+                        bool(delta.decisions_made) or
+                        delta.power_shift is not None or
+                        delta.danger_level_delta in ("escalated", "reduced")
+                    )
+                )
+                if not has_meaningful_change:
+                    issues.append(
+                        DramaticValidationIssue(
+                            code="STATIC_SCENE_NO_DELTA",
+                            severity="WARNING",
+                            message=f"High complexity scene '{sc.scene_id}' lacks meaningful transformation in state delta.",
+                            scene_id=sc.scene_id,
+                        )
+                    )
+
+    @classmethod
+    def _audit_adaptation_policy(
+        cls,
+        dramatic_plan: DramaticPlan,
+        segments: List[Dict[str, Any]],
+        source_text: str,
+        memory_context: Optional[Any],
+        issues: List[DramaticValidationIssue],
+    ) -> None:
+        """Enforce AdaptationFidelityPolicy: fail-closed on fabricated lore and POV violations."""
+        policy = getattr(dramatic_plan, "adaptation_policy", None)
+        if not policy:
+            return
+
+        s_low = source_text.lower()
+
+        # 1. Disallow fabricated reveals (Tier 1: ERROR if ungrounded)
+        if policy.disallow_fabricated_reveals:
+            for sc in dramatic_plan.scenes:
+                for rev in sc.major_reveals:
+                    clean_rev = re.sub(r"^(?:Disclosed:\s*'|Reversal:\s*')", "", rev).rstrip("'")
+                    core_words = [w for w in re.findall(r"\b[a-zA-Z]{5,}\b", clean_rev.lower()) if w not in ("detected", "narrative", "flow", "marks", "shift", "fortune", "truth")]
+                    if core_words:
+                        grounded = any(w in s_low for w in core_words)
+                        if not grounded and memory_context and hasattr(memory_context, "world_facts"):
+                            for f in getattr(memory_context, "world_facts", []):
+                                if any(w in str(f).lower() for w in core_words):
+                                    grounded = True
+                                    break
+                        if not grounded:
+                            issues.append(
+                                DramaticValidationIssue(
+                                    code="FABRICATED_REVEAL_BREACH",
+                                    severity="ERROR",
+                                    message=f"Major reveal '{rev}' in scene '{sc.scene_id}' is not substantiated by source text or memory.",
+                                    scene_id=sc.scene_id,
+                                )
+                            )
+
+        # 2. Preserve narrative POV
+        if policy.preserve_narrative_pov:
+            for sc in dramatic_plan.scenes:
+                if sc.narrative_pov.startswith("third_person"):
+                    for seg in segments:
+                        if seg.get("scene_id") == sc.scene_id and seg.get("type") == "narration":
+                            txt = seg.get("text", "")
+                            if re.search(r"\b(?:I thought|I felt|I realized|I saw|मैंने सोचा|मैंने देखा)\b", txt, re.IGNORECASE):
+                                issues.append(
+                                    DramaticValidationIssue(
+                                        code="NARRATIVE_POV_VIOLATION",
+                                        severity="WARNING",
+                                        message=f"Narration segment '{seg.get('uid')}' adopts first-person narrator voice in third-person scene '{sc.scene_id}'.",
+                                        segment_uid=seg.get("uid"),
+                                        scene_id=sc.scene_id,
+                                    )
+                                )

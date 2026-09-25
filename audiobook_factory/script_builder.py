@@ -791,9 +791,48 @@ def clean_screenplay_pass2(
             "listener_knowledge_state",
             "performance_priority",
             "dramatic_provenance",
+            "causal_trigger",
+            "consequence",
+            "relationship_shift",
+            "leverage_holder",
+            "dramatic_irony",
+            "blocking_directive",
+            "narrative_mode",
+            "narrative_distance",
+            "story_connection",
+            "conversational_dynamic",
+            "is_interruption",
+            "hesitation_pause_ms",
+            "silence_intent",
         ):
             if field in sanitized_item:
                 entry[field] = sanitized_item[field]
+
+        # Automatic Narrative Mode & Turn Dynamic Detection
+        if not entry.get("narrative_mode"):
+            if seg_type == "narration":
+                entry["narrative_mode"] = "narrator_exposition"
+            elif seg_type == "dialogue":
+                txt_check = cleaned_text.lower()
+                if "(मन में:" in cleaned_text or "binaural_whisper" in str(entry.get("acoustic_env", "")) or "[whispers] (" in cleaned_text:
+                    entry["narrative_mode"] = "internal_monologue"
+                elif re.search(r'\b(?:said that|told them that|बता रहा था कि|कहा कि)\b', cleaned_text, re.IGNORECASE):
+                    entry["narrative_mode"] = "reported_speech"
+                else:
+                    entry["narrative_mode"] = "direct_dialogue"
+
+        if entry.get("type") == "dialogue":
+            # Check for interruptions (trailing dashes)
+            if cleaned_text.rstrip().endswith(("--", "—", "-")):
+                entry["is_interruption"] = True
+                if not entry.get("conversational_dynamic"):
+                    entry["conversational_dynamic"] = "interruption"
+            # Check for hesitation markers (ellipses)
+            if "..." in cleaned_text or "…" in cleaned_text:
+                if entry.get("hesitation_pause_ms") is None:
+                    entry["hesitation_pause_ms"] = 350
+                if not entry.get("conversational_dynamic"):
+                    entry["conversational_dynamic"] = "hesitation"
 
         if memory_context is not None and hasattr(memory_context, "apply_performance_guidance_to_segment"):
             prev_dialogue_speaker = None
@@ -849,6 +888,28 @@ def clean_screenplay_pass2(
                     entry["listener_knowledge_state"] = sc.listener_knowledge_state
                 if not entry.get("performance_priority") or entry.get("performance_priority") == "standard":
                     entry["performance_priority"] = bt.performance_priority
+
+                # Attach refined dramatic capabilities
+                if not entry.get("causal_trigger") and bt.causal_trigger:
+                    entry["causal_trigger"] = bt.causal_trigger
+                if not entry.get("consequence") and bt.consequence:
+                    entry["consequence"] = bt.consequence
+                if not entry.get("relationship_shift") and bt.relationship_shift:
+                    entry["relationship_shift"] = bt.relationship_shift.description
+                if not entry.get("leverage_holder") and bt.leverage_holder:
+                    entry["leverage_holder"] = bt.leverage_holder
+                if not entry.get("dramatic_irony") and bt.dramatic_irony:
+                    entry["dramatic_irony"] = bt.dramatic_irony
+                if not entry.get("blocking_directive") and bt.blocking:
+                    entry["blocking_directive"] = bt.blocking.action_description
+                if not entry.get("story_connection") and bt.story_connection:
+                    entry["story_connection"] = bt.story_connection.description
+                if not entry.get("conversational_dynamic") and bt.conversational_dynamic:
+                    entry["conversational_dynamic"] = bt.conversational_dynamic.dynamic_type
+                if not entry.get("silence_intent") and bt.silence_intent:
+                    entry["silence_intent"] = bt.silence_intent.purpose
+                if not entry.get("narrative_distance") and sc.narrative_distance:
+                    entry["narrative_distance"] = sc.narrative_distance
 
     return final_script
 

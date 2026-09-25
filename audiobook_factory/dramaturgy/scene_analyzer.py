@@ -11,7 +11,14 @@ import hashlib
 from typing import List, Dict, Any, Optional, Tuple
 
 from audiobook_factory.translation.intensity_model import IntensityEvaluator
-from .contracts import SceneDramaticPlan, SceneType, DramaticComplexity
+from .contracts import (
+    SceneDramaticPlan,
+    SceneType,
+    DramaticComplexity,
+    DramaticStateDelta,
+    StoryConnectionRecord,
+    NarrativeDistance,
+)
 
 
 class SceneAnalyzer:
@@ -145,6 +152,38 @@ class SceneAnalyzer:
         reveals, reversals = cls._detect_reveals_and_reversals(scene_text)
         s_hash = hashlib.sha256(scene_text.encode("utf-8")).hexdigest()
 
+        # Capability 2: Dramatic State Delta
+        state_delta = cls._derive_state_delta(
+            scene_text=scene_text,
+            scene_type=scene_type,
+            primary_conflict=primary_conflict,
+            opening_state=opening_state,
+            closing_state=closing_state,
+            reveals=reveals,
+            reversals=reversals,
+            active_chars=active_chars,
+        )
+
+        # Capability 4: Power & Epistemic Asymmetry
+        epistemic_asymmetry = cls._derive_epistemic_asymmetry(
+            listener_knowledge=listener_knowledge,
+            active_chars=active_chars,
+            memory_context=memory_context,
+            reveals=reveals,
+        )
+
+        # Capability 6: Narrative Mode, Distance, & Perspective
+        narrative_pov, narrative_distance, pov_char = cls._infer_narrative_mode_and_pov(
+            scene_text=scene_text,
+            active_chars=active_chars,
+        )
+
+        # Capability 8: Long-Range Story Connections
+        story_connections = cls._detect_story_connections(
+            scene_text=scene_text,
+            memory_context=memory_context,
+        )
+
         return SceneDramaticPlan(
             scene_id=scene_id,
             chapter_num=chapter_num,
@@ -167,6 +206,12 @@ class SceneAnalyzer:
             tension_curve=[],
             beats=[],
             source_hash=s_hash,
+            state_delta=state_delta,
+            epistemic_asymmetry=epistemic_asymmetry,
+            narrative_pov=narrative_pov,
+            narrative_distance=narrative_distance,
+            pov_character=pov_char,
+            story_connections=story_connections,
         )
 
     @classmethod
@@ -356,7 +401,9 @@ class SceneAnalyzer:
                     return f"Dramatic irony: Audience and {participants[1]} aware of hidden truth that {participants[0]} does not know."
 
         t_low = text.lower()
-        if "secret" in t_low or "hidden" in t_low or "unbeknownst" in t_low:
+        if "unbeknownst" in t_low:
+            return "Dramatic irony: Audience observes concealed dynamics unfolding unbeknownst to active characters."
+        if "secret" in t_low or "hidden" in t_low:
             return "Audience observes concealed dynamics unfolding between characters."
         return "Audience and active characters share aligned narrative perspective."
 
@@ -372,3 +419,178 @@ class SceneAnalyzer:
             if phrase in t_low:
                 reversals.append(f"Reversal: '{phrase}' marks shift in fortune")
         return reveals, reversals
+
+    @classmethod
+    def _derive_state_delta(
+        cls,
+        scene_text: str,
+        scene_type: str,
+        primary_conflict: str,
+        opening_state: str,
+        closing_state: str,
+        reveals: List[str],
+        reversals: List[str],
+        active_chars: List[str],
+    ) -> DramaticStateDelta:
+        """
+        Derives net transformation across knowledge, relationships, objectives,
+        power, danger, decisions, and emotional state between scene entry and exit.
+        """
+        # Knowledge delta
+        k_delta = list(reveals)
+        if not k_delta:
+            k_delta.append(f"Established situational parameters regarding {primary_conflict}")
+
+        # Relationship shifts
+        rel_shifts: List[str] = []
+        if len(active_chars) >= 2:
+            p1, p2 = active_chars[0], active_chars[1]
+            if scene_type in ("combat", "confrontation"):
+                rel_shifts.append(f"Hostility heightened and stakes polarized between {p1} and {p2}")
+            elif scene_type == "romance":
+                rel_shifts.append(f"Vulnerability deepened and defensive barriers softened between {p1} and {p2}")
+            elif scene_type in ("investigation", "revelation"):
+                rel_shifts.append(f"Cooperative reliance tested by emerging evidence between {p1} and {p2}")
+            else:
+                rel_shifts.append(f"Dynamic shifted through mutual appraisal between {p1} and {p2}")
+
+        # Power shift
+        p_shift = None
+        if reversals:
+            p_shift = f"Leverage inverted: {reversals[0]}"
+        elif scene_type in ("combat", "confrontation") and active_chars:
+            p_shift = f"{active_chars[0]} asserted dominant initiative in {scene_type}"
+
+        # Danger level delta
+        danger_delta: Any = "unchanged"
+        if scene_type in ("combat", "horror"):
+            danger_delta = "escalated"
+        elif scene_type in ("confrontation", "investigation", "revelation"):
+            danger_delta = "escalated" if (reveals or "threat" in scene_text.lower()) else "latent"
+        elif reversals or "aftermath" in scene_text.lower():
+            danger_delta = "reduced"
+
+        # Decisions made
+        decisions: List[str] = []
+        dec_matches = re.findall(
+            r"\b(?:decided|chose|agreed|refused|swore|vowed|resolved|फैसला किया|तय किया)\s+([^.,;\n]{8,40})",
+            scene_text,
+            re.IGNORECASE,
+        )
+        for m in dec_matches[:3]:
+            decisions.append(f"Committed: '{m.strip()}'")
+        if not decisions and scene_type in ("combat", "confrontation", "decision"):
+            decisions.append(f"Forced to engage directly with {primary_conflict}")
+
+        return DramaticStateDelta(
+            knowledge_delta=k_delta,
+            relationship_shifts=rel_shifts,
+            power_shift=p_shift,
+            danger_level_delta=danger_delta,
+            decisions_made=decisions,
+            emotional_trajectory=f"{opening_state} -> {closing_state}",
+        )
+
+    @classmethod
+    def _derive_epistemic_asymmetry(
+        cls,
+        listener_knowledge: str,
+        active_chars: List[str],
+        memory_context: Optional[Any],
+        reveals: List[str],
+    ) -> List[str]:
+        """Detect and formalize contrasts between audience awareness and character ignorance."""
+        asymmetries: List[str] = []
+        if "dramatic irony" in listener_knowledge.lower() or "concealed" in listener_knowledge.lower():
+            asymmetries.append(listener_knowledge)
+        elif reveals and active_chars:
+            asymmetries.append(
+                f"Audience witnesses disclosure ({reveals[0]}) altering situational certainty for {active_chars[0]}"
+            )
+
+        if memory_context and hasattr(memory_context, "epistemic_constraints"):
+            constraints = memory_context.epistemic_constraints
+            for char in active_chars:
+                unknowns = constraints.get(char, {}).get("UNKNOWN", [])
+                if unknowns:
+                    unk_sample = [str(u) for u in unknowns[:2] if len(str(u)) > 3]
+                    if unk_sample:
+                        asymmetries.append(
+                            f"Character '{char}' acts under epistemic restriction: blind to {', '.join(unk_sample)}"
+                        )
+        return asymmetries
+
+    @classmethod
+    def _infer_narrative_mode_and_pov(
+        cls,
+        scene_text: str,
+        active_chars: List[str],
+    ) -> Tuple[str, NarrativeDistance, Optional[str]]:
+        """Determine narrative perspective, distance, and focalizing character."""
+        # Strip dialogue quotes to inspect narrative voice alone
+        narrative_only = re.sub(r'["“][^"”]*["”]', '', scene_text)
+
+        first_person_tokens = len(re.findall(r"\b(?:I|my|mine|we|our|मैंने|मुझे|हम|मेरा)\b", narrative_only, re.IGNORECASE))
+        third_person_tokens = len(re.findall(r"\b(?:he|she|his|her|they|their|उसने|उसका|उसकी|वे|उनका)\b", narrative_only, re.IGNORECASE))
+
+        pov_char = active_chars[0] if active_chars else None
+
+        if first_person_tokens >= 1 and first_person_tokens >= third_person_tokens:
+            return "first_person", "first_person_intimate", pov_char
+        elif third_person_tokens > 0:
+            return "third_person_limited", "close_third_person", pov_char
+        return "third_person_omniscient", "objective_detached", None
+
+    @classmethod
+    def _detect_story_connections(
+        cls,
+        scene_text: str,
+        memory_context: Optional[Any],
+    ) -> List[StoryConnectionRecord]:
+        """Link beats/scenes to long-range narrative arcs, setup, and motifs."""
+        connections: List[StoryConnectionRecord] = []
+        t_low = scene_text.lower()
+
+        # Common motif seeds
+        motifs = {
+            "dagger": ("Ancient blade with arcane resonance", "motif_echo"),
+            "key": ("Physical or symbolic unlocking device", "setup"),
+            "prophecy": ("Fateful decree looming over characters", "foreshadowing"),
+            "oath": ("Binding promise constraining future choices", "thematic_anchor"),
+            "letter": ("Document holding concealed narrative truth", "callback"),
+            "ring": ("Token of loyalty or ancient power", "motif_echo"),
+            "कटाार": ("प्राचीन खंजर", "motif_echo"),
+            "चाबी": ("रहस्यमयी कुंजी", "setup"),
+            "शपथ": ("निर्णायक प्रतिज्ञा", "thematic_anchor"),
+            "चिठ्ठी": ("गुप्त संदेश", "callback"),
+        }
+
+        for motif, (desc, conn_type) in motifs.items():
+            if re.search(rf"\b{re.escape(motif)}\b", t_low):
+                connections.append(
+                    StoryConnectionRecord(
+                        connection_type=conn_type,  # type: ignore
+                        reference_target=f"motif_{motif}",
+                        description=f"Echoes motif '{motif}': {desc}",
+                        motif_name=motif,
+                        confidence=0.88,
+                    )
+                )
+
+        # Check MemoryStore plot threads if available
+        if memory_context and hasattr(memory_context, "plot_threads"):
+            for thread in getattr(memory_context, "plot_threads", []):
+                t_name = getattr(thread, "title", getattr(thread, "name", ""))
+                t_id = getattr(thread, "thread_id", getattr(thread, "id", "thread_ref"))
+                if t_name and re.search(rf"\b{re.escape(t_name)}\b", t_low):
+                    connections.append(
+                        StoryConnectionRecord(
+                            connection_type="foreshadowing",
+                            reference_target=str(t_id),
+                            description=f"Directly advances narrative thread: {t_name}",
+                            confidence=0.92,
+                        )
+                    )
+
+        return connections
+

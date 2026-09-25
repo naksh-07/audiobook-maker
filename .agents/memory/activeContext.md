@@ -4,13 +4,13 @@
 # Active Context: Audiobook Maker Core Engine & Production
 
 ## Live Sprint State
-- **Branch**: `main` (Stage 3 Screenplay / Dramatic Adaptation Sprint COMPLETE).
-- **Test Suite Status**: 408/408 tests 100% green (368 baseline + 40 Stage 3 dramaturgy tests).
-- **Stage 3 Deliverables**:
-  - Dramaturgy Engine (`audiobook_factory/dramaturgy/`): contracts, scene analyzer, beat planner, performance bible, dramatic validator.
-  - ScreenplaySegment extensions with safe defaults & 100% backward compatibility.
-  - Beat-aligned chunk slicing (`slice_chapter_by_beats`) eliminating 1200w arbitrary split bottleneck.
-  - Dedicated Gate 2.5 (`audit_gate2_5_dramatic_fidelity`) fail-closed verification.
-  - 10 golden benchmark scenes + *"Don't touch it."* identical-dialogue multidimensional delivery proof.
-  - AST zero-hardcoding compliance: 100% verified.
+- **Branch**: `main` (Stage 3 Refined Dramatic Adaptation COMPLETE).
+- **Test Suite Status**: 420/420 tests 100% green (17 subtests passing, 52/52 dramaturgy tests green).
+- **Stage 3 Refined Deliverables**:
+  - Implemented all 10 dramatic capabilities across `contracts.py`, `scene_analyzer.py`, `beat_planner.py`, `script_builder.py`, `dramatic_validator.py`.
+  - Causal chains (`therefore`/`but`), `DramaticStateDelta`, `RelationshipShift`, power & epistemic irony.
+  - Meaningful physical blocking, `narrative_mode` (direct, monologue, reported), and long-range motif connections.
+  - Conversational dynamics (interruptions, hesitation) and `silence_intent` without Stage 10 audio timing interference.
+  - `AdaptationFidelityPolicy` + Tiered Gate 2.5 fail-closed validation on fabricated lore.
+  - Zero architectural disruption; 100% backward compatible; Stages 4-13 untouched.
 - **Quality Standards**: EBU R128 (-19 LUFS), zero hardcoding, fail-closed gates with provenance ledgering.

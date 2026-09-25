@@ -88,6 +88,8 @@ classDiagram
         +List~SceneDramaticPlan~ scenes
         +str overall_arc_summary
         +int total_beats
+        +AdaptationFidelityPolicy adaptation_policy
+        +List~StoryConnectionRecord~ global_story_connections
         +str version
         +str source_hash
         +get_scene(scene_id) SceneDramaticPlan
@@ -108,12 +110,19 @@ classDiagram
         +str stakes
         +str opening_state
         +str closing_state
+        +DramaticStateDelta state_delta
         +str primary_conflict
         +List~str~ secondary_conflicts
         +List~str~ participants
         +str dramatic_complexity
         +str listener_knowledge_state
         +Dict character_knowledge_states
+        +Dict epistemic_asymmetry
+        +str narrative_mode
+        +str pov_focalizer
+        +bool free_indirect_style
+        +AdaptationFidelityPolicy adaptation_policy
+        +List~StoryConnectionRecord~ story_connections
         +List~str~ major_reveals
         +List~str~ reversals
         +List~float~ tension_curve
@@ -127,6 +136,10 @@ classDiagram
         +int index
         +str dramatic_function
         +str summary
+        +str trigger_event
+        +str response_action
+        +str consequence
+        +str causal_connector
         +List~str~ active_characters
         +str primary_speaker
         +str target_character
@@ -136,6 +149,11 @@ classDiagram
         +str subtext
         +float subtext_confidence
         +str subtext_classification
+        +RelationshipShift relationship_shift
+        +Dict~str, float~ power_distribution
+        +PhysicalBlocking physical_blocking
+        +ConversationalDynamic conversational_dynamic
+        +DramaticSilenceIntent silence_intent
         +float tension_before
         +float tension_after
         +str intensity
@@ -152,6 +170,68 @@ classDiagram
         +str core_fear
         +str strategy
         +str actioning
+    }
+
+    class DramaticStateDelta {
+        +List~str~ knowledge_gained
+        +List~str~ secrets_revealed
+        +Dict~str, str~ relationship_changes
+        +Dict~str, str~ objective_shifts
+        +str power_shift_summary
+        +str danger_delta
+        +List~str~ irrevocable_decisions
+        +Dict~str, str~ emotional_deltas
+    }
+
+    class RelationshipShift {
+        +str character_a
+        +str character_b
+        +str shift_type
+        +float trust_delta
+        +float hostility_delta
+        +str status_dynamic
+        +str trigger_beat_id
+    }
+
+    class PhysicalBlocking {
+        +Dict~str, str~ character_positions
+        +List~str~ movement_cues
+        +str spatial_proximity
+        +Dict~str, str~ posture_changes
+        +List~str~ physical_interactions
+    }
+
+    class ConversationalDynamic {
+        +str status_move
+        +str interruption_type
+        +float subtext_pressure
+        +str subtext_expression
+        +str conversational_turn_type
+    }
+
+    class DramaticSilenceIntent {
+        +str silence_type
+        +str dramatic_purpose
+        +str subtext_active
+        +int recommended_duration_ms
+        +str acoustic_guidance
+    }
+
+    class StoryConnectionRecord {
+        +str connection_type
+        +str reference_element
+        +str prior_context
+        +str payoff_description
+        +str narrative_salience
+    }
+
+    class AdaptationFidelityPolicy {
+        +str compression_level
+        +bool dramatic_expansion_permitted
+        +str subtext_aggressiveness
+        +str modern_idiom_policy
+        +List~str~ untouchable_dialogue_anchors
+        +float min_quote_retention_ratio
     }
 
     class PerformanceBible {
@@ -176,20 +256,34 @@ classDiagram
 
     DramaticPlan "1" *-- "many" SceneDramaticPlan : contains
     SceneDramaticPlan "1" *-- "many" DramaticBeat : contains
+    SceneDramaticPlan "1" *-- "0..1" DramaticStateDelta : tracks
+    SceneDramaticPlan "1" *-- "0..1" AdaptationFidelityPolicy : governs
     DramaticBeat "1" *-- "0..1" CharacterDramaticObjective : guides
+    DramaticBeat "1" *-- "0..1" RelationshipShift : records
+    DramaticBeat "1" *-- "0..1" PhysicalBlocking : positions
+    DramaticBeat "1" *-- "0..1" ConversationalDynamic : regulates
+    DramaticBeat "1" *-- "0..1" DramaticSilenceIntent : paces
+    DramaticPlan "1" *-- "many" StoryConnectionRecord : references
     PerformanceBible "1" *-- "many" CharacterPerformanceProfile : indexes
 ```
 
 #### Contract Definitions
 
-1. **[`DramaticBeat`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L85-L113):** The atomic dramatic unit representing a meaningful change in state, leverage, or emotion. It tracks entry and exit tension indices ($0.0$ to $1.0$), active speaker, target counterpart, functional classification (`setup`, `threat`, `escalation`, `climax`, `reversal`, `aftermath`), and performance priority (`background`, `standard`, `high_focus`, `climactic`).
-2. **[`CharacterDramaticObjective`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L70-L83):** The immediate tactical objective of a character during a beat, answering: *"What does this character want right now, and what prevents them?"* Encodes `immediate_goal`, `obstacle`, `underlying_desire`, `core_fear`, behavioral `strategy`, and transitive `actioning` verb.
-3. **[`SceneDramaticPlan`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L118-L147):** The macro dramatic architecture of an individual scene. Encodes `dramatic_purpose`, driving `scene_question`, physical/emotional `stakes`, `opening_state` $\rightarrow$ `closing_state` transformations, primary/secondary conflicts, dramatic complexity (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), and audience epistemic context (`listener_knowledge_state`).
-4. **[`DramaticPlan`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L149-L202):** The durable chapter blueprint persisted atomically as `dramaturgy/chapter_XXX_dramatic_plan.json`. Contains all constituent scene plans, holistic chapter arc summaries, beat counts, and source text SHA-256 validation hashes.
-5. **[`CharacterPerformanceProfile`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L207-L225):** The performance-oriented projection of a character, strictly decoupled from lore/memory facts. Encodes vocal performance parameters: `baseline_pace` (0.5 to 2.0), `baseline_energy` (0.0 to 1.0), `articulation`, `emotional_behaviors` mapping, `restraint_level` (0.0=raw expression, 1.0=iron suppression), `speech_quirks`, and `performance_rules`.
-6. **[`PerformanceBible`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L227-L272):** The project-level authority persisted as `performance_bible.json`, mapping all characters to their delivery profiles and establishing standard narrator delivery styles.
-7. **[`DramaticValidationResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L290-L323):** Strongly typed validation report holding `status` (`PASS`, `WARNING`, `FAIL`), passed boolean, and a structured array of [`DramaticValidationIssue`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L278-L289) records with machine-readable codes and severities (`INFO`, `WARNING`, `ERROR`).
-8. **Screenplay Integration ([`ScreenplaySegment`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py#L201-L216)):** Extends standard screenplay lines with optional dramatic metadata: `scene_id`, `beat_id`, `dramatic_function`, `character_objective`, `actioning`, `subtext`, `subtext_confidence`, `surface_emotion`, `underlying_emotion`, `tension_before`, `tension_after`, `listener_knowledge_state`, and `performance_priority`.
+1. **[`DramaticBeat`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L131-L186):** The atomic dramatic unit representing a meaningful change in state, leverage, or emotion. Tracks causal links (`trigger_event`, `response_action`, `consequence`, `causal_connector`), interpersonal movements (`relationship_shift`, `power_distribution`), staging (`physical_blocking`), acting subtext (`conversational_dynamic`, `silence_intent`), entry/exit tension, actioning, and performance priority.
+2. **[`CharacterDramaticObjective`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L115-L129):** The immediate tactical objective of a character during a beat, answering: *"What does this character want right now, and what prevents them?"* Encodes `immediate_goal`, `obstacle`, `underlying_desire`, `core_fear`, behavioral `strategy`, and transitive `actioning` verb.
+3. **[`DramaticStateDelta`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L31-L47):** Explicit representation of what changes between scene entry and scene exit: `knowledge_gained`, `secrets_revealed`, `relationship_changes`, `objective_shifts`, `power_shift_summary`, `danger_delta` (`escalated`, `de-escalated`, `neutral`), `irrevocable_decisions`, and `emotional_deltas`.
+4. **[`RelationshipShift`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L49-L62):** Micro-evolution between two characters (`character_a`, `character_b`) across a beat: `shift_type` (`trust_gained`, `hostility_escalated`, `betrayal`, `intimacy_deepened`), `trust_delta` ($-1.0$ to $+1.0$), `hostility_delta` ($-1.0$ to $+1.0$), and `status_dynamic`.
+5. **[`PhysicalBlocking`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L64-L77):** Spatial relationships and physical postures: `character_positions`, `movement_cues`, `spatial_proximity` (`intimate_close`, `personal`, `social`, `distant`), `posture_changes`, and `physical_interactions`.
+6. **[`ConversationalDynamic`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L90-L101):** Mechanics of human dialogue exchanges: `status_move` (`claim_status`, `yield_status`, `neutral`), `interruption_type` (`steamroll`, `cooperative`, `abrupt_cut`, `trailing_off`), `subtext_pressure`, `subtext_expression`, and `conversational_turn_type`.
+7. **[`DramaticSilenceIntent`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L103-L113):** Structural narrative intent of silence: `silence_type` (`hesitation`, `shock`, `calculation`, `intimacy`, `aftermath`), `dramatic_purpose`, `subtext_active`, `recommended_duration_ms`, and `acoustic_guidance`.
+8. **[`StoryConnectionRecord`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L79-L88):** Narrative thread continuity: `connection_type` (`setup`, `payoff`, `foreshadowing`, `recurring_motif`, `callback`), `reference_element`, `prior_context`, and `narrative_salience`.
+9. **[`AdaptationFidelityPolicy`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L19-L29):** Explicit adaptation boundaries governing script dramatization: `compression_level` (`faithful`, `moderate`, `aggressive`), `dramatic_expansion_permitted`, `subtext_aggressiveness`, `modern_idiom_policy`, `untouchable_dialogue_anchors`, and `min_quote_retention_ratio`.
+10. **[`SceneDramaticPlan`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L188-L230):** The macro dramatic architecture of an individual scene. Encodes `dramatic_purpose`, driving `scene_question`, physical/emotional `stakes`, `opening_state` $\rightarrow$ `closing_state`, `state_delta`, `epistemic_asymmetry`, `narrative_mode`, `pov_focalizer`, `free_indirect_style`, `adaptation_policy`, `story_connections`, conflicts, complexity, and audience epistemic context (`listener_knowledge_state`).
+11. **[`DramaticPlan`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L232-L295):** The durable chapter blueprint persisted atomically as `dramaturgy/chapter_XXX_dramatic_plan.json`. Contains all constituent scene plans, chapter arc summaries, beat counts, `adaptation_policy`, `global_story_connections`, and source text SHA-256 validation hashes.
+12. **[`CharacterPerformanceProfile`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L300-L318):** Vocal performance parameters: `baseline_pace`, `baseline_energy`, `articulation`, `emotional_behaviors`, `restraint_level`, `speech_quirks`, and `performance_rules`.
+13. **[`PerformanceBible`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L320-L365):** The project-level authority persisted as `performance_bible.json`, mapping all characters to their delivery profiles and establishing standard narrator delivery styles.
+14. **[`DramaticValidationResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L383-L416):** Strongly typed validation report holding `status` (`PASS`, `WARNING`, `FAIL`), passed boolean, and a structured array of [`DramaticValidationIssue`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/contracts.py#L371-L382) records with machine-readable codes and severities (`INFO`, `WARNING`, `ERROR`).
+15. **Screenplay Integration ([`ScreenplaySegment`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py#L201-L225)):** Extends standard screenplay lines with dramatic metadata: `scene_id`, `beat_id`, `dramatic_function`, `character_objective`, `actioning`, `subtext`, `subtext_confidence`, `surface_emotion`, `underlying_emotion`, `tension_before`, `tension_after`, `listener_knowledge_state`, `performance_priority`, `narrative_mode`, `pov_focalizer`, `conversational_dynamic`, `silence_intent`, and `physical_blocking`.
 
 ---
 
@@ -360,21 +454,106 @@ The Narrator is calibrated as an **Objective Cinematic Observer**:
 
 ---
 
-### 6. Dramatic Validator & Fidelity Guards (`DramaticValidator`)
+### 5B. The 10 Refined Dramatic Capabilities (v1.1 Specification)
 
-The [`DramaticValidator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/dramatic_validator.py) enforces a rigorous **5-Pillar Fail-Closed Audit** over screenplay segments and dramatic plans before TTS synthesis begins.
+The v1.1 Refinement elevates Stage 3 from an episodic beat-extractor to a holistically connected dramatic adaptation engine:
 
 ```mermaid
 flowchart TD
-    Script["Screenplay Segments & Dramatic Plan"] --> Audit{"DramaticValidator<br/>5-Pillar Audit Suite"}
+    subgraph V11Capabilities["10 Refined Dramatic Capabilities (v1.1)"]
+        direction TB
+        C1["1. Beat Causality<br/>('therefore' / 'but' chain)"]
+        C2["2. Dramatic State Delta<br/>(Scene entry -> exit transformation)"]
+        C3["3. Relationship Evolution<br/>(Trust/hostility shifts per beat)"]
+        C4["4. Power & Epistemic Dynamics<br/>(Leverage & information asymmetry)"]
+        C5["5. Physical Blocking<br/>(Spatial proximity & postures)"]
+        C6["6. Narrative Mode & POV Nuance<br/>(Dialogue vs. Free Indirect Monologue)"]
+        C7["7. Adaptation Fidelity Policy<br/>(Compression & quote anchors)"]
+        C8["8. Long-Range Connections<br/>(Setups, payoffs, motifs, callbacks)"]
+        C9["9. Conversational Dynamics<br/>(Status moves & interruptions)"]
+        C10["10. Dramatic Silence Intent<br/>(Hesitation, calculation, aftermath)"]
+    end
+```
 
-    subgraph Pillars["The 5 Audit Pillars"]
+#### 1. Beat Causality (South Park "Therefore / But" Protocol)
+Rather than an isolated list of beats (`"and then..."`), beats form a rigorous causal progression:
+- Every beat records `trigger_event`, `response_action`, and resulting `consequence`.
+- `causal_connector` captures the logical transition: `"therefore"` (consequence-driven escalation), `"but"` (obstacle/reversal introduction), `"meanwhile"` (parallel action), or `"initial"` (scene opener).
+- **Audit:** Pillar 6 verifies that non-initial beats maintain explicit causality, flagging unmotivated shifts (`ISOLATED_BEAT_MISSING_CAUSALITY`).
+
+#### 2. Dramatic State Delta (`DramaticStateDelta`)
+Explicitly represents the transformative impact of the scene:
+- Encodes: `knowledge_gained`, `secrets_revealed`, `relationship_changes`, `objective_shifts`, `power_shift_summary`, `danger_delta` (`escalated`, `de-escalated`, `neutral`), `irrevocable_decisions`, and `emotional_deltas`.
+- **Audit:** Pillar 7 verifies that scenes achieve narrative transformation, flagging static scenes with zero state shifts as potential pacing dead zones (`STATIC_SCENE_ZERO_DELTA`).
+
+#### 3. Relationship Evolution (`RelationshipShift`)
+Tracks interpersonal shifts between pairs of characters (`character_a`, `character_b`) across significant beats:
+- Quantifies `trust_delta` ($-1.0$ to $+1.0$) and `hostility_delta` ($-1.0$ to $+1.0$).
+- Encodes qualitative shifts: `shift_type` (`trust_gained`, `hostility_escalated`, `betrayal`, `intimacy_deepened`, `alliance_formed`, `status_subversion`), linked to `trigger_beat_id`.
+
+#### 4. Power & Epistemic Dynamics (`EpistemicAsymmetry`)
+Models leverage, secret possession, and dramatic irony:
+- `audience_vs_characters`: Identifies dramatic irony where listeners know hidden truths unknown to scene characters.
+- `private_character_knowledge`: Maps characters who hold decisive tactical secrets.
+- `leverage_distribution`: Tracks numeric or qualitative leverage balance between participants.
+
+#### 5. Physical Blocking & Spatial Staging (`PhysicalBlocking`)
+Grounds dialogue in three-dimensional physical reality:
+- `spatial_proximity`: Encodes acoustic intimacy (`intimate_close`, `personal`, `social`, `distant`).
+- `character_positions` & `movement_cues`: Maps character motion (circling, advancing, backing away).
+- `posture_changes` & `physical_interactions`: Tracks physical contact (handshakes, blade presses, gripping shoulders), directly informing Downstream Stage 4 Foley staging.
+
+#### 6. Narrative Mode & POV Nuance (`narrative_mode`)
+Distinguishes how text is voiced in the screenplay:
+- `direct_dialogue`: Spoken out loud to other characters.
+- `internal_monologue`: First-person unvoiced thoughts rendered in `binaural_whisper`.
+- `reported_speech`: Dialogue summarized or filtered through narration.
+- `narrator_exposition`: Pure third-person storytelling.
+- Tracks `pov_focalizer` and `free_indirect_style` to guide the narrator's emotional color towards the focal character's internal perspective.
+
+#### 7. Explicit Adaptation Fidelity Policy (`AdaptationFidelityPolicy`)
+Defines strict adaptation boundaries:
+- `compression_level`: `faithful` (90%+ retention), `moderate` (75-90%), or `aggressive` (action pacing).
+- `untouchable_dialogue_anchors`: Key literary quotes that MUST be preserved verbatim.
+- `subtext_aggressiveness`: Controls how daring subtext acting tags can be.
+- `modern_idiom_policy`: Prevents anachronisms in period/fantasy literature.
+
+#### 8. Long-Range Story Connections (`StoryConnectionRecord`)
+Connects chapter scenes to macro-narrative architecture:
+- `connection_type`: `setup`, `payoff`, `foreshadowing`, `recurring_motif`, `callback`.
+- Preserves narrative threads across hundreds of pages without episodic forgetting.
+
+#### 9. Conversational Dynamics & Subtext Nuances (`ConversationalDynamic`)
+Models the sub-surface mechanics of spoken interaction:
+- `status_move`: `claim_status` (asserting dominance), `yield_status` (deferring), `neutral`.
+- `interruption_type`: `steamroll` (talking over), `cooperative` (finishing sentences), `abrupt_cut` (interrupted by action/strike), `trailing_off` (fading into silence).
+- `subtext_pressure`: Escalation metric from 0.0 to 1.0 indicating suppressed tension waiting to burst.
+
+#### 10. Dramatic Silence Intent (`DramaticSilenceIntent`)
+Paces dramatic pauses with narrative intentionality:
+- `silence_type`: `hesitation` (moral doubt), `shock` (stunned disbelief), `calculation` (evaluating threat), `intimacy` (shared breath), `aftermath` (mourning / recovery).
+- Provides `recommended_duration_ms` and `acoustic_guidance` to Downstream Stage 4 silence carvers.
+
+---
+
+### 6. Dramatic Validator & Fidelity Guards (`DramaticValidator`)
+
+The [`DramaticValidator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/dramatic_validator.py) enforces a rigorous **8-Pillar Fail-Closed Audit** over screenplay segments and dramatic plans before TTS synthesis begins.
+
+```mermaid
+flowchart TD
+    Script["Screenplay Segments & Dramatic Plan"] --> Audit{"DramaticValidator<br/>8-Pillar Audit Suite"}
+
+    subgraph Pillars["The 8 Audit Pillars"]
         direction TB
         P1["Pillar 1: Structural & Index Integrity<br/>• Monotonic 1-based indexing<br/>• Valid scene_id & beat_id references"]
         P2["Pillar 2: Character Epistemics & Objectives<br/>• Epistemic isolation (UNKNOWN facts)<br/>• Explicit actioning verbs on dialogue"]
         P3["Pillar 3: Dramatic Arc & Anti-Teleportation<br/>• Volatile leap detection (calm -> bellowing_rage)<br/>• Emotional bridge verification"]
         P4["Pillar 4: Dramatic Fidelity Guard<br/>• Source dialogue quote parity<br/>• Dropped dialogue detection"]
         P5["Pillar 5: Creative Overreach Guard<br/>• 'Nothing Above Source' enforcement<br/>• UNSUPPORTED subtext & invented SFX actions"]
+        P6["Pillar 6: Beat Causality Chain Audit<br/>• South Park 'therefore/but' validation<br/>• Isolated beat detection"]
+        P7["Pillar 7: Dramatic State Delta Audit<br/>• Scene transformation verification<br/>• Static scene zero-delta guard"]
+        P8["Pillar 8: Adaptation Policy Compliance Audit<br/>• Untouchable dialogue anchors<br/>• Quote retention ratio"]
     end
 
     Audit --> P1
@@ -382,12 +561,18 @@ flowchart TD
     Audit --> P3
     Audit --> P4
     Audit --> P5
+    Audit --> P6
+    Audit --> P7
+    Audit --> P8
 
     P1 --> Eval{"Evaluate Issues"}
     P2 --> Eval
     P3 --> Eval
     P4 --> Eval
     P5 --> Eval
+    P6 --> Eval
+    P7 --> Eval
+    P8 --> Eval
 
     Eval -->|Zero Errors & Warnings| Pass["PASS (Gate 2.5 Certified)"]
     Eval -->|Warnings Only| Warn["WARNING (Advisory Logged, Allowed)"]
@@ -418,6 +603,19 @@ flowchart TD
 - Enforces the **"Nothing Above Source"** principle.
 - **Subtext Overreach:** Flags any subtext marked `UNSUPPORTED` that has a confidence rating $> 0.60$ (`CREATIVE_OVERREACH_SUBTEXT`).
 - **Invented Actions:** Inspects Foley action segments for extreme acoustic cues (e.g. `explosion`, `gunshot`, `laser`) not supported by the source text (`CREATIVE_OVERREACH_ACTION`).
+
+#### Pillar 6: Beat Causality Chain Audit
+- Verifies that all beats after the opening beat have explicit causality links (`trigger_event` or `response_action`).
+- Flags unlinked beats with advisory warnings (`ISOLATED_BEAT_MISSING_CAUSALITY`).
+
+#### Pillar 7: Dramatic State Delta Audit
+- Audits that every scene plan defines a concrete `DramaticStateDelta`.
+- Flags scenes where entry and exit states are identical with zero shifts across knowledge, relationships, objectives, decisions, or emotions (`STATIC_SCENE_ZERO_DELTA`).
+
+#### Pillar 8: Adaptation Policy Compliance Audit
+- Validates script adherence to `AdaptationFidelityPolicy`.
+- Verifies that all `untouchable_dialogue_anchors` are preserved in dialogue lines (`MISSING_DIALOGUE_ANCHOR`).
+- Audits dialogue quote retention against `min_quote_retention_ratio` floor (`QUOTE_RETENTION_VIOLATION`).
 
 ---
 

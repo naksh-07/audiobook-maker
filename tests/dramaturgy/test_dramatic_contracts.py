@@ -17,6 +17,13 @@ from audiobook_factory.dramaturgy.contracts import (
     PerformanceBible,
     DramaticValidationResult,
     DramaticValidationIssue,
+    RelationshipShift,
+    PhysicalBlocking,
+    StoryConnectionRecord,
+    ConversationalDynamic,
+    DramaticSilenceIntent,
+    DramaticStateDelta,
+    AdaptationFidelityPolicy,
 )
 
 
@@ -180,6 +187,106 @@ class TestDramaticContracts(unittest.TestCase):
         )
         self.assertTrue(result.passed)
         self.assertEqual(result.total_issues, 1)
+
+    def test_refined_dramatic_contracts_roundtrip(self):
+        """Verify serialization and round-trip fidelity of all 10 refined dramatic models."""
+        delta = DramaticStateDelta(
+            knowledge_delta=["Disclosed: ancient map"],
+            relationship_shifts=["Hostility heightened between Harry and Draco"],
+            power_shift="Harry established leverage",
+            danger_level_delta="escalated",
+            decisions_made=["Committed to duel at midnight"],
+            emotional_trajectory="Calm defiance -> High alertness",
+        )
+        rel_shift = RelationshipShift(
+            source_character="Harry",
+            target_character="Draco",
+            dimension="hostility",
+            direction="increased",
+            description="Duel challenged openly",
+        )
+        blocking = PhysicalBlocking(
+            character="Harry",
+            action_description="Harry raises wand in defensive dueling stance",
+            dramatic_significance="threat_display",
+            spatial_intent="mid_stage",
+        )
+        s_conn = StoryConnectionRecord(
+            connection_type="setup",
+            reference_target="ch_midnight_duel",
+            description="Sets up midnight trophy room encounter",
+            motif_name="wand",
+            confidence=0.9,
+        )
+        dynamic = ConversationalDynamic(
+            dynamic_type="escalation",
+            initiator="Draco",
+            target="Harry",
+            description="Draco goads Harry into accepting duel",
+        )
+        silence = DramaticSilenceIntent(
+            purpose="anticipation",
+            affected_character="Harry",
+            dramatic_rationale="Stillness before wand draw",
+            listening_focus="character_reaction",
+        )
+        policy = AdaptationFidelityPolicy(
+            preserve_plot_events=True,
+            disallow_fabricated_reveals=True,
+        )
+
+        beat = DramaticBeat(
+            beat_id="beat_ref_001",
+            scene_id="scene_ref_001",
+            index=1,
+            causal_trigger="Draco insults Harry in common room",
+            character_response="Harry steps forward",
+            consequence="Duel challenge issued",
+            causal_link_type="therefore",
+            relationship_shift=rel_shift,
+            leverage_holder="Harry",
+            vulnerable_character="Draco",
+            dramatic_irony="Audience knows Filch is on night patrol",
+            blocking=blocking,
+            provenance_mode="SOURCE_DIRECT",
+            story_connection=s_conn,
+            conversational_dynamic=dynamic,
+            silence_intent=silence,
+        )
+
+        scene = SceneDramaticPlan(
+            scene_id="scene_ref_001",
+            state_delta=delta,
+            epistemic_asymmetry=["Audience aware of Filch prowling halls"],
+            narrative_pov="third_person_limited",
+            narrative_distance="close_third_person",
+            pov_character="Harry",
+            story_connections=[s_conn],
+            beats=[beat],
+        )
+
+        plan = DramaticPlan(
+            chapter_id="chap_ref_001",
+            scenes=[scene],
+            adaptation_policy=policy,
+        )
+
+        # JSON Round trip
+        raw_json = plan.model_dump_json()
+        loaded = DramaticPlan.model_validate_json(raw_json)
+
+        self.assertEqual(loaded.chapter_id, "chap_ref_001")
+        self.assertEqual(loaded.version, "1.1")
+        self.assertTrue(loaded.adaptation_policy.disallow_fabricated_reveals)
+        sc = loaded.scenes[0]
+        self.assertEqual(sc.state_delta.danger_level_delta, "escalated")
+        self.assertEqual(sc.narrative_pov, "third_person_limited")
+        b = sc.beats[0]
+        self.assertEqual(b.causal_link_type, "therefore")
+        self.assertEqual(b.relationship_shift.dimension, "hostility")
+        self.assertEqual(b.blocking.dramatic_significance, "threat_display")
+        self.assertEqual(b.silence_intent.purpose, "anticipation")
+        self.assertEqual(b.conversational_dynamic.dynamic_type, "escalation")
 
 
 if __name__ == "__main__":

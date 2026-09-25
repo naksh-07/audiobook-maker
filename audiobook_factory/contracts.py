@@ -214,6 +214,21 @@ class ScreenplaySegment(BaseModel):
     performance_priority: Optional[str] = Field(default="standard", description="Performance attention priority")
     dramatic_provenance: Optional[Dict[str, Any]] = Field(default=None, description="Provenance hash linking to dramatic plan")
 
+    # Refined Dramatic Capabilities Extensions (All Optional / Defaulted)
+    causal_trigger: Optional[str] = Field(default=None, description="What event or action triggered this beat ('Because of...')")
+    consequence: Optional[str] = Field(default=None, description="Direct dramatic consequence leading into subsequent beat ('Therefore...')")
+    relationship_shift: Optional[str] = Field(default=None, description="Relational movement occurring in this segment")
+    leverage_holder: Optional[str] = Field(default=None, description="Character holding tactical leverage in this beat")
+    dramatic_irony: Optional[str] = Field(default=None, description="Specific irony where listener knows truth hidden from character")
+    blocking_directive: Optional[str] = Field(default=None, description="Meaningful physical blocking instruction")
+    narrative_mode: Optional[str] = Field(default="direct_dialogue", description="Narrative delivery mode (direct_dialogue, internal_monologue, reported_speech, narrator_exposition)")
+    narrative_distance: Optional[str] = Field(default=None, description="Psychological distance of narration")
+    story_connection: Optional[str] = Field(default=None, description="Long-range narrative connection note")
+    conversational_dynamic: Optional[str] = Field(default=None, description="Turn-taking or rhetorical dynamic")
+    is_interruption: bool = Field(default=False, description="Whether line abruptly interrupts preceding speaker")
+    hesitation_pause_ms: Optional[int] = Field(default=None, description="Hesitation pause duration metadata")
+    silence_intent: Optional[str] = Field(default=None, description="Narrative purpose of pause after line")
+
     @model_validator(mode="before")
     @classmethod
     def set_action_defaults(cls, data: Any) -> Any:
