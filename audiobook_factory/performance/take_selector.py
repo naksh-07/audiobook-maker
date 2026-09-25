@@ -417,14 +417,16 @@ class IntelligentTakeSelector:
         direction: PerformanceDirection,
         chemistry_context: Optional[Dict[str, float]] = None,
         arc_context: Optional[Dict[str, float]] = None,
+        base_score: Optional[float] = None,
     ) -> float:
         """Stage 4: Context-aware weighted scoring based on dramatic mode."""
         ev = take.evaluation
-        if not ev:
+        if not ev and base_score is None:
             return 0.50
 
-        base_score = ev.overall_score
-        dims = ev.dimensions
+        if base_score is None:
+            base_score = ev.overall_score if ev else 0.50
+        dims = ev.dimensions if ev else {}
 
         sub_score = dims.get("subtext").score if "subtext" in dims else base_score
         rel_score = dims.get("relationship_consistency").score if "relationship_consistency" in dims else base_score
@@ -582,45 +584,56 @@ class IntelligentTakeSelector:
                 all_reasons.extend(r_voice)
 
             gates_passed = (len(all_reasons) == 0)
-            score = ev.overall_score if ev else 0.80
             eval_passed = ev.passed if ev else True
 
             fusion_res = self.fusion_engine.fuse_take(sole, text, direction)
-            status: TakeSelectionStatus = "ACCEPT"
+            fused_score = fusion_res.fused_score
+            fused_status = fusion_res.status
 
-            if gates_passed and eval_passed:
+            if gates_passed and eval_passed and fused_status == "ACCEPT":
                 sole.is_selected = True
-                reason = (
-                    f"Selected sole candidate ({sole.variant_type}): overall score {score:.2f} "
-                    f"satisfies performance and technical standards."
-                )
+                status = "ACCEPT"
                 review_req = False
                 confidence = 1.0
-                reason_codes = ["STRONGER_INTENT_MATCH"]
-                status = "ACCEPT"
+                reason = (
+                    f"Selected sole candidate ({sole.variant_type}): overall score {fused_score:.2f} "
+                    f"satisfies performance and technical standards."
+                )
+                reason_codes = fusion_res.reason_codes or ["STRONGER_INTENT_MATCH"]
             else:
                 sole.is_selected = False
+                if fused_status in ("REGENERATE", "NO_ACCEPTABLE_TAKE"):
+                    status = fused_status
+                elif not gates_passed or not eval_passed:
+                    status = "REVIEW" if eval_passed else "REGENERATE"
+                else:
+                    status = fused_status
+
+                review_req = True
+                confidence = 0.35
                 reason = (
-                    f"Selected sole candidate ({sole.variant_type}) as degraded baseline (score: {score:.2f})."
+                    f"Selected sole candidate ({sole.variant_type}) as degraded baseline (score: {fused_score:.2f})."
                 )
                 if not gates_passed:
                     reason += f" [HARD GATE FAILURE: {'; '.join(all_reasons)}]"
+                elif fusion_res.hard_gate_reasons:
+                    reason += f" [HARD GATE FAILURE: {'; '.join(fusion_res.hard_gate_reasons)}]"
                 if not eval_passed and ev:
                     failed_dims = [k for k, d in ev.dimensions.items() if d.rating in ("weak", "unacceptable")]
                     if failed_dims:
                         reason += f" [EVALUATION DEFECTS: {', '.join(failed_dims)}]"
                     elif ev.voice_drift_detected:
                         reason += " [VOICE DRIFT DETECTED]"
-                review_req = True
-                confidence = 0.35
-                reason_codes = ["REVIEW_REQUIRED_GATE_FAILURE"] if not gates_passed else ["REVIEW_REQUIRED_LOW_QUALITY"]
-                status = "REVIEW" if eval_passed else "REGENERATE"
+                if fusion_res.review_reasons:
+                    reason += f" [FUSION REVIEW: {'; '.join(fusion_res.review_reasons)}]"
+                reason_codes = fusion_res.reason_codes or (["REVIEW_REQUIRED_GATE_FAILURE"] if not gates_passed else ["REVIEW_REQUIRED_LOW_QUALITY"])
 
             sole.selection_reason = reason
+
             result = TakeSelectionResult(
                 winner=sole,
                 runner_up=None,
-                winner_score=round(score, 3),
+                winner_score=round(fused_score, 3),
                 runner_up_score=None,
                 margin=0.0,
                 confidence=confidence,
@@ -630,6 +643,7 @@ class IntelligentTakeSelector:
                     "gate_passed": gates_passed,
                     "gate_reasons": all_reasons,
                     "eval_passed": eval_passed,
+                    "fusion_status": fused_status,
                 },
                 fusion_result=fusion_res,
                 review_required=review_req,
@@ -637,30 +651,36 @@ class IntelligentTakeSelector:
             sole.selection_result = result
             return result
 
-        # Stage 1 - 3: Hard Gates Audit
-        qualified_takes: List[TakeVariant] = []
+        # Stage 1 - 3: Authoritative Hierarchical Evidence Fusion on Candidate Pool
+        fusion_winner, fusion_status, qualified_takes, fusion_map = self.fusion_engine.fuse_candidate_pool(
+            takes=takes,
+            text=text,
+            direction=direction,
+        )
+
         disqualified_takes: List[Tuple[TakeVariant, List[str]]] = []
-
         for t in takes:
-            t_reasons: List[str] = []
-            p_tech, r_tech = self._audit_technical_hard_gates(t, text, direction)
-            if not p_tech:
-                t_reasons.extend(r_tech)
+            if t not in qualified_takes:
+                f_res = fusion_map.get(t.take_id)
+                t_reasons = list(f_res.hard_gate_reasons) if f_res else []
+                if not t_reasons and f_res and f_res.fused_score < self.fusion_engine.config.critical_defect_score:
+                    t_reasons.append(
+                        f"Fused score {f_res.fused_score:.2f} below critical defect threshold ({self.fusion_engine.config.critical_defect_score:.2f})"
+                    )
+                if not t_reasons:
+                    p_tech, r_tech = self._audit_technical_hard_gates(t, text, direction)
+                    if not p_tech:
+                        t_reasons.extend(r_tech)
+                    p_align, r_align = self._audit_alignment_hard_gates(t)
+                    if not p_align:
+                        t_reasons.extend(r_align)
+                    p_voice, r_voice = self._audit_voice_identity_gate(t)
+                    if not p_voice:
+                        t_reasons.extend(r_voice)
 
-            p_align, r_align = self._audit_alignment_hard_gates(t)
-            if not p_align:
-                t_reasons.extend(r_align)
-
-            p_voice, r_voice = self._audit_voice_identity_gate(t)
-            if not p_voice:
-                t_reasons.extend(r_voice)
-
-            if t_reasons:
                 disqualified_takes.append((t, t_reasons))
                 t.is_selected = False
-                t.selection_reason = f"Disqualified by Hard Gate: {'; '.join(t_reasons)}"
-            else:
-                qualified_takes.append(t)
+                t.selection_reason = f"Disqualified by Hard Gate: {'; '.join(t_reasons or ['Critical defect'])}"
 
         all_violated = False
         if not qualified_takes:
@@ -670,13 +690,14 @@ class IntelligentTakeSelector:
                 # Score all candidates for runner-up provenance
                 scored_candidates: List[Tuple[float, TakeVariant]] = []
                 for t in takes:
-                    s = self._score_contextual(t, direction, chemistry_context, arc_context)
+                    base_s = fusion_map[t.take_id].fused_score if t.take_id in fusion_map else (t.evaluation.overall_score if t.evaluation else 0.50)
+                    s = self._score_contextual(t, direction, chemistry_context, arc_context, base_score=base_s)
                     scored_candidates.append((s, t))
                 scored_candidates.sort(key=lambda x: x[0], reverse=True)
                 cand_1_score, cand_1 = scored_candidates[0] if scored_candidates else (0.0, None)
 
                 all_gate_reasons = [r for _, r_list in disqualified_takes for r in r_list]
-                fusion_res = self.fusion_engine.fuse_take(cand_1, text, direction) if cand_1 else None
+                best_fusion = fusion_map.get(cand_1.take_id) if cand_1 else None
 
                 result = TakeSelectionResult(
                     winner=None,
@@ -691,8 +712,9 @@ class IntelligentTakeSelector:
                         "all_violated": True,
                         "disqualified_count": len(disqualified_takes),
                         "hard_gate_reasons": all_gate_reasons,
+                        "fusion_status": fusion_status,
                     },
-                    fusion_result=fusion_res,
+                    fusion_result=best_fusion,
                     review_required=True,
                 )
                 for t in takes:
@@ -700,7 +722,7 @@ class IntelligentTakeSelector:
                     t.selection_result = result
                 logger.warning(
                     f"  [TAKE SELECTION] Segment {direction.index} ({direction.speaker}): "
-                    f"NO ACCEPTABLE TAKE - all {len(takes)} candidates disqualified by hard gates."
+                    f"NO ACCEPTABLE TAKE - all {len(takes)} candidates disqualified by evidence fusion hard gates."
                 )
                 return result
             else:
@@ -712,7 +734,8 @@ class IntelligentTakeSelector:
         # Stage 4: Contextual Dimensional Scoring
         scored_candidates: List[Tuple[float, TakeVariant]] = []
         for t in competing_takes:
-            s = self._score_contextual(t, direction, chemistry_context, arc_context)
+            base_s = fusion_map[t.take_id].fused_score if t.take_id in fusion_map else (t.evaluation.overall_score if t.evaluation else 0.50)
+            s = self._score_contextual(t, direction, chemistry_context, arc_context, base_score=base_s)
             scored_candidates.append((s, t))
 
         scored_candidates.sort(key=lambda x: x[0], reverse=True)
@@ -795,33 +818,40 @@ class IntelligentTakeSelector:
 
             rationale = "; ".join(reason_parts)
 
-        # Flag review required if all violated or confidence too low
-        review_required = all_violated or (confidence < self.config.min_confidence_review_threshold)
+        # Retrieve authoritative fusion result for winner
+        winner_fusion = fusion_map.get(winner.take_id)
+        if winner_fusion is None:
+            winner_fusion = self.fusion_engine.fuse_take(winner, text, direction)
+
+        fusion_res = winner_fusion
+        status = fusion_res.status
+
+        # Flag review required if all violated or confidence too low or fusion requires review/regeneration
+        review_required = all_violated or (confidence < self.config.min_confidence_review_threshold) or (status in ("REVIEW", "REGENERATE", "NO_ACCEPTABLE_TAKE"))
         if all_violated:
             rationale = "[REVIEW REQUIRED - ALL TAKES FAILED HARD GATES] " + rationale
 
-        # Finalize winner and candidates state
-        winner.is_selected = True
-        winner.selection_reason = rationale
-
-        fusion_res = self.fusion_engine.fuse_take(winner, text, direction)
-        status = fusion_res.status
         if status == "ACCEPT" and review_required:
             status = "ACCEPT_WITH_WARNING"
 
+        # Finalize winner and candidates state
+        winner.is_selected = (status in ("ACCEPT", "ACCEPT_WITH_WARNING"))
+        winner.selection_reason = rationale
+
         result = TakeSelectionResult(
-            winner=winner,
+            winner=winner if (winner.is_selected or self.config.allow_degraded_winner) else None,
             runner_up=runner_up,
             winner_score=win_score,
             runner_up_score=ru_score,
             margin=final_margin,
             confidence=confidence,
             status=status,
-            reason_codes=reason_codes,
+            reason_codes=list(dict.fromkeys(reason_codes + fusion_res.reason_codes)),
             evidence={
                 "all_violated": all_violated,
                 "disqualified_count": len(disqualified_takes),
                 "pairwise_triggered": should_pairwise,
+                "fusion_status": fusion_res.status,
             },
             fusion_result=fusion_res,
             review_required=review_required,
@@ -909,16 +939,18 @@ class IntelligentTakeSelector:
             chemistry_context: Optional[Dict[str, float]] = None
             if selected_takes:
                 prev_winner = selected_takes[-1]
-                prev_spk = prev_winner.direction.speaker
-                curr_spk = direction.speaker
-                if prev_spk not in ("Narrator", "Foley") and curr_spk not in ("Narrator", "Foley") and prev_spk != curr_spk:
-                    chem_map: Dict[str, float] = {}
-                    for cand in cand_takes:
-                        c_res = chem_eval.evaluate_dialogue_chemistry(
-                            prev_winner, cand, actual_gap_ms=cand.direction.pause_before_ms
-                        )
-                        chem_map[cand.take_id] = c_res.composite_chemistry_score
-                    chemistry_context = chem_map
+                if prev_winner and getattr(prev_winner, "direction", None):
+                    prev_spk = prev_winner.direction.speaker
+                    curr_spk = direction.speaker
+                    if prev_spk not in ("Narrator", "Foley") and curr_spk not in ("Narrator", "Foley") and prev_spk != curr_spk:
+                        chem_map: Dict[str, float] = {}
+                        for cand in cand_takes:
+                            gap = getattr(cand.direction, "pause_before_ms", 400) if getattr(cand, "direction", None) else 400
+                            c_res = chem_eval.evaluate_dialogue_chemistry(
+                                prev_winner, cand, actual_gap_ms=gap
+                            )
+                            chem_map[cand.take_id] = c_res.composite_chemistry_score
+                        chemistry_context = chem_map
 
             # 2. Dramatic Performance Arc Context
             arc_context: Dict[str, float] = {}
@@ -927,7 +959,7 @@ class IntelligentTakeSelector:
             # Detect fatigue: if 3+ prior lines maintained high energy (> 0.80)
             recent_high_energy = 0
             for st in selected_takes[-3:]:
-                if st.direction.energy >= 0.80:
+                if st and getattr(st, "direction", None) and st.direction.energy >= 0.80:
                     recent_high_energy += 1
 
             for cand in cand_takes:
@@ -972,17 +1004,34 @@ class IntelligentTakeSelector:
                 chemistry_context=chemistry_context,
                 arc_context=arc_context,
             )
-            winner = result.winner
-            selected_takes.append(winner)
+            if result.winner is not None and (result.winner.is_selected or result.status in ("ACCEPT", "ACCEPT_WITH_WARNING")):
+                chosen = result.winner
+                chosen.is_selected = True
+            else:
+                # Degraded fallback: never append None
+                fallback = result.winner or result.runner_up or cand_takes[0]
+                fallback.is_selected = False
+                fallback.selection_reason = (
+                    f"[DEGRADED_FALLBACK - {result.status}] Candidate take failed hard gates or review. "
+                    f"Reason codes: {'; '.join(result.reason_codes)}"
+                )
+                fallback.selection_result = result
+                chosen = fallback
 
-            # Update continuity tracker
+            selected_takes.append(chosen)
+
+            # Update continuity tracker safely
             if continuity_tracker:
-                continuity_tracker.record_direction(direction, duration_sec=winner.duration_sec)
+                dur = getattr(chosen, "duration_sec", 0.0)
+                continuity_tracker.record_direction(direction, duration_sec=dur)
+                v_score = None
+                if result.winner is not None and chosen.evaluation:
+                    v_score = chosen.evaluation.voice_identity_score
                 continuity_tracker.record_take(
                     speaker=direction.speaker,
-                    take_id=winner.take_id,
-                    duration_sec=winner.duration_sec,
-                    voice_identity_score=winner.evaluation.voice_identity_score if winner.evaluation else None,
+                    take_id=chosen.take_id,
+                    duration_sec=dur,
+                    voice_identity_score=v_score,
                 )
 
         return selected_takes

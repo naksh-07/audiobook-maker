@@ -79,12 +79,21 @@ class PerformanceFidelityGate:
         dim_accum: Dict[str, List[float]] = {}
 
         take_by_seg = {t.segment_uid: t for t in selected_takes if t.is_selected}
+        unselected_by_seg = {t.segment_uid: t for t in selected_takes if not t.is_selected}
 
         for d in directions:
             take = take_by_seg.get(d.segment_uid)
             if not take:
-                # If take missing, note it
-                issues.append(f"Segment {d.index} ({d.speaker}): No selected take found in take registry.")
+                unselected = unselected_by_seg.get(d.segment_uid)
+                if unselected:
+                    sel_res = getattr(unselected, "selection_result", None)
+                    status_str = getattr(sel_res, "status", "NO_ACCEPTABLE_TAKE") if sel_res else "NO_ACCEPTABLE_TAKE"
+                    issues.append(
+                        f"Segment {d.index} ({d.speaker}): Critical defect - NO ACCEPTABLE TAKE selected "
+                        f"(status: {status_str}, take_id: {unselected.take_id})."
+                    )
+                else:
+                    issues.append(f"Segment {d.index} ({d.speaker}): No selected take found in take registry.")
                 continue
 
             ev = take.evaluation

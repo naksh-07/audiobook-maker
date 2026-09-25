@@ -16,6 +16,7 @@ from .contracts import (
     TakeVariant,
     EvaluationDimensionScore,
     PerceptualPerformanceEvidence,
+    PerformanceEvidence,
 )
 
 
@@ -55,20 +56,28 @@ class PerceptualPerformanceJudge:
 
     def judge_performance(
         self,
-        take: TakeVariant,
-        direction: PerformanceDirection,
-        text: str,
+        take: Optional[TakeVariant] = None,
+        direction: Optional[PerformanceDirection] = None,
+        text: str = "",
         scene_context: Optional[Dict[str, Any]] = None,
         prev_take: Optional[TakeVariant] = None,
         next_direction: Optional[PerformanceDirection] = None,
         scene_vector: Optional[Any] = None,
+        evidence: Optional[PerformanceEvidence] = None,
     ) -> PerceptualPerformanceEvidence:
         """
         Conducts perceptual evaluation of a take against dramatic direction.
         Returns structured PerceptualPerformanceEvidence with dimension scores and confidence.
+        Can evaluate from either an existing TakeVariant or directly from PerformanceDirection + PerformanceEvidence.
         """
-        ev = take.evaluation
-        det_ev = ev.evidence if ev else None
+        direction = direction or (take.direction if take else None)
+        if direction is None:
+            direction = PerformanceDirection(speaker="Narrator", index=1)
+
+        det_ev = evidence
+        if det_ev is None and take and take.evaluation:
+            det_ev = take.evaluation.evidence
+
         ac_ev = det_ev.acoustic if det_ev else None
         pr_ev = det_ev.prosody if det_ev else None
         pc_ev = det_ev.pacing if det_ev else None

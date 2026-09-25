@@ -201,6 +201,50 @@ class PerceptualPerformanceEvidence(BaseModel):
     diagnostics: List[str] = Field(default_factory=list)
     reason_codes: List[str] = Field(default_factory=list)
 
+    def _get_dim(self, name: str) -> EvaluationDimensionScore:
+        if name in self.dimensions:
+            return self.dimensions[name]
+        return EvaluationDimensionScore(
+            dimension=name,
+            score=self.composite_perceptual_score,
+            confidence=self.perceptual_confidence,
+            rating="strong" if self.composite_perceptual_score >= 0.80 else ("moderate" if self.composite_perceptual_score >= 0.65 else "weak"),
+            rationale="Default dimension score derived from composite",
+            reason_codes=[],
+        )
+
+    @property
+    def naturalness(self) -> EvaluationDimensionScore:
+        return self._get_dim("naturalness")
+
+    @property
+    def acting_believability(self) -> EvaluationDimensionScore:
+        return self._get_dim("acting_believability")
+
+    @property
+    def emotional_fidelity(self) -> EvaluationDimensionScore:
+        return self._get_dim("emotional_fidelity")
+
+    @property
+    def intent_fidelity(self) -> EvaluationDimensionScore:
+        return self._get_dim("intent_fidelity")
+
+    @property
+    def subtext_fidelity(self) -> EvaluationDimensionScore:
+        return self._get_dim("subtext_fidelity")
+
+    @property
+    def prosodic_fit(self) -> EvaluationDimensionScore:
+        return self._get_dim("prosodic_fit")
+
+    @property
+    def scene_fit(self) -> EvaluationDimensionScore:
+        return self._get_dim("scene_fit")
+
+    @property
+    def dialogue_reactivity(self) -> EvaluationDimensionScore:
+        return self._get_dim("dialogue_reactivity")
+
 
 class EvidenceFusionResult(BaseModel):
     """8-Layer Hierarchical Evidence Fusion Decision."""

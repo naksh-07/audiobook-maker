@@ -31,6 +31,7 @@ from .contracts import (
     BreathEvidence,
     EvaluatorCalibrationConfig,
 )
+from .perceptual_judge import PerceptualPerformanceJudge
 
 
 class PerformanceEvaluator:
@@ -44,10 +45,12 @@ class PerformanceEvaluator:
         self,
         sample_rate: int = 24000,
         config: Optional[EvaluatorCalibrationConfig] = None,
+        perceptual_judge: Optional[PerceptualPerformanceJudge] = None,
     ):
         self.sample_rate = sample_rate
         self.config = config or EvaluatorCalibrationConfig()
         self.acoustic_analyzer = MathematicalAcousticAnalyzer(sample_rate=sample_rate)
+        self.perceptual_judge = perceptual_judge or PerceptualPerformanceJudge()
 
     def evaluate_take(
         self,
@@ -226,6 +229,18 @@ class PerformanceEvaluator:
             emphasis=emphasis_ev,
             breath=breath_ev,
         )
+
+        if self.perceptual_judge is not None:
+            try:
+                perceptual_ev = self.perceptual_judge.judge_performance(
+                    take=None,
+                    direction=direction,
+                    text=text,
+                    evidence=evidence,
+                )
+                evidence.perceptual = perceptual_ev
+            except Exception as e:
+                logger.warning(f"Perceptual judge evaluation failed for take {take_id}: {e}")
 
         # 4. Composite Weighted Scoring
         weights = {

@@ -78,7 +78,7 @@ class EvidenceFusionEngine:
             reasons.append(f"Audio duration {dur:.2f}s exceeds maximum bounded limit of 600.0s")
 
         if 0 < dur < 0.25:
-            reasons.append(f"Audio duration {dur:.2f}s below minimum 0.25s")
+            reasons.append(f"Truncated audio: duration {dur:.2f}s below minimum 0.25s")
 
         word_count = len(text.split())
         if word_count > 0:
