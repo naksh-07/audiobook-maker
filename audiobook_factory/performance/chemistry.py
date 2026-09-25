@@ -103,7 +103,9 @@ class ConversationalChemistry:
                 prev_dir.pause_after_ms if prev_dir.pause_after_ms > 0 else 400
             )
 
-        effective_gap = actual_gap_ms if actual_gap_ms is not None else expected_gap
+        effective_gap = actual_gap_ms if actual_gap_ms is not None else (
+            curr_dir.pause_before_ms if curr_dir.pause_before_ms > 0 else expected_gap
+        )
 
         # 2. Pause Fidelity Score
         diff = abs(effective_gap - expected_gap)

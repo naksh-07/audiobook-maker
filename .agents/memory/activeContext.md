@@ -3,15 +3,13 @@
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
 # Active Context: Audiobook Maker Core Engine & Production
 
-## Live Sprint State: Commercial Studio Quality Upgrade (Waves 1-6 Complete)
-- **Status**: ALL 6 Waves (Phases 1-25) COMPLETE & 100% green. 521/521 tests passing (0 regressions).
-- **Wave 1 (Casting)**: `CharacterCastingProfile`, `VoiceCandidateEngine` (12 voices, 10 dimensions), `VoiceAuditionEngine` (10 modes), `CastingEvaluator`, `CastLockManager` (`cast_lock.json` + `TTSDispatcher` integration + recast audio invalidation).
-- **Wave 2 (Voice Identity)**: `VoiceDNA` (4-layer: Identity, Behavior, Emotional, Forbidden), `ReferenceVoiceBank` (acoustic signature extraction: F0 median, centroid, flatness), `VoiceIdentityAnalyzer` (calibrated pitch drift defense).
-- **Wave 3 (Acting Intelligence)**: `SceneEmotionalStateTracker` (6D vector trajectory smoothing), `PerformanceConstraintResolver` (clean prioritized directives, zero adjective bloat), `GenerationRiskEngine` ($R \in [0.0, 1.0] \to$ dynamic takes).
-- **Wave 4 (Generation Quality)**: `GenerationStrategyResolver`, `TakeBank` (adaptive variants: `more_restrained`, `more_vulnerable`, `slower_heavier`, `colder`, `more_urgent`), `PerformanceEvaluator 2.0` (4 pillars: Acoustic, Performance, Voice Identity, Relational), `IntelligentTakeSelector` (context-aware weighting, drift penalty).
-- **Wave 5 (Ensemble & Continuity)**: `ConversationalChemistry.evaluate_dialogue_chemistry` (pause fidelity, interruption snapping, energy dynamics), `PerformanceContinuityTracker` (`character_continuity.json` persistence, inter-chapter transition audit).
-- **Wave 6 (Hardening & Documentation)**: `GoldenAudioRegressionSuite` (18 dramatic cases, synthetic offline WAVs), Human Casting Console CLI (`scripts/casting_console.py`), Gate 1 & 6A cast lock enforcement, full architecture guides (`docs/TTS_CASTING_ARCHITECTURE.md`, `docs/TTS_GENERATION_ARCHITECTURE.md`).
-- **Zero-Hardcoding Compliance**: 100% verified by `test_zero_hardcoding_contracts.py`.
-- **Independent Audit Verdict**: CERTIFIED / PASS WITH ADVISORY (Architect: 9.5/10, QA: 9.8/10, Forensic Detective: 9.5/10, Security: 10/10).
-- **Integration & Remediation Pass Complete**: "Better wiring, not more machinery" completed. Wires `VoiceDNA` + `ReferenceVoiceBank` to `IntelligentTakeSelector`, dynamic take count control via `GenerationRiskEngine` + `GenerationStrategyResolver`, `SceneEmotionalStateTracker` + `VoiceDNA` in `PerformanceDirector`, dynamic acoustic scoring in `VoiceAuditionEngine`.
-- **Test Integrity**: Dedicated 10-point test matrix (`tests/test_tts_integration_remediation.py`) 100% green; full test suite 531/531 tests passing (0 regressions); AST zero-hardcoding 100% compliant.
+## Live Sprint State: Commercial Studio Quality Upgrade (Waves A-E Complete)
+- **Status**: ALL 5 Waves (A through E) COMPLETE & 100% green. 581/581 tests passing (0 regressions).
+- **Wave A (Alignment 2.0)**: `audiobook_factory/alignment_contracts.py` + `forced_aligner.py` (MMS_FA CTC token-level alignment, multi-signal confidence, 7-class pause intelligence, Hindi/Hinglish tokenization, energy-valley fallback). 18 golden tests green.
+- **Wave B (Performance Evidence)**: `PerformanceEvidence`, `AcousticEvidence`, `ProsodyEvidence`, `PacingEvidence`, `EvaluatorCalibrationConfig` in `evaluator.py` (autocorrelation F0 tracking, dynamic range, monotonic pitch-lock detection, restraint enforcement, two-tier voice identity gates). 9 dedicated tests green.
+- **Wave C (Take Selection 2.0)**: `IntelligentTakeSelector`, `TakeSelectionResult`, `PairwiseTakeJudge`, `TakeSelectorCalibrationConfig` in `take_selector.py` (3-stage hard gates: audio clipping/DC offset, alignment confidence, catastrophic voice drift; 6 dramatic modes contextual weighting; pairwise acoustic evidence judge; circular-repr protection). 11 dedicated tests green.
+- **Wave D (Scene Selection & Chemistry)**: `select_scene_takes` in `take_selector.py` (dynamic performance arc tracking: energy curve, pace curve, tension curve; conversational chemistry turn coupling via `ConversationalChemistry`; `PerformanceContinuityTracker` character pace synchronization). 5 dedicated tests green.
+- **Wave E (Golden Benchmarks & Regression)**: `tests/test_golden_take_selection_benchmark.py` (7 behavioral tests: restraint beats loudness, dramatic pause beats dead air, voice stability beats pitch drift, chemistry beats isolated score, scene arc beats segment score, naturalness beats distortion, subtext beats yell). 7 golden benchmarks green.
+- **Zero-Hardcoding Compliance**: 100% verified by `test_zero_hardcoding_contracts.py` (zero hardcoded characters, soundtrack titles, or chapter branches).
+- **Test Integrity**: 581/581 tests + 17 subtests passing in 243.12s (50 new tests, 0 regressions).
+- **Independent 4-Expert Audit**: CERTIFIED / PASS (Architect: 10.0/10, QA: 10.0/10, Forensic DSP: 9.5/10, Security: 9.5/10 after bounded loading & hop-guard remediations).

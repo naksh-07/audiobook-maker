@@ -16,9 +16,9 @@
    - [Capability 6: `PerformanceDirector` Sociolect Projection](#capability-6-performancedirector-actor-direction--sociolect-projection)
    - [Capability 7: Anti-Emotional Teleportation Defense](#capability-7-anti-emotional-teleportation-defense)
    - [Capability 8: `GeminiTTSPerformanceAdapter` & Style Synthesis](#capability-8-geminittsperformanceadapter--style-synthesis)
-   - [Capability 9: `PerformanceEvaluator` 8D Acoustic QC](#capability-9-performanceevaluator-8-dimensional-qc-engine)
+   - [Capability 9: `PerformanceEvaluator` 2.0 & Evidence Models](#capability-9-performanceevaluator-20--evidence-models)
    - [Capability 10: `TakeBank` Priority Allocation](#capability-10-takebank-priority-based-multi-take-banking)
-   - [Capability 11: `IntelligentTakeSelector` Explainable Ranking](#capability-11-intelligenttakeselector-multi-dimensional-selection)
+   - [Capability 11: `IntelligentTakeSelector` 2.0 & Judicial Deliberation](#capability-11-intelligenttakeselector-20--judicial-deliberation)
    - [Capability 12: `ConversationalChemistry` Turn Coupling](#capability-12-conversationalchemistry-dialogue-turn-coupling)
    - [Capability 13: `PerformanceContinuityTracker` Drift Monitoring](#capability-13-performancecontinuitytracker-actor-continuity)
    - [Capability 14: `PerformanceFidelityGate` (Gate 2.8)](#capability-14-performancefidelitygate-gate-28-pre-mix-gatekeeper)
@@ -218,12 +218,15 @@ Each `TakeVariant` records its filesystem path, duration, link to the governing 
 ---
 
 ### Capability 3: `PerformanceEvaluationResult` & 8-Dimension Scoring
-- **Module:** [`audiobook_factory/performance/contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L156-L173)
-- **Class:** [`PerformanceEvaluationResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L156-L173), [`EvaluationDimensionScore`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L49-L57)
+- **Module:** [`audiobook_factory/performance/contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L252-L273)
+- **Class:** [`PerformanceEvaluationResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L252-L273), [`EvaluationDimensionScore`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L145-L153)
 
 Every synthesized take undergoes multidimensional evaluation across 8 discrete axes. `EvaluationDimensionScore` provides an explainable score between $0.0$ and $1.0$, a qualitative rating (`strong`, `moderate`, `weak`, `unacceptable`), and an explainable diagnosis.
 
-The composite result determines:
+In Evaluator 2.0 (Wave B), `PerformanceEvaluationResult` is backed by empirical forensic telemetry:
+- `evidence`: Full [`PerformanceEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L108-L122) capturing acoustic, prosodic, pacing, and voice identity measurements.
+- `voice_identity_score`: Acoustic similarity score against the reference voice bank.
+- `voice_drift_detected`: Boolean flag indicating whether vocal timbre or pitch drifted beyond dynamic tolerances.
 - `overall_score`: Weighted sum across active dimensions.
 - `passed`: Boolean indicator requiring $overall \ge 0.70$ and $naturalness \ge 0.65$.
 - `recommendation`: `accept`, `downgrade`, or `regenerate`.
@@ -317,22 +320,39 @@ The bridge between `PerformanceDirection` contracts and Google Gemini 3.8 Flash 
 
 ---
 
-### Capability 9: `PerformanceEvaluator`: 8-Dimensional QC Engine
+### Capability 9: `PerformanceEvaluator` 2.0 & Evidence Models
 - **Module:** [`audiobook_factory/performance/evaluator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/evaluator.py)
-- **Class:** [`PerformanceEvaluator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/evaluator.py#L26-L337)
+- **Class:** [`PerformanceEvaluator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/evaluator.py#L33-L618)
+- **Contracts:** [`PerformanceEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L108-L122), [`AcousticEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L49-L64), [`ProsodyEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L65-L79), [`PacingEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L80-L93), [`VoiceIdentityEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L94-L107), [`EvaluatorCalibrationConfig`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L123-L144)
 
-Evaluates synthesized WAV audio takes using DSP signal processing and mathematical analysis via [`MathematicalAcousticAnalyzer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/forensic_analyzer.py):
+In Wave B, the evaluator was completely overhauled into **Performance Evaluator 2.0**, substituting subjective scoring heuristics with empirical signal extraction and mathematical telemetry:
 
-| Dimension | Weight | Metric Evaluated | Pass Criteria / Diagnostic Check |
+#### 1. Empirical Forensic Extraction
+Rather than guessing performance quality, `PerformanceEvaluator` extracts discrete physical metrics:
+- **Normalized Autocorrelation Pitch Tracking ($F_0$)**: Analyzes 50ms centered frames with 25ms hops across a $60\text{ Hz} \le F_0 \le 400\text{ Hz}$ search window:
+  $$R_{xx}(\tau) = \sum_{n=0}^{N-\tau-1} x[n] \cdot x[n+\tau]$$
+  Accepts candidate voiced peaks when $\frac{R_{xx}(\tau_{\text{peak}})}{R_{xx}(0)} > 0.30$ and frame energy $\ge 10^6$. Computes median $F_0$, interquartile range ($F_{0,\text{IQR}} = Q_3 - Q_1$), and standard deviation ($\sigma_{F0}$).
+- **Crest Factor Dynamic Range**: Evaluates dynamic acoustic headroom:
+  $$\text{Dynamic Range (dB)} = 20 \log_{10}\left(\frac{\max(|x|)}{\text{RMS}(x)}\right)$$
+- **Robotic Monotonic Pitch-Lock Detection**: Flags artificial vocoder pitch-locking when $\sigma_{F0} < 5.0\text{ Hz}$ across $\ge 6$ voiced frames. Whispered or close-mic lines (`proximity == "close_mic"`, `resonance == "whisper_air"`) are mathematically exempted to prevent false positives during unvoiced speech.
+- **Waveform Hygiene**: Measures exact consecutive clipped samples pinned to the digital rail ($\pm 32760$), DC bias offset, Wiener spectral flatness mean, high-frequency energy ratio ($> 4\text{ kHz}$), and trailing dead air endpoints.
+
+#### 2. Dimensional Evaluation Grounded in Evidence
+
+| Dimension | Weight | Mathematical / Empirical Basis | Diagnostic Check & Thresholds |
 |---|:---:|---|---|
-| **Naturalness** | **0.20** | Waveform hygiene, rail clipping, DC bias, dead air, spectral flatness | Max consecutive rail samples $< 6$, DC bias $< 1200$, dead air $< 1.5\text{s}$, spectral flatness $< 0.40$. |
-| **Intent Match** | **0.15** | Dramatic beat objective & actioning verb delivery | Congruence of active delivery with intended tactical goal. |
-| **Emotional Match** | **0.15** | Acoustic energy headroom vs. emotional intensity | RMS $> -27\text{ dBFS}$ for explosive lines; RMS $< -16\text{ dBFS}$ for intimate/whispered lines. |
-| **Pacing** | **0.15** | Words-per-second (WPS) vs. target pace | Target WPS $= 3.1 \times \text{direction.pace}$. Pacing error $\le 0.20$ rates strong; $> 0.65$ fails. |
-| **Subtext** | **0.10** | Restraint adherence & vocal compression | High-restraint characters $(\ge 0.75)$ must not clip or shout (peak $< 31000$ or RMS $< -15\text{ dBFS}$). |
-| **Prosody** | **0.10** | Spectral harmonic formants & pitch inflections | Spectral flatness $> 0.005$ to prevent monotonic robotic pitch locking. |
-| **Character Consistency** | **0.08** | Alignment with character sociolect profile | Cadence and timber match assigned character identity. |
-| **Relationship Consistency** | **0.07** | Interpersonal leverage & power posture | Measured pacing for dominant postures; cautious cadence for submissive postures. |
+| **Naturalness** | **0.20** | Rail pinning, DC offset, dead air, spectral flatness | Max consecutive rail samples $< 6$; DC bias $< 1200.0$; trailing dead air $< 1.5\text{s}$; spectral flatness $< 0.40$. |
+| **Intent Match** | **0.15** | Dramatic beat objective & actioning verb delivery | Congruence of acoustic projection with active verb (e.g. commands require $\text{RMS} \ge -28\text{ dBFS}$; soothing requires $\text{RMS} \le -16\text{ dBFS}$). |
+| **Emotional Match** | **0.15** | Acoustic energy headroom vs. emotional intensity | Explosive intensity requires $\text{RMS} \ge -24\text{ dBFS}$; intimate/whispered delivery requires $\text{RMS} \le -18\text{ dBFS}$. |
+| **Pacing** | **0.15** | Words-per-second (WPS) adherence vs. target pace | Target $\text{WPS} = 3.1 \times \text{direction.pace}$. Ratio error $\le 0.20$ rates strong ($0.95$); $> 0.65$ fails ($0.40$). |
+| **Subtext & Restraint** | **0.10** | Character restraint vs. vocal compression | High-restraint characters ($\ge 0.75$) must not shout: $\text{peak} \ge 31,000$ and $\text{RMS} > -15\text{ dBFS}$ docks $-0.30$ on subtext. |
+| **Prosody & Cadence** | **0.10** | Melodic pitch inflection & pitch-lock defense | Monotonic pitch lock ($\sigma_{F0} < 5.0\text{ Hz}$) docks $-0.20$; harmonic lock anomaly docks $-0.20$. |
+| **Character Consistency** | **0.08** | Acoustic voice identity against reference bank | Probed via `VoiceIdentityAnalyzer`; catastrophic drift triggers hard gate violation. |
+| **Relationship Consistency** | **0.07** | Interpersonal leverage & power posture | Dominant power reflects measured, unhurried delivery; submissive posture respects turn latency. |
+
+#### 3. Two-Tier Voice Identity Gates
+- **Tier 1 Hard Gate (Catastrophic Drift)**: Similarity score $< 0.45$ or $F_0$ deviation $> 60.0\%$ triggers an immediate hard gate rejection (`is_hard_gate_violation = True`), disqualifying the candidate before take ranking.
+- **Tier 2 Soft Preference Gate**: Non-catastrophic drift incurs a $-0.40$ contextual penalty, while robust acoustic signature consistency ($\ge 0.85$) awards a $+0.05$ bonus.
 
 ---
 
@@ -350,17 +370,28 @@ Takes are registered with sample duration, filesystem paths, and full serializab
 
 ---
 
-### Capability 11: `IntelligentTakeSelector`: Multi-Dimensional Selection
+### Capability 11: `IntelligentTakeSelector` 2.0 & Judicial Deliberation
 - **Module:** [`audiobook_factory/performance/take_selector.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py)
-- **Class:** [`IntelligentTakeSelector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py#L17-L141)
+- **Classes:** [`IntelligentTakeSelector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py#L250-L795), [`PairwiseTakeJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py#L34-L248)
+- **Contracts:** [`TakeSelectionResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L374-L390), [`TakeSelectorCalibrationConfig`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L330-L353)
 
-Selects the single winning performance take for final stem assembly. It evaluates candidates through the **Non-Loudest Best Evaluation Principle**:
-$$\text{Effective Score} = \text{Overall Score} + \text{Bonus}_{\text{restraint}} + \text{Bonus}_{\text{relationship}} - \text{Penalty}_{\text{naturalness}}$$
-- **Restraint Bonus ($+0.06$):** Awarded when a high-restraint character achieves superior subtext control $(\ge 0.85)$ rather than shouting.
-- **Relationship Bonus ($+0.04$):** Awarded when interpersonal leverage matches the dynamic toward the target character.
-- **Naturalness Penalty ($-0.15$):** Applied if acoustic naturalness drops below $0.70$.
-- **Explainability:** Generates a human-readable selection rationale on the winning take, e.g.:
-  > *"Selected Take 'restraint' (overall: 0.91); superior subtext control (0.92 vs 0.78); better relationship dynamic toward Yennefer; preferred over 'standard' (0.84)."*
+In Wave C and Wave D, the selector was expanded into **Take Selection 2.0**, introducing a staged judicial pipeline, whole-scene arc orchestration, and first-class provenance tracking:
+
+#### 1. The Staged Judicial Pipeline
+Candidate takes pass through a rigorous 6-stage evaluation before final stem promotion:
+1. **Stage 1 (Technical Audio Integrity Hard Gate)**: Rejects corrupt files, truncated durations ($< 0.25\text{s}$), excessive runaways ($> 3.5\times$ target duration), digital rail clipping ($\ge 12$ pinned samples), DC bias ($|bias| > 1500.0$), and dead air violations ($> 2.0\text{s}$).
+2. **Stage 2 (Alignment Validity Hard Gate)**: Rejects takes with alignment confidence $< 0.35$ or word omission rates $> 50.0\%$.
+3. **Stage 3 (Catastrophic Voice Drift Hard Gate)**: Disqualifies takes with similarity $< 0.45$ or explicit catastrophic drift diagnostics.
+4. **Stage 4 (6-Mode Contextual Scoring)**: Evaluates qualified takes under specific dramatic modes (Exposition, Climax, Whisper, Anger, Grief, Standard Dialogue), applying dynamic acoustic bonuses and voice drift penalties ($-0.40$).
+5. **Stage 5 (Pairwise Judicial Deliberation)**: Triggers when the score margin between top takes $\le 0.05$ or during climactic/iron-restraint moments. [`PairwiseTakeJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py#L34-L248) breaks ties by deliberating on subtext restraint vs. volume, dramatic pauses vs. dead air, intent alignment, voice identity continuity, and conversational chemistry.
+6. **Stage 6 (First-Class Contract Emitted)**: Emits a strongly typed [`TakeSelectionResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L374-L390) with machine-readable reason codes (`BETTER_RESTRAINT`, `BETTER_DRAMATIC_PAUSE`, `BETTER_SUBTEXT`, `BETTER_VOICE_CONTINUITY`, `BETTER_CHEMISTRY`), runner-up provenance, margin, and review flags. Circular recursion is eliminated with `repr=False` on `TakeVariant.selection_result`.
+
+#### 2. Whole-Scene Arc Selection (`select_scene_takes`)
+Rather than optimizing each line in isolation, `select_scene_takes()` coordinates candidate takes across entire scenes:
+- **Listener Fatigue Defense**: Penalizes consecutive high-energy takes ($\ge 0.80$) after 3+ loud lines, giving listeners acoustic breathing room.
+- **Premature Climax Guard**: Suppresses explosive deliveries in the opening 35% of scenes.
+- **Climactic Release Reward**: Grants $+0.04$ score bonuses to expressive variants in climactic finales.
+- **Continuity Synchronization**: Synchronizes candidate tempos with running character averages in [`PerformanceContinuityTracker`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/continuity.py).
 
 ---
 
@@ -431,9 +462,10 @@ In classical machine learning and automated audio engineering, quality metrics o
 
 ### The Multi-Metric Solution
 [`IntelligentTakeSelector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py) enforces the **Non-Loudest Best Evaluation Principle**:
-1. **Restraint as a Dramatic Virtue:** When a character's profile dictates high restraint ($\text{restraint} \ge 0.70$), takes that preserve tight vocal control and deliver high subtext scores receive an explicit $+0.06$ score bonus.
+1. **Restraint as a Dramatic Virtue:** When a character's profile dictates high restraint ($\text{restraint} \ge 0.70$), takes that preserve tight vocal control and deliver high subtext scores receive an explicit $+0.06$ score bonus. Over-acting with $\text{peak} \ge 31,000$ and $\text{RMS} > -15.0\text{ dBFS}$ triggers a $-0.30$ subtext penalty.
 2. **Headroom Clamping on Intimacy:** In intimate (`intimacy_level == "intimate"`) or close-mic (`proximity == "close_mic"`) moments, takes with RMS $> -16\text{ dBFS}$ are penalized for violating acoustic intimacy.
 3. **Explosive Headroom Verification:** Shouted takes are only rewarded when the screenplay explicitly specifies `intensity == "explosive"`.
+4. **Empirical Proof via Golden Benchmarks:** Verified by [`test_01_restraint_beats_loudness`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_take_selection_benchmark.py#L90-L162) and [`test_07_correct_subtext_intent_beats_generic_aggressive_yell`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_take_selection_benchmark.py#L425-L487), mathematically proving that controlled menace outranks loud shouting across competitive take pools.
 
 This ensures that a cold, terrifying whisper from a disciplined character consistently outranks an unmotivated shout.
 
@@ -532,23 +564,21 @@ python audiobook_cli.py produce audiobooks/projects/witcher_blood_of_elves --cha
 The Dramatic Performance Realization Layer is fortified by a comprehensive test suite. All tests pass with 100% green integrity across Windows and POSIX environments.
 
 ### Verification Summary
-- **Overall Codebase Test Suite:** **521 tests passed, 17 subtests passed (100% green)**
+- **Overall Codebase Test Suite:** **581 tests passed, 17 subtests passed (100% green, 0 regressions)**
+- **AST Zero-Hardcoding Compliance:** **100% green** ([`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py))
 - **Commercial Studio Casting & Generation Waves (1-6):** **77 passed in 6.00s**
+- **Commercial Studio Quality Upgrade Waves (A-E):** **50 passed in 23.4s**
 - **Dedicated Performance Realization Test Suite:** [`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py) — **23 passed in 1.25s**
 - **Gate Auditor Test Suite:** [`tests/test_gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_gate_auditor.py) — **5 passed in 35s**
 
-### Performance Realization Test Breakdown (23 Tests)
+### Performance Realization & Studio Quality Test Breakdown (73 Tests)
 
-| Test Class | Tests | Test Method / Focus | Verification Result |
+| Test Suite File | Tests | Test Method / Focus | Verification Result |
 |---|:---:|---|:---:|
-| [`TestPerformanceContracts`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L62-L112) | 3 | Deterministic ID generation, priority take allocation (`climactic` $\rightarrow$ 3 takes), Pydantic v2 JSON serialization roundtrip | ✅ PASSED |
-| [`TestTimingRealizer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L114-L157) | 4 | Ellipsis hesitation ($\ge 350\text{ms}$), interruption cutoff ($\le 100\text{ms}$), dramatic silence intent (`shock` $\ge 1500\text{ms}$), respiratory breath pre-roll | ✅ PASSED |
-| [`TestPerformanceDirector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L159-L229) | 4 | Sociolect archetype projection, anti-emotional teleportation dampening, leverage/power dynamics, subtext & social mask generation | ✅ PASSED |
-| [`TestTTSPerformanceAdapter`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L231-L271) | 2 | Sacred text immutability, multi-token style synthesis, variant temperature modulation | ✅ PASSED |
-| [`TestPerformanceEvaluator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L273-L310) | 2 | Clean synthetic WAV evaluation across 8 dimensions, fail-closed handling on missing/corrupt audio files | ✅ PASSED |
-| [`TestTakeBankAndSelector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L312-L346) | 2 | Priority take variant allocation, intelligent take selection with explainability audit rationale | ✅ PASSED |
-| [`TestConversationalChemistry`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L348-L386) | 2 | Interruption turn coupling (zero onset delay), dominant threat / submissive reaction latency coupling | ✅ PASSED |
-| [`TestPerformanceContinuityTracker`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L388-L406) | 1 | Baseline character telemetry aggregation, $30\%$ pace drift alert detection across scenes | ✅ PASSED |
-| [`TestPerformanceFidelityGate`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L408-L448) | 2 | Gate 2.8 passes clean chapter reports; fails closed on ungrounded emotional teleportation | ✅ PASSED |
-| [`TestEndToEndPerformancePipeline`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py#L450-L537) | 1 | Full end-to-end integration: `ScreenplaySegment` $\rightarrow$ `PerformanceDirection` $\rightarrow$ Multi-Take $\rightarrow$ 8D QC $\rightarrow$ Gate 2.8 $\rightarrow$ Cinema Manifest | ✅ PASSED |
-| **Total** | **23** | **100% Comprehensive Coverage** | **✅ ALL GREEN** |
+| [`tests/test_golden_take_selection_benchmark.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_take_selection_benchmark.py) | 7 | Golden behavioral benchmarks (restraint vs. volume, pause vs. dead air, voice stability, chemistry, scene arc, naturalness, subtext) | ✅ PASSED |
+| [`tests/test_take_selection_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_take_selection_2.py) | 11 | Staged hard gates (technical, alignment, drift), 6-mode contextual scoring, `PairwiseTakeJudge`, `TakeSelectionResult` reason codes | ✅ PASSED |
+| [`tests/test_performance_evidence_and_evaluator_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_evidence_and_evaluator_2.py) | 9 | `PerformanceEvidence` extraction, autocorrelation F0 tracking, crest dynamic range, monotonic pitch-lock detection, two-tier voice identity | ✅ PASSED |
+| [`tests/test_scene_selection_and_continuity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_scene_selection_and_continuity.py) | 5 | `select_scene_takes` arc modulation, listener fatigue defense, premature climax guard, character pace continuity tracking | ✅ PASSED |
+| [`tests/test_golden_alignment_benchmark.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_alignment_benchmark.py) | 18 | Alignment 2.0 contracts, MMS_FA CTC word token spans, 7 pause classes, multi-signal confidence, energy-valley fallback | ✅ PASSED |
+| [`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py) | 23 | 14 core performance capabilities, `TimingRealizer`, `PerformanceDirector`, `Gate 2.8` fidelity audit | ✅ PASSED |
+| **Total Performance & Quality Upgrade** | **73** | **100% Comprehensive Theatrical Coverage** | **✅ ALL GREEN** |

@@ -8,8 +8,8 @@
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.8%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-Universal%20Director%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-521%20Passed%20(100%25)-brightgreen.svg)](tests/)
-[![Casting & Acting Engine](https://img.shields.io/badge/Acting%20Engine-Studio%20Multi--Take%20%26%20CastLock-blue.svg)](docs/TTS_CASTING_ARCHITECTURE.md)
+[![Verification](https://img.shields.io/badge/Tests-581%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Casting & Acting Engine](https://img.shields.io/badge/Acting%20Engine-Studio%20Multi--Take%20%26%20Waves%20A--E-blue.svg)](docs/TTS_GENERATION_ARCHITECTURE.md)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
@@ -78,7 +78,7 @@ The architecture orchestrates an end-to-end 6-stage lifecycle from raw document 
 1. **Stage 1: Forensic Document Ingestion & Canonical AST** ([`docs/FORENSIC_DOCUMENT_INGESTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/FORENSIC_DOCUMENT_INGESTION.md)): Single-pass DOM traversal, layout-aware PDF reading order reconstruction, sacred raw archival, and fail-closed Gate 0.1 extraction audits.
 2. **Stage 2: Literary Translation Intelligence & Memory 2.0** ([`docs/LITERARY_TRANSLATION_INTELLIGENCE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md)): Persistent BookBible v2.0, dual semantic maps, contextual Hindustani register, 7D calibrated intensity, World & Character Memory 2.0 epistemic continuity, and Gates T0–T15 certification.
 3. **Stage 3: Dramatic Adaptation & Screenplay Engine (v1.1)** ([`docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)): Transforms flat prose into multi-cast dramatic screenplays via the **Dramaturgy Engine** (`audiobook_factory/dramaturgy/`). Deploys 10 refined dramatic capabilities (Beat Causality 'therefore/but' chaining, Dramatic State Deltas, Relationship Evolution, Power/Epistemic Dynamics, Physical Blocking, Narrative Mode & POV Nuance, Adaptation Fidelity Policy, Long-Range Story Connections, Conversational Dynamics, Dramatic Silence Intent), **Beat-Aligned Chunk Slicing** (`slice_chapter_by_beats`) eliminating the historical 1,200-word cut boundary flaw, `PerformanceBibleGenerator` for sociolect archetypes (`COLD_CYNIC`, `CAUSTIC_ARISTOCRAT`, `THARKI_BARD`), and fail-closed **Gate 2.5 Dramatic Fidelity** 8-pillar validation.
-4. **Stage 3.5: Dramatic Performance Realization Layer & Gate 2.8 (ADR-032)** ([`docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md)): Bridges Stage 3 dramatic beats into moment-level actor performance directions (`PerformanceDirection`), humanized timing and respiration (`TimingRealizer`), conversational chemistry turn coupling (`ConversationalChemistry`), provider-neutral synthesis with sacred text immutability (`GeminiTTSPerformanceAdapter`), priority-based multi-take banking (`TakeBank`), 8-dimensional acoustic/dramatic evaluation (`PerformanceEvaluator`), non-loudest best take selection (`IntelligentTakeSelector`), and fail-closed pre-mix certification via **Gate 2.8: Dramatic Performance Fidelity Gate**.
+4. **Stage 3.5: Dramatic Performance Realization Layer, Commercial Studio Quality Upgrade (Waves A–E) & Gate 2.8 (ADR-032 / ADR-024)** ([`docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md) & [`docs/TTS_GENERATION_ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TTS_GENERATION_ARCHITECTURE.md)): Bridges Stage 3 dramatic beats into moment-level actor performance directions (`PerformanceDirection`), humanized timing and respiration (`TimingRealizer`), provider-neutral synthesis with sacred text immutability (`GeminiTTSPerformanceAdapter`), priority-based multi-take banking (`TakeBank`), **Forced Alignment 2.0** with frame-accurate MMS_FA CTC word token spans and 7 pause classes (`WorkstationForcedAligner`), **Performance Evaluator 2.0** with autocorrelation F0 tracking, crest dynamic range, monotonic pitch-lock detection, and restraint enforcement (`PerformanceEvaluator`), **Take Selection 2.0** with staged 1-3 hard gates, 6-mode contextual scoring, pairwise judicial deliberation (`PairwiseTakeJudge`), and explainable reason codes (`TakeSelectionResult`), **Whole-Scene Arc Selection** (`select_scene_takes`), conversational chemistry turn coupling (`ConversationalChemistry`), character pace continuity tracking (`PerformanceContinuityTracker`), and fail-closed pre-mix certification via **Gate 2.8: Dramatic Performance Fidelity Gate**.
 5. **Stage 3.8: Pronunciation & Spoken Language QA Subsystem (ADR-022)** ([`docs/PRONUNCIATION_AND_SPOKEN_LANGUAGE_QA.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PRONUNCIATION_AND_SPOKEN_LANGUAGE_QA.md)): Decouples sacred literary prose (`ScreenplaySegment.text` strictly immutable) from phonetically resolved TTS payloads (`ScreenplaySegment.spoken_text`). Deploys the Deterministic 7-Tier Resolver, shields neural acting tags (`[whispers]`), executes post-synthesis acoustic QA with Meta MMS_FA CTC alignment, performs targeted single-take repairs with rhythmic micro-pause anchors and atomic WAV promotion, and enforces project-wide cross-chapter consistency (Gate 6E).
 6. **Stage 4: Autonomous Directing & Gemini 3.8 Flash Speech Synthesis** ([`docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md) & [`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md)): Autonomous 3-pass workflow executing $\ge 60\%$ acoustic silence carving, SQLite FTS5 leitmotif music scoring, and bilingual anchor Foley staging. Emits `CreativeManifest v3.0` and dispatches multi-cast speech synthesis via `TTSDispatcher` to `gemini-3.8-flash-tts` with turn-level theatrical style directing, physical inline vocal tags (`<gasp>`, `<sigh>`, `<sob>`), and zero voice drift.
 7. **Stage 5: Acoustic Compositor & 5-Track DME Stem Mastering** ([`docs/AUDIO_ENGINEERING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)): Manifest rendering with whisper-safe sidechain ducking (-34.9 dBFS / 0.018 threshold), isolated 2.2kHz spectral notch, dynamic IR reverb, and discrete 5-track DME stem export audited by Gates 5, 5.2, and 5.3.
@@ -238,14 +238,37 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - `SceneEmotionalStateTracker`: Tracks 6D emotional vectors (`valence`, `arousal`, `dominance`, `tension`, `energy`, `restraint`) with trajectory smoothing.
   - `PerformanceConstraintResolver`: Resolves scene context into concise, prioritized acting directives, eliminating adjective bloat.
   - `Continuous Generation Risk Engine`: Evaluates scene difficulty $R \in [0.0, 1.0]$ based on emotional volatility, physical strain, dialogue speed, and multi-speaker density, triggering single vs. multi-take generation strategies.
-  - `TakeBank` & `IntelligentTakeSelector`: Generates targeted variants (`more_restrained`, `more_vulnerable`, `slower_heavier`, `colder`, `more_urgent`), evaluated across Acoustic, Performance, Voice Identity, and Relational dimensions.
-  - `ConversationalChemistry`: Interpersonal turn-taking modeling, latency adjustment based on power dynamics/tension, and realistic interruption snapping.
-  - `PerformanceContinuityTracker`: Tracks running character metrics (`paces[-200:]`, `energies[-200:]`, `restraints[-200:]`) across scenes and chapters in `character_continuity.json`, with atomic file persistence.
-- **Human Casting Console CLI (`scripts/casting_console.py`)**:
-  - Interactive CLI supporting `--status`, `--list-voices`, `--recommend`, `--audition`, `--lock`, and `--recast`. Fully UTF-8 encoded on Windows 11 PowerShell.
-- **Golden Audio Regression Suite & AST Zero-Hardcoding Contracts**:
-  - 18 dramatic test cases validated offline using synthetic multi-frequency PCM wave fixtures (`tests/test_golden_audio_regression_suite.py`).
-  - Static AST contract testing (`tests/test_zero_hardcoding_contracts.py`) guaranteeing zero hardcoded character names, chapter logic, or sound references in engine code.
+  - `TakeBank`: Generates targeted variants (`more_restrained`, `more_vulnerable`, `slower_heavier`, `colder`, `more_urgent`).
+
+### 15. Commercial Studio Quality Upgrade (ADR-024 / Waves A–E)
+*(See comprehensive architecture manual: [`docs/TTS_GENERATION_ARCHITECTURE.md`](docs/TTS_GENERATION_ARCHITECTURE.md))*
+- **Wave A — Forced Alignment 2.0 (`audiobook_factory/forced_aligner.py`, `alignment_contracts.py`)**:
+  - First-class contracts: [`AlignmentResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L147-L189), [`WordAlignment`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L130-L146), [`PauseInterval`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L109-L129), [`SpeechRegion`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L96-L108).
+  - Extracts millisecond-accurate word token spans ($\pm 20\text{ms}$) via Meta MMS_FA CTC emissions on CUDA RTX 4050 GPU with standard-library wave tensor loader.
+  - 7 pause classes: `natural_pause`, `dramatic_pause`, `hesitation`, `interruption_gap`, `breath_pause`, `dead_air`, `synthetic_gap`.
+  - 5-signal calibrated confidence: $C_{\text{align}} = 0.35 C_{\text{phonetic}} + 0.25 C_{\text{coverage}} + 0.20 C_{\text{timing}} + 0.10 C_{\text{speech}} + 0.10 C_{\text{boundary}}$.
+  - Language-aware Devanagari romanization map (`DEVA_TO_ROMAN_MAP`), conjunct normalization, and transparent acoustic energy-valley fallback.
+- **Wave B — Performance Evidence & Evaluator 2.0 (`audiobook_factory/performance/evaluator.py`, `contracts.py`)**:
+  - Empirical telemetry models: [`PerformanceEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L108-L122), [`AcousticEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L49-L64), [`ProsodyEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L65-L79), [`PacingEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L80-L93), [`VoiceIdentityEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L94-L107).
+  - Normalized autocorrelation fundamental pitch ($F_0$) tracking across 50ms frames with 25ms hops ($60\text{Hz} \le F_0 \le 400\text{Hz}$).
+  - Crest factor dynamic range ($20 \log_{10}(\text{peak}/\text{RMS})$) and robotic monotonic pitch-lock detection ($\sigma_{F0} < 5.0\text{Hz}$ with whisper exemption).
+  - Dramatic restraint vs. overacting enforcement: penalizes loud shouting ($peak \ge 31,000$ and $RMS > -15\text{dBFS}$) under high restraint ($\ge 0.75$).
+  - Two-tier voice identity gates: catastrophic drift hard gate (similarity $< 0.45$ or $F_0$ shift $> 60\%$) vs. soft preference bonus ($+0.05$ on similarity $\ge 0.85$).
+- **Wave C — Take Selection 2.0 & Judicial Deliberation (`audiobook_factory/performance/take_selector.py`)**:
+  - Staged 1-3 hard gates: technical audio integrity ($\ge 12$ pinned samples, DC offset $> 1500$, duration $< 0.25\text{s}$ or $> 3.5\times$, dead air $> 2.0\text{s}$), alignment validity (confidence $< 0.35$), catastrophic voice drift (similarity $< 0.45$).
+  - Stage 4 contextual scoring: 6 dramatic modes (Exposition, Climax, Whisper, Anger, Grief, Standard Dialogue).
+  - Stage 5 Pairwise Judicial Deliberation: [`PairwiseTakeJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py#L34-L248) breaks close margins ($\Delta \le 0.05$) and climactic beats by deliberating on acoustic restraint, dramatic pauses vs. dead air, subtext, intent, voice stability, and chemistry.
+  - Stage 6 First-Class Result: [`TakeSelectionResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L374-L390) with machine-readable reason codes (`BETTER_RESTRAINT`, `BETTER_DRAMATIC_PAUSE`, `BETTER_SUBTEXT`, `BETTER_VOICE_CONTINUITY`, `BETTER_CHEMISTRY`), runner-up provenance, and review flags. Circular recursion eliminated with `repr=False`.
+- **Wave D — Whole-Scene Selection & Ensemble Coupling (`audiobook_factory/performance/take_selector.py`, `chemistry.py`, `continuity.py`)**:
+  - `select_scene_takes()` coordinates candidate takes across whole-scene performance arcs (`energy_curve`, `pace_curve`, `tension_curve`).
+  - Listener fatigue defense: penalizes consecutive high-energy takes ($\ge 0.80$) after 3+ loud lines; rewards controlled acoustic breathing room ($+0.04$).
+  - Premature climax guard: suppresses explosive takes in opening 35% of scenes; climactic release reward ($+0.04$) in finales.
+  - Interpersonal turn-taking modeling, latency adjustment based on power dynamics/tension, and realistic interruption snapping ($\le 40\text{ms}$) via `ConversationalChemistry`.
+  - Character pace continuity tracking via `PerformanceContinuityTracker` with atomic persistence in `character_continuity.json`.
+- **Wave E — Golden Behavioral Benchmark Suite (`tests/test_golden_take_selection_benchmark.py`)**:
+  - 7 behavioral benchmark proofs verifying that restraint beats loudness, dramatic pause beats dead air, voice stability beats pitch drift, chemistry beats isolated score, scene arc beats segment score, naturalness beats distortion, and subtext beats generic aggressive yelling.
+  - 100% AST zero-hardcoding compliance verified by `tests/test_zero_hardcoding_contracts.py`.
+  - 581/581 passing tests (100% green, 0 regressions).
 
 ---
 
@@ -341,11 +364,14 @@ python audiobook_cli.py bank stats
 
 ## 🧪 Verification & Test Suite
 
-The codebase maintains **521 passed unit tests (100% green)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (521/521 passed, 0 failures, 0 errors):
+The codebase maintains **581 passed unit tests (100% green, 0 regressions)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (581/581 passed, 0 failures, 0 errors, 17 subtests):
 
 ```powershell
-# Run full regression suite across all test suites (521 tests)
+# Run full regression suite across all test suites (581 tests)
 pytest tests/
+
+# Commercial Studio Quality Upgrade Waves A-E Benchmark Suite (50 tests)
+pytest tests/test_golden_take_selection_benchmark.py tests/test_take_selection_2.py tests/test_performance_evidence_and_evaluator_2.py tests/test_scene_selection_and_continuity.py tests/test_golden_alignment_benchmark.py -v
 
 # Commercial Studio Voice Casting, Identity & Generation Suites (Waves 1-6, 77 tests)
 pytest tests/test_wave1_casting.py tests/test_wave2_voice_identity.py tests/test_wave3_acting_intelligence.py tests/test_wave4_generation_quality.py tests/test_wave5_ensemble_performance.py -v

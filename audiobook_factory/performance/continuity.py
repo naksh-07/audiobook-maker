@@ -84,6 +84,8 @@ class PerformanceContinuityTracker:
             telem.restraints = telem.restraints[-200:]
         if direction.surface_emotion not in telem.emotions_seen:
             telem.emotions_seen.append(direction.surface_emotion)
+            if len(telem.emotions_seen) > 50:
+                telem.emotions_seen = telem.emotions_seen[-50:]
 
         # Update last observed state
         telem.last_emotional_state = direction.surface_emotion

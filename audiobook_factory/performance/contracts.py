@@ -46,6 +46,102 @@ IntimacyLevel = Literal["formal", "colleague", "familiar", "intimate", "hostile"
 PhysicalStagingState = Literal["normal", "wounded", "exhausted", "combat_strain", "leaning_in", "withdrawing", "hidden"]
 
 
+class AcousticEvidence(BaseModel):
+    """Forensic acoustic waveform telemetry extracted from take."""
+    model_config = ConfigDict(extra="ignore")
+
+    peak_amplitude: float = Field(default=0.0, description="Absolute peak sample amplitude [0, 32768]")
+    rms_dbfs: float = Field(default=-30.0, description="RMS level in dBFS")
+    dc_bias: float = Field(default=0.0, description="Mean offset from zero")
+    max_consecutive_clipped_samples: int = Field(default=0, description="Max consecutive samples pinned to digital rail")
+    clipping_samples_pinned: int = Field(default=0, description="Max consecutive samples pinned to digital rail")
+    spectral_flatness_mean: float = Field(default=0.05, description="Wiener spectral flatness [0.0 = harmonic, 1.0 = noise]")
+    hf_ratio_mean: float = Field(default=0.10, description="Energy ratio above 4kHz")
+    dead_air_sec: float = Field(default=0.0, description="Measured trailing or unmotivated silence in seconds")
+    is_clipped: bool = Field(default=False, description="Whether hard clipping is detected")
+    snr_db: float = Field(default=30.0, description="Estimated signal-to-noise ratio in dB")
+
+
+class ProsodyEvidence(BaseModel):
+    """Multidimensional prosodic pitch, energy, and inflection telemetry."""
+    model_config = ConfigDict(extra="ignore")
+
+    f0_median_hz: float = Field(default=0.0, description="Median fundamental frequency in Hz")
+    f0_iqr_hz: float = Field(default=0.0, description="F0 interquartile range (pitch dispersion/stability)")
+    f0_min_hz: float = Field(default=0.0, description="Minimum voiced F0 in Hz")
+    f0_max_hz: float = Field(default=0.0, description="Maximum voiced F0 in Hz")
+    f0_variance: float = Field(default=0.0, description="F0 standard deviation across voiced frames")
+    dynamic_range_db: float = Field(default=0.0, description="Crest factor / peak-to-floor dynamic range in dB")
+    energy_variance: float = Field(default=0.0, description="Variance of frame RMS energy")
+    is_monotonic_pitch_locked: bool = Field(default=False, description="Whether delivery exhibits unnatural robotic pitch lock")
+    has_pitch_rupture: bool = Field(default=False, description="Whether unmotivated octave-jumping pitch glitch occurred")
+
+
+class PacingEvidence(BaseModel):
+    """Syllabic and word delivery timing telemetry."""
+    model_config = ConfigDict(extra="ignore")
+
+    words_per_sec: float = Field(default=3.1, description="Measured speaking rate in words/second")
+    target_wps: float = Field(default=3.1, description="Dramatically anticipated target speaking rate")
+    wps_ratio: float = Field(default=1.0, description="Measured WPS / Target WPS")
+    local_rate_variance: float = Field(default=0.0, description="Speech rate acceleration/deceleration variance")
+    speech_duration_sec: float = Field(default=0.0, description="Duration of active speech excluding pauses")
+    pause_duration_total_ms: int = Field(default=0, description="Total non-speech silence duration in milliseconds")
+    pause_count: int = Field(default=0, description="Number of detected pause intervals")
+    dramatic_timing_fit: float = Field(default=1.0, ge=0.0, le=1.0, description="Adherence to dramatic timing instructions")
+
+
+class VoiceIdentityEvidence(BaseModel):
+    """Acoustic identity consistency telemetry against character reference signature."""
+    model_config = ConfigDict(extra="ignore")
+
+    measured_f0_hz: float = Field(default=0.0)
+    baseline_f0_hz: float = Field(default=0.0)
+    f0_deviation_pct: float = Field(default=0.0)
+    measured_centroid_hz: float = Field(default=0.0)
+    baseline_centroid_hz: float = Field(default=0.0)
+    similarity_score: float = Field(default=1.0, ge=0.0, le=1.0)
+    drift_detected: bool = Field(default=False)
+    is_hard_gate_violation: bool = Field(default=False, description="Catastrophic voice drift exceeding hard gate")
+
+
+class PerformanceEvidence(BaseModel):
+    """
+    First-Class Performance Evidence Model.
+    Aggregates all measurable acoustic, prosodic, pacing, alignment, and identity signals.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    acoustic: AcousticEvidence = Field(default_factory=AcousticEvidence)
+    prosody: ProsodyEvidence = Field(default_factory=ProsodyEvidence)
+    pacing: PacingEvidence = Field(default_factory=PacingEvidence)
+    voice_identity: Optional[VoiceIdentityEvidence] = None
+    alignment_confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    alignment_diagnostics: List[str] = Field(default_factory=list)
+
+
+class EvaluatorCalibrationConfig(BaseModel):
+    """
+    Isolated and configurable initial calibration parameters for performance evaluation.
+    These values are baseline hypotheses and are validated against golden benchmarks.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    base_neutral_score: float = Field(default=0.75, description="Neutral evidence baseline")
+    target_wps_nominal: float = Field(default=3.1, description="Nominal conversational words per second")
+    clipping_pinned_threshold: int = Field(default=6, description="Consecutive pinned samples triggering clipping penalty")
+    dc_bias_threshold: float = Field(default=1200.0, description="DC offset penalty threshold")
+    dead_air_threshold_sec: float = Field(default=1.5, description="Trailing silence penalty threshold")
+    vocoder_flatness_threshold: float = Field(default=0.40, description="White noise vocoder static threshold")
+    monotonic_f0_var_threshold: float = Field(default=5.0, description="F0 variance threshold below which voice is robotic")
+    explosive_min_rms_dbfs: float = Field(default=-24.0, description="Minimum RMS dBFS for explosive projection")
+    intimate_max_rms_dbfs: float = Field(default=-18.0, description="Maximum RMS dBFS for intimate whisper")
+    restraint_overacting_peak: float = Field(default=31000.0, description="Peak amplitude threshold indicating shouting")
+    restraint_overacting_rms: float = Field(default=-15.0, description="RMS dBFS threshold indicating unsuppressed shouting")
+    catastrophic_drift_similarity: float = Field(default=0.45, description="Similarity threshold for catastrophic voice drift hard gate")
+    catastrophic_f0_dev_pct: float = Field(default=60.0, description="Pitch deviation percentage (e.g. 60.0%) triggering catastrophic voice drift hard gate")
+
+
 class EvaluationDimensionScore(BaseModel):
     """Evaluation score and qualitative diagnosis for a single performance dimension."""
     model_config = ConfigDict(extra="ignore")
@@ -172,6 +268,7 @@ class PerformanceEvaluationResult(BaseModel):
     recommendation: Literal["accept", "regenerate", "downgrade"] = Field(default="accept")
     voice_identity_score: Optional[float] = Field(default=None, description="Acoustic similarity score against reference voice bank")
     voice_drift_detected: bool = Field(default=False, description="Whether acoustic drift exceeded calibrated threshold")
+    evidence: Optional[PerformanceEvidence] = Field(default=None, description="Forensic acoustic, prosodic, and pacing evidence")
 
 
 class ChemistryEvaluationResult(BaseModel):
@@ -227,6 +324,32 @@ class TakeVariant(BaseModel):
     evaluation: Optional[PerformanceEvaluationResult] = Field(default=None, description="Dimensional evaluation result")
     is_selected: bool = Field(default=False, description="Whether this take was selected for final mix")
     selection_reason: str = Field(default="", description="Explainable reason for selection or rejection")
+    selection_result: Optional[Any] = Field(default=None, repr=False, description="Detailed selection outcome and provenance")
+
+
+class TakeSelectorCalibrationConfig(BaseModel):
+    """
+    Isolated and configurable initial calibration parameters for take selection.
+    These values are baseline hypotheses and are validated against golden benchmarks.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    pairwise_margin_threshold: float = Field(default=0.05, description="Margin threshold triggering pairwise judging")
+    clipping_pinned_hard_gate: int = Field(default=12, description="Pinned clipped samples triggering hard gate rejection")
+    dc_bias_hard_gate: float = Field(default=1500.0, description="DC offset threshold triggering hard gate rejection")
+    dead_air_hard_gate_sec: float = Field(default=2.0, description="Trailing silence seconds triggering hard gate rejection")
+    min_duration_sec: float = Field(default=0.25, description="Minimum duration in seconds for valid take")
+    max_duration_multiplier: float = Field(default=3.5, description="Maximum duration multiplier over expected target")
+    alignment_confidence_hard_gate: float = Field(default=0.35, description="Minimum alignment confidence threshold")
+    max_word_omission_pct: float = Field(default=50.0, description="Maximum word omission percentage threshold")
+    voice_drift_penalty: float = Field(default=0.40, description="Score penalty for detected voice drift")
+    voice_match_bonus: float = Field(default=0.05, description="Bonus for rock-solid signature match")
+    unnaturalness_penalty: float = Field(default=0.15, description="Score penalty for unnaturalness (< threshold)")
+    unnaturalness_threshold: float = Field(default=0.70, description="Naturalness threshold triggering penalty")
+    min_confidence_review_threshold: float = Field(default=0.40, description="Confidence threshold triggering human review flag")
+    chemistry_weight: float = Field(default=0.15, description="Weight multiplier for conversational chemistry bonus/penalty")
+    continuity_weight: float = Field(default=0.05, description="Weight multiplier for performance continuity bonus/penalty")
+
 
 
 class PerformanceFidelityReport(BaseModel):
@@ -245,3 +368,22 @@ class PerformanceFidelityReport(BaseModel):
     teleportation_violations: int = Field(default=0, ge=0)
     unresolved_issues: List[str] = Field(default_factory=list)
     created_at: str = Field(default="", description="ISO timestamp of audit")
+
+
+class TakeSelectionResult(BaseModel):
+    """
+    First-Class Take Selection Result Contract.
+    Captures the winning take, runner up, margin, confidence, and explainable reason codes.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    winner: TakeVariant = Field(..., description="The chosen winning take")
+    runner_up: Optional[TakeVariant] = Field(default=None, description="The closest competing candidate take")
+    winner_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    runner_up_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    margin: float = Field(default=0.0, description="Score delta between winner and runner-up")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Selection certainty [0.0 - 1.0]")
+    reason_codes: List[str] = Field(default_factory=list, description="Machine-readable selection reason codes")
+    evidence: Dict[str, Any] = Field(default_factory=dict, description="Supporting acoustic and performance evidence")
+    review_required: bool = Field(default=False, description="Flagged for human audio engineer review")
+

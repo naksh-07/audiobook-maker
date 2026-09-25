@@ -23,6 +23,8 @@ from .contracts import (
     PerformanceEvaluationResult,
     ChemistryEvaluationResult,
     TakeVariant,
+    TakeSelectionResult,
+    TakeSelectorCalibrationConfig,
     PerformanceFidelityReport,
 )
 from .timing_realizer import TimingRealizer
@@ -54,6 +56,8 @@ __all__ = [
     "PerformanceEvaluationResult",
     "ChemistryEvaluationResult",
     "TakeVariant",
+    "TakeSelectionResult",
+    "TakeSelectorCalibrationConfig",
     "PerformanceFidelityReport",
     "TimingRealizer",
     "PerformanceDirector",

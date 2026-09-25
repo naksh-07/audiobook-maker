@@ -637,5 +637,43 @@
      - Full repository test suite confirmed 100% green: 521/521 tests passing.
 - **Rationale:** Delivers commercial studio-quality, Harry Potter / Pottermore-caliber vocal performances with complete architectural provenance, zero character hardcoding, and zero regressions.
 
+## ADR-024: Commercial Studio Quality Upgrade — Alignment 2.0, Performance Evidence, Take Selection 2.0 & Scene Continuity (Waves A-E)
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:**
+  1. Commercial studio audiobook productions (Harry Potter / Pottermore standard) require precise character-level speech alignment, evidence-grounded performance evaluation, and intelligent take selection that rewards dramatic restraint, subtext, and scene continuity over raw acoustic loudness.
+  2. Forced alignment previously lacked word-level token spans, pause intelligence classification, and robust Hindi/Hinglish handling.
+  3. Performance evaluation previously used static heuristic scores rather than forensic acoustic/prosodic evidence, failing to penalize monotonic pitch-lock or reward icy dramatic restraint.
+  4. Take selection previously lacked technical and voice identity hard gates, pairwise judicial deliberation for close margins, and whole-scene performance arc optimization.
+- **Decision:**
+  1. **Wave A — Alignment 2.0 (`forced_aligner.py`, `alignment_contracts.py`):**
+     - Built `AlignmentResult`, `WordAlignment`, `PauseInterval`, and `SpeechRegion` contracts.
+     - Extracted character-accurate word token spans directly from MMS_FA CTC emissions.
+     - Implemented 7-class pause intelligence (`natural_pause`, `dramatic_pause`, `hesitation`, `interruption_gap`, `breath_pause`, `dead_air`, `synthetic_gap`).
+     - Added Hindi conjuncts/nukta normalization and transparent energy-valley fallback.
+  2. **Wave B — Performance Evidence & Evidence-Grounded Evaluation (`evaluator.py`, `contracts.py`):**
+     - Replaced static score baselines with dynamic evidence extraction (`AcousticEvidence`, `ProsodyEvidence`, `PacingEvidence`, `PerformanceEvidence`).
+     - Implemented autocorrelation-based fundamental pitch (F0) tracking, pitch variance, and dynamic range.
+     - Added monotonic pitch lock detection ($\sigma_{F0} < 5\text{ Hz}$ on non-whisper speech).
+     - Enforced iron restraint vs shouting in high-restraint dramatic moments.
+     - Enforced two-tier voice identity gates (hard gate on catastrophic drift $< 0.45$ similarity or $> 60\%$ F0 shift; soft preference on emotional variation).
+  3. **Wave C — Take Selection 2.0 (`take_selector.py`):**
+     - Implemented 3-stage hard gates: Technical audio integrity (clipping $\ge 12$ pinned samples, DC offset $> 1500$, duration, dead air $> 2.0\text{s}$), Alignment validity (confidence $< 0.35$, word omissions $> 50\%$), and Voice identity safety.
+     - Added 6-mode contextual scoring (Exposition, Climax, Whisper, Anger, Grief, Standard).
+     - Built `PairwiseTakeJudge` deliberating on restraint, dramatic pauses, subtext, and voice stability.
+     - Designed `TakeSelectionResult` with explainable reason codes, runner-up provenance, and review flags.
+     - Protected against circular-repr recursion with `repr=False` on `TakeVariant.selection_result`.
+  4. **Wave D — Scene Selection, Chemistry & Continuity (`take_selector.py`, `chemistry.py`, `continuity.py`):**
+     - Implemented `select_scene_takes` tracking whole-scene performance arcs (`energy_curve`, `pace_curve`, `tension_curve`).
+     - Defends against listener fatigue (monotonous screaming) and premature scene climax.
+     - Integrates `ConversationalChemistry` to couple adjacent dialogue turns with responsive turn-taking latency.
+     - Integrates `PerformanceContinuityTracker` to maintain character tempo stability across beats.
+  5. **Wave E — Golden Behavioral Benchmark Suite (`tests/test_golden_take_selection_benchmark.py`):**
+     - Built 7 behavioral benchmark scenarios verifying that restraint beats loudness, dramatic pause beats dead air, voice stability beats pitch drift, chemistry beats isolated score, scene arc beats segment score, naturalness beats distortion, and subtext beats generic aggressive yelling.
+  6. **Regression Protection & AST Compliance:**
+     - 100% compliant with AST zero-hardcoding contracts (`test_zero_hardcoding_contracts.py`).
+     - Full repository test suite confirmed 100% green: 581/581 tests + 17 subtests passing with 0 regressions.
+- **Rationale:** Preserves the existing architecture while dramatically improving the quality, expressiveness, and commercial credibility of audiobook performance decisions.
+
 
 
