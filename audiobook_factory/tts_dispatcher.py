@@ -211,6 +211,8 @@ def synthesize_gemini_tts(
     acting: Any = None,
     intensity: str = "medium",
     memory_vocal_constraint: Optional[str] = None,
+    performance_direction: Optional[Any] = None,
+    variant_type: str = "standard",
     max_retries: int = 4,
     rate_limiter: Optional[TokenBucketRateLimiter] = None,
 ) -> Tuple[Path, float]:
@@ -223,9 +225,15 @@ def synthesize_gemini_tts(
         text = NUMERAL_NORMALIZATION[clean_text]
 
     part_payload: Dict[str, Any] = {"text": text}
-    style_desc = resolve_speech_metadata_style(acting, emotion, intensity, memory_vocal_constraint=memory_vocal_constraint)
-    if style_desc and style_desc.lower() not in ("neutral", "standard"):
-        part_payload["speechMetadata"] = {"style": style_desc}
+    if performance_direction:
+        from audiobook_factory.performance.tts_adapter import GeminiTTSPerformanceAdapter
+        adapter = GeminiTTSPerformanceAdapter()
+        adapted = adapter.adapt_direction_to_payload(text, performance_direction, variant_type=variant_type)
+        part_payload = adapted["part_payload"]
+    else:
+        style_desc = resolve_speech_metadata_style(acting, emotion, intensity, memory_vocal_constraint=memory_vocal_constraint)
+        if style_desc and style_desc.lower() not in ("neutral", "standard"):
+            part_payload["speechMetadata"] = {"style": style_desc}
 
     payload = {
         "contents": [{"parts": [part_payload]}],
@@ -909,6 +917,28 @@ class TTSDispatcher:
         self.batching_enabled = DEFAULT_BATCHING_ENABLED
         self.forced_aligner = WorkstationForcedAligner() if DEFAULT_FORCED_ALIGNMENT_ENABLED else None
         self.batch_planner = BatchDispatchPlanner()
+        # Performance Realization Layer
+        from audiobook_factory.performance import (
+            PerformanceDirector,
+            TakeBank,
+            PerformanceEvaluator,
+            IntelligentTakeSelector,
+            PerformanceContinuityTracker,
+        )
+        pb = None
+        for cand_pb in (self.project_dir / "performance_bible.json", self.project_dir / "dramaturgy" / "performance_bible.json"):
+            if cand_pb.exists():
+                try:
+                    from audiobook_factory.dramaturgy.contracts import PerformanceBible
+                    pb = PerformanceBible.load_from_file(cand_pb)
+                    break
+                except Exception:
+                    pass
+        self.performance_director = PerformanceDirector(performance_bible=pb)
+        self.take_bank = TakeBank(self.audio_dir / "takes")
+        self.evaluator = PerformanceEvaluator()
+        self.take_selector = IntelligentTakeSelector(evaluator=self.evaluator)
+        self.continuity_tracker = PerformanceContinuityTracker()
 
     def _load_character_roster(self) -> Tuple[Dict[str, str], Dict[str, str]]:
         """Loads character aliases and gender mappings from character_roster.json."""
@@ -1060,7 +1090,13 @@ class TTSDispatcher:
         cfg = self.get_speaker_config(speaker, seg_type)
         return cfg.get("backend", self.default_backend), cfg.get("voice", self.default_voice)
 
-    def synthesize_segment(self, segment: Dict[str, Any], chapter_num: int, seg_num: int) -> Tuple[Path, float]:
+    def synthesize_segment(
+        self,
+        segment: Dict[str, Any],
+        chapter_num: int,
+        seg_num: int,
+        performance_direction: Optional[Any] = None,
+    ) -> Tuple[Path, float]:
         """Synthesize a single speech segment with resume checkpointing and post-DSP calibration."""
         seg_type = segment.get("type", "narration") if isinstance(segment, dict) else getattr(segment, "type", "narration")
 
@@ -1133,20 +1169,55 @@ class TTSDispatcher:
                 dur = 1.0
             return out_file, dur
 
-        # Dispatch with VibeVoice-style emotion prosody and Gemini 3.8 speechMetadata style
+        # Resolve Performance Direction
+        p_dir = performance_direction
+        if not p_dir:
+            p_dir = self.performance_director.direct_segment(segment)
+
         emotion = segment.get("emotion", "neutral") if isinstance(segment, dict) else getattr(segment, "emotion", "neutral")
         intensity = segment.get("intensity_level", "medium") if isinstance(segment, dict) else getattr(segment, "intensity_level", "medium")
         mem_vc = segment.get("memory_vocal_constraint") if isinstance(segment, dict) else getattr(segment, "memory_vocal_constraint", None)
-        out_path, dur = synthesize_gemini_tts(
-            text=text,
-            output_file=out_file,
-            voice=voice,
-            emotion=emotion,
-            acting=acting,
-            intensity=intensity,
-            memory_vocal_constraint=mem_vc,
-            rate_limiter=self.rate_limiter,
-        )
+
+        # Multi-Take Candidate Generation via TakeBank
+        candidate_variants = self.take_bank.get_candidate_variants(p_dir)
+        takes_for_seg = []
+
+        for v_type in candidate_variants:
+            if v_type == "standard" and len(candidate_variants) == 1:
+                take_target = out_file
+            else:
+                take_target = self.take_bank.takes_dir / f"c{chapter_num:03d}_s{seg_num:04d}_{v_type}.wav"
+
+            if not (take_target.exists() and take_target.stat().st_size > 1000):
+                synthesize_gemini_tts(
+                    text=text,
+                    output_file=take_target,
+                    voice=voice,
+                    emotion=emotion,
+                    acting=acting,
+                    intensity=intensity,
+                    memory_vocal_constraint=mem_vc,
+                    performance_direction=p_dir,
+                    variant_type=v_type,
+                    rate_limiter=self.rate_limiter,
+                )
+
+            take_var = self.take_bank.create_take(
+                segment_uid=p_dir.segment_uid,
+                segment_index=seg_num,
+                variant_type=v_type,
+                audio_file=take_target,
+                direction=p_dir,
+            )
+            takes_for_seg.append(take_var)
+
+        # Intelligent Take Selection
+        winning_take = self.take_selector.select_best_take(takes_for_seg, text, p_dir)
+        if str(winning_take.audio_path) != str(out_file):
+            shutil.copy2(winning_take.audio_path, str(out_file))
+
+        out_path = out_file
+        dur = winning_take.duration_sec
 
         # Apply speaker DSP calibration filters (noise reduction, pitch, tempo, warmth, clarity control)
         post_filters = []
@@ -1238,6 +1309,9 @@ class TTSDispatcher:
                 if tmp_calib.exists():
                     tmp_calib.unlink(missing_ok=True)
 
+        if p_dir:
+            self.continuity_tracker.record_direction(p_dir, dur)
+
         return out_path, dur
 
     def synthesize_chapter_script(self, script_path: Path, chapter_num: int) -> List[Path]:
@@ -1273,6 +1347,12 @@ class TTSDispatcher:
 
         # Register in SQLite state ledger
         self.ledger.register_script_segments(chapter_num, script, self.voice_map, self.default_voice)
+
+        # Pre-direct chapter script with conversational chemistry
+        from audiobook_factory.performance.chemistry import ConversationalChemistry
+        chapter_directions = self.performance_director.direct_chapter_script(script)
+        chapter_directions = ConversationalChemistry.apply_conversational_chemistry(chapter_directions)
+        dir_by_idx = {d.index: d for d in chapter_directions}
 
         # Pre-allocate results array by index
         results: List[Optional[Path]] = [None] * total
@@ -1412,7 +1492,7 @@ class TTSDispatcher:
             self.ledger.mark_segment_started(seg_id, chapter_num=chapter_num, seg_num=idx)
 
             try:
-                audio_path, dur = self.synthesize_segment(segment, chapter_num, idx)
+                audio_path, dur = self.synthesize_segment(segment, chapter_num, idx, performance_direction=dir_by_idx.get(idx))
                 self.ledger.mark_segment_completed(seg_id, str(audio_path), dur, chapter_num=chapter_num, seg_num=idx)
                 cadence.record_completed_segment(dur)
                 results[idx - 1] = audio_path
@@ -1436,7 +1516,7 @@ class TTSDispatcher:
             for idx in missing_indices:
                 seg = script[idx - 1]
                 try:
-                    audio_path, dur = self.synthesize_segment(seg, chapter_num, idx)
+                    audio_path, dur = self.synthesize_segment(seg, chapter_num, idx, performance_direction=dir_by_idx.get(idx))
                     results[idx - 1] = audio_path
                     logger.info(f"  [{idx}/{total}] Successfully recovered segment ({audio_path.name})")
                 except Exception as e:
@@ -1451,6 +1531,33 @@ class TTSDispatcher:
             raise RuntimeError(
                 f"Chapter {chapter_num} synthesis incomplete: {len(missing)} segments pending ({missing[:5]}...)."
             )
+
+        # Performance Fidelity Gate 2.8 Audit & Manifest Persistence
+        try:
+            self.take_bank.save_manifest(self.audio_dir / f"c{chapter_num:03d}_take_bank.json")
+            selected_takes = []
+            for d in chapter_directions:
+                cands = self.take_bank.get_takes_for_segment(d.segment_uid)
+                sels = [t for t in cands if t.is_selected]
+                if sels:
+                    selected_takes.append(sels[0])
+                elif cands:
+                    selected_takes.append(cands[0])
+
+            if selected_takes:
+                from audiobook_factory.performance.gate import PerformanceFidelityGate
+                gate_report = PerformanceFidelityGate.audit_chapter_performance(
+                    chapter_id=f"chapter_{chapter_num:03d}",
+                    directions=chapter_directions,
+                    selected_takes=selected_takes,
+                    allow_warnings=True,
+                )
+                rep_path = self.project_dir / "manifests" / f"chapter_{chapter_num:03d}_performance_report.json"
+                rep_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(rep_path, "w", encoding="utf-8") as rf:
+                    rf.write(gate_report.model_dump_json(indent=2))
+        except Exception as e:
+            logger.warning(f"  [!] Performance Layer Gate 2.8 notice: {e}")
 
         audio_files = [p for p in results if p is not None]
         logger.info(f"[+] Chapter {chapter_num} complete: {len(audio_files)} segments synthesized successfully.")

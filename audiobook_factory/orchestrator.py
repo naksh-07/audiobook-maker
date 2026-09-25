@@ -327,6 +327,23 @@ class PipelineOrchestrator:
             logger.info("[*] The system will gracefully halt now. Run the script again tomorrow after 12:30 PM IST (Midnight PT) to automatically resume.")
             sys.exit(0)
 
+        # Gate 2.8: Pre-Mix Performance Fidelity Gate
+        perf_report_file = manifests_dir / f"chapter_{chapter_num:03d}_performance_report.json"
+        if not perf_report_file.exists():
+            perf_report_file = manifests_dir / f"{chap_stem}_performance_report.json"
+        if perf_report_file.exists():
+            try:
+                from audiobook_factory.performance.contracts import PerformanceFidelityReport
+                with open(perf_report_file, "r", encoding="utf-8") as rf:
+                    rep_dict = json.load(rf)
+                rep = PerformanceFidelityReport.model_validate(rep_dict)
+                if rep.passed:
+                    logger.info(f"[*] Gate 2.8 Performance Fidelity: PASSED for Chapter {chapter_num:02d} (Avg Score: {rep.avg_evaluation_score:.2f})")
+                else:
+                    logger.warning(f"[!] Gate 2.8 Performance Fidelity notice for Chapter {chapter_num:02d}: {rep.unresolved_issues}")
+            except Exception as e:
+                logger.warning(f"[!] Gate 2.8 Performance Fidelity notice for Chapter {chapter_num:02d}: {e}")
+
         # 2. Master dialogue vocals with 5-stage DSP and script-aware micro-pauses
         segments = sorted(audio_dir.glob(f"c{chapter_num:03d}_*.wav"))
         if not segments:

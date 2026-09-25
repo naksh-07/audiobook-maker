@@ -370,6 +370,53 @@ def audit_gate2_5_dramatic_fidelity(
     }
 
 
+def audit_gate2_8_performance_fidelity(
+    chapter_id: str,
+    directions: List[Any],
+    selected_takes: List[Any],
+    allow_warnings: bool = True,
+) -> Dict[str, Any]:
+    """
+    Audit Gate 2.8: Pre-Mix Performance Fidelity Gate.
+    Verifies that performance directions are intact, anti-emotional teleportation rules are upheld,
+    and all selected takes pass dimensional quality thresholds before dialogue stems enter mastering.
+    """
+    from audiobook_factory.performance.gate import PerformanceFidelityGate
+    from audiobook_factory.performance.contracts import PerformanceDirection, TakeVariant
+
+    parsed_directions = [
+        d if isinstance(d, PerformanceDirection) else PerformanceDirection.model_validate(d)
+        for d in directions
+    ]
+    parsed_takes = [
+        t if isinstance(t, TakeVariant) else TakeVariant.model_validate(t)
+        for t in selected_takes
+    ]
+
+    report = PerformanceFidelityGate.audit_chapter_performance(
+        chapter_id=chapter_id,
+        directions=parsed_directions,
+        selected_takes=parsed_takes,
+        allow_warnings=allow_warnings,
+    )
+
+    if not report.passed:
+        raise GateAuditError(
+            f"Gate 2.8 Performance Fidelity Failed for {chapter_id}: "
+            f"{'; '.join(report.unresolved_issues[:3])}"
+        )
+
+    return {
+        "status": "PASS",
+        "chapter_id": chapter_id,
+        "total_segments": report.total_segments,
+        "total_takes": report.total_takes_generated,
+        "avg_score": report.avg_evaluation_score,
+        "dimension_averages": report.dimension_averages,
+        "violations": report.teleportation_violations,
+    }
+
+
 def audit_gate3_scenes(scenes_file: Path, script_file: Path) -> Dict[str, Any]:
     """Audit Gate 3: Verifies dramatic scenes source continuity and coverage against the script."""
     scenes_file = Path(scenes_file).resolve()

@@ -535,3 +535,33 @@
      - Added 12 new comprehensive tests in test_dramatic_refinements.py and test_dramatic_contracts.py.
      - Full project test suite passes at 420/420 tests green (17 subtests passing).
 - **Rationale:** Empowers Stage 3 to understand not only what happens in a scene, but why each beat happens, what changes because of it, how relationships evolve, what the listener knows, and what must remain faithful to source literature.
+
+## ADR-032: Dramatic Intelligence to Actor Performance Realization Layer & Gate 2.8
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:**
+  1. Stage 3 produces rich dramatic metadata (`CharacterDramaticObjective`, `DramaticBeat`, `PerformanceBible` sociolect profiles, subtext, tension curves, actioning verbs, physical blocking, conversational dynamics, silence intent), but the speech synthesis layer historically collapsed all acting into a flattened string (`acting.delivery_style`).
+  2. Every segment received a single take regardless of dramatic weight (climax vs routine narration), and audio QC was restricted to acoustic DSP checks (clipping, DC bias, RMS floor) with zero evaluation of acting performance, subtext conveyance, emotional truth, or conversational turn-taking chemistry.
+  3. Constraints: Absolute immutability of sacred literary dialogue text, zero disruption to existing gates or contracts, 100% backward compatibility, explainable take selection (no opaque single scores; avoid loudest=best trap), and grounded emotional continuity (no emotional teleportation without dramatic triggers).
+- **Decision:**
+  1. **Performance Realization Package (`audiobook_factory/performance/`):**
+     - `contracts.py`: Strongly typed Pydantic models for `PerformanceDirection`, `TakeVariant`, `PerformanceEvaluationResult`, `EvaluationDimensionScore`, `PerformanceFidelityReport`, and provenance modes (`SOURCE_DIRECT`, `DRAMATIC_CANON`, `INFERRED_PERFORMANCE`, `DRAMATIC_INTERPRETATION`). Re-exported cleanly in root `contracts.py`.
+     - `timing_realizer.py`: Calibrated human respiratory breaths (120-250ms pre/post-roll), organic punctuation hesitation, dramatic silences (shock, realization, grief: 1200-1800ms), and conversational interruption cutoffs (80ms abrupt cuts).
+     - `director.py`: `PerformanceDirector` maps `ScreenplaySegment` + `PerformanceBible` + `DramaticBeat` into actionable actor directions, grounding sudden emotional leaps against volatile teleportation transitions.
+     - `tts_adapter.py`: `GeminiTTSPerformanceAdapter` synthesizes multi-token `speechMetadata.style` strings and take variants (`standard`, `restraint`, `vulnerable`, `exposed`), guaranteeing text immutability.
+     - `evaluator.py`: `PerformanceEvaluator` scores takes across 8 dimensions: intent match, emotional match, prosody, pacing, subtext, character consistency, relationship consistency, naturalness.
+     - `take_bank.py`: `TakeBank` allocates candidate takes by priority (`standard`=1, `focused`=2, `high`=3, `climactic`=4) avoiding quota waste on routine narration.
+     - `take_selector.py`: `IntelligentTakeSelector` selects the optimal take based on multidimensional balance, preventing the "loudest = best" trap, with explainable human-readable rationales.
+     - `chemistry.py`: `ConversationalChemistry` couples dialogue turns: zero-onset interruption cuts, intimidation hesitation, intimate close-mic whispering.
+     - `continuity.py`: `PerformanceContinuityTracker` monitors character pace/energy averages across scenes, flagging >30% drift anomalies.
+     - `gate.py`: `PerformanceFidelityGate` (Gate 2.8) enforces pre-mix quality before dialogue stems enter mastering.
+  2. **Pipeline Integration:**
+     - `gate_auditor.py`: Added `audit_gate2_8_performance_fidelity` between Gate 2.5 and Gate 3.
+     - `tts_dispatcher.py`: Integrated `performance_direction` into `synthesize_gemini_tts` and `synthesize_segment`; integrated `TakeBank`, `IntelligentTakeSelector`, `ConversationalChemistry`, and Gate 2.8 report generation in `synthesize_chapter_script`.
+     - `orchestrator.py`: Integrated Gate 2.8 pre-mix audit verification prior to dialogue stem mastering.
+  3. **Verification:**
+     - Added 23 comprehensive tests in `tests/test_performance_realization.py` covering all 14 capabilities and end-to-end integration: 23/23 PASSED.
+     - Verified existing gate auditing with 5/5 tests passing in `tests/test_gate_auditor.py`.
+     - Full regression suite confirmed 100% green across all existing and new tests.
+- **Rationale:** Bridges the critical divide between Stage 3 dramatic intelligence and final speech synthesis, transforming synthetic TTS speech into emotionally grounded, dynamically paced, multi-cast dramatic audio drama performances with complete explainability and zero regression risk.
+

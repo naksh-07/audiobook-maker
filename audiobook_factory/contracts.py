@@ -887,3 +887,21 @@ class LegacyCreativeManifestAdapter:
         )
 
 
+# ==============================================================================
+# Performance Realization Re-exports
+# ==============================================================================
+from audiobook_factory.performance.contracts import (
+    PerformanceDirection,
+    PerformanceProvenanceMode,
+    PerformancePriority,
+    SilenceType,
+    InterruptionBehavior,
+    TurnTakingBehavior,
+    EvaluationDimensionScore,
+    PerformanceEvaluationResult,
+    TakeVariant,
+    PerformanceFidelityReport,
+)
+
+
+

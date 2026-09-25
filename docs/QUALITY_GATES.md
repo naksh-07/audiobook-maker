@@ -13,7 +13,8 @@ flowchart LR
     G0 --> G1["Gate 1:<br/>Voice Roster"]
     G1 --> G2["Gate 2:<br/>Screenplay"]
     G2 --> G25["Gate 2.5:<br/>Dramatic Fidelity"]
-    G25 --> G3["Gate 3 / 3.5:<br/>Manifest Feasibility"]
+    G25 --> G28["Gate 2.8:<br/>Performance Fidelity"]
+    G28 --> G3["Gate 3 / 3.5:<br/>Manifest Feasibility"]
     G3 --> G45["Gate 4.5:<br/>Timeline Ledger"]
     G45 --> G52["Gate 5.2:<br/>Spectral Masking"]
     G52 --> G53["Gate 5.3:<br/>Stereo Phase"]
@@ -158,6 +159,25 @@ flowchart LR
 - **CLI & API Integration**:
   - API: `audit_gate2_5_dramatic_fidelity(script_file, dramatic_plan_file=..., source_file=..., project_dir=...)`
   - CLI: Audited via `python audiobook_cli.py script audiobooks/projects/my_project --audit-only` and integrated into the autonomous chapter pipeline.
+
+---
+
+### Gate 2.8: Dramatic Performance Fidelity Pre-Mix Gate (ADR-032)
+*(See full architectural manual: [`docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md))*
+- **Function**: `audit_gate2_8_performance_fidelity(chapter_id: str, directions: List[Any], selected_takes: List[Any], allow_warnings: bool = True) -> Dict[str, Any]`
+- **Modules**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py), [`audiobook_factory/performance/gate.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/gate.py)
+- **Data Models**: [`PerformanceDirection`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L59-L154), [`TakeVariant`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L175-L194), [`PerformanceEvaluationResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L156-L173), [`PerformanceFidelityReport`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L196-L212)
+- **Pipeline Stage**: Executed immediately following multi-take speech synthesis, 8-dimensional QC evaluation, and intelligent take selection, prior to locking dialogue stems into `CinemaAudioEngine` and timeline ledger mastering.
+- **Audit Rules & Evaluators**:
+  - **Minimum Composite Overall Quality Floor**: The chapter average composite evaluation score across all selected takes must meet or exceed $0.70$ ($\text{avg\_score} \ge 0.70$).
+  - **Acoustic Naturalness Floor**: Every candidate take must satisfy a minimum naturalness threshold of $0.65$ ($\text{naturalness\_score} \ge 0.65$) without hard clipping ($\ge 6$ consecutive rail samples), DC offset bias ($> 1200$), dead air ($> 1.5\text{s}$), or elevated white-noise vocoder static ($> 0.40$).
+  - **Zero Emotional Teleportation**: Zero tolerance for ungrounded volatile emotional transitions across consecutive lines by the same character without explicit causal triggers (e.g. `calm` $\rightarrow$ `bellowing_rage`, `peaceful` $\rightarrow$ `explosive`, `whispering` $\rightarrow$ `bellowing_rage`, `joyous` $\rightarrow$ `despair`, `calm` $\rightarrow$ `rage`). Any violation increments `teleportation_violations` and immediately fails the gate.
+  - **Sacred Spoken Text Immutability Guarantee**: Dialogue text passed to speech synthesis must remain 100% sacred and unmutated (`payload["part_payload"]["text"] == original_text`). The gate asserts that no parenthetical stage directions or acting adjectives have bled into the spoken dialogue buffer.
+  - **Take Coverage & Registry Integrity**: At least $90\%$ of all screenplay directions must have a validated, winning take variant registered in the take bank ($\frac{\text{selected\_takes}}{\text{directions}} \ge 0.90$). Takes below the $0.65$ critical threshold or lacking explainable selection rationale strings (`selection_reason`) are flagged as critical defects.
+- **Fail Condition**: Fails closed and raises [`GateAuditError`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py#L38-L46) if `teleportation_violations > 0`, take coverage is below $90\%$, or critical unresolved issues persist. Halts dialogue mastering before unverified audio enters the 5-stem broadcast master.
+- **CLI & API Integration**:
+  - API: `audit_gate2_8_performance_fidelity(chapter_id, directions=..., selected_takes=..., allow_warnings=...)`
+  - CLI: Audited during `python audiobook_cli.py produce <project> --chapter <N>` and validated in end-to-end performance test suite ([`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py)).
 
 ---
 

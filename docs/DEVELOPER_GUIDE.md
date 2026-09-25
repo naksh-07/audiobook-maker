@@ -46,10 +46,16 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **340 passed unit tests (17 subtests passed)** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
+The codebase maintains **443 passed unit tests (17 subtests passed)** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# Dramatic Performance Realization Layer & Gate 2.8 (ADR-032, 23 tests)
+pytest tests/test_performance_realization.py -v
+
+# Stage 3 Dramaturgy, Beat Planner & Golden Scenes (7 test suites)
+pytest tests/dramaturgy/ -v
+
 # World + Character Memory 2.0 Test Suite (7 test suites, 35+ tests)
 python -m unittest discover tests/translation/memory -p "test_*.py"
 
