@@ -99,6 +99,9 @@ class ScreenplaySegment(BaseModel):
     music: SegmentMusicParams           # Music atmosphere preferences
     intensity_level: Optional[str] = "medium"  # 'low', 'medium', 'high', 'explosive'
     pre_roll_breath_ms: Optional[int] = 0      # Breath intake Foley duration
+    memory_vocal_constraint: Optional[str] = None  # Conservative physical vocal constraint (e.g. 'strained_breath')
+    recommended_pronoun: Optional[str] = None      # Recommended Hindi pronoun from RelationshipState ('tu', 'tum', 'aap')
+    recommended_register: Optional[str] = None     # Recommended socio-linguistic register from RelationshipState
 
 class ScreenplayScript(BaseModel):
     segments: List[ScreenplaySegment] = []
@@ -937,27 +940,230 @@ class IntelligentTranslationPipeline:
 ```
 
 ### 5. World & Character Memory 2.0 ([`audiobook_factory.translation.memory`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/))
-*Event-driven epistemic continuity, temporal mode isolation (`PRESENT` vs. `FLASHBACK`), and 7 continuity guardrails.*
+*(See complete specification: [`docs/WORLD_AND_CHARACTER_MEMORY_2_0.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/WORLD_AND_CHARACTER_MEMORY_2_0.md))*
+
+*Event-driven narrative continuity, epistemic isolation (`MUST_NOT_KNOW`), dual-chronology validation, and performance guidance.*
 
 ```python
-class MemoryStore:
-    def __init__(self, store_path: Path): ...
-    def commit_events_and_deltas(self, events: List[StoryEvent], deltas: List[StateDelta], chapter_num: int) -> None: ...
-    def rollback_to_chapter(self, target_chapter: int) -> None: ...
+# audiobook_factory/translation/memory/state.py
+def apply_character_delta(character_states: Dict[str, CharacterState], world_state: WorldState, delta: StateDelta) -> CharacterState: ...
+def apply_relationship_delta(relationships: Dict[str, DynamicRelationshipState], delta: StateDelta) -> DynamicRelationshipState: ...
+def apply_knowledge_delta(facts_registry: Dict[str, KnowledgeFact], character_states: Dict[str, CharacterState], delta: StateDelta) -> KnowledgeFact: ...
+def apply_world_or_narrative_delta(world_state: WorldState, character_states: Dict[str, CharacterState], delta: StateDelta) -> None: ...
+def record_events_on_timeline(world_state: WorldState, events: List[StoryEvent], chapter: int, scene: str, location: str = "Unspecified", time_marker: str = "Unspecified") -> None: ...
+
+# audiobook_factory/translation/memory/events.py
+class StoryEventType(str, Enum):
+    CHARACTER_INTRODUCED = "CHARACTER_INTRODUCED"
+    CHARACTER_MOVED = "CHARACTER_MOVED"
+    CHARACTER_INJURED = "CHARACTER_INJURED"
+    CHARACTER_RECOVERED = "CHARACTER_RECOVERED"
+    CHARACTER_DIED = "CHARACTER_DIED"
+    SECRET_REVEALED = "SECRET_REVEALED"
+    FACT_LEARNED = "FACT_LEARNED"
+    FACT_DISPROVEN = "FACT_DISPROVEN"
+    RELATIONSHIP_CHANGED = "RELATIONSHIP_CHANGED"
+    BETRAYAL = "BETRAYAL"
+    RECONCILIATION = "RECONCILIATION"
+    ROMANTIC_CONFESSION = "ROMANTIC_CONFESSION"
+    SHARED_DANGER = "SHARED_DANGER"
+    THREAT_ISSUED = "THREAT_ISSUED"
+    OBJECT_ACQUIRED = "OBJECT_ACQUIRED"
+    OBJECT_TRANSFERRED = "OBJECT_TRANSFERRED"
+    OBJECT_LOST = "OBJECT_LOST"
+    LOCATION_CHANGED = "LOCATION_CHANGED"
+    PROMISE_CREATED = "PROMISE_CREATED"
+    PROMISE_BROKEN = "PROMISE_BROKEN"
+    MYSTERY_INTRODUCED = "MYSTERY_INTRODUCED"
+    MYSTERY_RESOLVED = "MYSTERY_RESOLVED"
+    GOAL_CHANGED = "GOAL_CHANGED"
+    BELIEF_CHANGED = "BELIEF_CHANGED"
+    WORLD_STATE_CHANGED = "WORLD_STATE_CHANGED"
+    OTHER = "OTHER"
+
+class TemporalMode(str, Enum):
+    PRESENT = "PRESENT"
+    FLASHBACK = "FLASHBACK"
+    MEMORY_DREAM = "MEMORY_DREAM"
+    HISTORICAL_NARRATION = "HISTORICAL_NARRATION"
+    NON_LINEAR = "NON_LINEAR"
+
+class StoryEvent(BaseModel):
+    event_id: str = ""
+    chapter: int = 1
+    scene: str = "scene_001"
+    event_type: StoryEventType = StoryEventType.OTHER
+    description: str
+    participants: List[str] = []
+    location: str = "Unspecified"
+    source_reference: str = ""
+    importance: int = 3
+    temporal_mode: TemporalMode = TemporalMode.PRESENT
+    salience_score: float = 0.5
+    emotional_valence: Any = 0.0
+    dramatic_tags: List[str] = []
+    is_resolved: bool = False
+    metadata: Dict[str, Any] = {}
+
+class SceneChangeDetector:
+    @classmethod
+    def detect_temporal_mode(cls, text: str) -> Tuple[TemporalMode, Optional[int], str]: ...
+    @classmethod
+    def assess_scene(cls, scene_text: str, known_characters: Optional[List[str]] = None, chapter: int = 1, scene_id: str = "scene_001", active_characters: Optional[List[str]] = None, location: str = "Unspecified", known_objects: Optional[List[str]] = None, previous_location: Optional[str] = None) -> SceneChangeAssessment: ...
+
+class EventExtractor:
+    @classmethod
+    def extract_scene_events(cls, scene_text: str, chapter: int = 1, scene_id: str = "scene_001", active_characters: Optional[List[str]] = None, known_characters: Optional[List[str]] = None, location: str = "Unspecified", known_objects: Optional[List[str]] = None, previous_location: Optional[str] = None, call_llm_fn: Optional[Callable[..., str]] = None, model: Optional[str] = None, force_llm: bool = False) -> Tuple[List[StoryEvent], SceneChangeAssessment]: ...
+    @classmethod
+    def propose_events_llm(cls, scene_text: str, chapter: int, scene_id: str, active_characters: List[str], location: str, default_temporal_mode: TemporalMode, call_llm_fn: Callable[..., str]) -> List[StoryEvent]: ...
+
+# audiobook_factory/translation/memory/character_memory.py
+class KnowledgeStatus(str, Enum):
+    KNOWN = "KNOWN"
+    SUSPECTED = "SUSPECTED"
+    FALSE_BELIEF = "FALSE_BELIEF"
+    UNKNOWN = "UNKNOWN"
+    DISPROVEN = "DISPROVEN"
+
+class KnowledgeFact(BaseModel):
+    fact_id: str
+    subject: str
+    predicate: str
+    value: str
+    confidence: float = 1.0
+    source_event: str
+    learned_at: str = "ch001_scene_001"
+    known_by: List[str] = []
+    status: KnowledgeStatus = KnowledgeStatus.KNOWN
+    character_statuses: Dict[str, KnowledgeStatus] = {}
+
+class CharacterState(BaseModel):
+    character_name: str
+    is_alive: bool = True
+    current_location: str = "Unspecified"
+    current_emotion: str = "neutral"
+    emotion_intensity: float = 0.5
+    physical_condition: str = "healthy"
+    active_injuries: List[str] = []
+    energy: float = 0.8
+    immediate_goal: str = ""
+    known_facts: List[str] = []
+    suspected_facts: List[str] = []
+    false_beliefs: List[str] = []
+    recent_events: List[str] = []
+    arc_state: CharacterArcMemory = Field(default_factory=CharacterArcMemory)
+
+class CharacterKnowledgeEngine:
+    @staticmethod
+    def register_or_update_fact(facts_registry: Dict[str, KnowledgeFact], character_states: Dict[str, CharacterState], fact_id: str, subject: str, predicate: str, value: str, source_event: str, learned_at: str, learners: List[str], status: KnowledgeStatus = KnowledgeStatus.KNOWN, confidence: float = 1.0) -> KnowledgeFact: ...
+    @staticmethod
+    def get_character_knowledge_status(character_name: str, fact_id: str, facts_registry: Dict[str, KnowledgeFact], character_states: Optional[Dict[str, CharacterState]] = None) -> KnowledgeStatus: ...
+    @staticmethod
+    def build_epistemic_constraints_for_scene(active_characters: List[str], facts_registry: Dict[str, KnowledgeFact], character_states: Optional[Dict[str, CharacterState]] = None, max_facts_per_bucket: int = 8) -> Dict[str, Dict[str, List[str]]]: ...
+
+# audiobook_factory/translation/memory/memory_delta.py
+class DeltaDomain(str, Enum):
+    CHARACTER = "CHARACTER"
+    RELATIONSHIP = "RELATIONSHIP"
+    KNOWLEDGE = "KNOWLEDGE"
+    WORLD = "WORLD"
+    NARRATIVE = "NARRATIVE"
+
+class StateMutability(str, Enum):
+    HARD_CANON = "HARD_CANON"
+    SOFT_STATE = "SOFT_STATE"
+
+class StateDelta(BaseModel):
+    delta_id: str = ""
+    source_event_id: str
+    chapter: int = 1
+    scene: str = "scene_001"
+    domain: DeltaDomain
+    mutability: StateMutability = StateMutability.SOFT_STATE
+    target_entity: str
+    field_name: str
+    operation: Literal["set", "add", "remove", "adjust"] = "set"
+    old_value: Optional[Any] = None
+    new_value: Any = None
+    numeric_delta: Optional[float] = None
+    temporal_mode: TemporalMode = TemporalMode.PRESENT
+    rationale: str = ""
+    metadata: Dict[str, Any] = {}
+
+class StateDeltaEngine:
+    @classmethod
+    def derive_deltas_from_event(cls, event: StoryEvent, existing_relationships: Optional[Dict[str, DynamicRelationshipState]] = None) -> List[StateDelta]: ...
+    @classmethod
+    def compute_deltas_for_events(cls, events: List[StoryEvent], character_states: Optional[Dict[str, CharacterState]] = None, relationships: Optional[Dict[str, DynamicRelationshipState]] = None, facts_registry: Optional[Dict[str, KnowledgeFact]] = None, world_state: Optional[WorldState] = None) -> List[StateDelta]: ...
+
+# audiobook_factory/translation/memory/memory_validator.py
+class ValidationOutcome(str, Enum):
+    PASS = "PASS"
+    WARN = "WARN"
+    CONFLICT = "CONFLICT"
+
+class MemoryValidationReport(BaseModel):
+    outcome: ValidationOutcome = ValidationOutcome.PASS
+    accepted_deltas: List[StateDelta] = []
+    rejected_deltas: List[StateDelta] = []
+    rejected_event_ids: List[str] = []
+    warnings: List[str] = []
+    flagged_conflicts: List[FlaggedConflict] = []
+    repair_instructions: List[str] = []
 
 class MemoryValidator:
-    def validate_deltas(self, deltas: List[StateDelta], store: MemoryStore, temporal_mode: TemporalMode) -> Tuple[List[StateDelta], List[ContinuityConflict]]:
-        """Enforces 7 continuity guardrails (canon, timeline, epistemic knowledge, relationship jump, physical, dead character, world rule)."""
+    @classmethod
+    def validate_deltas(cls, deltas: List[StateDelta], book_bible: Optional[BookBible], character_states: Dict[str, CharacterState], relationships: Dict[str, DynamicRelationshipState], facts_registry: Dict[str, KnowledgeFact], world_state: WorldState, events_by_id: Optional[Dict[str, StoryEvent]] = None) -> MemoryValidationReport:
+        """Enforces 7 contradiction classes (canon, timeline, dead character, physical impossibility, relationship jump, knowledge leakage, world rule)."""
+
+# audiobook_factory/translation/memory/memory_store.py
+class MemoryStore(BaseModel):
+    schema_version: str = "2.0"
+    memory_version: int = 0
+    version_hash: str = "genesis"
+    character_states: Dict[str, CharacterState] = {}
+    relationships: Dict[str, DynamicRelationshipState] = {}
+    facts_registry: Dict[str, KnowledgeFact] = {}
+    world_state: WorldState = Field(default_factory=WorldState)
+    events: Dict[str, StoryEvent] = {}
+    rejected_events: Dict[str, StoryEvent] = {}
+    commit_history: List[MemoryCommitRecord] = []
+    flagged_conflicts: List[FlaggedConflict] = []
+
+    def seed_from_book_bible(self, bible: BookBible) -> None: ...
+    def commit_scene_memory(self, scene_id: str, chapter: int, events: List[StoryEvent], deltas: Optional[List[StateDelta]] = None, source_text: str = "", book_bible: Optional[BookBible] = None, location: str = "Unspecified", time_marker: str = "Unspecified") -> MemoryValidationReport: ...
+    def trace_mutations(self, entity_name: Optional[str] = None, chapter: Optional[int] = None, scene_id: Optional[str] = None, domain: Optional[DeltaDomain] = None) -> List[StateDelta]: ...
+    def save(self, path: Path) -> None: ...
+    @classmethod
+    def load(cls, path: Path, book_bible: Optional[BookBible] = None) -> MemoryStore: ...
+
+# audiobook_factory/translation/memory/memory_retriever.py & memory_context.py
+class MemoryContext(BaseModel):
+    chapter: int = 1
+    scene_id: str = "scene_01"
+    location_name: str = "Unspecified"
+    temporal_mode: TemporalMode = TemporalMode.PRESENT
+    canon_identities: List[Dict[str, Any]] = []
+    relevant_world_rules: List[str] = []
+    active_character_states: Dict[str, CharacterState] = {}
+    active_relationships: List[DynamicRelationshipState] = []
+    epistemic_constraints: Dict[str, Dict[str, List[str]]] = {}
+    location_state: Optional[LocationState] = None
+    relevant_objects: List[ObjectState] = []
+    recent_events: List[StoryEvent] = []
+    salient_events: List[StoryEvent] = []
+    unresolved_threads: List[NarrativeThreadState] = []
+
+    @property
+    def high_salience_events(self) -> List[StoryEvent]: ...
+    def enforce_token_budget(self, max_token_budget: int = 800) -> "MemoryContext": ...
+    def get_character_performance_guidance(self, speaker: str, target: Optional[str] = None) -> Dict[str, Any]: ...
+    def apply_performance_guidance_to_segment(self, seg_dict: Dict[str, Any], target_speaker: Optional[str] = None) -> Dict[str, Any]: ...
+    def get_prompt_context(self) -> str: ...
 
 class MemoryRetriever:
-    def retrieve_scene_context(
-        self,
-        store: MemoryStore,
-        chapter_num: int,
-        scene_id: str,
-        active_characters: List[str],
-        location: str = "",
-        max_tokens: int = 1200,
-    ) -> MemoryContext:
-        """Assembles token-budgeted 7-tier + narrative salience MemoryContext for translation prompt injection."""
+    @classmethod
+    def infer_active_entities(cls, scene_text: str, store: MemoryStore, book_bible: Optional[BookBible] = None, explicit_characters: Optional[List[str]] = None, explicit_location: Optional[str] = None) -> Tuple[List[str], str]: ...
+    @classmethod
+    def retrieve_for_scene(cls, store: MemoryStore, book_bible: Optional[BookBible] = None, chapter: int = 1, scene_id: str = "scene_01", active_characters: Optional[List[str]] = None, location: Optional[str] = None, active_location: Optional[str] = None, scene_text: str = "", max_recent_events: int = 5, max_salient_events: int = 4, max_token_budget: int = 800) -> MemoryContext: ...
 ```

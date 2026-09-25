@@ -194,6 +194,9 @@ class ScreenplaySegment(BaseModel):
     music: SegmentMusicParams = Field(default_factory=SegmentMusicParams)
     intensity_level: Optional[str] = Field(default="medium", description="Dynamic DSP headroom rating (low, medium, high, explosive)")
     pre_roll_breath_ms: Optional[int] = Field(default=0, description="Organic breath intake Foley duration before speech")
+    memory_vocal_constraint: Optional[str] = Field(default=None, description="Conservative physical vocal constraint from Memory 2.0 (e.g. 'strained_breath', 'fatigued_low_energy')")
+    recommended_pronoun: Optional[str] = Field(default=None, description="Recommended Hindi pronoun from DynamicRelationshipState ('tu', 'tum', 'aap')")
+    recommended_register: Optional[str] = Field(default=None, description="Recommended socio-linguistic register from DynamicRelationshipState")
 
     @model_validator(mode="before")
     @classmethod

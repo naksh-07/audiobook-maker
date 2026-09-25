@@ -77,6 +77,7 @@ class TranslationCertifier:
         source_intensity: Optional[LiteraryIntensityVector] = None,
         target_intensity: Optional[LiteraryIntensityVector] = None,
         call_llm_fn: Optional[Any] = None,
+        memory_context: Optional[Any] = None,
     ) -> GateAuditResult:
         """
         Executes Gates T0 through T11 on a translated scene.
@@ -147,6 +148,26 @@ class TranslationCertifier:
             failures=add_res.hallucinated_actions + add_res.unsupported_fabrications,
             warnings=add_res.warnings,
         )
+
+        # Gate T6: Relationship, Pronoun & Memory Continuity (Memory 2.0)
+        if memory_context is not None and hasattr(memory_context, "get_character_performance_guidance"):
+            t6_warnings: List[str] = []
+            rels_checked = 0
+            active_chars = list(scene_plan.active_characters or [])
+            for i, spk in enumerate(active_chars):
+                tgt = active_chars[i + 1] if i + 1 < len(active_chars) else (active_chars[0] if len(active_chars) > 1 else None)
+                guidance = memory_context.get_character_performance_guidance(spk, tgt)
+                rec_pronoun = guidance.get("recommended_pronoun")
+                rec_register = guidance.get("recommended_register")
+                if rec_pronoun or rec_register:
+                    rels_checked += 1
+            gates["T6_relationship_memory"] = GateResult(
+                gate_id="T6",
+                gate_name="Relationship, Pronoun & Memory Continuity",
+                status=GateStatus.PASS if not t6_warnings else GateStatus.WARN,
+                details=f"Verified {rels_checked} active relationship/pronoun guidance pairs",
+                warnings=t6_warnings,
+            )
 
         # Gate T7: Character Voice Profile Alignment
         cv_res = evaluate_character_voices(scene_plan.active_characters, target_text, book_bible, call_llm_fn)

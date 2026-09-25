@@ -346,24 +346,29 @@ flowchart TD
     RET --> PROMPT["Compact MemoryContext Prompt Block<br/>(Injected into Next Scene Translation)"]
 ```
 
-### 9.1 The 10 Memory 2.0 Modules
-1. **`models.py`**: Defines `StoryEvent`, `StateDelta`, `KnowledgeFact`, `ContinuityConflict`, `ChapterMemorySnapshot`, and `MemoryContext` along with enums `TemporalMode` (`PRESENT`, `FLASHBACK`, `MEMORY_DREAM`, `HISTORICAL_NARRATION`, `NON_LINEAR`), `FactStatus` (`HARD_CANON`, `SOFT_STATE`, `RETCONNED`, `DISPUTED`), and `KnowledgeStatus` (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`).
-2. **`scene_change_detector.py` (`SceneChangeDetector`)**: Classifies whether a scene occurs in `PRESENT` narrative time or a `FLASHBACK` / `MEMORY_DREAM` so past memories never overwrite present-day character locations or resurrect dead characters.
-3. **`event_extractor.py` (`EventExtractor`)**: Extracts atomic `StoryEvent` records (`INJURY`, `DEATH`, `REVELATION`, `BETRAYAL`, `ALLIANCE`, `PROMISE`, `OBJECT_TRANSFER`, `LOCATION_CHANGE`) anchored with verbatim `evidence_quote` strings.
-4. **`state_delta_engine.py` (`StateDeltaEngine`)**: Translates `StoryEvent` records into explicit `StateDelta` mutations (`previous_value` $\rightarrow$ `new_value`), separating immutable `HARD_CANON` facts from evolving `SOFT_STATE` attributes. Includes **Salience Floors** (`DEATH = 1.0`, `BETRAYAL = 0.90`, `INJURY = 0.85`) and **Emotional Residue Carryover** across scenes.
-5. **`character_knowledge.py` (`CharacterKnowledgeEngine`)**: Tracks epistemic boundaries per character—distinguishing objective reader truth from what a specific character `KNOWS`, `SUSPECTS`, or holds as a `FALSE_BELIEF`, and generating prompt guardrails against epistemic leaks.
-6. **`memory_validator.py` (`MemoryValidator`)**: Enforces **7 Continuity Guardrails** before any delta is committed:
-   - `canon_contradiction` (violating locked `HARD_CANON` without explicit retcon)
-   - `timeline_contradiction` (applying `FLASHBACK` state as present canon)
-   - `knowledge_violation` (character acting on unwitnessed information)
-   - `relationship_jump` (unmotivated honorific/hostility jump without a trigger event)
-   - `physical_impossibility` (impossible travel or action while incapacitated)
-   - `dead_character_violation` (deceased character acting in `PRESENT` timeline)
-   - `world_rule_violation` (contradicting established `BookBible` world rules)
-7. **`memory_store.py` (`MemoryStore`)**: Versioned, crash-safe JSON persistence (`<project_dir>/memory/memory_store.json`) with chapter snapshot rollback (`rollback_to_chapter()`).
-8. **`memory_retriever.py` (`MemoryRetriever`)**: Assembles a token-budgeted `MemoryContext` (`max_tokens=1200`) using a **7-Tier Priority Hierarchy** weighted by **Narrative Salience** (recency decay + character overlap + emotional weight + unresolved tension).
-9. **`metrics.py` (`MemoryMetricsCollector`)**: Tracks operational telemetry (`canon_contradiction_rate`, `knowledge_leak_blocks`, `retrieval_precision_proxy`).
-10. **`shadow_evaluator.py` (`ShadowEvaluator`)**: Runs side-by-side shadow comparisons between baseline translation state and Memory 2.0 context.
+### 9.1 The Package Architecture (`audiobook_factory/translation/memory/`)
+*(See complete specification: [`docs/WORLD_AND_CHARACTER_MEMORY_2_0.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/WORLD_AND_CHARACTER_MEMORY_2_0.md))*
+
+The production engine is structured across 9 cohesive, strongly-typed modules in `audiobook_factory/translation/memory/`:
+
+1. **[`state.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/state.py)**: Pure deterministic state transition engine executing validated mutations via `apply_character_delta()`, `apply_relationship_delta()`, `apply_knowledge_delta()`, `apply_world_or_narrative_delta()`, and `record_events_on_timeline()`.
+2. **[`events.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/events.py)**: Defines `StoryEvent` with deterministic SHA-256 identifiers and `salience_score`, `StoryEventType` (15+ types), `TemporalMode` (`PRESENT`, `FLASHBACK`, `MEMORY_DREAM`, `HISTORICAL_NARRATION`, `NON_LINEAR`), `SceneChangeDetector` (fast 0ms pre-filter with noun/verb trigger matching, intra-scene travel, and transitive attacker vs. victim resolution), and `EventExtractor` (gated LLM proposal with deterministic fallback and LLM-vs-deterministic deduplication).
+3. **[`character_memory.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/character_memory.py)**: Defines `CharacterState`, `CharacterArcMemory`, and `CharacterKnowledgeEngine` managing epistemic states (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`). Enforces strict `known_by` membership, scoped `DISPROVEN` transitions, asymmetric secret prioritization, and `MUST_NOT_KNOW` prompt boundaries.
+4. **[`world_memory.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/world_memory.py)**: Models dynamic, evolving world state across `LocationState`, `ObjectState`, `OrganizationState`, `NarrativeThreadState`, `TimelinePoint` (dual narrative/chronological timeline), and `WorldState`.
+5. **[`memory_delta.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/memory_delta.py)**: Defines `StateDelta`, `DeltaDomain`, `StateMutability` (`HARD_CANON` vs `SOFT_STATE`), and `StateDeltaEngine` projecting StoryEvents into typed deltas while strictly preserving damaged/destroyed location conditions across movement events.
+6. **[`memory_validator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/memory_validator.py)**: Enforces **7 Contradiction Guardrails** before deltas can commit: `canon_contradiction`, `timeline_contradiction`, `dead_character_violation`, `physical_impossibility`, `relationship_jump`, `knowledge_violation`, and `world_rule_violation`. Emits a structured `MemoryValidationReport`.
+7. **[`memory_store.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/memory_store.py)**: Versioned store (`memory_store.json`) with deterministic SHA-256 commit hashes, `BookBible` synchronization, and **Ghost Event Isolation** (quarantining rejected contradictory events in `store.rejected_events` to prevent ghost event pollution in active timelines or salience queries).
+8. **[`memory_retriever.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/memory_retriever.py)**: Assembles a scene-scoped memory slice using a **7-Tier Priority Hierarchy** combined with a **Narrative Salience (Dramatic Memory)** layer retrieving past turning points, oaths, and betrayals across long novels.
+9. **[`memory_context.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/memory_context.py)**: Packages the prompt context under a strict **$\le 800$ token budget ceiling** (`enforce_token_budget()`) and provides conservative performance guidance (`apply_performance_guidance_to_segment()`) respecting explicit director acting directives while enriching neutral lines with `memory_vocal_constraint`, `recommended_pronoun`, and `recommended_register`.
+
+### 9.2 Epistemic Isolation (`MUST_NOT_KNOW`) & Bounded Relationship Priors
+- **Epistemic Boundaries**: Readers frequently know secrets that characters on page do not. `CharacterKnowledgeEngine` builds an explicit per-character matrix preventing omniscient leakage by generating hard prompt instructions:
+  ```text
+  EPISTEMIC ISOLATION (Strict Knowledge Boundaries):
+    - Vikram: KNOWS=[Arjun (secret_plan): ambush at gate]
+    - Kabir: MUST_NOT_KNOW=[Arjun (secret_plan): ambush at gate]
+  ```
+- **Bounded Relationship Priors**: The 7D relationship vectors dynamically dictate Hindi second-person pronoun choice (`आप` for high respect/distance, `तुम` for peer familiarity, `तू` for intense intimacy or contempt). Changes are strictly clamped to $\pm 2$ points per scene on standard events and $\pm 3$ points on major turning points, anchored by `TranslationDecisionMemory` (`translation_memory.json`).
 
 ---
 

@@ -270,6 +270,38 @@ class PipelineOrchestrator:
 
         chap_stem = script_file.stem.replace("_script", "")
 
+        # Memory 2.0: Apply conservative performance & acoustic context from MemoryStore if available
+        try:
+            from audiobook_factory.translation.book_bible import BookBible
+            from audiobook_factory.translation.memory import MemoryStore, MemoryRetriever
+
+            store_path = MemoryStore.default_store_path(project_dir)
+            if store_path.exists() and isinstance(script_data, list):
+                bible = BookBible.load_from_project(project_dir)
+                store = MemoryStore.load(store_path, book_bible=bible)
+                active_speakers = list({
+                    str(s.get("speaker", "")).strip()
+                    for s in script_data
+                    if isinstance(s, dict) and s.get("speaker") not in ("", "Narrator", "Foley", None)
+                })
+                mem_ctx = MemoryRetriever.retrieve_for_scene(
+                    store=store,
+                    book_bible=bible,
+                    chapter=chapter_num,
+                    scene_id=chap_stem,
+                    active_characters=active_speakers,
+                )
+                script_data = [
+                    mem_ctx.apply_performance_guidance_to_segment(seg)
+                    if isinstance(seg, dict) else seg
+                    for seg in script_data
+                ]
+                with open(script_file, "w", encoding="utf-8") as f:
+                    json.dump(script_data, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+
         # Gate 2: Screenplay Script Schema and canonical speakers (ADR-021 Whitelist Enforcement)
         try:
             gate2_res = audit_gate2_script(script_file, project_dir=project_dir)

@@ -51,13 +51,14 @@ flowchart TD
 - **EPUB**: Traverses `.opf` spine and table of contents with zero external pip dependencies.
 - **PDF**: Uses Gemini multimodal vision API to digitize clean Markdown, automatically stripping running headers and footers.
 
-### Stage 2: Sense-for-Sense Translation ([`translator.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py))
-- **Pass 1**: Extracts persistent character glossary (`translation/glossary.json`) defining Hindi spellings and honorific relationships (*Aap/Tum/Tu*).
-- **Pass 2**: Sense-for-sense dramatic Hindustani translation suitable for spoken audio drama.
+### Stage 2: Sense-for-Sense Translation & Epistemic Continuity ([`translator.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py) & [`translation/`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/))
+- **BookBible & Memory 2.0 Integration**: Persistent canonical BookBible (`book_bible.json`) paired with World + Character Memory 2.0 (`memory_store.json`). Tracks character knowledge (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`), enforces epistemic isolation (`MUST_NOT_KNOW`), isolates flashbacks, and audits honorific continuity via Gate `T6_relationship_memory`.
+- **Sense-for-Sense Dramatic Hindustani**: Contextual register engine ("Aate mein Namak jitni Urdu") with zero clinical calques and natural interpersonal dynamics (*Aap/Tum/Tu*).
 
-### Stage 3: Screenplay Attribution ([`script_builder.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))
+### Stage 3: Screenplay Attribution & Performance Guidance ([`script_builder.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))
 - **Sliding-Window Parsing**: Chunks chapters into 1,200-word blocks with rolling context. Eliminates text truncation for long chapters.
-- **Multi-Cast Speaker Attribution**: Attributes character dialogue vs narrator, removes redundant speech tags, tags acting emotions (`whispering`, `growl`, `calm_raspy`, `angry`).
+- **Multi-Cast Speaker Attribution**: Attributes character dialogue vs narrator, removes redundant speech tags, and tags acting emotions (`whispering`, `growl`, `calm_raspy`, `angry`).
+- **Memory 2.0 Vocal Constraint Propagation**: Automatically propagates physical states from Memory 2.0 (`memory_vocal_constraint`: `strained_breath`, `fatigued_low_energy`) to dialogue segments while preserving explicit director delivery styles, rendered natively into speechMetadata by the TTS dispatcher.
 
 ### Stage 4: Autonomous Directing Layer ([`agent_director.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py))
 - **3-Pass Dramaturgy & Multi-Scene Partitioning (ADR-018 & ADR-022)**:

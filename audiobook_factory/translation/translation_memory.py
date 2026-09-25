@@ -5,6 +5,7 @@ Persists challenging translation decisions, idioms, and contextual choices
 to prevent re-inventing solutions across subsequent chapters.
 """
 
+from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional

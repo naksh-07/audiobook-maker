@@ -160,10 +160,15 @@ NUMERAL_NORMALIZATION = {
 }
 
 
-def resolve_speech_metadata_style(acting: Any, emotion: str = "neutral", intensity: str = "medium") -> str:
+def resolve_speech_metadata_style(
+    acting: Any,
+    emotion: str = "neutral",
+    intensity: str = "medium",
+    memory_vocal_constraint: Optional[str] = None,
+) -> str:
     """
-    Transforms Pydantic screenplay acting directives and emotion into a concise,
-    expressive natural language style descriptor for Gemini speechMetadata.style.
+    Transforms Pydantic screenplay acting directives, emotion, and conservative Memory 2.0
+    physical vocal constraints into a concise natural language style descriptor for Gemini speechMetadata.style.
     """
     descriptors = []
 
@@ -182,6 +187,15 @@ def resolve_speech_metadata_style(acting: Any, emotion: str = "neutral", intensi
     elif intensity == "low":
         descriptors.append("subdued")
 
+    # Conservative physical vocal constraint from Memory 2.0 (only applied when no conflicting explicit style overrides it)
+    eff_constraint = memory_vocal_constraint
+    if not eff_constraint and isinstance(acting, dict):
+        eff_constraint = acting.get("memory_vocal_constraint")
+    if eff_constraint and str(eff_constraint).lower() not in ("none", "normal", "neutral"):
+        constraint_str = str(eff_constraint).replace("_", " ")
+        if constraint_str not in descriptors:
+            descriptors.append(constraint_str)
+
     if not descriptors:
         return "neutral"
 
@@ -196,6 +210,7 @@ def synthesize_gemini_tts(
     emotion: str = "neutral",
     acting: Any = None,
     intensity: str = "medium",
+    memory_vocal_constraint: Optional[str] = None,
     max_retries: int = 4,
     rate_limiter: Optional[TokenBucketRateLimiter] = None,
 ) -> Tuple[Path, float]:
@@ -208,7 +223,7 @@ def synthesize_gemini_tts(
         text = NUMERAL_NORMALIZATION[clean_text]
 
     part_payload: Dict[str, Any] = {"text": text}
-    style_desc = resolve_speech_metadata_style(acting, emotion, intensity)
+    style_desc = resolve_speech_metadata_style(acting, emotion, intensity, memory_vocal_constraint=memory_vocal_constraint)
     if style_desc and style_desc.lower() not in ("neutral", "standard"):
         part_payload["speechMetadata"] = {"style": style_desc}
 
@@ -501,8 +516,9 @@ def synthesize_gemini_multispeaker_batch(
         acting = getattr(seg, "acting", None) if hasattr(seg, "acting") else seg.get("acting")
         emotion = getattr(seg, "emotion", "neutral") if hasattr(seg, "emotion") else seg.get("emotion", "neutral")
         intensity = getattr(seg, "intensity_level", "medium") if hasattr(seg, "intensity_level") else seg.get("intensity_level", "medium")
+        mem_vc = getattr(seg, "memory_vocal_constraint", None) if hasattr(seg, "memory_vocal_constraint") else seg.get("memory_vocal_constraint")
 
-        style_desc = resolve_speech_metadata_style(acting, emotion, intensity)
+        style_desc = resolve_speech_metadata_style(acting, emotion, intensity, memory_vocal_constraint=mem_vc)
         parts.append({
             "text": clean_text,
             "speechMetadata": {
@@ -1120,6 +1136,7 @@ class TTSDispatcher:
         # Dispatch with VibeVoice-style emotion prosody and Gemini 3.8 speechMetadata style
         emotion = segment.get("emotion", "neutral") if isinstance(segment, dict) else getattr(segment, "emotion", "neutral")
         intensity = segment.get("intensity_level", "medium") if isinstance(segment, dict) else getattr(segment, "intensity_level", "medium")
+        mem_vc = segment.get("memory_vocal_constraint") if isinstance(segment, dict) else getattr(segment, "memory_vocal_constraint", None)
         out_path, dur = synthesize_gemini_tts(
             text=text,
             output_file=out_file,
@@ -1127,6 +1144,7 @@ class TTSDispatcher:
             emotion=emotion,
             acting=acting,
             intensity=intensity,
+            memory_vocal_constraint=mem_vc,
             rate_limiter=self.rate_limiter,
         )
 

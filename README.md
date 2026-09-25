@@ -7,7 +7,7 @@
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-6.0%2B%20%7C%208.0-red.svg)](https://ffmpeg.org/)
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.1%20Flash%20API-green.svg)](https://ai.google.dev/)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-319%2B%20Passing%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-340%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
@@ -92,7 +92,7 @@ flowchart TD
 - **Universal Character Voice Profiles & 7D Relationship Engine:** 8 novel-agnostic sociolect archetypes ([`character_profile.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_profile.py)) paired with [`RelationshipStateEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/relationship_state.py) to dynamically resolve Hindi pronouns (`आप`, `तुम`, `तू`) across 7 interpersonal dimensions.
 - **Transition-Driven Scene Segmentation & Frozen Semantic Map:** [`ScenePlanner`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/scene_planner.py) segments chapters on genuine temporal/spatial transitions rather than arbitrary character chunks, while [`SourceSemanticMapEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/source_semantic_map.py) freezes per-beat actors, speakers, and negation markers.
 - **12-Gate Independent Certification (Gates T0–T11) & Tiered Self-Healing Repair:** [`TranslationCertifier`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/certification.py) audits word sanity, terminology, negation/semantic fidelity, quote parity/omissions, hallucinated additions, character voice, 7D intensity ($\pm 0.75$ soft `WARN`, $> 2.0$ hard `FAIL`), and clinical anachronisms (`डिप्रेशन` $\rightarrow$ `उदासी का साया`), healing failures via [`TieredRepairEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/repair_engine.py) (0ms Regex/Advisory DB $\rightarrow$ Surgical Paragraph LLM $\rightarrow$ Scene Retranslation) and sealing a 6-part SHA-256 provenance cache key.
-- **World & Character Memory 2.0:** 10-module event-driven epistemic continuity engine (`audiobook_factory/translation/memory/`) isolating `PRESENT` vs `FLASHBACK` timelines, tracking character knowledge (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`), and enforcing 7 continuity guardrails.
+- **World & Character Memory 2.0:** *(See full technical guide: [`docs/WORLD_AND_CHARACTER_MEMORY_2_0.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/WORLD_AND_CHARACTER_MEMORY_2_0.md))* Pure deterministic state transition engine (`audiobook_factory/translation/memory/`) isolating `PRESENT` vs `FLASHBACK` timelines, tracking character knowledge (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`), enforcing 7 continuity contradiction guardrails, and feeding conservative acting guidance (`memory_vocal_constraint`, `recommended_pronoun`, `recommended_register`) into Screenplay segments and Gemini Cloud TTS.
 
 ### 4. Multi-Gate Independent Verification Suite (Gates 0.1 - 6D & Gates T0 - T11)
 Quality is mathematically audited at every stage of the pipeline:
@@ -273,11 +273,14 @@ python audiobook_cli.py bank stats
 
 ## 🧪 Verification & Test Suite
 
-The codebase maintains **319+ passing unit tests** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors):
+The codebase maintains **340 passed unit tests (17 subtests passed)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors):
 
 ```powershell
-# Run full regression suite across all test suites (319+ tests)
+# Run full regression suite across all test suites (340 tests)
 python -m unittest discover tests -p "test_*.py"
+
+# Run World + Character Memory 2.0 test suites (7 test suites)
+python -m unittest discover tests/translation/memory -p "test_*.py"
 
 # Run Literary Translation Intelligence & Memory 2.0 suites (Pillar 2)
 python -m unittest discover tests/translation -p "test_*.py"

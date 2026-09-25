@@ -55,12 +55,29 @@ flowchart LR
   - **Gate T3 (Omission & Quote Parity)**: Runs `deterministic_omission_check()` verifying paragraph ratio $\ge 50\%$ and dialogue quote parity ($\ge 60\%$ when source has $\ge 4$ quotes), followed by LLM beat omission detection.
   - **Gate T4 (Addition & Fabrication Detector)**: Audits that the translation did not invent actions, characters, or lore absent from the English source.
   - **Gate T5 (Entity & Script Purity)**: Scans for untransliterated Latin proper nouns ($\ge 4$ chars) leaked into Devanagari narrative prose.
-  - **Gate T6 (Character Sociolect Consistency)**: Audits dialogue lines against each speaker's [`CharacterLanguageProfile`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_profile.py).
-  - **Gate T7 (Pronoun & Relationship Honorifics)**: Audits Hindi second-person pronouns (`आप` / `तुम` / `तू`) against [`RelationshipStateEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/relationship_state.py) 7D interpersonal vectors.
+  - **Gate T6 (Relationship, Pronoun & Memory Continuity - `T6_relationship_memory`)**: Audits active speaker/target pairs against `MemoryContext.get_character_performance_guidance()`, verifying that recommended Hindi pronouns (`आप`, `तुम`, `तू`) and socio-linguistic registers match established narrative relationships without unmotivated honorific drift.
+  - **Gate T7 (Character Language Profile Alignment - `T7_character_voice`)**: Audits dialogue lines against each speaker's [`CharacterLanguageProfile`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_profile.py) archetype.
   - **Gate T8 (7D Literary Intensity Preservation)**: Compares 7D `LiteraryIntensityVector` (`profanity`, `sexual_intimacy`, `violence`, `emotional_intensity`, `formality`, `urdu_register`, `colloquiality`). Enforces **"Nothing Above Source"** with a soft heuristic threshold of $\pm 0.75$ (`WARN`, `is_valid=True`) and a hard failure threshold of $|\Delta| > 2.0$ (`FAIL`, `is_valid=False`).
   - **Gate T9 (Literary Naturalness & Anachronism Guard)**: Runs `sanitizer.audit_literary_register()` to block modern clinical English loanwords (`डिप्रेशन`, `ट्रॉमा`, `स्ट्रेस`), literal calques (`सुनहरी लड़की`), and anachronistic greetings (`नमस्ते`), paired with an LLM translatese critic (minimum score $3.5 / 5.0$).
   - **Gate T10 (Hindustani Register Balance)**: `HindustaniRegisterEngine.audit_text()` verifies contextual Urdu seasoning density stays within organic bounds ($0.2\% - 8.0\%$ per 100 words).
   - **Gate T11 (Provenance & Cache Seal)**: Seals the 24-character SHA-256 `composite_cache_key` (`source_hash:bible_version_hash:policy_version:prompt_version:model:advisory_version`) into `provenance.json`.
+
+---
+
+### MemoryValidator: The 7 Continuity Contradiction Guardrails (Memory 2.0)
+*(See complete specification: [`docs/WORLD_AND_CHARACTER_MEMORY_2_0.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/WORLD_AND_CHARACTER_MEMORY_2_0.md))*
+- **Function**: `MemoryValidator.validate_deltas(deltas, book_bible, character_states, relationships, facts_registry, world_state, events_by_id) -> MemoryValidationReport`
+- **Module**: [`audiobook_factory/translation/memory/memory_validator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/memory_validator.py)
+- **Pipeline Stage**: Executed during Stage 5 of the scene memory lifecycle before committing any deltas to `MemoryStore`.
+- **The 7 Contradiction Guardrails**:
+  1. **`CANON_IMMUTABILITY_VIOLATION` (`canon_contradiction`)**: Blocks mutations to locked BookBible attributes (`canonical_name`, `gender`, `canonical_role`, `voice_id`, `locked_pronoun`, `locked_register`) or deltas flagged `HARD_CANON`.
+  2. **`TIMELINE_CONTRADICTION`**: Rejects retrograde present-tense chapter mutations or events asserting negative story epochs in `TemporalMode.PRESENT`. Directs past memories to `FLASHBACK`.
+  3. **`DEAD_CHARACTER_ACTION` (`dead_character_violation`)**: Prohibits deceased characters (`is_alive=False`) from moving, acting, or recovering in `PRESENT` timeline unless an explicit resurrection `WorldRule` exists in BookBible.
+  4. **`PHYSICAL_IMPOSSIBILITY` & `IMPOSSIBLE_LOCATION_TRANSITION`**: Prevents simultaneous presence of a character in two distinct locations within the same scene (unless marked as intra-scene travel) and blocks actions while incapacitated.
+  5. **`OBJECT_CUSTODY_CONFLICT`**: Rejects ownership transfer of objects held by a different character or objects marked `status="destroyed"`.
+  6. **`ABRUPT_RELATIONSHIP_JUMP` (`relationship_jump`)**: Clamps single-scene relationship jumps to $\pm 2$ points on standard events and $\pm 3$ on major turning points, requiring explicit `StoryEvent` provenance.
+  7. **`KNOWLEDGE_LEAKAGE` (`knowledge_violation`)**: Prohibits characters from acting upon or mentioning secrets where their epistemic status is `UNKNOWN`.
+- **Fail Condition & Isolation**: Produces `MemoryValidationReport(outcome=ValidationOutcome.CONFLICT)`. Conflicting deltas are rejected and recorded as `FlaggedConflict` records; rejected events are permanently quarantined in `store.rejected_events` (preventing ghost event pollution in active timelines or salience queries).
 
 ---
 

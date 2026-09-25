@@ -46,10 +46,16 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **319+ passing unit tests** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
+The codebase maintains **340 passed unit tests (17 subtests passed)** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# World + Character Memory 2.0 Test Suite (7 test suites, 35+ tests)
+python -m unittest discover tests/translation/memory -p "test_*.py"
+
+# Forensic Audit Remediation Probes (100-chapter stress, victim ordering, ghost event isolation)
+python -m unittest tests/translation/memory/test_audit_remediation.py
+
 # Literary Translation Intelligence & Memory 2.0 Suites (Pillar 2 - ADR-030)
 python -m unittest discover tests/translation -p "test_*.py"
 
@@ -96,6 +102,30 @@ python -m unittest tests/test_audio_dsp_loudness.py tests/test_action_beats_and_
 ### Running Full Repository Regression Test Discovery
 ```powershell
 python -m unittest discover tests -p "test_*.py"
+```
+
+### World + Character Memory 2.0 Repository Layout
+```text
+audiobook_factory/translation/memory/
+├── __init__.py               # Package exports
+├── state.py                  # Pure deterministic transition functions
+├── events.py                 # StoryEvent, StoryEventType, TemporalMode, SceneChangeDetector, EventExtractor
+├── character_memory.py       # CharacterState, CharacterArcMemory, CharacterKnowledgeEngine (MUST_NOT_KNOW)
+├── world_memory.py           # WorldState, LocationState, ObjectState, NarrativeThreadState, TimelinePoint
+├── memory_delta.py           # StateDelta, DeltaDomain, StateMutability, StateDeltaEngine
+├── memory_validator.py       # MemoryValidator (7 contradiction classes), MemoryValidationReport
+├── memory_store.py           # MemoryStore (versioned persistence, ghost event isolation)
+├── memory_retriever.py       # MemoryRetriever (7-tier selective hierarchy + Narrative Salience)
+└── memory_context.py         # MemoryContext (800-token budget cap, performance guidance adapter)
+
+tests/translation/memory/
+├── test_audit_remediation.py           # 5 independent audit probes & Pass 2 polish items
+├── test_character_and_knowledge.py     # Epistemic isolation & CharacterKnowledgeEngine
+├── test_events_and_deltas.py           # StoryEvent hashing, delta projection, location conditions
+├── test_golden_novel_continuity.py     # 10-chapter Golden Novel end-to-end integration test
+├── test_relationships_and_register.py  # 7D relationship mutations, pronoun/register resolution
+├── test_retriever_and_store.py         # 7-tier retrieval, atomic persistence, version hashing
+└── test_world_and_validator.py         # WorldState, timeline, 7 contradiction classes
 ```
 
 ---

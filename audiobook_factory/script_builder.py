@@ -390,6 +390,7 @@ def build_dramatized_script_llm(
     chapter_text: str,
     is_hindi: bool = False,
     character_roster: Optional[Dict[str, Any]] = None,
+    memory_context: Optional[Any] = None,
 ) -> List[Dict[str, Any]]:
     """
     Dramatized Screenplay Mode with Sliding-Window Chunking:
@@ -402,11 +403,17 @@ def build_dramatized_script_llm(
         return build_narrator_script(chapter_text, is_hindi)
 
     model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-lite-latest")
+    memory_prompt_str = (
+        memory_context.get_prompt_context()
+        if memory_context is not None and hasattr(memory_context, "get_prompt_context")
+        else ""
+    )
 
     # If chapter is within safe token budget (~7,500 chars), process directly
     if len(chapter_text) <= 7500:
         raw_items = _parse_dramatized_chunk_llm(
             chunk_text=chapter_text,
+            preceding_context=memory_prompt_str,
             is_hindi=is_hindi,
             character_roster=character_roster,
             api_key="",
@@ -436,7 +443,7 @@ def build_dramatized_script_llm(
             chunks.append("\n\n".join(cur_chunk))
 
         raw_items = []
-        rolling_context = ""
+        rolling_context = memory_prompt_str
 
         for c_idx, chunk_str in enumerate(chunks, 1):
             chunk_items = _parse_dramatized_chunk_llm(
@@ -459,7 +466,8 @@ def build_dramatized_script_llm(
                         txt = txt[:82] + "..."
                     tail_lines.append(f"  - [{typ.upper()}] {sp}: \"{txt}\"")
                 rolling_context = (
-                    f"Preceding Scene Context (Last exchanges of chunk {c_idx}):\n"
+                    (f"{memory_prompt_str}\n\n" if memory_prompt_str else "")
+                    + f"Preceding Scene Context (Last exchanges of chunk {c_idx}):\n"
                     + "\n".join(tail_lines)
                     + "\nATTRIBUTION INSTRUCTION: Use this conversational memory to attribute opening dialogue tags "
                     f"and pronouns (e.g. 'उसने', 'वह', 'he', 'she') to the correct character."
@@ -472,17 +480,24 @@ def build_dramatized_script_llm(
     if not raw_items:
         return build_narrator_script(chapter_text, is_hindi)
 
-    return clean_screenplay_pass2(raw_items, is_hindi=is_hindi, character_roster=character_roster)
+    return clean_screenplay_pass2(
+        raw_items,
+        is_hindi=is_hindi,
+        character_roster=character_roster,
+        memory_context=memory_context,
+    )
 
 
 def clean_screenplay_pass2(
     raw_items: List[Dict[str, Any]],
     is_hindi: bool = False,
     character_roster: Optional[Dict[str, Any]] = None,
+    memory_context: Optional[Any] = None,
 ) -> List[Dict[str, Any]]:
     """
     Pass 2 (Alexandria Pattern): Two-pass pronoun disambiguation, alias resolution,
     unknown speaker fallback, text normalization, and continuous 1-based indexing.
+
     """
     import re
     alias_map = {}
@@ -611,9 +626,32 @@ def clean_screenplay_pass2(
             "emotion": sanitized_item.get("emotion", "neutral"),
             "pause_after_ms": int(sanitized_item.get("pause_after_ms", 600)),
         }
-        for field in ("acting", "spatial", "acoustic_env", "sfx_cues", "music", "intensity_level", "pre_roll_breath_ms"):
+        for field in (
+            "acting",
+            "spatial",
+            "acoustic_env",
+            "sfx_cues",
+            "music",
+            "intensity_level",
+            "pre_roll_breath_ms",
+            "recommended_pronoun",
+            "recommended_register",
+            "memory_vocal_constraint",
+        ):
             if field in sanitized_item:
                 entry[field] = sanitized_item[field]
+
+        if memory_context is not None and hasattr(memory_context, "apply_performance_guidance_to_segment"):
+            prev_dialogue_speaker = None
+            for prev_seg in reversed(final_script):
+                prev_sp = prev_seg.get("speaker", "Narrator")
+                if prev_sp not in ("Narrator", "Foley", speaker):
+                    prev_dialogue_speaker = prev_sp
+                    break
+            entry = memory_context.apply_performance_guidance_to_segment(
+                entry,
+                target_speaker=prev_dialogue_speaker,
+            )
 
         final_script.append(entry)
 
@@ -654,9 +692,26 @@ def generate_project_scripts(
         except Exception:
             pass
 
+    # Load BookBible & MemoryStore 2.0 for screenplay continuity
+    bible = None
+    memory_store = None
+    memory_store_path = None
+    try:
+        from audiobook_factory.translation.book_bible import BookBible
+        from audiobook_factory.translation.memory import (
+            MemoryStore,
+            MemoryRetriever,
+            EventExtractor,
+        )
+        bible = BookBible.load_from_project(project_dir)
+        memory_store_path = MemoryStore.default_store_path(project_dir)
+        memory_store = MemoryStore.load(memory_store_path, book_bible=bible)
+    except Exception:
+        pass
+
     print(f"[*] Building audiobook scripts for {len(target_files)} chapters (Mode: {'Dramatized' if dramatized else 'Narrator'})...")
 
-    for chap_file in target_files:
+    for seq_idx, chap_file in enumerate(target_files, 1):
         script_file = scripts_dir / f"{chap_file.stem}_script.json"
         if not overwrite and script_file.exists() and script_file.stat().st_size > 50:
             print(f"[-] Script already exists: {script_file.name} (Skipping)")
@@ -665,10 +720,67 @@ def generate_project_scripts(
         with open(chap_file, "r", encoding="utf-8") as f:
             content = f.read()
 
+        mem_ctx = None
+        if memory_store is not None:
+            try:
+                from audiobook_factory.translation.memory import MemoryRetriever
+                mem_ctx = MemoryRetriever.retrieve_for_scene(
+                    store=memory_store,
+                    book_bible=bible,
+                    chapter=seq_idx,
+                    scene_id=chap_file.stem,
+                    scene_text=content,
+                )
+            except Exception:
+                mem_ctx = None
+
         if dramatized:
-            script = build_dramatized_script_llm(content, is_hindi=use_hindi, character_roster=roster)
+            script = build_dramatized_script_llm(
+                content,
+                is_hindi=use_hindi,
+                character_roster=roster,
+                memory_context=mem_ctx,
+            )
         else:
             script = build_narrator_script(content, is_hindi=use_hindi)
+            if mem_ctx is not None:
+                script = [mem_ctx.apply_performance_guidance_to_segment(seg) for seg in script]
+
+        # Commit extracted screenplay events to MemoryStore if not already committed
+        if memory_store is not None and memory_store_path is not None:
+            try:
+                from audiobook_factory.translation.memory import EventExtractor
+                already_committed = any(c.scene_id == chap_file.stem for c in memory_store.commit_history)
+                if not already_committed and content.strip():
+                    known_chars = (
+                        list(bible.characters.keys())
+                        if bible and isinstance(bible.characters, dict)
+                        else ([c.canonical_name for c in bible.characters] if bible else [])
+                    )
+                    llm_wrapper = (
+                        lambda prompt, system_instruction="", json_mode=True, **kw: json.dumps(
+                            call_gemini_json(f"{system_instruction}\n\n{prompt}")
+                        )
+                    )
+                    events, _ = EventExtractor.extract_scene_events(
+                        scene_text=content,
+                        chapter=seq_idx,
+                        scene_id=chap_file.stem,
+                        known_characters=known_chars,
+                        location=mem_ctx.location_name if mem_ctx else "Unspecified",
+                        call_llm_fn=llm_wrapper,
+                    )
+                    memory_store.commit_scene_memory(
+                        scene_id=chap_file.stem,
+                        chapter=seq_idx,
+                        events=events,
+                        source_text=content,
+                        book_bible=bible,
+                        location=mem_ctx.location_name if mem_ctx else "Unspecified",
+                    )
+                    memory_store.save(memory_store_path)
+            except Exception:
+                pass
 
         with open(script_file, "w", encoding="utf-8") as f:
             json.dump(script, f, ensure_ascii=False, indent=2)
@@ -677,3 +789,4 @@ def generate_project_scripts(
 
     print(f"[DONE] All chapter scripts built -> {scripts_dir}")
     return scripts_dir
+

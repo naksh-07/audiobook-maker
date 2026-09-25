@@ -310,6 +310,146 @@ def _translate_single_block(
     return cleaned
 
 
+def _retrieve_chapter_memory_in_translator(
+    project_dir: Path,
+    source_text: str,
+    block_label: str,
+    glossary: Optional[Dict[str, Any]] = None,
+) -> str:
+    """
+    Step 1 (Pre-Translation READ): Retrieves the selective 7-tier + Salience MemoryContext
+    for a chapter/block BEFORE translation runs, without mutating or saving MemoryStore.
+    """
+    try:
+        from audiobook_factory.translation.book_bible import BookBible
+        from audiobook_factory.translation.memory import (
+            MemoryStore,
+            MemoryRetriever,
+        )
+
+        bible = BookBible.load_from_project(project_dir)
+        if glossary and not bible.characters:
+            bible.import_from_legacy_glossary(glossary)
+            bible.save(project_dir)
+
+        store_path = MemoryStore.default_store_path(project_dir)
+        store = MemoryStore.load(store_path, book_bible=bible)
+
+        m = re.search(r"(\d+)", block_label or "")
+        seq_idx = int(m.group(1)) if m else max(1, store.memory_version + 1)
+        scene_id = block_label or f"scene_{seq_idx:03d}"
+
+        mem_ctx = MemoryRetriever.retrieve_for_scene(
+            store=store,
+            book_bible=bible,
+            chapter=seq_idx,
+            scene_id=scene_id,
+            scene_text=source_text,
+        )
+        return mem_ctx.get_prompt_context()
+    except Exception:
+        return ""
+
+
+def _commit_chapter_memory_in_translator(
+    project_dir: Path,
+    source_text: str,
+    block_label: str,
+    glossary: Optional[Dict[str, Any]] = None,
+    model: str = DEFAULT_MODEL,
+    call_llm_fn: Optional[Any] = None,
+) -> None:
+    """
+    Step 2 (Post-Translation EXTRACT -> VALIDATE -> COMMIT): Extracts and commits scene
+    events AFTER translation succeeds so mid-chapter failures never leave uncommitted state on disk.
+    """
+    try:
+        from audiobook_factory.translation.book_bible import BookBible
+        from audiobook_factory.translation.memory import (
+            MemoryStore,
+            MemoryRetriever,
+            EventExtractor,
+        )
+
+        bible = BookBible.load_from_project(project_dir)
+        if glossary and not bible.characters:
+            bible.import_from_legacy_glossary(glossary)
+
+        store_path = MemoryStore.default_store_path(project_dir)
+        store = MemoryStore.load(store_path, book_bible=bible)
+
+        m = re.search(r"(\d+)", block_label or "")
+        seq_idx = int(m.group(1)) if m else max(1, store.memory_version + 1)
+        scene_id = block_label or f"scene_{seq_idx:03d}"
+
+        already_committed = any(c.scene_id == scene_id for c in store.commit_history)
+        if not already_committed and source_text.strip():
+            _, resolved_loc = MemoryRetriever.infer_active_entities(
+                scene_text=source_text,
+                store=store,
+                book_bible=bible,
+            )
+            known_chars = (
+                list(bible.characters.keys())
+                if isinstance(bible.characters, dict)
+                else [c.canonical_name for c in bible.characters]
+            )
+            eff_llm_fn = call_llm_fn or (
+                lambda prompt, system_instruction="", json_mode=True, **kw: call_gemini(
+                    prompt=prompt,
+                    system_instruction=system_instruction,
+                    model=model,
+                    json_mode=json_mode,
+                )
+            )
+            events, _ = EventExtractor.extract_scene_events(
+                scene_text=source_text,
+                chapter=seq_idx,
+                scene_id=scene_id,
+                known_characters=known_chars,
+                location=resolved_loc,
+                call_llm_fn=eff_llm_fn,
+            )
+            store.commit_scene_memory(
+                scene_id=scene_id,
+                chapter=seq_idx,
+                events=events,
+                source_text=source_text,
+                book_bible=bible,
+                location=resolved_loc,
+            )
+            store.save(store_path)
+            bible.save(project_dir)
+    except Exception:
+        pass
+
+
+def _sync_chapter_memory_in_translator(
+    project_dir: Path,
+    source_text: str,
+    block_label: str,
+    glossary: Optional[Dict[str, Any]] = None,
+    commit_after: bool = True,
+    call_llm_fn: Optional[Any] = None,
+) -> str:
+    """Backward-compatible helper retrieving prompt context and optionally committing."""
+    prompt_block = _retrieve_chapter_memory_in_translator(
+        project_dir=project_dir,
+        source_text=source_text,
+        block_label=block_label,
+        glossary=glossary,
+    )
+    if commit_after:
+        _commit_chapter_memory_in_translator(
+            project_dir=project_dir,
+            source_text=source_text,
+            block_label=block_label,
+            glossary=glossary,
+            call_llm_fn=call_llm_fn,
+        )
+    return prompt_block
+
+
 def translate_chapter(
     chapter_text: str,
     glossary: Dict[str, Any],
@@ -321,9 +461,20 @@ def translate_chapter(
     """Pass 2: Sense-for-sense literary translation of a single chapter into spoken Hindustani."""
     from audiobook_factory.sanitizer import validate_and_sanitize_translation
     cache_dir = None
+    effective_context = preceding_context
+    block_label = chapter_title or "scene_001"
     if project_dir:
         cache_dir = Path(project_dir) / "translation" / ".cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
+        # Step 1: READ ONLY before translation
+        mem_block = _retrieve_chapter_memory_in_translator(
+            project_dir=Path(project_dir),
+            source_text=chapter_text,
+            block_label=block_label,
+            glossary=glossary,
+        )
+        if mem_block:
+            effective_context = f"{preceding_context}\n\n{mem_block}".strip() if preceding_context else mem_block
 
     words = chapter_text.split()
     # Chapters under 2,200 words fit comfortably within the 8,192 token limit
@@ -335,14 +486,31 @@ def translate_chapter(
             is_valid, cleaned_cached, err = validate_and_sanitize_translation(cached_text, is_hindi=True)
             if is_valid:
                 print(f"    [CACHED] Chapter loaded from cache ({len(cleaned_cached)} chars).", flush=True)
+                if project_dir:
+                    _commit_chapter_memory_in_translator(
+                        project_dir=Path(project_dir),
+                        source_text=chapter_text,
+                        block_label=block_label,
+                        glossary=glossary,
+                        model=model,
+                        call_llm_fn=None,
+                    )
                 return cleaned_cached
             else:
                 print(f"    [INVALID CACHE] Cache failed guardrail ({err}). Re-translating...", flush=True)
 
-        res = _translate_single_block(chapter_text, glossary, chapter_title, preceding_context, model)
+        res = _translate_single_block(chapter_text, glossary, chapter_title, effective_context, model)
         if cache_file:
             with open(cache_file, "w", encoding="utf-8") as f:
                 f.write(res)
+        if project_dir:
+            _commit_chapter_memory_in_translator(
+                project_dir=Path(project_dir),
+                source_text=chapter_text,
+                block_label=block_label,
+                glossary=glossary,
+                model=model,
+            )
         return res
 
     # For long chapters, split across paragraph boundaries to avoid hitting MAX_TOKENS
@@ -364,7 +532,7 @@ def translate_chapter(
         chunks.append("\n\n".join(curr_chunk))
 
     translated_pieces: List[str] = []
-    rolling_ctx = preceding_context
+    rolling_ctx = effective_context
     for i, chunk in enumerate(chunks, 1):
         chunk_words = len(chunk.split())
         cache_file = (cache_dir / f"{chapter_title}_part_{i}.txt") if cache_dir and chapter_title else None
@@ -391,6 +559,14 @@ def translate_chapter(
     full_trans = "\n\n".join(translated_pieces)
     if glossary:
         full_trans = normalize_translated_lexicon(full_trans, glossary)
+    if project_dir:
+        _commit_chapter_memory_in_translator(
+            project_dir=Path(project_dir),
+            source_text=chapter_text,
+            block_label=block_label,
+            glossary=glossary,
+            model=model,
+        )
     return full_trans
 
 
@@ -433,6 +609,23 @@ def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Pat
             json.dump(glossary, f, ensure_ascii=False, indent=2)
         print(f"[+] Saved glossary with {len(glossary.get('characters', []))} characters -> {glossary_file}", flush=True)
 
+    # Seed BookBible & MemoryStore 2.0 from project glossary
+    try:
+        from audiobook_factory.translation.book_bible import BookBible
+        from audiobook_factory.translation.memory import MemoryStore
+
+        bible = BookBible.load_from_project(project_dir)
+        if not bible.book_title:
+            bible.book_title = str(meta.get("title", ""))
+        if glossary and not bible.characters:
+            bible.import_from_legacy_glossary(glossary)
+        bible.save(project_dir)
+        store_path = MemoryStore.default_store_path(project_dir)
+        store = MemoryStore.load(store_path, book_bible=bible)
+        store.save(store_path)
+    except Exception:
+        pass
+
     # Step 2: Translate chapters in order
     chapter_files = sorted(extracted_dir.glob("chapter_*.md"))
     total = len(chapter_files)
@@ -445,6 +638,13 @@ def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Pat
         if target_file.exists() and target_file.stat().st_size > 100:
             print(f"[-] Chapter {idx}/{total} already translated: {target_file.name} (Skipping)", flush=True)
             try:
+                with open(chap_file, "r", encoding="utf-8") as src_f:
+                    _sync_chapter_memory_in_translator(
+                        project_dir=project_dir,
+                        source_text=src_f.read(),
+                        block_label=chap_file.stem,
+                        glossary=glossary,
+                    )
                 with open(target_file, "r", encoding="utf-8") as f:
                     skipped_tail = f.read().split()[-250:]
                     if skipped_tail:
@@ -481,6 +681,7 @@ def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Pat
 
     print(f"[DONE] All chapters translated into Hindi successfully -> {trans_dir}")
     return trans_dir
+
 
 
 def translate_chapter_intelligent(

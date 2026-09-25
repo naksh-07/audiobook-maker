@@ -60,3 +60,82 @@ class NarrativeStateEngine:
             updated.newly_decided_terms.update(new_terms)
 
         return updated
+
+    @staticmethod
+    def sync_from_memory_store(
+        current_state: NarrativeContinuityState,
+        memory_store: Optional[Any] = None,
+        scene_plan: Optional[Any] = None,
+        character_states: Optional[Dict[str, Any]] = None,
+        world_state: Optional[Any] = None,
+        recent_events: Optional[List[Any]] = None,
+        active_characters: Optional[List[str]] = None,
+        location: Optional[str] = None,
+    ) -> NarrativeContinuityState:
+        """
+        Projects rich MemoryStore state into NarrativeContinuityState so legacy callers
+        automatically receive updated character injuries, active objectives, and unresolved threads.
+        """
+        updated = current_state.model_copy(deep=True)
+
+        # Sync character injuries and objectives
+        char_states = character_states if character_states is not None else getattr(memory_store, "character_states", {})
+        injuries: Dict[str, str] = {}
+        objectives: List[str] = []
+        for cname, cstate in char_states.items():
+            if not getattr(cstate, "is_alive", True):
+                injuries[cname] = "deceased"
+            elif getattr(cstate, "active_injuries", []):
+                injuries[cname] = ", ".join(cstate.active_injuries)
+            elif getattr(cstate, "physical_condition", "healthy") != "healthy":
+                injuries[cname] = cstate.physical_condition
+
+            goal = getattr(cstate, "immediate_goal", "") or getattr(getattr(cstate, "arc_state", None), "primary_goal", "")
+            if goal:
+                objectives.append(f"{cname}: {goal}")
+
+        updated.character_injuries = injuries
+        if objectives:
+            updated.current_objectives = objectives[:8]
+
+        # Sync unresolved narrative threads
+        eff_world_state = world_state if world_state is not None else getattr(memory_store, "world_state", None)
+        if eff_world_state and hasattr(eff_world_state, "narrative_threads"):
+            open_threads = [
+                t.summary for t in eff_world_state.narrative_threads.values()
+                if getattr(t, "status", "open") == "open"
+            ]
+            updated.unresolved_questions = open_threads[:8]
+
+        # Sync recent events
+        if recent_events is not None:
+            recent_descs = [
+                getattr(e, "description", str(e))
+                for e in recent_events[-5:]
+            ]
+            if recent_descs:
+                updated.recent_events = recent_descs
+        elif memory_store is not None:
+            events_map = getattr(memory_store, "events", {})
+            if events_map:
+                recent_descs = [ev.description for ev in list(events_map.values())[-5:]]
+                if recent_descs:
+                    updated.recent_events = recent_descs
+
+        if active_characters is not None:
+            updated.active_characters = list(active_characters)
+        if location and location != "Unspecified":
+            updated.current_location = location
+
+        if scene_plan is not None:
+            if getattr(scene_plan, "active_characters", None):
+                updated.active_characters = list(scene_plan.active_characters)
+            if getattr(scene_plan, "location", "Unspecified") != "Unspecified":
+                updated.current_location = scene_plan.location
+            if getattr(scene_plan, "time", "Unspecified") != "Unspecified":
+                updated.current_time = scene_plan.time
+            if getattr(scene_plan, "emotional_state", ""):
+                updated.prevailing_emotional_tone = scene_plan.emotional_state
+
+        return updated
+

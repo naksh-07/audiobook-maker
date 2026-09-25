@@ -341,3 +341,22 @@
      - Established read-only calibration standards in `audiobooks/standards/` (`chapter_009_hi_old_canonical.md` vs `chapter_009_hi_standard.md` and `chapter_009_benchmark_comparison.md`).
      - Purged 37 legacy novel-specific utility scripts and enforced a multi-script (Latin + Devanagari `FORBIDDEN_CHARACTERS_DEVANAGARI`) AST Zero-Hardcoding contract in [`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py).
 - **Rationale:** Transforms literary translation from a brittle single-pass prompt into a self-auditing, context-aware, novel-agnostic studio engine with provable semantic fidelity, natural Hindustani cadence, and cryptographic cache provenance.
+
+---
+
+## ADR-031: World + Character Memory 2.0 (Deterministic State Deltas, Epistemic Isolation & Dual Chronology)
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:**
+  1. Long-form audiobook generation across 100+ chapters suffers from amnesia, knowledge leakage across character boundaries, resurrection of deceased characters in present timelines, and erratic relationship pronoun jumps (`आप`/`तुम`/`तू`).
+  2. Overwriting full state blobs causes race conditions and resets prior environmental damage (e.g. damaged locations reverting to normal).
+  3. LLM prompts for downstream Screenplay generation were overriding explicit director delivery styles when memory vocal constraints were blindly applied.
+- **Decision:**
+  1. Built `audiobook_factory/translation/memory/` as a pure deterministic state transition engine driven by explicit `StateDelta` models across 5 domains (`CHARACTER`, `RELATIONSHIP`, `KNOWLEDGE`, `WORLD`, `NARRATIVE`).
+  2. Implemented `SceneChangeDetector` with 0ms pre-filtering, noun/verb trigger matching, transitive attacker vs. victim disambiguation, and gated LLM event proposal with deterministic fallback and deduplication.
+  3. Implemented `CharacterKnowledgeEngine` enforcing strict `known_by` membership (`KnowledgeStatus.KNOWN`), scoped `DISPROVEN` transitions, asymmetric secret prioritization, and `MUST_NOT_KNOW` prompt boundaries.
+  4. Implemented `MemoryValidator` enforcing 7 contradiction classes (`canon_contradiction`, `timeline_contradiction`, `dead_character_violation`, `physical_impossibility`, `relationship_jump`, `knowledge_violation`, `world_rule_violation`).
+  5. Implemented Ghost Event Isolation in `MemoryStore`: rejected contradictory events are permanently quarantined in `store.rejected_events` and excluded from `store.events`, `world_state.timeline`, and salience queries.
+  6. Implemented selective 7-tier + Narrative Salience retrieval in `MemoryRetriever` and `MemoryContext` with an enforced $\le 800$ token budget cap.
+  7. Implemented conservative performance guidance in `apply_performance_guidance_to_segment()`, strictly preserving explicit nested `acting.delivery_style` while injecting physical vocal constraints (`strained_breath`, `fatigued_low_energy`) into `ScreenplaySegment` contracts and Gemini TTS `speechMetadata.style`.
+- **Rationale:** Guarantees unbreakable narrative, epistemic, and physical continuity across 100+ chapter novels without context window blowup, prevents ghost event corruption, and enriches vocal performance with true character physical state.

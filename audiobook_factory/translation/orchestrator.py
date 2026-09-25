@@ -26,6 +26,12 @@ from .hindustani_register import HindustaniRegisterEngine
 from .provenance import TranslationProvenanceTracker
 from .repair_engine import TieredRepairEngine
 from .certification import TranslationCertifier, GateAuditResult
+from .translation_memory import TranslationDecisionMemory
+from .memory import (
+    MemoryStore,
+    MemoryRetriever,
+    EventExtractor,
+)
 
 from audiobook_factory.sanitizer import validate_and_sanitize_translation
 
@@ -42,7 +48,74 @@ class IntelligentTranslationPipeline:
         self.policy = policy or get_default_translation_policy()
         self.book_bible = BookBible.load_from_project(self.project_dir)
         self.hindustani_engine = HindustaniRegisterEngine()
-        self.narrative_state = NarrativeContinuityState()
+        self.decision_memory_path = self.project_dir / "translation" / "translation_decisions.json"
+        self.decision_memory = TranslationDecisionMemory.load(self.decision_memory_path)
+        self.memory_store_path = MemoryStore.default_store_path(self.project_dir)
+        self.memory_store = MemoryStore.load(self.memory_store_path, book_bible=self.book_bible)
+        self.narrative_state = NarrativeStateEngine.sync_from_memory_store(
+            current_state=NarrativeContinuityState(),
+            character_states=self.memory_store.character_states,
+            world_state=self.memory_store.world_state,
+            recent_events=list(self.memory_store.events.values())[-5:],
+        )
+
+    def _get_known_character_names(self) -> List[str]:
+        if isinstance(self.book_bible.characters, dict):
+            return list(self.book_bible.characters.keys())
+        return [c.canonical_name for c in self.book_bible.characters]
+
+    def _extract_and_commit_scene_memory(
+        self,
+        scene: ScenePlan,
+        chapter_num: int,
+        call_llm_fn: Optional[Callable[..., str]] = None,
+    ) -> None:
+        """
+        Executes EXTRACT -> CALCULATE DELTAS -> VALIDATE -> COMMIT for a completed scene.
+        Skips duplicate commit if the exact (chapter_num, scene_id) is already recorded.
+        """
+        already_committed = any(
+            c.chapter == chapter_num and c.scene_id == scene.scene_id
+            for c in self.memory_store.commit_history
+        )
+        if already_committed:
+            return
+
+        known_chars = self._get_known_character_names()
+        events, assessment = EventExtractor.extract_scene_events(
+            scene_text=scene.text_block,
+            chapter=chapter_num,
+            scene_id=scene.scene_id,
+            known_characters=known_chars or scene.active_characters,
+            location=scene.location,
+            call_llm_fn=call_llm_fn,
+            model=self.model,
+        )
+        val_report = self.memory_store.commit_scene_memory(
+            scene_id=scene.scene_id,
+            chapter=chapter_num,
+            events=events,
+            source_text=scene.text_block,
+            book_bible=self.book_bible,
+            location=scene.location,
+            time_marker=getattr(scene, "time", "Unspecified"),
+        )
+        self.memory_store.save(self.memory_store_path)
+        self.book_bible.save(self.project_dir)
+
+        self.narrative_state = NarrativeStateEngine.sync_from_memory_store(
+            current_state=self.narrative_state,
+            character_states=self.memory_store.character_states,
+            world_state=self.memory_store.world_state,
+            recent_events=events,
+            active_characters=scene.active_characters,
+            location=scene.location,
+        )
+        if val_report.flagged_conflicts:
+            print(
+                f"    [MEMORY VALIDATOR] {len(val_report.flagged_conflicts)} conflict(s) rejected; "
+                f"{len(val_report.accepted_deltas)} delta(s) committed (v{self.memory_store.memory_version})."
+            )
 
     def translate_chapter(
         self,
@@ -53,7 +126,7 @@ class IntelligentTranslationPipeline:
         use_cache: bool = True,
     ) -> Tuple[str, List[GateAuditResult]]:
         """
-        Executes autonomous scene-by-scene translation, QA certification, and repair.
+        Executes autonomous scene-by-scene translation, QA certification, repair, and Memory 2.0 updates.
         """
         if call_llm_fn is None:
             from audiobook_factory.translator import call_gemini
@@ -80,12 +153,15 @@ class IntelligentTranslationPipeline:
             print(f"    [+] Entity Discovery: {committed} new entities committed, {flagged} flagged conflicts.")
             self.book_bible.save(self.project_dir)
 
+        self.memory_store.seed_from_book_bible(self.book_bible)
+        known_chars = self._get_known_character_names()
+
         # 2. Transition-Driven Scene Planning
         print(f"[*] Step 2: Transition-Driven Scene Segmentation...")
         chapter_plan = ScenePlanner.plan_chapter(
             chapter_text=chapter_text,
             chapter_title=chapter_title,
-            known_characters=list(self.book_bible.characters.keys()),
+            known_characters=known_chars,
         )
         print(f"    [+] Chapter segmented into {len(chapter_plan.scenes)} dramatic scenes (Total Words: {chapter_plan.total_words}).")
 
@@ -98,12 +174,23 @@ class IntelligentTranslationPipeline:
 
         bible_hash = self.book_bible.get_version_hash()
 
-        # 3. Scene-by-Scene Translation Lifecycle
+        # 3. Scene-by-Scene Translation Lifecycle (READ -> ACT -> EXTRACT -> DELTA -> VALIDATE -> COMMIT)
         for s_idx, scene in enumerate(chapter_plan.scenes, 1):
             scene_dir = chapter_artifact_dir / scene.scene_id
             scene_dir.mkdir(parents=True, exist_ok=True)
 
             print(f"\n[*] [Scene {s_idx}/{len(chapter_plan.scenes)}] {scene.scene_title} ({len(scene.text_block.split())} words)...")
+
+            # STEP 1 (READ): Selective 7-Tier + Salience Memory Retrieval
+            memory_ctx = MemoryRetriever.retrieve_for_scene(
+                store=self.memory_store,
+                book_bible=self.book_bible,
+                chapter=chapter_num,
+                scene_id=scene.scene_id,
+                active_characters=scene.active_characters,
+                location=scene.location,
+                scene_text=scene.text_block,
+            )
 
             # A. Build persistent SourceSemanticMap
             semantic_map_path = scene_dir / "semantic_map.json"
@@ -113,7 +200,7 @@ class IntelligentTranslationPipeline:
                 source_map = build_source_semantic_map(
                     scene_text=scene.text_block,
                     scene_id=scene.scene_id,
-                    known_entities=list(self.book_bible.characters.keys()),
+                    known_entities=known_chars,
                 )
                 source_map.save(semantic_map_path)
 
@@ -131,14 +218,16 @@ class IntelligentTranslationPipeline:
                 with open(cache_file, "r", encoding="utf-8") as f:
                     translated_text = f.read()
                 print(f"    [CACHED] Scene loaded from valid provenance cache ({len(translated_text)} chars).")
+                self._extract_and_commit_scene_memory(scene, chapter_num, call_llm_fn=None)
                 translated_scenes.append(translated_text)
                 continue
 
-            # C. Construct Contextual Instructions
+            # C. Construct Contextual Instructions (with Selective MemoryContext)
             policy_prompt = self.policy.get_prompt_instructions()
             hindustani_prompt = self.hindustani_engine.get_prompt_guidelines()
             scene_context = scene.get_prompt_context()
             narrative_context = self.narrative_state.get_prompt_context()
+            memory_prompt_block = memory_ctx.get_prompt_context()
 
             # Character profiles for active characters
             char_profiles_prompt = "\n\n".join(
@@ -146,12 +235,15 @@ class IntelligentTranslationPipeline:
                 for c in scene.active_characters
             ) if scene.active_characters else "No specific character profiles present."
 
-            # Canonical proper nouns
+            # Canonical proper nouns & translation decisions
             canonical_lexicon = self.book_bible.get_canonical_lexicon()
             relevant_lexicon = {
                 k: v for k, v in canonical_lexicon.items()
                 if k.lower() in scene.text_block.lower()
             }
+            for concept_key, dec in self.decision_memory.decisions.items():
+                if concept_key in scene.text_block.lower():
+                    relevant_lexicon.setdefault(dec.source_concept, dec.chosen_translation)
             lexicon_str = json.dumps(relevant_lexicon, ensure_ascii=False, indent=2)
 
             system_instruction = (
@@ -168,6 +260,9 @@ class IntelligentTranslationPipeline:
 ### PRECEDING NARRATIVE CONTINUITY:
 {narrative_context}
 
+### SELECTIVE SCENE MEMORY & EPISTEMIC CONSTRAINTS:
+{memory_prompt_block}
+
 ### SCENE METADATA:
 {scene_context}
 
@@ -176,7 +271,7 @@ class IntelligentTranslationPipeline:
 {scene.text_block}
 \"\"\"
 """
-            # D. Dispatch Translation LLM Call
+            # D. Dispatch Translation LLM Call (ACT)
             t0 = time.time()
             raw_target = call_llm_fn(
                 prompt=prompt,
@@ -208,16 +303,15 @@ class IntelligentTranslationPipeline:
                 book_bible=self.book_bible,
                 chapter_num=chapter_num,
                 call_llm_fn=call_llm_fn,
+                memory_context=memory_ctx,
             )
 
             # H. Level 2 Targeted Repair if needed
             if not audit_result.certified:
                 print(f"    [!] Certification Alert ({audit_result.overall_status}). Attempting Level 2 targeted repair...")
-                # Find failing gates
                 for gate_key, g_res in audit_result.gates.items():
                     if g_res.status == "FAIL":
                         print(f"        -> Failing Gate {gate_key}: {', '.join(g_res.failures)}")
-                        # Attempt targeted repair on first paragraph
                         paras_src = [p for p in scene.text_block.split("\n\n") if p.strip()]
                         paras_tgt = [p for p in cleaned_target.split("\n\n") if p.strip()]
                         if paras_src and paras_tgt:
@@ -231,7 +325,6 @@ class IntelligentTranslationPipeline:
                                 paras_tgt[0] = rep_para
                                 cleaned_target = "\n\n".join(paras_tgt)
                                 print("        [+] Level 2 repair applied successfully.")
-                                # Re-certify
                                 audit_result = TranslationCertifier.certify_scene(
                                     source_text=scene.text_block,
                                     target_text=cleaned_target,
@@ -239,7 +332,8 @@ class IntelligentTranslationPipeline:
                                     scene_plan=scene,
                                     book_bible=self.book_bible,
                                     chapter_num=chapter_num,
-                                    call_llm_fn=None,  # fast re-check
+                                    call_llm_fn=None,
+                                    memory_context=memory_ctx,
                                 )
                                 break
 
@@ -254,6 +348,7 @@ class IntelligentTranslationPipeline:
                 "prompt_version": "2.0.0",
                 "model": self.model,
                 "composite_cache_key": comp_key,
+                "memory_version": self.memory_store.memory_version,
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "chapter_num": chapter_num,
                 "scene_id": scene.scene_id,
@@ -269,7 +364,7 @@ class IntelligentTranslationPipeline:
                 provenance_dict=prov_dict,
             )
 
-            # J. Update Narrative Continuity State
+            # J. Update Narrative Continuity State & Commit Scene Memory 2.0 (EXTRACT -> DELTA -> VALIDATE -> COMMIT)
             scene_summary = f"{scene.scene_title}: {scene.location}, active: {', '.join(scene.active_characters)}"
             self.narrative_state = NarrativeStateEngine.update_from_scene_completion(
                 current_state=self.narrative_state,
@@ -277,6 +372,7 @@ class IntelligentTranslationPipeline:
                 active_characters=scene.active_characters,
                 location=scene.location,
             )
+            self._extract_and_commit_scene_memory(scene, chapter_num, call_llm_fn=call_llm_fn)
 
             translated_scenes.append(cleaned_target)
             scene_audit_results.append(audit_result)
@@ -284,3 +380,4 @@ class IntelligentTranslationPipeline:
         # 4. Assemble Full Certified Chapter
         full_chapter_hindi = "\n\n".join(translated_scenes)
         return full_chapter_hindi, scene_audit_results
+
