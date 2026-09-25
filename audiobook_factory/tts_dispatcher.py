@@ -513,12 +513,18 @@ def synthesize_gemini_multispeaker_batch(
 
     parts = []
     for seg in batch.segments:
-        clean_text = seg.text.strip() if hasattr(seg, "text") else seg.get("text", "").strip()
-        stripped = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
-        if stripped in NUMERAL_NORMALIZATION:
-            clean_text = NUMERAL_NORMALIZATION[stripped]
-        elif clean_text in NUMERAL_NORMALIZATION:
-            clean_text = NUMERAL_NORMALIZATION[clean_text]
+        # Prefer resolved spoken_text, falling back to literary text
+        if hasattr(seg, "spoken_text") and seg.spoken_text:
+            clean_text = seg.spoken_text.strip()
+        elif isinstance(seg, dict) and seg.get("spoken_text"):
+            clean_text = seg["spoken_text"].strip()
+        else:
+            clean_text = seg.text.strip() if hasattr(seg, "text") else seg.get("text", "").strip()
+            stripped = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
+            if stripped in NUMERAL_NORMALIZATION:
+                clean_text = NUMERAL_NORMALIZATION[stripped]
+            elif clean_text in NUMERAL_NORMALIZATION:
+                clean_text = NUMERAL_NORMALIZATION[clean_text]
 
         spk = seg.speaker if hasattr(seg, "speaker") else seg.get("speaker", "Narrator")
         acting = getattr(seg, "acting", None) if hasattr(seg, "acting") else seg.get("acting")
@@ -940,6 +946,29 @@ class TTSDispatcher:
         self.take_selector = IntelligentTakeSelector(evaluator=self.evaluator)
         self.continuity_tracker = PerformanceContinuityTracker()
 
+        # Pronunciation & Spoken Language QA Subsystem
+        from audiobook_factory.pronunciation import (
+            PronunciationLexicon,
+            PronunciationResolver,
+            SpokenTextEngine,
+            PronunciationAudioQA,
+            PronunciationRepairEngine,
+        )
+        book_bible = None
+        for cand_bb in (self.project_dir / "book_bible.json", self.project_dir / "translation" / "book_bible.json"):
+            if cand_bb.exists():
+                try:
+                    from audiobook_factory.translation.book_bible import BookBible
+                    book_bible = BookBible.load_from_project(self.project_dir)
+                    break
+                except Exception:
+                    pass
+        self.pronunciation_lexicon = PronunciationLexicon.load_or_create(self.project_dir, book_bible=book_bible)
+        self.pronunciation_resolver = PronunciationResolver(lexicon=self.pronunciation_lexicon, book_bible=book_bible)
+        self.spoken_text_engine = SpokenTextEngine(resolver=self.pronunciation_resolver)
+        self.pronunciation_auditor = PronunciationAudioQA(forced_aligner=self.forced_aligner)
+        self.pronunciation_repair = PronunciationRepairEngine(auditor=self.pronunciation_auditor)
+
     def _load_character_roster(self) -> Tuple[Dict[str, str], Dict[str, str]]:
         """Loads character aliases and gender mappings from character_roster.json."""
         alias_map: Dict[str, str] = {}
@@ -1178,6 +1207,16 @@ class TTSDispatcher:
         intensity = segment.get("intensity_level", "medium") if isinstance(segment, dict) else getattr(segment, "intensity_level", "medium")
         mem_vc = segment.get("memory_vocal_constraint") if isinstance(segment, dict) else getattr(segment, "memory_vocal_constraint", None)
 
+        # Resolve Spoken Text representation (leaves segment literary text immutable)
+        spoken_res = self.spoken_text_engine.resolve_screenplay_segment(segment)
+        tts_text = spoken_res.spoken_text or text
+        if isinstance(segment, dict):
+            segment["spoken_text"] = tts_text
+            segment["pronunciation_metadata"] = [r.model_dump() for r in spoken_res.resolutions]
+        elif hasattr(segment, "spoken_text"):
+            segment.spoken_text = tts_text
+            segment.pronunciation_metadata = [r.model_dump() for r in spoken_res.resolutions]
+
         # Multi-Take Candidate Generation via TakeBank
         candidate_variants = self.take_bank.get_candidate_variants(p_dir)
         takes_for_seg = []
@@ -1190,7 +1229,7 @@ class TTSDispatcher:
 
             if not (take_target.exists() and take_target.stat().st_size > 1000):
                 synthesize_gemini_tts(
-                    text=text,
+                    text=tts_text,
                     output_file=take_target,
                     voice=voice,
                     emotion=emotion,
@@ -1213,6 +1252,27 @@ class TTSDispatcher:
 
         # Intelligent Take Selection
         winning_take = self.take_selector.select_best_take(takes_for_seg, text, p_dir)
+
+        # Pronunciation Audio QA & Targeted Take Repair
+        qa_res = self.pronunciation_auditor.audit_take(
+            take_audio_path=winning_take.audio_path,
+            spoken_result=spoken_res,
+            take_id=winning_take.take_id,
+            segment_uid=p_dir.segment_uid,
+        )
+        if not qa_res.passed:
+            repaired_take = self.pronunciation_repair.attempt_repair(
+                dispatcher=self,
+                segment=segment if isinstance(segment, dict) else segment.model_dump(),
+                failed_take=winning_take,
+                qa_result=qa_res,
+                chapter_num=chapter_num,
+                seg_num=seg_num,
+                p_dir=p_dir,
+            )
+            if repaired_take:
+                winning_take = repaired_take
+
         if str(winning_take.audio_path) != str(out_file):
             shutil.copy2(winning_take.audio_path, str(out_file))
 

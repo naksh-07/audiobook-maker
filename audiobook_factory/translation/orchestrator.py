@@ -188,6 +188,13 @@ class IntelligentTranslationPipeline:
         scene_audit_results: List[GateAuditResult] = []
 
         bible_hash = self.book_bible.get_version_hash()
+        pron_hash = ""
+        try:
+            from audiobook_factory.pronunciation.provenance import PronunciationProvenanceTracker
+            pron_lex = self.book_bible.sync_pronunciation_lexicon(self.project_dir)
+            pron_hash = PronunciationProvenanceTracker.compute_lexicon_hash(pron_lex.entries)
+        except Exception:
+            pron_hash = ""
 
         # 3. Scene-by-Scene Translation Lifecycle
         for s_idx, scene in enumerate(chapter_plan.scenes, 1):
@@ -255,6 +262,8 @@ class IntelligentTranslationPipeline:
                 semantic_map_version=SEMANTIC_MAP_VERSION,
                 semantic_map_hash=sem_map_hash,
                 repair_version=REPAIR_ENGINE_VERSION,
+                pronunciation_version="1.0",
+                pronunciation_hash=pron_hash,
             )
 
             if use_cache and cache_file.exists() and TranslationProvenanceTracker.is_cache_valid(prov_file, comp_key):
@@ -530,6 +539,8 @@ class IntelligentTranslationPipeline:
                 "semantic_map_hash": sem_map_hash,
                 "repair_version": REPAIR_ENGINE_VERSION,
                 "model": self.model,
+                "pronunciation_version": "1.0",
+                "pronunciation_hash": pron_hash,
                 "composite_cache_key": comp_key,
                 "memory_version": self.memory_store.memory_version,
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

@@ -247,6 +247,14 @@ class BookBible(BaseModel):
         lexicon.update(self.terminology)
         return lexicon
 
+    def sync_pronunciation_lexicon(self, project_dir: Path) -> Any:
+        """Loads and synchronizes project PronunciationLexicon with BookBible entities."""
+        from audiobook_factory.pronunciation.lexicon import PronunciationLexicon
+        lexicon = PronunciationLexicon.load_or_create(project_dir, book_bible=self)
+        lexicon.export_to_book_bible(self)
+        lexicon.save(project_dir)
+        return lexicon
+
     def export_legacy_glossary(self) -> Dict[str, Any]:
         """
         Projects canonical Book Bible state into legacy glossary.json schema.

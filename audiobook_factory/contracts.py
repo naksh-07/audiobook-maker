@@ -197,6 +197,8 @@ class ScreenplaySegment(BaseModel):
     memory_vocal_constraint: Optional[str] = Field(default=None, description="Conservative physical vocal constraint from Memory 2.0 (e.g. 'strained_breath', 'fatigued_low_energy')")
     recommended_pronoun: Optional[str] = Field(default=None, description="Recommended Hindi pronoun from DynamicRelationshipState ('tu', 'tum', 'aap')")
     recommended_register: Optional[str] = Field(default=None, description="Recommended socio-linguistic register from DynamicRelationshipState")
+    spoken_text: Optional[str] = Field(default=None, description="Resolved spoken representation for TTS payload (strictly preserves text as immutable literary prose)")
+    pronunciation_metadata: Optional[List[Dict[str, Any]]] = Field(default=None, description="Traceable pronunciation resolution metadata for words and entities in segment")
 
     # Stage 3: Dramatic Intelligence & Performance Adaptation Extensions (Optional & Defaulted)
     scene_id: Optional[str] = Field(default=None, description="Enclosing dramatic scene identifier")

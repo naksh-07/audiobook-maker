@@ -46,12 +46,16 @@ CRITICAL_GATES = {
     "T5_terminology",
     "T6_relationship_memory",
     "T8_intensity",
+    "T13_pronunciation_plan",
 }
 
 ADVISORY_GATES = {
     "T7_character_voice",
     "T9_naturalness",
     "T10_register_balance",
+    "T12_spoken_language",
+    "T14_pronunciation_audio",
+    "T15_pronunciation_consistency",
 }
 
 
@@ -100,9 +104,11 @@ class TranslationCertifier:
         call_llm_fn: Optional[Any] = None,
         memory_context: Optional[Any] = None,
         target_map: Optional[TargetSemanticMap] = None,
+        takes: Optional[List[Any]] = None,
+        project_dir: Optional[Path] = None,
     ) -> GateAuditResult:
         """
-        Executes Gates T0 through T11 on a translated scene.
+        Executes Gates T0 through T15 on a translated scene.
         Guarantees that critical WARN states cannot silently become PASS.
         Calibrates intensity vectors deterministically if not explicitly provided.
         """
@@ -323,6 +329,119 @@ class TranslationCertifier:
             status=reg_status,
             details=f"Seasoning words: {len(reg_audit.detected_seasoning_words)}",
             warnings=reg_warnings,
+        )
+
+        # -------------------------------------------------------------
+        # Gate T12: Spoken Language & Code-Switch QA (Advisory)
+        # -------------------------------------------------------------
+        from audiobook_factory.pronunciation.language_detector import classify_sentence_language
+        lang_audit = classify_sentence_language(target_text)
+        t12_status = GateStatus.PASS
+        t12_warnings = []
+        if lang_audit.get("is_code_switched") and lang_audit.get("latin_ratio", 0) > 0.45:
+            t12_status = GateStatus.WARN
+            t12_warnings.append(f"Elevated Latin script ratio ({lang_audit.get('latin_ratio'):.1%}) in translated scene")
+
+        gates["T12_spoken_language"] = GateResult(
+            gate_id="T12",
+            gate_name="Spoken Language & Code-Switching Naturalness",
+            status=t12_status,
+            details=f"Primary: {lang_audit.get('primary_language')} | Latin Ratio: {lang_audit.get('latin_ratio', 0):.1%}",
+            warnings=t12_warnings,
+        )
+
+        # -------------------------------------------------------------
+        # Gate T13: Pronunciation Plan QA (Critical)
+        # -------------------------------------------------------------
+        from audiobook_factory.pronunciation import (
+            PronunciationLexicon,
+            PronunciationResolver,
+            SpokenTextEngine,
+            PronunciationStatus,
+        )
+        t13_lexicon = PronunciationLexicon()
+        t13_lexicon.sync_from_book_bible(book_bible)
+        t13_resolver = PronunciationResolver(t13_lexicon, book_bible=book_bible, call_llm_fn=call_llm_fn)
+        t13_engine = SpokenTextEngine(t13_resolver)
+        spoken_res = t13_engine.resolve_text(target_text)
+
+        t13_status = GateStatus.PASS
+        t13_failures = []
+        t13_warnings = []
+
+        for r in spoken_res.resolutions:
+            if r.status == PronunciationStatus.FAILED:
+                t13_status = GateStatus.FAIL
+                t13_failures.append(f"Failed pronunciation resolution for '{r.original_token}': {r.explanation}")
+            elif r.status in (PronunciationStatus.REVIEW_REQUIRED, PronunciationStatus.UNCERTAIN) or r.requires_review:
+                t13_warnings.append(f"Unresolved pronunciation requiring review: '{r.original_token}'")
+            elif r.status == PronunciationStatus.LIKELY:
+                t13_warnings.append(f"Pronunciation resolution unverified (status=LIKELY): '{r.original_token}'")
+
+        if t13_warnings and t13_status != GateStatus.FAIL:
+            t13_status = GateStatus.WARN
+
+        gates["T13_pronunciation_plan"] = GateResult(
+            gate_id="T13",
+            gate_name="Pronunciation Plan & Entity Determinism",
+            status=t13_status,
+            details=f"Resolved {len(spoken_res.resolutions)} sensitive tokens/entities",
+            failures=t13_failures,
+            warnings=t13_warnings,
+        )
+
+        # -------------------------------------------------------------
+        # Gate T14: Pronunciation Audio QA (Advisory/Pre-Mix)
+        # -------------------------------------------------------------
+        t14_status = GateStatus.PASS
+        t14_details = "Pre-synthesis certified (no candidate takes passed for audit)"
+        t14_warnings = []
+        if takes:
+            from audiobook_factory.pronunciation.auditor import PronunciationAudioQA
+            qa_auditor = PronunciationAudioQA(forced_aligner=None)
+            for t in takes:
+                t_path = getattr(t, "audio_path", None)
+                if t_path and Path(t_path).exists():
+                    qa_rep = qa_auditor.audit_take(t_path, spoken_res)
+                    if not qa_rep.passed:
+                        t14_status = GateStatus.WARN
+                        t14_warnings.extend(qa_rep.review_reasons)
+            if t14_warnings:
+                t14_details = f"Audited {len(takes)} takes: issues flagged"
+            else:
+                t14_details = f"Audited {len(takes)} takes: verified clean"
+
+        gates["T14_pronunciation_audio"] = GateResult(
+            gate_id="T14",
+            gate_name="Pronunciation Audio QA & Acoustic Alignment",
+            status=t14_status,
+            details=t14_details,
+            warnings=t14_warnings,
+        )
+
+        # -------------------------------------------------------------
+        # Gate T15: Cross-Chapter Pronunciation Consistency
+        # -------------------------------------------------------------
+        t15_status = GateStatus.PASS
+        t15_details = "Verified scene entity pronunciations align with canonical lexicon"
+        t15_warnings = []
+        if project_dir and Path(project_dir).exists():
+            from audiobook_factory.pronunciation.consistency import CrossChapterConsistencyAuditor
+            drift_auditor = CrossChapterConsistencyAuditor()
+            drifts = drift_auditor.audit_project(project_dir)
+            unexc_drifts = [d for d in drifts if not d.allowed_exception]
+            if unexc_drifts:
+                t15_status = GateStatus.WARN
+                for d in unexc_drifts:
+                    t15_warnings.append(f"Pronunciation drift on '{d.canonical_text}': {'; '.join(d.drift_details)}")
+                t15_details = f"Detected {len(unexc_drifts)} unexempted pronunciation drift(s)"
+
+        gates["T15_pronunciation_consistency"] = GateResult(
+            gate_id="T15",
+            gate_name="Cross-Chapter Pronunciation Consistency",
+            status=t15_status,
+            details=t15_details,
+            warnings=t15_warnings,
         )
 
         # -------------------------------------------------------------

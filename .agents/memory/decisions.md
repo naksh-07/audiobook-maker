@@ -565,3 +565,38 @@
      - Full regression suite confirmed 100% green across all existing and new tests.
 - **Rationale:** Bridges the critical divide between Stage 3 dramatic intelligence and final speech synthesis, transforming synthetic TTS speech into emotionally grounded, dynamically paced, multi-cast dramatic audio drama performances with complete explainability and zero regression risk.
 
+## ADR-022: Pronunciation & Spoken Language QA Subsystem (Dual-Layer Text Decoupling, Deterministic 7-Tier Resolution, Acoustic MMS_FA Verification, and Single-Take Surgical Repair)
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:**
+  1. Multilingual, historical, fantasy, and translated literature poses acute phonetic hazards for generative neural TTS models: non-standard proper nouns, foreign names, numerals, currencies, compound units, percentages, and acronyms are frequently mispronounced, swallowed, or read as robotic digit sequences.
+  2. Naive attempts to fix pronunciation by rewriting dialogue in the screenplay corrupted human-facing text, broken subtitles, TOC displays, and original authorial prose, violating text immutability invariants.
+  3. Bracketed neural acting directives (`[whispers]`, `[gasp]`, `[shouting]`) were vulnerable to verbalization or transliteration mutilation by naive phoneticizers.
+  4. TTS vocoders occasionally dropped difficult tokens or entered runaway stutter loops without acoustic verification, and character pronunciations drifted across chapters without project-wide consistency auditing.
+- **Decision:**
+  1. **Dual-Layer Text Decoupling (`contracts.py`, `spoken_text.py`):**
+     - Established absolute physical separation between sacred literary prose (`ScreenplaySegment.text`, 100% immutable for subtitles, display, and archive) and phonetic TTS delivery payloads (`ScreenplaySegment.spoken_text` + `pronunciation_metadata`).
+     - Preserved neural acting tags (`ACTING_TAG_PATTERN = re.compile(r"(\[[^\]]+\])")`) passing them through verbatim without phonetic expansion.
+  2. **Unicode-Safe Script & Dialect Classifier (`language_detector.py`, `code_switch.py`):**
+     - Analyzed character ranges to distinguish Perso-Arabic loanwords (`URDU_NUKTA_PATTERNS`: क़, ख़, ग़, ज़, फ़) and Sanskrit Tatsama conjuncts (क्ष, त्र, ज्ञ, श्र) from native Hindi retroflex flaps.
+     - Implemented Option 1A Hybrid Mode: phonetic Devanagari guidance for foreign proper nouns in Hindi dialogue, colloquial loanword preservation, and authentic code-switching retention.
+  3. **Deterministic 7-Tier Resolver (`resolver.py`):**
+     - Enforced strict auditable precedence: Tier 1 Manual Override $\rightarrow$ Tier 2 Canonical BookBible $\rightarrow$ Tier 3 Verified Project History $\rightarrow$ Tier 4 Canonical Lexicon Entry $\rightarrow$ Tier 5 Deterministic Rules (currency expansion `₹500` $\rightarrow$ `पाँच सौ रुपये`, percentages, Devanagari/Latin numerals up to 100M, compound units `10km` $\rightarrow$ `दस किलोमीटर`, acronym initialisms `FBI` $\rightarrow$ `एफ़.बी.आई.`) $\rightarrow$ Tier 6 Model-Assisted Inference $\rightarrow$ Tier 7 `REVIEW_REQUIRED` (zero silent pass on unknown foreign tokens).
+     - Standardized objective states without fake precision: `VERIFIED`, `LIKELY`, `UNCERTAIN`, `FAILED`, `REVIEW_REQUIRED`.
+  4. **Acoustic Forced Alignment QA (`auditor.py`):**
+     - Integrated Meta MMS_FA CTC alignment on GPU/CPU with proportional energy valley fallback to compute frame-accurate token boundaries (`start_ms`, `end_ms`, `duration_ms`).
+     - Implemented forensic detectors for swallowed/omitted tokens ($< \max(60, \text{syllables} \times 45)\text{ms}$), vocoder stutter loops ($> \max(1200, \text{syllables} \times 350)\text{ms}$), and rushed/dragging cadence anomalies.
+  5. **Targeted Single-Take Repair Engine (`repair.py`):**
+     - Bounded by a strict circuit breaker of max 1 targeted repair attempt per segment to eliminate runaway retry loops or quota exhaustion.
+     - Injected rhythmic micro-pause anchors (gentle commas) around swallowed tokens to give the neural vocoder acoustic onset breathing room.
+     - Enforced atomic synthesis to `.tmp.wav` before promoting verified audio takes into `TakeBank`.
+  6. **Cross-Chapter Drift Auditor & Production Quality Gates (`consistency.py`, `certification.py`, `gate_auditor.py`):**
+     - Added Scene Gates T12 (Spoken Language QA), T13 (Pronunciation Plan QA - Critical), T14 (Pronunciation Audio QA), and T15 (Cross-Chapter Consistency) to `TranslationCertifier`.
+     - Added Book Master Gate 6E (`CrossChapterConsistencyAuditor`) to `audit_book_master` in `gate_auditor.py`, failing closed before final `.m4b` delivery if unexempted pronunciation drift is detected.
+     - Integrated 16-char SHA-256 lexicon hash into `TranslationProvenanceTracker` composite cache key for clean downstream take invalidation upon pronunciation edits.
+  7. **Verification:**
+     - Created permanent Golden Pronunciation Bank (`golden_set.py`) covering 20 edge cases across 8 linguistic dimensions, passing with 100% precision.
+     - Validated complete 6-stage lifecycle in `tests/pronunciation/test_end_to_end_pronunciation_integration.py`.
+- **Rationale:** Guarantees flawless spoken clarity and character entity continuity across full-novel audio drama productions without mutating authorial prose, corrupting subtitles, or exhausting generative AI quota.
+
+

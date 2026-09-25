@@ -215,11 +215,11 @@ def _parse_dramatized_chunk_llm(
                 + "\n"
             )
 
+    dramatic_section = f"Dramatic Scene & Beat Context:\n{dramatic_context}\n" if dramatic_context else ""
     prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 Preceding Scene Context / Characters Speaking:
 {preceding_context if preceding_context else "Beginning of scene."}
-{f"Dramatic Scene & Beat Context:\n{dramatic_context}" if dramatic_context else ""}
-{roster_hint}
+{dramatic_section}{roster_hint}
 Current Scene Text:
 \"\"\"
 {chunk_text}

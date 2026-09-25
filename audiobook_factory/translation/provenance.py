@@ -36,6 +36,8 @@ class TranslationProvenance(BaseModel):
     repair_version: str = "2.0"
     model: str
     advisory_version: str = "2.0"
+    pronunciation_version: str = "1.0"
+    pronunciation_hash: str = ""
     composite_cache_key: str
     created_at: str
     chapter_num: int = 1
@@ -59,13 +61,15 @@ class TranslationProvenanceTracker:
         semantic_map_version: str = "2.0",
         semantic_map_hash: str = "",
         repair_version: str = "2.0",
+        pronunciation_version: str = "1.0",
+        pronunciation_hash: str = "",
     ) -> str:
-        """Computes deterministic SHA256 composite cache key across all 11 dependency components."""
+        """Computes deterministic SHA256 composite cache key across all 13 dependency components."""
         source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()[:16]
         payload = (
             f"{source_hash}:{bible_version_hash}:{policy_version}:{prompt_version}:"
             f"{translator_version}:{evaluator_version}:{semantic_map_version}:{semantic_map_hash}:"
-            f"{repair_version}:{model}:{advisory_version}"
+            f"{repair_version}:{model}:{advisory_version}:{pronunciation_version}:{pronunciation_hash}"
         )
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24]
 
@@ -103,6 +107,8 @@ class TranslationProvenanceTracker:
         semantic_map_hash: str = "",
         repair_version: str = "2.0",
         advisory_version: str = "2.0",
+        pronunciation_version: str = "1.0",
+        pronunciation_hash: str = "",
         certified: bool = False,
         certification_status: str = "UNCHECKED",
     ):
@@ -120,6 +126,8 @@ class TranslationProvenanceTracker:
             semantic_map_version=semantic_map_version,
             semantic_map_hash=semantic_map_hash,
             repair_version=repair_version,
+            pronunciation_version=pronunciation_version,
+            pronunciation_hash=pronunciation_hash,
         )
         source_hash = hashlib.sha256(source_text.encode("utf-8")).hexdigest()[:16]
 
@@ -135,6 +143,8 @@ class TranslationProvenanceTracker:
             repair_version=repair_version,
             model=model,
             advisory_version=advisory_version,
+            pronunciation_version=pronunciation_version,
+            pronunciation_hash=pronunciation_hash,
             composite_cache_key=comp_key,
             created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
             chapter_num=chapter_num,

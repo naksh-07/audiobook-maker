@@ -1620,7 +1620,15 @@ def audit_book_master(project_dir: Path) -> Dict[str, Any]:
     r_6c = audit_gate6c_toc_integrity(chapter_files, toc=toc)
     r_6d = audit_gate6d_packaging_specs(cover_image=cover_path, specs=specs)
 
-    all_passed = all([r_6a.passed, r_6b.passed, r_6c.passed, r_6d.passed])
+    # Gate 6E: Cross-Chapter Pronunciation Consistency
+    from audiobook_factory.pronunciation.consistency import CrossChapterConsistencyAuditor
+    drift_auditor = CrossChapterConsistencyAuditor()
+    drifts = drift_auditor.audit_project(pdir)
+    unexc_drifts = [d for d in drifts if not d.allowed_exception]
+    passed_6e = (len(unexc_drifts) == 0)
+    r_6e_errors = [f"Entity '{d.canonical_text}': {'; '.join(d.drift_details)}" for d in unexc_drifts]
+
+    all_passed = all([r_6a.passed, r_6b.passed, r_6c.passed, r_6d.passed, passed_6e])
 
     return {
         "project_dir": str(pdir),
@@ -1630,5 +1638,11 @@ def audit_book_master(project_dir: Path) -> Dict[str, Any]:
         "gate_6b": r_6b.to_dict(),
         "gate_6c": r_6c.to_dict(),
         "gate_6d": r_6d.to_dict(),
+        "gate_6e_pronunciation_consistency": {
+            "passed": passed_6e,
+            "drifts_detected": len(drifts),
+            "unexempted_drifts": len(unexc_drifts),
+            "errors": r_6e_errors,
+        },
     }
 
