@@ -12,7 +12,6 @@ Features:
 """
 
 from __future__ import annotations
-import os
 import wave
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
@@ -21,14 +20,13 @@ from audiobook_factory.logger import logger
 from .contracts import (
     TakeVariant,
     PerformanceDirection,
-    PerformanceEvaluationResult,
     TakeSelectionResult,
     TakeSelectorCalibrationConfig,
-    EvaluationDimensionScore,
 )
 from .evaluator import PerformanceEvaluator
 from .chemistry import ConversationalChemistry
 from .continuity import PerformanceContinuityTracker
+from .evidence_fusion import EvidenceFusionEngine, EvidenceFusionCalibrationConfig
 
 
 class PairwiseTakeJudge:
@@ -203,6 +201,48 @@ class PairwiseTakeJudge:
                     if "LOWER_ALIGNMENT_UNCERTAINTY" not in reason_codes:
                         reason_codes.append("LOWER_ALIGNMENT_UNCERTAINTY")
 
+        # 9. Emphasis Evidence Match
+        emp_a = ev_a.evidence.emphasis if (ev_a and ev_a.evidence) else None
+        emp_b = ev_b.evidence.emphasis if (ev_b and ev_b.evidence) else None
+        if emp_a and emp_b:
+            if "EMPHASIS_CORRECT" in emp_a.reason_codes and "EMPHASIS_CORRECT" not in emp_b.reason_codes:
+                adj_a += 0.03
+                if "BETTER_EMPHASIS" not in reason_codes:
+                    reason_codes.append("BETTER_EMPHASIS")
+            elif "EMPHASIS_CORRECT" in emp_b.reason_codes and "EMPHASIS_CORRECT" not in emp_a.reason_codes:
+                adj_b += 0.03
+                if "BETTER_EMPHASIS" not in reason_codes:
+                    reason_codes.append("BETTER_EMPHASIS")
+
+        # 10. Breath & Respiration Organic Match
+        br_a = ev_a.evidence.breath if (ev_a and ev_a.evidence) else None
+        br_b = ev_b.evidence.breath if (ev_b and ev_b.evidence) else None
+        if br_a and br_b:
+            if br_a.breath_detected and not br_b.breath_detected:
+                adj_a += 0.02
+                if "ORGANIC_BREATH_EXECUTION" not in reason_codes:
+                    reason_codes.append("ORGANIC_BREATH_EXECUTION")
+            elif br_b.breath_detected and not br_a.breath_detected:
+                adj_b += 0.02
+                if "ORGANIC_BREATH_EXECUTION" not in reason_codes:
+                    reason_codes.append("ORGANIC_BREATH_EXECUTION")
+
+        # 11. Perceptual Judge Score
+        perc_a = ev_a.evidence.perceptual if (ev_a and ev_a.evidence) else None
+        perc_b = ev_b.evidence.perceptual if (ev_b and ev_b.evidence) else None
+        if perc_a and perc_b:
+            act_a = perc_a.acting_believability.score
+            act_b = perc_b.acting_believability.score
+            if abs(act_a - act_b) >= 0.06:
+                if act_a > act_b:
+                    adj_a += 0.03
+                    if "SUPERIOR_ACTING_BELIEVABILITY" not in reason_codes:
+                        reason_codes.append("SUPERIOR_ACTING_BELIEVABILITY")
+                else:
+                    adj_b += 0.03
+                    if "SUPERIOR_ACTING_BELIEVABILITY" not in reason_codes:
+                        reason_codes.append("SUPERIOR_ACTING_BELIEVABILITY")
+
         final_a = round(min(1.0, max(0.0, score_a + adj_a)), 3)
         final_b = round(min(1.0, max(0.0, score_b + adj_b)), 3)
 
@@ -264,6 +304,11 @@ class IntelligentTakeSelector:
         self.evaluator = evaluator or PerformanceEvaluator()
         self.config = config or TakeSelectorCalibrationConfig()
         self.aligner = aligner
+        self.fusion_engine = EvidenceFusionEngine(
+            config=EvidenceFusionCalibrationConfig(
+                alignment_confidence_hard_gate=self.config.alignment_confidence_hard_gate
+            )
+        )
 
     def _audit_technical_hard_gates(
         self,
@@ -274,17 +319,23 @@ class IntelligentTakeSelector:
         """Stage 1: Audits raw audio integrity, DC offset, duration, and clipping."""
         reasons: List[str] = []
         p = Path(take.audio_path)
-        if not p.exists() or p.stat().st_size <= 44:
+        if not p.is_file() or p.stat().st_size <= 44:
             return False, ["Audio file missing or unreadable header"]
 
         dur = take.duration_sec
         if dur <= 0.0:
             try:
                 with wave.open(str(p), "rb") as wf:
-                    dur = wf.getnframes() / float(wf.getframerate())
+                    fr = wf.getframerate()
+                    if fr <= 0:
+                        return False, ["Invalid WAV framerate <= 0"]
+                    dur = wf.getnframes() / float(fr)
                     take.duration_sec = round(dur, 3)
             except Exception as e:
                 return False, [f"Failed to read WAV audio header: {e}"]
+
+        if dur > 600.0:
+            return False, [f"Take duration {dur:.1f}s exceeds bounded limit of 600.0s"]
 
         if dur < self.config.min_duration_sec:
             reasons.append(f"Truncated audio: duration {dur:.2f}s < {self.config.min_duration_sec}s")
@@ -515,7 +566,6 @@ class IntelligentTakeSelector:
         # Single candidate take path
         if len(takes) == 1:
             sole = takes[0]
-            sole.is_selected = True
             ev = sole.evaluation
 
             all_reasons: List[str] = []
@@ -535,7 +585,11 @@ class IntelligentTakeSelector:
             score = ev.overall_score if ev else 0.80
             eval_passed = ev.passed if ev else True
 
+            fusion_res = self.fusion_engine.fuse_take(sole, text, direction)
+            status: TakeSelectionStatus = "ACCEPT"
+
             if gates_passed and eval_passed:
+                sole.is_selected = True
                 reason = (
                     f"Selected sole candidate ({sole.variant_type}): overall score {score:.2f} "
                     f"satisfies performance and technical standards."
@@ -543,7 +597,9 @@ class IntelligentTakeSelector:
                 review_req = False
                 confidence = 1.0
                 reason_codes = ["STRONGER_INTENT_MATCH"]
+                status = "ACCEPT"
             else:
+                sole.is_selected = False
                 reason = (
                     f"Selected sole candidate ({sole.variant_type}) as degraded baseline (score: {score:.2f})."
                 )
@@ -558,6 +614,7 @@ class IntelligentTakeSelector:
                 review_req = True
                 confidence = 0.35
                 reason_codes = ["REVIEW_REQUIRED_GATE_FAILURE"] if not gates_passed else ["REVIEW_REQUIRED_LOW_QUALITY"]
+                status = "REVIEW" if eval_passed else "REGENERATE"
 
             sole.selection_reason = reason
             result = TakeSelectionResult(
@@ -567,12 +624,14 @@ class IntelligentTakeSelector:
                 runner_up_score=None,
                 margin=0.0,
                 confidence=confidence,
+                status=status,
                 reason_codes=reason_codes,
                 evidence={
                     "gate_passed": gates_passed,
                     "gate_reasons": all_reasons,
                     "eval_passed": eval_passed,
                 },
+                fusion_result=fusion_res,
                 review_required=review_req,
             )
             sole.selection_result = result
@@ -605,9 +664,48 @@ class IntelligentTakeSelector:
 
         all_violated = False
         if not qualified_takes:
-            # All candidates violated hard gates - compete among all with review_required
-            competing_takes = takes
             all_violated = True
+            if not self.config.allow_degraded_winner:
+                # Authoritative NO_ACCEPTABLE_TAKE!
+                # Score all candidates for runner-up provenance
+                scored_candidates: List[Tuple[float, TakeVariant]] = []
+                for t in takes:
+                    s = self._score_contextual(t, direction, chemistry_context, arc_context)
+                    scored_candidates.append((s, t))
+                scored_candidates.sort(key=lambda x: x[0], reverse=True)
+                cand_1_score, cand_1 = scored_candidates[0] if scored_candidates else (0.0, None)
+
+                all_gate_reasons = [r for _, r_list in disqualified_takes for r in r_list]
+                fusion_res = self.fusion_engine.fuse_take(cand_1, text, direction) if cand_1 else None
+
+                result = TakeSelectionResult(
+                    winner=None,
+                    runner_up=cand_1,
+                    winner_score=0.0,
+                    runner_up_score=round(cand_1_score, 3) if cand_1 else None,
+                    margin=0.0,
+                    confidence=0.35,
+                    status="NO_ACCEPTABLE_TAKE",
+                    reason_codes=["NO_ACCEPTABLE_TAKE", "HARD_GATE_FAILURE"],
+                    evidence={
+                        "all_violated": True,
+                        "disqualified_count": len(disqualified_takes),
+                        "hard_gate_reasons": all_gate_reasons,
+                    },
+                    fusion_result=fusion_res,
+                    review_required=True,
+                )
+                for t in takes:
+                    t.is_selected = False
+                    t.selection_result = result
+                logger.warning(
+                    f"  [TAKE SELECTION] Segment {direction.index} ({direction.speaker}): "
+                    f"NO ACCEPTABLE TAKE - all {len(takes)} candidates disqualified by hard gates."
+                )
+                return result
+            else:
+                # All candidates violated hard gates - compete among all with review_required
+                competing_takes = takes
         else:
             competing_takes = qualified_takes
 
@@ -706,6 +804,11 @@ class IntelligentTakeSelector:
         winner.is_selected = True
         winner.selection_reason = rationale
 
+        fusion_res = self.fusion_engine.fuse_take(winner, text, direction)
+        status = fusion_res.status
+        if status == "ACCEPT" and review_required:
+            status = "ACCEPT_WITH_WARNING"
+
         result = TakeSelectionResult(
             winner=winner,
             runner_up=runner_up,
@@ -713,12 +816,14 @@ class IntelligentTakeSelector:
             runner_up_score=ru_score,
             margin=final_margin,
             confidence=confidence,
+            status=status,
             reason_codes=reason_codes,
             evidence={
                 "all_violated": all_violated,
                 "disqualified_count": len(disqualified_takes),
                 "pairwise_triggered": should_pairwise,
             },
+            fusion_result=fusion_res,
             review_required=review_required,
         )
         winner.selection_result = result
@@ -745,7 +850,10 @@ class IntelligentTakeSelector:
         """
         Evaluates and selects the winning take from a list of candidate TakeVariants.
         Sets is_selected=True, selection_reason, and selection_result on the chosen take.
-        Fully backward-compatible API returning winning TakeVariant.
+        Fully backward-compatible API returning TakeVariant.
+        If status == 'NO_ACCEPTABLE_TAKE', acts as a legacy adapter returning the best
+        available degraded candidate with is_selected=False, review_required=True,
+        and selection_reason starting with '[DEGRADED_FALLBACK - NO_ACCEPTABLE_TAKE]'.
         """
         result = self.select_take_with_result(
             takes=takes,
@@ -754,7 +862,18 @@ class IntelligentTakeSelector:
             signature=signature,
             voice_dna=voice_dna,
         )
-        return result.winner
+        if result.winner is not None:
+            return result.winner
+
+        # Legacy adapter: return best candidate explicitly marked as unselected degraded fallback
+        fallback = result.runner_up or takes[0]
+        fallback.is_selected = False
+        fallback.selection_reason = (
+            f"[DEGRADED_FALLBACK - NO_ACCEPTABLE_TAKE] All candidate takes failed hard gates. "
+            f"Reason codes: {'; '.join(result.reason_codes)}"
+        )
+        fallback.selection_result = result
+        return fallback
 
     def select_scene_takes(
         self,

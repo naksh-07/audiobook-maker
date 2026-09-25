@@ -40,6 +40,13 @@ class AcousticSignature(BaseModel):
     spectral_flatness_mean: float = Field(default=0.06, description="Voicing purity vs breathiness")
     rms_dbfs_mean: float = Field(default=-20.0, description="Nominal vocal projection headroom")
     formant_ratio_f2_f1: float = Field(default=2.5, description="Vocal tract length proxy (F2/F1 ratio)")
+    f0_min_hz: float = Field(default=80.0, description="Minimum voiced pitch (Hz)")
+    f0_max_hz: float = Field(default=300.0, description="Maximum voiced pitch (Hz)")
+    f0_dispersion_ratio: float = Field(default=0.25, description="F0 IQR / median ratio")
+    mode_baselines: Dict[str, Dict[str, float]] = Field(
+        default_factory=dict,
+        description="Mode-specific empirical acoustic telemetry (neutral, conversational, emotional, intense, intimate)"
+    )
     num_reference_takes: int = Field(default=1)
     reference_files: List[str] = Field(default_factory=list)
 
@@ -135,9 +142,11 @@ class ReferenceVoiceBank:
         flatnesses = []
         rms_vals = []
         ref_names = []
+        mode_baselines: Dict[str, Dict[str, float]] = {}
 
         for wav in ref_wavs:
             ref_names.append(wav.name)
+            mode_name = wav.stem.lower()
             try:
                 with wave.open(str(wav), "rb") as wf:
                     n_frames = wf.getnframes()
@@ -164,11 +173,21 @@ class ReferenceVoiceBank:
                 # Spectral centroid via FFT
                 centroid = self._estimate_spectral_centroid(samples, self.sample_rate)
                 centroids.append(centroid)
+
+                # Record mode-specific empirical baseline
+                mode_baselines[mode_name] = {
+                    "f0_median_hz": round(f0, 1) if f0 > 40.0 else 150.0,
+                    "spectral_centroid_hz": round(centroid, 1),
+                    "rms_dbfs": round(rms_db, 1),
+                }
             except Exception as e:
                 logger.warning(f"  [REF SIGNATURE] Error processing {wav.name}: {e}")
 
         median_f0 = float(np.median(f0_estimates)) if f0_estimates else 150.0
         iqr_f0 = float(np.percentile(f0_estimates, 75) - np.percentile(f0_estimates, 25)) if len(f0_estimates) >= 4 else 30.0
+        min_f0 = float(np.min(f0_estimates)) if f0_estimates else max(40.0, median_f0 * 0.6)
+        max_f0 = float(np.max(f0_estimates)) if f0_estimates else median_f0 * 1.6
+        dispersion_ratio = round(iqr_f0 / max(median_f0, 40.0), 3)
         avg_centroid = float(np.mean(centroids)) if centroids else 1600.0
         avg_flatness = float(np.mean(flatnesses)) if flatnesses else 0.06
         avg_rms = float(np.mean(rms_vals)) if rms_vals else -20.0
@@ -183,12 +202,16 @@ class ReferenceVoiceBank:
             spectral_flatness_mean=round(avg_flatness, 3),
             rms_dbfs_mean=round(avg_rms, 1),
             formant_ratio_f2_f1=2.6,
+            f0_min_hz=round(min_f0, 1),
+            f0_max_hz=round(max_f0, 1),
+            f0_dispersion_ratio=dispersion_ratio,
+            mode_baselines=mode_baselines,
             num_reference_takes=len(ref_wavs),
             reference_files=ref_names,
         )
         self.signatures[character_id] = sig
         self.save_signatures()
-        logger.info(f"  [REF VOICE BANK] Recomputed signature for '{character_id}': F0={median_f0:.1f}Hz, Centroid={avg_centroid:.1f}Hz.")
+        logger.info(f"  [REF VOICE BANK] Recomputed signature for '{character_id}': F0={median_f0:.1f}Hz, Centroid={avg_centroid:.1f}Hz, Modes={list(mode_baselines.keys())}.")
         return sig
 
     def get_signature(self, character_id: str) -> Optional[AcousticSignature]:
@@ -229,11 +252,36 @@ class ReferenceVoiceBank:
 
     @staticmethod
     def _estimate_spectral_centroid(samples: np.ndarray, sample_rate: int) -> float:
-        """Estimates spectral brightness centroid in Hz."""
-        windowed = samples[:2048] * np.hanning(min(len(samples), 2048))
+        """Estimates spectral brightness centroid in Hz across active/voiced frames."""
+        frame_len = min(2048, len(samples))
+        if frame_len < 128:
+            return 1500.0
+        hop = frame_len // 2
+        centroids = []
+        hann = np.hanning(frame_len)
+        freqs = np.fft.rfftfreq(frame_len, 1.0 / sample_rate)
+
+        for start in range(0, len(samples) - frame_len + 1, hop):
+            frame = samples[start:start + frame_len]
+            frame_centered = frame - np.mean(frame)
+            energy = np.sum(frame_centered ** 2)
+            if energy < 1e6:
+                continue
+            windowed = frame_centered * hann
+            spectrum = np.abs(np.fft.rfft(windowed))
+            sum_spec = np.sum(spectrum)
+            if sum_spec > 1e-4:
+                c = float(np.sum(freqs * spectrum) / sum_spec)
+                centroids.append(c)
+
+        if centroids:
+            return float(np.median(centroids))
+
+        # Fallback if whole file is low energy or short
+        windowed = (samples[:frame_len] - np.mean(samples[:frame_len])) * hann
         spectrum = np.abs(np.fft.rfft(windowed))
-        freqs = np.fft.rfftfreq(len(windowed), 1.0 / sample_rate)
         sum_spec = np.sum(spectrum)
         if sum_spec > 1e-4:
             return float(np.sum(freqs * spectrum) / sum_spec)
         return 1500.0
+

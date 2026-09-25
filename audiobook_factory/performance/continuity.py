@@ -10,7 +10,7 @@ import os
 import uuid
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Tuple
 from pydantic import BaseModel, Field, ConfigDict
 
 from audiobook_factory.logger import logger
@@ -28,6 +28,19 @@ class CharacterPerformanceTelemetry(BaseModel):
     energies: List[float] = Field(default_factory=list)
     restraints: List[float] = Field(default_factory=list)
     emotions_seen: List[str] = Field(default_factory=list)
+
+    # Stable Character Performance DNA
+    habitual_pace_range: Tuple[float, float] = (0.85, 1.15)
+    baseline_energy_range: Tuple[float, float] = (0.60, 0.85)
+    baseline_restraint_range: Tuple[float, float] = (0.35, 0.70)
+    invariant_articulation: str = "natural"
+    invariant_resonance: str = "chest"
+    invariant_timbre: str = "resonant"
+
+    # Dynamic Scene Context & Immediate State
+    current_emotion: Optional[str] = None
+    current_tension: Optional[float] = None
+    current_objective: Optional[str] = None
 
     # Long-form continuity fields (Phase 18)
     last_emotional_state: Optional[str] = None
@@ -50,6 +63,40 @@ class CharacterPerformanceTelemetry(BaseModel):
     @property
     def average_restraint(self) -> float:
         return float(sum(self.restraints) / len(self.restraints)) if self.restraints else 0.50
+
+    @property
+    def pace_iqr(self) -> float:
+        if len(self.paces) < 4:
+            return 0.15
+        import numpy as np
+        return float(np.percentile(self.paces, 75) - np.percentile(self.paces, 25))
+
+    @property
+    def energy_iqr(self) -> float:
+        if len(self.energies) < 4:
+            return 0.15
+        import numpy as np
+        return float(np.percentile(self.energies, 75) - np.percentile(self.energies, 25))
+
+    @property
+    def pace_bounds(self) -> Tuple[float, float]:
+        if len(self.paces) < 4:
+            return self.habitual_pace_range
+        import numpy as np
+        p25 = float(np.percentile(self.paces, 25))
+        p75 = float(np.percentile(self.paces, 75))
+        iqr = p75 - p25
+        return (max(0.4, p25 - 1.5 * iqr), min(2.5, p75 + 1.5 * iqr))
+
+    @property
+    def energy_bounds(self) -> Tuple[float, float]:
+        if len(self.energies) < 4:
+            return self.baseline_energy_range
+        import numpy as np
+        p25 = float(np.percentile(self.energies, 25))
+        p75 = float(np.percentile(self.energies, 75))
+        iqr = p75 - p25
+        return (max(0.0, p25 - 1.5 * iqr), min(1.0, p75 + 1.5 * iqr))
 
 
 class PerformanceContinuityTracker:
@@ -87,11 +134,18 @@ class PerformanceContinuityTracker:
             if len(telem.emotions_seen) > 50:
                 telem.emotions_seen = telem.emotions_seen[-50:]
 
-        # Update last observed state
+        # Update dynamic scene context and last observed state
         telem.last_emotional_state = direction.surface_emotion
         telem.last_energy = direction.energy
         telem.last_pace = direction.pace
         telem.last_physical_state = direction.physical_state
+        telem.current_emotion = direction.surface_emotion
+        telem.current_tension = direction.tension_after
+        telem.current_objective = direction.objective
+        if direction.articulation:
+            telem.invariant_articulation = direction.articulation
+        if direction.resonance:
+            telem.invariant_resonance = direction.resonance
 
     def record_take(
         self,
@@ -186,7 +240,7 @@ class PerformanceContinuityTracker:
             if spk in self.characters and len(self.characters[spk].paces) >= 5:
                 est_pace = self.characters[spk].average_pace
                 scene_pace = sum(paces) / len(paces)
-                pace_diff = abs(scene_pace - est_pace) / est_pace
+                pace_diff = abs(scene_pace - est_pace) / max(est_pace, 0.01)
                 if pace_diff > 0.30:
                     warn = (
                         f"Performance Drift Alert: {spk} average pace shifted by {pace_diff*100:.1f}% "

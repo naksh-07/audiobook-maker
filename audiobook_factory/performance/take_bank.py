@@ -8,11 +8,9 @@ Standard (1 take), Focused (2 takes), High (2-3 takes), Climactic (3-4 takes).
 from __future__ import annotations
 import json
 import wave
-import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from audiobook_factory.logger import logger
 from .contracts import PerformanceDirection, TakeVariant, PerformancePriority
 
 
@@ -71,10 +69,12 @@ class TakeBank:
         Registers a generated audio file as a TakeVariant in the TakeBank.
         """
         p = Path(audio_file).resolve()
-        if duration_sec <= 0.0 and p.exists() and p.stat().st_size > 44:
+        if duration_sec <= 0.0 and p.is_file() and p.stat().st_size > 44:
             try:
                 with wave.open(str(p), "rb") as wf:
-                    duration_sec = wf.getnframes() / float(wf.getframerate())
+                    fr = wf.getframerate()
+                    if fr > 0:
+                        duration_sec = wf.getnframes() / float(fr)
             except Exception:
                 duration_sec = 1.0
 

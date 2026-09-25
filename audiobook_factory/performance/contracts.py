@@ -7,9 +7,7 @@ Acoustic-Dramatic Performance Evaluation, and Pre-Mix Performance Fidelity Gates
 
 from __future__ import annotations
 import hashlib
-import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Literal, Union
+from typing import List, Dict, Any, Optional, Literal
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
@@ -61,6 +59,10 @@ class AcousticEvidence(BaseModel):
     is_clipped: bool = Field(default=False, description="Whether hard clipping is detected")
     snr_db: float = Field(default=30.0, description="Estimated signal-to-noise ratio in dB")
 
+    @property
+    def spectral_flatness(self) -> float:
+        return self.spectral_flatness_mean
+
 
 class ProsodyEvidence(BaseModel):
     """Multidimensional prosodic pitch, energy, and inflection telemetry."""
@@ -90,6 +92,10 @@ class PacingEvidence(BaseModel):
     pause_count: int = Field(default=0, description="Number of detected pause intervals")
     dramatic_timing_fit: float = Field(default=1.0, ge=0.0, le=1.0, description="Adherence to dramatic timing instructions")
 
+    @property
+    def words_per_second(self) -> float:
+        return self.words_per_sec
+
 
 class VoiceIdentityEvidence(BaseModel):
     """Acoustic identity consistency telemetry against character reference signature."""
@@ -105,10 +111,130 @@ class VoiceIdentityEvidence(BaseModel):
     is_hard_gate_violation: bool = Field(default=False, description="Catastrophic voice drift exceeding hard gate")
 
 
+TakeSelectionStatus = Literal[
+    "ACCEPT",
+    "ACCEPT_WITH_WARNING",
+    "REVIEW",
+    "REGENERATE",
+    "NO_ACCEPTABLE_TAKE",
+]
+
+
+class EmotionRealizationEvidence(BaseModel):
+    """Forensic & dramatic telemetry for emotional realization fidelity."""
+    model_config = ConfigDict(extra="ignore")
+
+    intended_emotion: str = Field(default="neutral")
+    observed_markers: List[str] = Field(default_factory=list)
+    intensity_fit: float = Field(default=1.0, ge=0.0, le=1.0)
+    restraint_adherence: float = Field(default=1.0, ge=0.0, le=1.0)
+    is_teleportation_violation: bool = Field(default=False)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    diagnostics: List[str] = Field(default_factory=list)
+    reason_codes: List[str] = Field(default_factory=list)
+
+
+class IntentRealizationEvidence(BaseModel):
+    """Dramatic communicative actioning and subtext realization telemetry."""
+    model_config = ConfigDict(extra="ignore")
+
+    actioning_verb: str = Field(default="speak")
+    actioning_communicated: bool = Field(default=True)
+    subtext_fit: float = Field(default=1.0, ge=0.0, le=1.0)
+    power_leverage_fit: float = Field(default=1.0, ge=0.0, le=1.0)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    diagnostics: List[str] = Field(default_factory=list)
+    reason_codes: List[str] = Field(default_factory=list)
+
+
+class EmphasisEvidence(BaseModel):
+    """Forensic acoustic prominence telemetry for targeted emphasis/de-emphasis words."""
+    model_config = ConfigDict(extra="ignore")
+
+    target_emphasis_words: List[str] = Field(default_factory=list)
+    target_de_emphasis_words: List[str] = Field(default_factory=list)
+    detected_prominence: Dict[str, float] = Field(default_factory=dict)
+    emphasis_fidelity: float = Field(default=1.0, ge=0.0, le=1.0)
+    diagnostics: List[str] = Field(default_factory=list)
+    reason_codes: List[str] = Field(default_factory=list)
+
+
+class BreathEvidence(BaseModel):
+    """Forensic respiratory and physical staging acoustic telemetry."""
+    model_config = ConfigDict(extra="ignore")
+
+    expected_behavior: BreathBehavior = Field(default="steady")
+    physical_state: PhysicalStagingState = Field(default="normal")
+    pre_roll_breath_detected: bool = Field(default=False)
+    post_roll_breath_detected: bool = Field(default=False)
+    physical_strain_match: float = Field(default=1.0, ge=0.0, le=1.0)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    diagnostics: List[str] = Field(default_factory=list)
+    reason_codes: List[str] = Field(default_factory=list)
+
+    @property
+    def breath_detected(self) -> bool:
+        return self.pre_roll_breath_detected or self.post_roll_breath_detected
+
+
+class EvaluationDimensionScore(BaseModel):
+    """Evaluation score and qualitative diagnosis for a single performance dimension."""
+    model_config = ConfigDict(extra="ignore")
+
+    dimension: str = Field(..., description="Dimension name (e.g. 'intent_match', 'subtext')")
+    score: float = Field(..., ge=0.0, le=1.0, description="Normalized score from 0.0 to 1.0")
+    rating: Literal["strong", "moderate", "weak", "unacceptable"] = Field(default="strong")
+    rationale: str = Field(default="", description="Explainable rationale for this score")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Measurement certainty [0.0 - 1.0]")
+    evidence: Dict[str, Any] = Field(default_factory=dict, description="Supporting telemetry and metrics")
+    reason_codes: List[str] = Field(default_factory=list, description="Machine-readable diagnostic reason codes")
+
+
+class PerceptualPerformanceEvidence(BaseModel):
+    """Multi-dimensional perceptual acting believability and dramatic fit telemetry."""
+    model_config = ConfigDict(extra="ignore")
+
+    dimensions: Dict[str, EvaluationDimensionScore] = Field(default_factory=dict)
+    composite_perceptual_score: float = Field(default=1.0, ge=0.0, le=1.0)
+    perceptual_confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    provider: str = Field(default="heuristic", description="Evidence source: heuristic or external_judge")
+    diagnostics: List[str] = Field(default_factory=list)
+    reason_codes: List[str] = Field(default_factory=list)
+
+
+class EvidenceFusionResult(BaseModel):
+    """8-Layer Hierarchical Evidence Fusion Decision."""
+    model_config = ConfigDict(extra="ignore")
+
+    layer_passed: Dict[str, bool] = Field(default_factory=dict)
+    hard_gate_reasons: List[str] = Field(default_factory=list)
+    fused_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    fused_confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    status: TakeSelectionStatus = Field(default="ACCEPT")
+    review_reasons: List[str] = Field(default_factory=list)
+    reason_codes: List[str] = Field(default_factory=list)
+
+
+class EvidenceFusionCalibrationConfig(BaseModel):
+    """
+    Isolated and configurable calibration parameters for hierarchical evidence fusion.
+    These values are baseline hypotheses and are validated against golden benchmarks and human calibration data.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    min_accept_score: float = Field(default=0.70, description="Minimum fused score for ACCEPT")
+    high_quality_threshold: float = Field(default=0.75, description="High quality threshold")
+    min_accept_confidence: float = Field(default=0.50, description="Minimum confidence for clean ACCEPT")
+    low_confidence_review_threshold: float = Field(default=0.45, description="Confidence threshold triggering REVIEW")
+    critical_defect_score: float = Field(default=0.55, description="Score threshold below which take triggers REGENERATE/REJECT")
+    catastrophic_voice_drift_similarity: float = Field(default=0.45)
+    alignment_confidence_hard_gate: float = Field(default=0.35)
+
+
 class PerformanceEvidence(BaseModel):
     """
     First-Class Performance Evidence Model.
-    Aggregates all measurable acoustic, prosodic, pacing, alignment, and identity signals.
+    Aggregates all measurable acoustic, prosodic, pacing, alignment, emotion, intent, emphasis, breath, and identity signals.
     """
     model_config = ConfigDict(extra="ignore")
 
@@ -118,12 +244,17 @@ class PerformanceEvidence(BaseModel):
     voice_identity: Optional[VoiceIdentityEvidence] = None
     alignment_confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     alignment_diagnostics: List[str] = Field(default_factory=list)
+    emotion: Optional[EmotionRealizationEvidence] = None
+    intent: Optional[IntentRealizationEvidence] = None
+    emphasis: Optional[EmphasisEvidence] = None
+    breath: Optional[BreathEvidence] = None
+    perceptual: Optional[PerceptualPerformanceEvidence] = None
 
 
 class EvaluatorCalibrationConfig(BaseModel):
     """
     Isolated and configurable initial calibration parameters for performance evaluation.
-    These values are baseline hypotheses and are validated against golden benchmarks.
+    These values are baseline hypotheses and are validated against golden benchmarks and human calibration data.
     """
     model_config = ConfigDict(extra="ignore")
 
@@ -140,16 +271,6 @@ class EvaluatorCalibrationConfig(BaseModel):
     restraint_overacting_rms: float = Field(default=-15.0, description="RMS dBFS threshold indicating unsuppressed shouting")
     catastrophic_drift_similarity: float = Field(default=0.45, description="Similarity threshold for catastrophic voice drift hard gate")
     catastrophic_f0_dev_pct: float = Field(default=60.0, description="Pitch deviation percentage (e.g. 60.0%) triggering catastrophic voice drift hard gate")
-
-
-class EvaluationDimensionScore(BaseModel):
-    """Evaluation score and qualitative diagnosis for a single performance dimension."""
-    model_config = ConfigDict(extra="ignore")
-
-    dimension: str = Field(..., description="Dimension name (e.g. 'intent_match', 'subtext')")
-    score: float = Field(..., ge=0.0, le=1.0, description="Normalized score from 0.0 to 1.0")
-    rating: Literal["strong", "moderate", "weak", "unacceptable"] = Field(default="strong")
-    rationale: str = Field(default="", description="Explainable rationale for this score")
 
 
 class PerformanceDirection(BaseModel):
@@ -350,6 +471,7 @@ class TakeSelectorCalibrationConfig(BaseModel):
     min_confidence_review_threshold: float = Field(default=0.40, description="Confidence threshold triggering human review flag")
     chemistry_weight: float = Field(default=0.15, description="Weight multiplier for conversational chemistry bonus/penalty")
     continuity_weight: float = Field(default=0.05, description="Weight multiplier for performance continuity bonus/penalty")
+    allow_degraded_winner: bool = Field(default=False, description="When False, returns winner=None with status NO_ACCEPTABLE_TAKE when all takes fail hard gates; when True, falls back to best degraded take.")
 
 
 
@@ -374,17 +496,20 @@ class PerformanceFidelityReport(BaseModel):
 class TakeSelectionResult(BaseModel):
     """
     First-Class Take Selection Result Contract.
-    Captures the winning take, runner up, margin, confidence, and explainable reason codes.
+    Captures the winning take (or None if NO_ACCEPTABLE_TAKE), runner up, margin, confidence,
+    status, and explainable reason codes.
     """
     model_config = ConfigDict(extra="ignore")
 
-    winner: TakeVariant = Field(..., description="The chosen winning take")
+    winner: Optional[TakeVariant] = Field(default=None, description="The chosen winning take, or None if NO_ACCEPTABLE_TAKE")
     runner_up: Optional[TakeVariant] = Field(default=None, description="The closest competing candidate take")
     winner_score: float = Field(default=0.0, ge=0.0, le=1.0)
     runner_up_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     margin: float = Field(default=0.0, description="Score delta between winner and runner-up")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Selection certainty [0.0 - 1.0]")
+    status: TakeSelectionStatus = Field(default="ACCEPT", description="Granular selection outcome")
     reason_codes: List[str] = Field(default_factory=list, description="Machine-readable selection reason codes")
     evidence: Dict[str, Any] = Field(default_factory=dict, description="Supporting acoustic and performance evidence")
+    fusion_result: Optional[EvidenceFusionResult] = Field(default=None, description="Hierarchical evidence fusion outcome")
     review_required: bool = Field(default=False, description="Flagged for human audio engineer review")
 

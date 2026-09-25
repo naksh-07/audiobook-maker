@@ -6,12 +6,9 @@ into actionable, explainable actor delivery directives (PerformanceDirection).
 """
 
 from __future__ import annotations
-import re
-from typing import Dict, Any, List, Optional, Tuple
-from pathlib import Path
+from typing import Any, List, Optional
 
 from audiobook_factory.logger import logger
-from audiobook_factory.contracts import ScreenplaySegment
 from audiobook_factory.dramaturgy.contracts import (
     DramaticPlan,
     DramaticBeat,
@@ -23,9 +20,6 @@ from .contracts import (
     PerformanceDirection,
     PerformanceProvenanceMode,
     PerformancePriority,
-    SilenceType,
-    InterruptionBehavior,
-    TurnTakingBehavior,
     PitchBehavior,
     ResonancePlacement,
     VocalTexture,

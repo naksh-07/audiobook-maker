@@ -412,7 +412,7 @@ The behavioral correctness of the take selection engine is proven by 7 dedicated
 ## 8. Verification & Test Matrix
 
 The entire subsystem is verified by an extensive, non-regressing test suite executing across all platforms:
-- **Total Repository Test Suite**: **581 passed tests, 17 subtests (100% green)**
+- **Total Repository Test Suite**: **616 passed tests, 17 subtests (100% green in 209.20s)**
 - **Regressions**: **0 regressions**
 - **AST Zero-Hardcoding Compliance**: 100% verified by [`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py) (0 hardcoded character names, soundtrack titles, or chapter branches in engine files).
 
@@ -420,12 +420,16 @@ The entire subsystem is verified by an extensive, non-regressing test suite exec
 
 | Test Suite File | Tests | Focus Area |
 |---|:---:|---|
+| [`tests/test_golden_performance_qc_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_performance_qc_2.py) | **18** | 18-Category golden dramatic benchmarks: clipping, dead air, dramatic silence, emphasis, breath, chemistry, panic, pairwise, gate fail-closed |
+| [`tests/test_human_calibration_schema.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_human_calibration_schema.py) | **5** | Genuine human calibration rating schema, Pearson $r$, Spearman $\rho$, False Acceptance Rate (FAR), False Rejection Rate (FRR) |
 | [`tests/test_golden_take_selection_benchmark.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_take_selection_benchmark.py) | **7** | Golden behavioral scenarios (restraint, pause, voice stability, chemistry, scene arc, naturalness, subtext) |
 | [`tests/test_take_selection_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_take_selection_2.py) | **11** | Staged hard gates, 6-mode scoring, PairwiseTakeJudge, reason codes, review flags |
 | [`tests/test_performance_evidence_and_evaluator_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_evidence_and_evaluator_2.py) | **9** | Autocorrelation F0, dynamic range, monotonic pitch-lock, restraint enforcement, two-tier voice identity |
+| [`tests/test_alignment_and_take_selection_fixes.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_alignment_and_take_selection_fixes.py) | **10** | Real alignment confidence propagation, hard gate fail-closed audits, sole candidate degraded flag hardening |
 | [`tests/test_scene_selection_and_continuity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_scene_selection_and_continuity.py) | **5** | `select_scene_takes`, performance arc curves, fatigue defense, premature climax guard |
 | [`tests/test_golden_alignment_benchmark.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_alignment_benchmark.py) | **18** | MMS_FA CTC token spans, 7 pause classes, multi-signal confidence, energy fallback |
 | [`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py) | **23** | 14 performance capabilities, TimingRealizer, Gate 2.8, contracts |
+| [`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py) | **4** | AST zero-hardcoding compliance across all 119 source files in `audiobook_factory/` |
 | [`tests/test_wave1_casting.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_wave1_casting.py) | **15** | Character casting profiles, voice candidate engine, audition engine, cast locks |
 | [`tests/test_wave2_voice_identity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_wave2_voice_identity.py) | **12** | Voice DNA, reference voice signatures, voice drift analyzer |
 | [`tests/test_wave3_acting_intelligence.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_wave3_acting_intelligence.py) | **18** | Scene emotional state tracker (6D), constraint resolver, generation risk engine |

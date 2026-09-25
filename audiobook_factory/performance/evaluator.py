@@ -10,7 +10,6 @@ Grounded in empirical acoustic, prosodic, pacing, and alignment evidence.
 from __future__ import annotations
 import wave
 import math
-import struct
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -26,6 +25,10 @@ from .contracts import (
     ProsodyEvidence,
     PacingEvidence,
     VoiceIdentityEvidence,
+    EmotionRealizationEvidence,
+    IntentRealizationEvidence,
+    EmphasisEvidence,
+    BreathEvidence,
     EvaluatorCalibrationConfig,
 )
 
@@ -60,7 +63,7 @@ class PerformanceEvaluator:
         Evaluates a candidate audio take against PerformanceDirection using real audio evidence.
         """
         p = Path(audio_file).resolve()
-        if not p.exists() or p.stat().st_size <= 44:
+        if not p.is_file() or p.stat().st_size <= 44:
             dim_fail = EvaluationDimensionScore(
                 dimension="naturalness",
                 score=0.0,
@@ -85,7 +88,9 @@ class PerformanceEvaluator:
                 sampwidth = wf.getsampwidth()
                 framerate = wf.getframerate()
                 n_frames = wf.getnframes()
-                dur_est = n_frames / float(framerate) if framerate > 0 else 0.0
+                if framerate <= 0:
+                    raise ValueError(f"Invalid WAV framerate: {framerate}")
+                dur_est = n_frames / float(framerate)
                 if dur_est > 600.0:
                     raise ValueError(f"Take duration {dur_est:.1f}s exceeds bounded limit of 600.0s")
                 raw_bytes = wf.readframes(n_frames)
@@ -108,7 +113,21 @@ class PerformanceEvaluator:
             )
 
         duration_sec = n_frames / float(framerate) if framerate > 0 else 0.0
-        samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32)
+        if sampwidth == 2:
+            samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32)
+        elif sampwidth == 1:
+            samples = (np.frombuffer(raw_bytes, dtype=np.uint8).astype(np.float32) - 128.0) * 256.0
+        elif sampwidth == 4:
+            try:
+                samples = np.frombuffer(raw_bytes, dtype=np.float32) * 32768.0
+            except Exception:
+                samples = (np.frombuffer(raw_bytes, dtype=np.int32).astype(np.float32) / 65536.0)
+        else:
+            samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32)
+
+        if n_channels > 1 and len(samples) >= n_channels:
+            samples = samples.reshape(-1, n_channels).mean(axis=1)
+
         total_samples = len(samples)
 
         if total_samples == 0:
@@ -148,33 +167,30 @@ class PerformanceEvaluator:
             align_conf = None
             align_diags = ["No alignment result provided; speech alignment unverified"]
 
-        evidence = PerformanceEvidence(
-            acoustic=acoustic_ev,
-            prosody=prosody_ev,
-            pacing=pacing_ev,
-            voice_identity=v_ident_ev,
-            alignment_confidence=align_conf,
-            alignment_diagnostics=align_diags,
-        )
+        # Emphasis and Breath Evidence extraction
+        emphasis_ev, emphasis_dim = self._extract_emphasis_features(samples, framerate, text, direction, alignment_result)
+        breath_ev, breath_dim = self._extract_breath_features(samples, framerate, duration_sec, direction)
 
         # 3. Dimensional Evaluations Grounded in Evidence
         dimensions: Dict[str, EvaluationDimensionScore] = {}
         diagnostics: List[str] = []
 
         # Dimension 1: Naturalness
-        dimensions["naturalness"] = self._evaluate_naturalness(acoustic_ev)
+        dimensions["naturalness"] = self._evaluate_naturalness(acoustic_ev, direction)
 
         # Dimension 2: Pacing
         dimensions["pacing"] = self._evaluate_pacing(pacing_ev, direction)
 
         # Dimension 3: Emotional & Intensity Match
-        dimensions["emotional_match"] = self._evaluate_emotional_match(acoustic_ev, prosody_ev, direction)
+        emo_dim, emotion_ev = self._evaluate_emotional_match_with_evidence(acoustic_ev, prosody_ev, direction)
+        dimensions["emotional_match"] = emo_dim
 
         # Dimension 4: Subtext & Restraint Fidelity
         dimensions["subtext"] = self._evaluate_subtext_restraint(acoustic_ev, prosody_ev, direction)
 
         # Dimension 5: Intent Match
-        dimensions["intent_match"] = self._evaluate_intent_match(acoustic_ev, pacing_ev, direction)
+        intent_dim, intent_ev = self._evaluate_intent_match_with_evidence(acoustic_ev, pacing_ev, direction)
+        dimensions["intent_match"] = intent_dim
 
         # Dimension 6: Character Consistency & Voice Identity
         dimensions["character_consistency"] = EvaluationDimensionScore(
@@ -182,6 +198,8 @@ class PerformanceEvaluator:
             score=round(char_score, 2),
             rating="strong" if char_score >= 0.80 else ("moderate" if char_score >= 0.65 else "unacceptable"),
             rationale="; ".join(char_reasons),
+            confidence=0.90 if signature else 0.60,
+            reason_codes=["VOICE_IDENTITY_VERIFIED"] if not v_drift else ["VOICE_DRIFT_DETECTED"],
         )
 
         # Dimension 7: Relationship Consistency
@@ -190,16 +208,37 @@ class PerformanceEvaluator:
         # Dimension 8: Prosody & Cadence
         dimensions["prosody"] = self._evaluate_prosody(prosody_ev, acoustic_ev, direction)
 
+        # Dimension 9: Emphasis Realization
+        dimensions["emphasis"] = emphasis_dim
+
+        # Dimension 10: Breath & Physical Staging
+        dimensions["breath_physical"] = breath_dim
+
+        evidence = PerformanceEvidence(
+            acoustic=acoustic_ev,
+            prosody=prosody_ev,
+            pacing=pacing_ev,
+            voice_identity=v_ident_ev,
+            alignment_confidence=align_conf,
+            alignment_diagnostics=align_diags,
+            emotion=emotion_ev,
+            intent=intent_ev,
+            emphasis=emphasis_ev,
+            breath=breath_ev,
+        )
+
         # 4. Composite Weighted Scoring
         weights = {
-            "naturalness": 0.20,
-            "intent_match": 0.15,
-            "emotional_match": 0.15,
-            "pacing": 0.15,
+            "naturalness": 0.18,
+            "intent_match": 0.14,
+            "emotional_match": 0.14,
+            "pacing": 0.14,
             "subtext": 0.10,
             "prosody": 0.10,
             "character_consistency": 0.08,
-            "relationship_consistency": 0.07,
+            "relationship_consistency": 0.06,
+            "emphasis": 0.03,
+            "breath_physical": 0.03,
         }
         active_weights = {k: w for k, w in weights.items() if k in dimensions}
         total_w = sum(active_weights.values()) or 1.0
@@ -468,31 +507,230 @@ class PerformanceEvaluator:
     # -------------------------------------------------------------------------
     # Dimensional Evaluation Methods (Evidence-Grounded)
     # -------------------------------------------------------------------------
-    def _evaluate_naturalness(self, ev: AcousticEvidence) -> EvaluationDimensionScore:
+    def _extract_emphasis_features(
+        self,
+        samples: np.ndarray,
+        sample_rate: int,
+        text: str,
+        direction: PerformanceDirection,
+        alignment_result: Optional[Any],
+    ) -> Tuple[EmphasisEvidence, EvaluationDimensionScore]:
+        """Evaluates prominence on emphasis_words and de_emphasis_words."""
+        emph_words = [w.lower().strip(".,!?;:\"'") for w in direction.emphasis_words if w.strip()]
+        de_emph_words = [w.lower().strip(".,!?;:\"'") for w in direction.de_emphasis_words if w.strip()]
+        prominence_map: Dict[str, float] = {}
+        reason_codes: List[str] = []
+        diagnostics: List[str] = []
+        score = 0.90
+
+        if not emph_words and not de_emph_words:
+            ev = EmphasisEvidence(
+                target_emphasis_words=emph_words,
+                target_de_emphasis_words=de_emph_words,
+                detected_prominence={},
+                emphasis_fidelity=1.0,
+                diagnostics=["No explicit emphasis/de-emphasis directives"],
+                reason_codes=[],
+            )
+            dim = EvaluationDimensionScore(
+                dimension="emphasis",
+                score=1.0,
+                rating="strong",
+                rationale="Natural emphasis delivery",
+                confidence=1.0,
+                reason_codes=[],
+            )
+            return ev, dim
+
+        words_align = getattr(alignment_result, "words", None) if alignment_result else None
+        if words_align:
+            mean_rms = float(np.sqrt(np.mean(samples ** 2))) if len(samples) > 0 else 1.0
+            for w_obj in words_align:
+                raw_w = getattr(w_obj, "word", "").lower().strip(".,!?;:\"'")
+                s_t = getattr(w_obj, "start_time_sec", 0.0)
+                e_t = getattr(w_obj, "end_time_sec", 0.0)
+                s_idx = max(0, int(s_t * sample_rate))
+                e_idx = min(len(samples), int(e_t * sample_rate))
+                if e_idx > s_idx:
+                    w_samples = samples[s_idx:e_idx]
+                    w_rms = float(np.sqrt(np.mean(w_samples ** 2)))
+                    rel_prominence = round(w_rms / max(mean_rms, 1e-4), 2)
+                    prominence_map[raw_w] = rel_prominence
+
+            for ew in emph_words:
+                prom = prominence_map.get(ew)
+                if prom is not None:
+                    if prom < 0.85:
+                        score -= 0.15
+                        reason_codes.append("MISSING_EMPHASIS")
+                        diagnostics.append(f"Target emphasis word '{ew}' under-projected (prominence {prom:.2f} < 0.85)")
+                    else:
+                        reason_codes.append("EMPHASIS_MATCH")
+                else:
+                    reason_codes.append("EMPHASIS_UNVERIFIED")
+
+            for dw in de_emph_words:
+                prom = prominence_map.get(dw)
+                if prom is not None and prom > 1.30:
+                    score -= 0.15
+                    reason_codes.append("DE_EMPHASIS_VIOLATION")
+                    diagnostics.append(f"De-emphasis word '{dw}' inappropriately projected (prominence {prom:.2f} > 1.30)")
+        else:
+            score = 0.85
+            reason_codes.append("EMPHASIS_UNVERIFIED_NO_ALIGNMENT")
+            diagnostics.append("Word alignment unavailable for emphasis probe")
+
+        score = max(0.0, min(1.0, score))
+        ev = EmphasisEvidence(
+            target_emphasis_words=emph_words,
+            target_de_emphasis_words=de_emph_words,
+            detected_prominence=prominence_map,
+            emphasis_fidelity=round(score, 2),
+            diagnostics=diagnostics,
+            reason_codes=reason_codes,
+        )
+        dim = EvaluationDimensionScore(
+            dimension="emphasis",
+            score=round(score, 2),
+            rating="strong" if score >= 0.80 else ("moderate" if score >= 0.65 else "weak"),
+            rationale="; ".join(diagnostics) if diagnostics else "Appropriate communicative emphasis",
+            confidence=0.85 if words_align else 0.50,
+            reason_codes=reason_codes,
+            evidence=prominence_map,
+        )
+        return ev, dim
+
+    def _extract_breath_features(
+        self,
+        samples: np.ndarray,
+        sample_rate: int,
+        duration_sec: float,
+        direction: PerformanceDirection,
+    ) -> Tuple[BreathEvidence, EvaluationDimensionScore]:
+        """Evaluates presence and plausibility of respiration matching physical staging."""
+        score = 0.90
+        reason_codes: List[str] = []
+        diagnostics: List[str] = []
+
+        pre_breath_expected = direction.pre_roll_breath_ms > 0
+        post_breath_expected = direction.post_roll_breath_ms > 0
+        phys_state = direction.physical_state
+
+        pre_detected = False
+        post_detected = False
+
+        pre_len = min(len(samples), int(sample_rate * 0.25))
+        if pre_len > 100:
+            pre_chunk = samples[:pre_len]
+            pre_rms = float(np.sqrt(np.mean(pre_chunk ** 2)))
+            pre_db = 20.0 * math.log10(max(pre_rms, 1e-5) / 32768.0)
+            if -48.0 <= pre_db <= -24.0:
+                pre_detected = True
+
+        if len(samples) > pre_len + 100:
+            post_chunk = samples[-pre_len:]
+            post_rms = float(np.sqrt(np.mean(post_chunk ** 2)))
+            post_db = 20.0 * math.log10(max(post_rms, 1e-5) / 32768.0)
+            if -50.0 <= post_db <= -24.0:
+                post_detected = True
+
+        strain_match = 1.0
+        if phys_state in ("wounded", "exhausted", "combat_strain"):
+            if not pre_detected and pre_breath_expected:
+                score -= 0.10
+                diagnostics.append(f"Missing directed breath intake for physical state '{phys_state}'")
+                reason_codes.append("MISSING_PHYSICAL_BREATH")
+            else:
+                diagnostics.append(f"Acoustic respiration consistent with physical state '{phys_state}'")
+                reason_codes.append("PHYSICAL_STRAIN_CONSISTENT")
+        elif pre_breath_expected and not pre_detected:
+            score -= 0.05
+            diagnostics.append("Expected subtle breath intake not detected in pre-roll")
+            reason_codes.append("SUBTLE_BREATH_MISSED")
+        else:
+            diagnostics.append("Natural respiratory envelope")
+            reason_codes.append("BREATH_PLAUSIBLE")
+
+        score = max(0.0, min(1.0, score))
+        ev = BreathEvidence(
+            expected_behavior=direction.breath_behavior,
+            physical_state=direction.physical_state,
+            pre_roll_breath_detected=pre_detected,
+            post_roll_breath_detected=post_detected,
+            physical_strain_match=round(strain_match, 2),
+            confidence=0.75,
+            diagnostics=diagnostics,
+            reason_codes=reason_codes,
+        )
+        dim = EvaluationDimensionScore(
+            dimension="breath_physical",
+            score=round(score, 2),
+            rating="strong" if score >= 0.80 else "moderate",
+            rationale="; ".join(diagnostics),
+            confidence=0.75,
+            reason_codes=reason_codes,
+        )
+        return ev, dim
+
+    # -------------------------------------------------------------------------
+    # Dimensional Evaluation Methods (Evidence-Grounded)
+    # -------------------------------------------------------------------------
+    def _evaluate_naturalness(self, ev: AcousticEvidence, direction: Optional[PerformanceDirection] = None) -> EvaluationDimensionScore:
         """Evaluates waveform hygiene: clipping, DC offset, dead air, and vocoder hiss."""
         score = 1.0
         reasons = []
+        reason_codes = []
 
         if ev.max_consecutive_clipped_samples >= self.config.clipping_pinned_threshold:
             score -= 0.35
             reasons.append(f"Hard clipping detected ({ev.max_consecutive_clipped_samples} samples pinned)")
+            reason_codes.append("CLIPPING_DEFECT")
 
         if ev.dc_bias > self.config.dc_bias_threshold:
             score -= 0.20
             reasons.append(f"High DC offset ({ev.dc_bias:.1f})")
+            reason_codes.append("DC_BIAS_DEFECT")
 
+        # Distinguish dramatic silence from unmotivated dead air
+        is_dramatic_silence = (
+            direction is not None
+            and direction.silence_type in ("dramatic_silence", "emotional_freeze", "reaction_silence", "hesitation")
+        )
         if ev.dead_air_sec > self.config.dead_air_threshold_sec:
-            score -= 0.15
-            reasons.append(f"Excessive trailing dead air ({ev.dead_air_sec:.2f}s)")
+            if is_dramatic_silence and ev.dead_air_sec <= 2.2:
+                reasons.append(f"Dramatic silence preserved ({ev.dead_air_sec:.2f}s)")
+                reason_codes.append("BETTER_DRAMATIC_PAUSE")
+            else:
+                score -= 0.15
+                reasons.append(f"Excessive trailing dead air ({ev.dead_air_sec:.2f}s)")
+                reason_codes.append("DEAD_AIR_DEFECT")
+        elif is_dramatic_silence:
+            reason_codes.append("BETTER_DRAMATIC_PAUSE")
 
         if ev.spectral_flatness_mean > self.config.vocoder_flatness_threshold:
             score -= 0.20
             reasons.append("Elevated white-noise vocoder static")
+            reason_codes.append("VOCODER_STATIC_DEFECT")
+
+        if not reason_codes:
+            reason_codes.append("CLEAN_WAVEFORM")
 
         score = max(0.0, min(1.0, score))
         rationale = "Clean acoustic waveform" if not reasons else "; ".join(reasons)
         rating = "strong" if score >= 0.85 else ("moderate" if score >= 0.70 else "weak")
-        return EvaluationDimensionScore(dimension="naturalness", score=round(score, 2), rating=rating, rationale=rationale)
+        return EvaluationDimensionScore(
+            dimension="naturalness",
+            score=round(score, 2),
+            rating=rating,
+            rationale=rationale,
+            confidence=0.95,
+            reason_codes=reason_codes,
+            evidence={
+                "clipping_samples": ev.max_consecutive_clipped_samples,
+                "dc_bias": ev.dc_bias,
+                "dead_air_sec": ev.dead_air_sec,
+            },
+        )
 
     def _evaluate_pacing(self, ev: PacingEvidence, direction: PerformanceDirection) -> EvaluationDimensionScore:
         """Evaluates speech cadence and word timing adherence against dramatic target."""
@@ -517,40 +755,80 @@ class PerformanceEvaluator:
 
         return EvaluationDimensionScore(dimension="pacing", score=round(score, 2), rating=rating, rationale=rat)
 
-    def _evaluate_emotional_match(
+    def _evaluate_emotional_match_with_evidence(
         self,
         ac_ev: AcousticEvidence,
         pr_ev: ProsodyEvidence,
         direction: PerformanceDirection,
-    ) -> EvaluationDimensionScore:
+    ) -> Tuple[EvaluationDimensionScore, EmotionRealizationEvidence]:
         """Evaluates acoustic projection, dynamic range, and pitch range against emotional direction."""
         score = 0.90
         reasons = []
+        reason_codes = []
 
         is_whisper = (
             direction.proximity == "close_mic"
             or "whisper" in direction.surface_emotion.lower()
             or direction.resonance == "whisper_air"
         )
+        intensity_fit = 1.0
+        restraint_fit = 1.0
 
         if direction.intensity == "explosive":
             if ac_ev.rms_dbfs < self.config.explosive_min_rms_dbfs:
                 score -= 0.25
+                intensity_fit = 0.50
                 reasons.append(f"Underpowered energy for explosive scene (RMS {ac_ev.rms_dbfs:.1f} dBFS)")
+                reason_codes.append("EMOTION_UNDERPLAYED")
+                reason_codes.append("WRONG_INTENSITY")
             else:
                 reasons.append("Full explosive dynamic presence")
+                reason_codes.append("EXPLOSIVE_PRESENCE")
         elif direction.intensity == "low" or is_whisper:
             if ac_ev.rms_dbfs > self.config.intimate_max_rms_dbfs:
                 score -= 0.25
+                intensity_fit = 0.50
                 reasons.append(f"Excessive volume for intimate/low intensity delivery (RMS {ac_ev.rms_dbfs:.1f} dBFS)")
+                reason_codes.append("EMOTION_OVERPLAYED")
+                reason_codes.append("WRONG_INTENSITY")
             else:
                 reasons.append("Appropriately intimate acoustic headroom")
+                reason_codes.append("INTIMATE_HEADROOM")
         else:
             reasons.append(f"Balanced emotional presence ({direction.surface_emotion})")
+            reason_codes.append("BALANCED_EMOTION")
 
         score = max(0.0, min(1.0, score))
         rating = "strong" if score >= 0.80 else ("moderate" if score >= 0.65 else "weak")
-        return EvaluationDimensionScore(dimension="emotional_match", score=round(score, 2), rating=rating, rationale="; ".join(reasons))
+        dim = EvaluationDimensionScore(
+            dimension="emotional_match",
+            score=round(score, 2),
+            rating=rating,
+            rationale="; ".join(reasons),
+            confidence=0.85,
+            reason_codes=reason_codes,
+            evidence={"rms_dbfs": ac_ev.rms_dbfs, "restraint_fit": restraint_fit},
+        )
+        ev = EmotionRealizationEvidence(
+            intended_emotion=direction.surface_emotion,
+            observed_markers=reasons,
+            intensity_fit=intensity_fit,
+            restraint_adherence=restraint_fit,
+            is_teleportation_violation=False,
+            confidence=0.85,
+            diagnostics=reasons,
+            reason_codes=reason_codes,
+        )
+        return dim, ev
+
+    def _evaluate_emotional_match(
+        self,
+        ac_ev: AcousticEvidence,
+        pr_ev: ProsodyEvidence,
+        direction: PerformanceDirection,
+    ) -> EvaluationDimensionScore:
+        dim, _ = self._evaluate_emotional_match_with_evidence(ac_ev, pr_ev, direction)
+        return dim
 
     def _evaluate_subtext_restraint(
         self,
@@ -581,28 +859,69 @@ class PerformanceEvaluator:
         rating = "strong" if score >= 0.80 else "moderate"
         return EvaluationDimensionScore(dimension="subtext", score=round(score, 2), rating=rating, rationale="; ".join(reasons))
 
+    def _evaluate_intent_match_with_evidence(
+        self,
+        ac_ev: AcousticEvidence,
+        pc_ev: PacingEvidence,
+        direction: PerformanceDirection,
+    ) -> Tuple[EvaluationDimensionScore, IntentRealizationEvidence]:
+        """Matches acoustic delivery characteristics against dramatic actioning verb."""
+        score = 0.92
+        reasons = [f"Delivers objective '{direction.objective}' with action '{direction.actioning}'"]
+        reason_codes = []
+        communicated = True
+
+        act = direction.actioning.lower()
+        if "threat" in act or "corner" in act or "command" in act:
+            if ac_ev.rms_dbfs < -28.0:
+                score -= 0.15
+                communicated = False
+                reasons.append("Under-projected command authority")
+                reason_codes.append("INTENT_MISMATCH")
+                reason_codes.append("ACTIONING_MISMATCH")
+            else:
+                reason_codes.append("STRONGER_INTENT_MATCH")
+        elif "whisper" in act or "soothe" in act:
+            if ac_ev.rms_dbfs > -16.0:
+                score -= 0.15
+                communicated = False
+                reasons.append("Excessive vocal force for soothing action")
+                reason_codes.append("INTENT_MISMATCH")
+                reason_codes.append("ACTIONING_MISMATCH")
+            else:
+                reason_codes.append("STRONGER_INTENT_MATCH")
+        else:
+            reason_codes.append("STRONGER_INTENT_MATCH")
+
+        score = max(0.0, min(1.0, score))
+        dim = EvaluationDimensionScore(
+            dimension="intent_match",
+            score=round(score, 2),
+            rating="strong" if score >= 0.80 else "moderate",
+            rationale="; ".join(reasons),
+            confidence=0.85,
+            reason_codes=reason_codes,
+            evidence={"actioning": direction.actioning, "communicated": communicated},
+        )
+        ev = IntentRealizationEvidence(
+            actioning_verb=direction.actioning,
+            actioning_communicated=communicated,
+            subtext_fit=0.90 if direction.subtext else 1.0,
+            power_leverage_fit=0.90,
+            confidence=0.85,
+            diagnostics=reasons,
+            reason_codes=reason_codes,
+        )
+        return dim, ev
+
     def _evaluate_intent_match(
         self,
         ac_ev: AcousticEvidence,
         pc_ev: PacingEvidence,
         direction: PerformanceDirection,
     ) -> EvaluationDimensionScore:
-        """Matches acoustic delivery characteristics against dramatic actioning verb."""
-        score = 0.92
-        reasons = [f"Delivers objective '{direction.objective}' with action '{direction.actioning}'"]
-
-        act = direction.actioning.lower()
-        if "threat" in act or "corner" in act or "command" in act:
-            if ac_ev.rms_dbfs < -28.0:
-                score -= 0.15
-                reasons.append("Under-projected command authority")
-        elif "whisper" in act or "soothe" in act:
-            if ac_ev.rms_dbfs > -16.0:
-                score -= 0.15
-                reasons.append("Excessive vocal force for soothing action")
-
-        score = max(0.0, min(1.0, score))
-        return EvaluationDimensionScore(dimension="intent_match", score=round(score, 2), rating="strong", rationale="; ".join(reasons))
+        dim, _ = self._evaluate_intent_match_with_evidence(ac_ev, pc_ev, direction)
+        return dim
 
     def _evaluate_prosody(
         self,

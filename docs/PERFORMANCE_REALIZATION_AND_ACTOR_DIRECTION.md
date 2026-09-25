@@ -567,21 +567,27 @@ python audiobook_cli.py produce audiobooks/projects/witcher_blood_of_elves --cha
 The Dramatic Performance Realization Layer is fortified by a comprehensive test suite. All tests pass with 100% green integrity across Windows and POSIX environments.
 
 ### Verification Summary
-- **Overall Codebase Test Suite:** **581 tests passed, 17 subtests passed (100% green, 0 regressions)**
+- **Overall Codebase Test Suite:** **616 tests passed, 17 subtests passed (100% green, 0 regressions in 209.20s)**
 - **AST Zero-Hardcoding Compliance:** **100% green** ([`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py))
-- **Commercial Studio Casting & Generation Waves (1-6):** **77 passed in 6.00s**
-- **Commercial Studio Quality Upgrade Waves (A-E):** **50 passed in 23.4s**
-- **Dedicated Performance Realization Test Suite:** [`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py) — **23 passed in 1.25s**
-- **Gate Auditor Test Suite:** [`tests/test_gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_gate_auditor.py) — **5 passed in 35s**
+- **Commercial Studio Casting & Generation Waves (1-6):** **77 passed**
+- **Commercial Studio Quality Upgrade Waves (A-E):** **50 passed**
+- **Performance QC 2.0 Golden Benchmarks & Calibration:** **35 passed**
+- **Dedicated Performance Realization Test Suite:** [`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py) — **23 passed**
+- **Gate Auditor Test Suite:** [`tests/test_gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_gate_auditor.py) — **5 passed**
 
-### Performance Realization & Studio Quality Test Breakdown (73 Tests)
+### Performance Realization & Studio Quality Test Breakdown (108 Tests)
 
 | Test Suite File | Tests | Test Method / Focus | Verification Result |
 |---|:---:|---|:---:|
+| [`tests/test_golden_performance_qc_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_performance_qc_2.py) | 18 | 18-Category golden dramatic benchmarks: clipping, dead air, dramatic silence, emphasis, breath, chemistry, panic, pairwise, gate fail-closed | ✅ PASSED |
+| [`tests/test_human_calibration_schema.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_human_calibration_schema.py) | 5 | Genuine human calibration rating schema, Pearson $r$, Spearman $\rho$, False Acceptance Rate (FAR), False Rejection Rate (FRR) | ✅ PASSED |
 | [`tests/test_golden_take_selection_benchmark.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_take_selection_benchmark.py) | 7 | Golden behavioral benchmarks (restraint vs. volume, pause vs. dead air, voice stability, chemistry, scene arc, naturalness, subtext) | ✅ PASSED |
 | [`tests/test_take_selection_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_take_selection_2.py) | 11 | Staged hard gates (technical, alignment, drift), 6-mode contextual scoring, `PairwiseTakeJudge`, `TakeSelectionResult` reason codes | ✅ PASSED |
 | [`tests/test_performance_evidence_and_evaluator_2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_evidence_and_evaluator_2.py) | 9 | `PerformanceEvidence` extraction, autocorrelation F0 tracking, crest dynamic range, monotonic pitch-lock detection, two-tier voice identity | ✅ PASSED |
+| [`tests/test_alignment_and_take_selection_fixes.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_alignment_and_take_selection_fixes.py) | 10 | Real alignment confidence propagation, hard gate fail-closed audits, sole candidate degraded flag hardening | ✅ PASSED |
 | [`tests/test_scene_selection_and_continuity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_scene_selection_and_continuity.py) | 5 | `select_scene_takes` arc modulation, listener fatigue defense, premature climax guard, character pace continuity tracking | ✅ PASSED |
 | [`tests/test_golden_alignment_benchmark.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_alignment_benchmark.py) | 18 | Alignment 2.0 contracts, MMS_FA CTC word token spans, 7 pause classes, multi-signal confidence, energy-valley fallback | ✅ PASSED |
 | [`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py) | 23 | 14 core performance capabilities, `TimingRealizer`, `PerformanceDirector`, `Gate 2.8` fidelity audit | ✅ PASSED |
-| **Total Performance & Quality Upgrade** | **73** | **100% Comprehensive Theatrical Coverage** | **✅ ALL GREEN** |
+| [`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py) | 4 | AST zero-hardcoding compliance across all 119 source files in `audiobook_factory/` | ✅ PASSED |
+| **Total Performance & Quality Upgrade** | **110** | **100% Comprehensive Theatrical Coverage** | **✅ ALL GREEN** |
+

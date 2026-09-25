@@ -26,16 +26,28 @@ from .contracts import (
     TakeSelectionResult,
     TakeSelectorCalibrationConfig,
     PerformanceFidelityReport,
+    TakeSelectionStatus,
+    EmotionRealizationEvidence,
+    IntentRealizationEvidence,
+    EmphasisEvidence,
+    BreathEvidence,
+    PerceptualPerformanceEvidence,
+    EvidenceFusionResult,
+    EvidenceFusionCalibrationConfig,
+    EvaluatorCalibrationConfig,
+    PerformanceEvidence,
 )
 from .timing_realizer import TimingRealizer
 from .director import PerformanceDirector
 from .tts_adapter import BaseTTSPerformanceAdapter, GeminiTTSPerformanceAdapter
 from .evaluator import PerformanceEvaluator
 from .take_bank import TakeBank
-from .take_selector import IntelligentTakeSelector
+from .take_selector import IntelligentTakeSelector, PairwiseTakeJudge
 from .chemistry import ConversationalChemistry
 from .continuity import PerformanceContinuityTracker, CharacterPerformanceTelemetry
 from .gate import PerformanceFidelityGate
+from .evidence_fusion import EvidenceFusionEngine
+from .perceptual_judge import PerceptualPerformanceJudge, PerceptualJudgeConfig
 
 __all__ = [
     "PerformanceDirection",
@@ -57,8 +69,18 @@ __all__ = [
     "ChemistryEvaluationResult",
     "TakeVariant",
     "TakeSelectionResult",
+    "TakeSelectionStatus",
     "TakeSelectorCalibrationConfig",
     "PerformanceFidelityReport",
+    "EmotionRealizationEvidence",
+    "IntentRealizationEvidence",
+    "EmphasisEvidence",
+    "BreathEvidence",
+    "PerceptualPerformanceEvidence",
+    "EvidenceFusionResult",
+    "EvidenceFusionCalibrationConfig",
+    "EvaluatorCalibrationConfig",
+    "PerformanceEvidence",
     "TimingRealizer",
     "PerformanceDirector",
     "BaseTTSPerformanceAdapter",
@@ -66,8 +88,12 @@ __all__ = [
     "PerformanceEvaluator",
     "TakeBank",
     "IntelligentTakeSelector",
+    "PairwiseTakeJudge",
     "ConversationalChemistry",
     "PerformanceContinuityTracker",
     "CharacterPerformanceTelemetry",
     "PerformanceFidelityGate",
+    "EvidenceFusionEngine",
+    "PerceptualPerformanceJudge",
+    "PerceptualJudgeConfig",
 ]

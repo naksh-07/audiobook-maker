@@ -8,8 +8,7 @@ are locked and handed over to CinemaAudioEngine.
 
 from __future__ import annotations
 import datetime
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 
 from audiobook_factory.logger import logger
 from .contracts import (
@@ -106,6 +105,23 @@ class PerformanceFidelityGate:
                     )
                 if not take.selection_reason:
                     issues.append(f"Take {take.take_id} lacks explainable selection rationale.")
+
+            # Audit selection result and evidence fusion status
+            if getattr(take, "selection_result", None) is not None:
+                sel_res = take.selection_result
+                sel_status = getattr(sel_res, "status", "")
+                if sel_status == "NO_ACCEPTABLE_TAKE":
+                    issues.append(
+                        f"Take {take.take_id} ({d.speaker}): Critical defect - NO ACCEPTABLE TAKE available."
+                    )
+                elif sel_status == "REGENERATE":
+                    issues.append(
+                        f"Take {take.take_id} ({d.speaker}): Take marked for regeneration."
+                    )
+                fusion = getattr(sel_res, "fusion_result", None)
+                if fusion and getattr(fusion, "hard_gate_reasons", []):
+                    for hgr in fusion.hard_gate_reasons:
+                        issues.append(f"Take {take.take_id} ({d.speaker}): Hard gate defect - {hgr}")
 
         avg_score = float(sum(eval_scores) / len(eval_scores)) if eval_scores else 0.0
         dim_averages = {

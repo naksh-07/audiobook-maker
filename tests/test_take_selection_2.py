@@ -308,10 +308,19 @@ class TestTakeSelection2Suite:
         t2 = TakeVariant(take_id="t6_c2", segment_uid="s6", segment_index=6, variant_type="standard", audio_path=str(clip2), direction=pd)
 
         result = self.selector.select_take_with_result([t1, t2], text="Silence fell.", direction=pd)
-        assert result.winner is not None
+        assert result.winner is None
+        assert result.status == "NO_ACCEPTABLE_TAKE"
         assert result.review_required is True
-        assert "REVIEW REQUIRED" in result.winner.selection_reason
         assert result.evidence["all_violated"] is True
+        assert "NO_ACCEPTABLE_TAKE" in result.reason_codes
+
+        # Legacy adapter returns degraded fallback marked is_selected=False
+        best = self.selector.select_best_take([t1, t2], text="Silence fell.", direction=pd)
+        assert best is not None
+        assert best.is_selected is False
+        assert best.selection_result.review_required is True
+        assert best.selection_result.status == "NO_ACCEPTABLE_TAKE"
+        assert "[DEGRADED_FALLBACK - NO_ACCEPTABLE_TAKE]" in best.selection_reason
 
     def test_07_context_aware_mode_scoring_exposition_vs_climax_vs_whisper(self):
         """Verifies context-aware weight allocation across Exposition, Climax, and Whisper modes."""

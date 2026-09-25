@@ -132,19 +132,39 @@ class ConversationalChemistry:
         prev_energy = prev_dir.energy
         curr_energy = curr_dir.energy
 
-        # Intimidation / Submissive check
+        # Use empirical acoustic RMS if available in evidence
+        prev_ev = prev_take.evaluation.evidence if (prev_take.evaluation and prev_take.evaluation.evidence) else None
+        curr_ev = curr_take.evaluation.evidence if (curr_take.evaluation and curr_take.evaluation.evidence) else None
+        if prev_ev and prev_ev.acoustic and curr_ev and curr_ev.acoustic:
+            empirical_prev = max(0.0, min(1.0, (prev_ev.acoustic.rms_dbfs + 40.0) / 30.0))
+            empirical_curr = max(0.0, min(1.0, (curr_ev.acoustic.rms_dbfs + 40.0) / 30.0))
+            prev_energy = 0.5 * prev_energy + 0.5 * empirical_prev
+            curr_energy = 0.5 * curr_energy + 0.5 * empirical_curr
+
+        # Contextual Threat / Submissive dynamics
         is_threat = "threat" in prev_dir.actioning.lower() or "intimidat" in prev_dir.actioning.lower()
         if is_threat:
             if curr_dir.power_position == "submissive":
-                if curr_energy > prev_energy:
+                is_dramatic_outburst = any(
+                    tok in curr_dir.surface_emotion.lower()
+                    for tok in ("panic", "terror", "desperation", "scream", "rage")
+                ) or any(
+                    tok in curr_dir.actioning.lower()
+                    for tok in ("defy", "scream", "rebel", "explode")
+                )
+                if curr_energy > prev_energy and not is_dramatic_outburst:
                     energy_score -= 0.35
                     diagnostics.append("Submissive respondent inappropriately projected higher energy than intimidator")
+                elif is_dramatic_outburst:
+                    diagnostics.append("Submissive respondent delivered justified dramatic panic outburst under intimidation")
                 else:
                     diagnostics.append("Submissive respondent properly yielded vocal projection")
             elif curr_dir.power_position in ("contested", "dominant"):
                 if curr_energy < 0.55:
                     energy_score -= 0.25
                     diagnostics.append("Counter-assertion delivered with insufficient vocal energy")
+                else:
+                    diagnostics.append("Counter-assertion delivered with assertive projection")
 
         # Intimate proximity check
         if prev_dir.intimacy_level == "intimate" and curr_dir.intimacy_level == "intimate":

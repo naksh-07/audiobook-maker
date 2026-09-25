@@ -18,6 +18,8 @@ from audiobook_factory.performance.contracts import (
     PerformanceDirection,
     TakeVariant,
     PerformanceEvidence,
+    PacingEvidence,
+    AcousticEvidence,
     EvaluatorCalibrationConfig,
 )
 from audiobook_factory.performance.evaluator import PerformanceEvaluator
@@ -258,3 +260,79 @@ class TestPerformanceEvidenceAndEvaluator2:
         custom_evaluator = PerformanceEvaluator(config=custom_cfg)
         assert custom_evaluator.config.explosive_min_rms_dbfs == -20.0
         assert custom_evaluator.config.monotonic_f0_var_threshold == 10.0
+
+    # 10. Defensive Audio File Handling: Missing, Empty, Corrupt, and Oversized (>600s)
+    def test_10_defensive_file_handling_corrupt_empty_and_oversized(self, temp_dir, evaluator):
+        pd = PerformanceDirection(index=10, speaker="Geralt", surface_emotion="neutral")
+
+        # A. Missing file
+        res_missing = evaluator.evaluate_take(
+            take_id="t_missing",
+            audio_file=temp_dir / "does_not_exist.wav",
+            text="Hello.",
+            direction=pd,
+        )
+        assert res_missing.passed is False
+        assert res_missing.recommendation == "regenerate"
+
+        # B. Truncated header (<= 44 bytes)
+        trunc_path = temp_dir / "truncated.wav"
+        trunc_path.write_bytes(b"RIFF1234WAVEfmt ")
+        res_trunc = evaluator.evaluate_take(
+            take_id="t_trunc",
+            audio_file=trunc_path,
+            text="Hello.",
+            direction=pd,
+        )
+        assert res_trunc.passed is False
+        assert res_trunc.recommendation == "regenerate"
+
+        # C. Oversized file (>600s bound)
+        oversized_path = temp_dir / "oversized.wav"
+        with wave.open(str(oversized_path), "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(100)
+            wf.writeframes(b"\x00" * (100 * 2 * 605))  # 605s duration
+
+        res_over = evaluator.evaluate_take(
+            take_id="t_over",
+            audio_file=oversized_path,
+            text="Long speech.",
+            direction=pd,
+        )
+        assert res_over.passed is False
+        assert any("exceeds bounded limit of 600.0s" in d for d in res_over.diagnostics)
+
+    # 11. Multi-channel Downmixing & Contract Property Aliases
+    def test_11_stereo_downmix_and_evidence_property_aliases(self, temp_dir, evaluator):
+        # A. Property aliases on contracts
+        pe = PacingEvidence(words_per_sec=3.4)
+        assert pe.words_per_second == 3.4
+        ae = AcousticEvidence(spectral_flatness_mean=0.08)
+        assert ae.spectral_flatness == 0.08
+
+        # B. Stereo downmixing in evaluator
+        stereo_path = temp_dir / "stereo.wav"
+        with wave.open(str(stereo_path), "wb") as wf:
+            wf.setnchannels(2)
+            wf.setsampwidth(2)
+            wf.setframerate(24000)
+            # Create stereo sine wave (Left and Right)
+            t = np.arange(24000) / 24000.0
+            left = (np.sin(2 * np.pi * 150.0 * t) * 15000.0).astype(np.int16)
+            right = (np.sin(2 * np.pi * 150.0 * t) * 15000.0).astype(np.int16)
+            interleaved = np.empty((24000 * 2,), dtype=np.int16)
+            interleaved[0::2] = left
+            interleaved[1::2] = right
+            wf.writeframes(interleaved.tobytes())
+
+        pd = PerformanceDirection(index=11, speaker="Geralt", surface_emotion="neutral")
+        res_stereo = evaluator.evaluate_take(
+            take_id="t_stereo",
+            audio_file=stereo_path,
+            text="Stereo sample.",
+            direction=pd,
+        )
+        assert res_stereo.passed is True
+        assert res_stereo.overall_score >= 0.70
