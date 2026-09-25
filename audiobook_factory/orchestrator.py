@@ -127,7 +127,7 @@ class PipelineOrchestrator:
         # -------------------------------------------------------------
         if hindi:
             logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
-            translate_book_project(project_dir)
+            translate_book_project(project_dir, force_gate=force_gate)
             # Inline Gate 0: Translation Coverage Verification
             extracted_dir = project_dir / "extracted"
             translation_dir = project_dir / "translation"

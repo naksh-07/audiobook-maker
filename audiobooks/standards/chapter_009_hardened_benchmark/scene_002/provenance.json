@@ -1,0 +1,13 @@
+{
+  "source_hash": "7a860c294fe6dec7",
+  "bible_version_hash": "d2ed99ca0767f4af",
+  "policy_version": "2.0.0",
+  "prompt_version": "2.0.0",
+  "translator_version": "2.0",
+  "evaluator_version": "2.0",
+  "semantic_map_version": "2.0",
+  "repair_version": "2.0",
+  "composite_cache_key": "cf39f319a11fb19c56a1b6a6",
+  "certified": false,
+  "certification_status": "REVIEW_REQUIRED"
+}

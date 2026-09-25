@@ -1,0 +1,125 @@
+{
+  "chapter_num": 9,
+  "scene_id": "scene_002",
+  "overall_status": "REVIEW_REQUIRED",
+  "certified": false,
+  "gates": {
+    "T0_source_integrity": {
+      "gate_id": "T0",
+      "gate_name": "Source Text Integrity & Word Count Sanity",
+      "status": "PASS",
+      "details": "Source: 513 words | Target: 583 words",
+      "failures": [],
+      "warnings": [],
+      "affected_paragraphs": []
+    },
+    "T5_terminology": {
+      "gate_id": "T5",
+      "gate_name": "Terminology & Entity Consistency",
+      "status": "PASS",
+      "details": "Forbidden variants: 0",
+      "failures": [],
+      "warnings": [],
+      "affected_paragraphs": []
+    },
+    "T2_semantic_fidelity": {
+      "gate_id": "T2",
+      "gate_name": "Semantic Fidelity & Action Integrity",
+      "status": "FAIL",
+      "details": "Deterministic semantic alignment completed.",
+      "failures": [],
+      "warnings": [
+        "Paragraph 0: Source has 2 negation(s) but target has 0.",
+        "Paragraph 0: Low beat coverage (0.14). Potential omission.",
+        "Paragraph 1: Source contains dialogue but target lacks dialogue quotation/markers.",
+        "Paragraph 8: Source has 1 negation(s) but target has 0.",
+        "Paragraph 10: Source contains dialogue but target lacks dialogue quotation/markers.",
+        "Paragraph 10: Low beat coverage (0.25). Potential omission."
+      ],
+      "affected_paragraphs": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "T3_omission": {
+      "gate_id": "T3",
+      "gate_name": "Omission Detection",
+      "status": "PASS",
+      "details": "Deterministic omission check completed.",
+      "failures": [],
+      "warnings": [],
+      "affected_paragraphs": []
+    },
+    "T4_addition": {
+      "gate_id": "T4",
+      "gate_name": "Addition & Hallucination Detection",
+      "status": "PASS",
+      "details": "Deterministic addition check completed.",
+      "failures": [],
+      "warnings": [],
+      "affected_paragraphs": []
+    },
+    "T7_character_voice": {
+      "gate_id": "T7",
+      "gate_name": "Character Language Profile Alignment",
+      "status": "PASS",
+      "details": "Character voice profiles verified.",
+      "failures": [],
+      "warnings": [],
+      "affected_paragraphs": []
+    },
+    "T8_intensity": {
+      "gate_id": "T8",
+      "gate_name": "Mature Register & Intensity Preservation",
+      "status": "FAIL",
+      "details": "Max delta: 2.4 across 7 dimensions",
+      "failures": [
+        "CRITICAL UNJUSTIFIED AMPLIFICATION on 'emotional_intensity': source was 2.6 but target inflated to 5.0 (delta: 2.40)"
+      ],
+      "warnings": [
+        "Mild softening on 'colloquiality': source 2.9 -> target 2.0 (delta: -0.90)"
+      ],
+      "affected_paragraphs": []
+    },
+    "T9_naturalness": {
+      "gate_id": "T9",
+      "gate_name": "Hindi / Hindustani Literary Naturalness",
+      "status": "PASS",
+      "details": "Deterministic literary register check completed.",
+      "failures": [],
+      "warnings": [],
+      "affected_paragraphs": []
+    },
+    "T10_register_balance": {
+      "gate_id": "T10",
+      "gate_name": "Register Balance & Advisory Lexicon Check",
+      "status": "PASS",
+      "details": "Seasoning words: 2",
+      "failures": [],
+      "warnings": [],
+      "affected_paragraphs": []
+    }
+  },
+  "affected_paragraphs": [
+    0,
+    1,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "summary": "Certification completed for scene_002: REVIEW_REQUIRED (Passed: 7/9, Warned: 0, Failed: 2)",
+  "evaluator_version": "2.0"
+}

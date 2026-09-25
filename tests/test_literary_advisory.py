@@ -55,10 +55,18 @@ class TestLiteraryAdvisory(unittest.TestCase):
         is_clean, cleaned, warnings = audit_literary_register(raw_robotic_text)
         self.assertFalse(is_clean, "Expected is_clean=False for robotic antipatterns")
         self.assertGreater(len(warnings), 0, "Expected warnings for robotic antipatterns")
-        self.assertNotIn("सुनहरी लड़की", cleaned)
-        self.assertNotIn("कुंवारी चोटी", cleaned)
-        self.assertNotIn("नमस्ते, गेराल्ट", cleaned)
-        self.assertNotIn("दारू", cleaned)
+        # Fix 6: audit_literary_register is non-destructive by default and preserves literary greetings/beverages
+        self.assertIn("नमस्ते", cleaned)
+        self.assertIn("दारू", cleaned)
+
+        # TieredRepairEngine normalizes unambiguous calques while preserving literary choices
+        from audiobook_factory.translation.repair_engine import TieredRepairEngine
+        repaired, actions = TieredRepairEngine.apply_deterministic_repair(raw_robotic_text)
+        self.assertNotIn("सुनहरी लड़की", repaired)
+        self.assertNotIn("कुंवारी चोटी", repaired)
+        self.assertIn("गोरी-चिट्टी", repaired)
+        self.assertIn("नमस्ते", repaired)
+        self.assertIn("दारू", repaired)
 
     def test_04_audit_literary_register_passes_calibrated_text(self):
         calibrated_text = (

@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
 Audiobook Factory - Multi-Gate Translation Certifier (Gates T0 to T11).
-Executes the comprehensive verification lifecycle across all 12 dimensions:
+Executes the comprehensive verification lifecycle across all dimensions:
 - Gate T0: Source Integrity & Length Sanity
-- Gate T1: Entity Consistency
-- Gate T2: Semantic Fidelity
+- Gate T2: Semantic Fidelity (WHO -> DID WHAT -> TO WHOM -> OBJECT -> NEGATION)
 - Gate T3: Omission Detection
 - Gate T4: Addition / Hallucination Detection
-- Gate T5: Terminology Consistency
-- Gate T6: Relationship Consistency
+- Gate T5: Terminology & Entity Consistency
+- Gate T6: Relationship, Pronoun & Memory Continuity (Memory 2.0)
 - Gate T7: Character Language Profile Alignment
-- Gate T8: Mature Register & Intensity Preservation
+- Gate T8: Mature Register & Intensity Preservation (Soft ±0.75 Heuristic)
 - Gate T9: Hindi / Hindustani Literary Naturalness
-- Gate T10: Literary Advisory & Antipattern Check
+- Gate T10: Register Balance & Advisory Lexicon Check
 - Gate T11: Provenance & Artifact Completeness
 
-Emits final certification status: PASS, AUTO_REPAIR, REVIEW_REQUIRED, or BLOCKED.
+Emits final certification status: PASS, PASS_WITH_WARNINGS, AUTO_REPAIR, REVIEW_REQUIRED, or BLOCKED.
 """
 
 from __future__ import annotations
@@ -26,7 +25,7 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 
 from .book_bible import BookBible
-from .source_semantic_map import SourceSemanticMap
+from .source_semantic_map import SourceSemanticMap, TargetSemanticMap, build_target_semantic_map
 from .scene_planner import ScenePlan
 from .intensity_model import LiteraryIntensityVector, IntensityEvaluator
 from .terminology_auditor import audit_terminology
@@ -35,6 +34,25 @@ from .omission_detector import evaluate_omissions
 from .addition_detector import evaluate_additions
 from .character_voice_auditor import evaluate_character_voices
 from .naturalness_auditor import evaluate_literary_naturalness
+from .hindustani_register import HindustaniRegisterEngine
+
+EVALUATOR_VERSION = "2.0"
+
+CRITICAL_GATES = {
+    "T0_source_integrity",
+    "T2_semantic_fidelity",
+    "T3_omission",
+    "T4_addition",
+    "T5_terminology",
+    "T6_relationship_memory",
+    "T8_intensity",
+}
+
+ADVISORY_GATES = {
+    "T7_character_voice",
+    "T9_naturalness",
+    "T10_register_balance",
+}
 
 
 class GateStatus(str, Enum):
@@ -48,20 +66,23 @@ class GateResult(BaseModel):
     gate_name: str
     status: GateStatus
     details: str
-    warnings: List[str] = Field(default_factory=list)
     failures: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+    affected_paragraphs: List[int] = Field(default_factory=list)
 
 
 class GateAuditResult(BaseModel):
     chapter_num: int
     scene_id: str
-    overall_status: str  # PASS, AUTO_REPAIR, REVIEW_REQUIRED, BLOCKED
+    overall_status: str  # PASS, PASS_WITH_WARNINGS, AUTO_REPAIR, REVIEW_REQUIRED, BLOCKED
     certified: bool
     gates: Dict[str, GateResult] = Field(default_factory=dict)
+    affected_paragraphs: List[int] = Field(default_factory=list)
     summary: str = ""
+    evaluator_version: str = EVALUATOR_VERSION
 
     def is_certified(self) -> bool:
-        return self.overall_status in ("PASS", "AUTO_REPAIR")
+        return self.certified and self.overall_status in ("PASS", "PASS_WITH_WARNINGS", "AUTO_REPAIR")
 
 
 class TranslationCertifier:
@@ -78,24 +99,45 @@ class TranslationCertifier:
         target_intensity: Optional[LiteraryIntensityVector] = None,
         call_llm_fn: Optional[Any] = None,
         memory_context: Optional[Any] = None,
+        target_map: Optional[TargetSemanticMap] = None,
     ) -> GateAuditResult:
         """
         Executes Gates T0 through T11 on a translated scene.
-        Uses deterministic checks first, then isolated multi-pass evaluators.
+        Guarantees that critical WARN states cannot silently become PASS.
+        Calibrates intensity vectors deterministically if not explicitly provided.
         """
         gates: Dict[str, GateResult] = {}
+        all_affected_paras: List[int] = []
 
+        # Build TargetSemanticMap if not already provided
+        if target_map is None:
+            target_map = build_target_semantic_map(
+                target_text=target_text,
+                scene_id=source_map.scene_id,
+                book_bible=book_bible,
+                call_llm_fn=call_llm_fn,
+            )
+
+        # -------------------------------------------------------------
         # Gate T0: Source Integrity & Length Sanity
+        # -------------------------------------------------------------
         src_words = len(source_text.split())
         tgt_words = len(target_text.split())
         t0_status = GateStatus.PASS
         t0_failures = []
-        if src_words < 5 or tgt_words < 5:
+        is_blocked = False
+
+        if not target_text.strip():
+            t0_status = GateStatus.FAIL
+            t0_failures.append("Target translation is completely empty.")
+            is_blocked = True
+        elif src_words < 5 or tgt_words < 5:
             t0_status = GateStatus.FAIL
             t0_failures.append(f"Suspiciously short text (source {src_words} words, target {tgt_words} words)")
-        elif tgt_words < (src_words * 0.4):
+        elif tgt_words < (src_words * 0.35):
             t0_status = GateStatus.FAIL
             t0_failures.append(f"Target text severely truncated ({tgt_words} words vs source {src_words} words)")
+            is_blocked = True
 
         gates["T0_source_integrity"] = GateResult(
             gate_id="T0",
@@ -105,7 +147,9 @@ class TranslationCertifier:
             failures=t0_failures,
         )
 
-        # Gate T5 & T1: Terminology & Entity Consistency (Deterministic)
+        # -------------------------------------------------------------
+        # Gate T5: Terminology & Entity Consistency (Deterministic)
+        # -------------------------------------------------------------
         term_res = audit_terminology(target_text, book_bible, source_text)
         gates["T5_terminology"] = GateResult(
             gate_id="T5",
@@ -116,40 +160,80 @@ class TranslationCertifier:
             warnings=term_res.warnings,
         )
 
-        # Gate T2: Semantic Fidelity (Deterministic Pre-validator + LLM Evaluator)
-        sem_res = evaluate_semantic_fidelity(source_map, target_text, call_llm_fn)
+        # -------------------------------------------------------------
+        # Gate T2: Semantic Fidelity (WHO -> DID WHAT -> TO WHOM -> OBJECT -> NEGATION)
+        # -------------------------------------------------------------
+        sem_res = evaluate_semantic_fidelity(
+            source_map=source_map,
+            target_text=target_text,
+            call_llm_fn=call_llm_fn,
+            book_bible=book_bible,
+            target_map=target_map,
+        )
+        t2_status = GateStatus.PASS if sem_res.is_valid and not sem_res.warnings else (
+            GateStatus.WARN if sem_res.is_valid else GateStatus.FAIL
+        )
+        if sem_res.affected_paragraphs:
+            all_affected_paras.extend(sem_res.affected_paragraphs)
+
         gates["T2_semantic_fidelity"] = GateResult(
             gate_id="T2",
             gate_name="Semantic Fidelity & Action Integrity",
-            status=GateStatus.PASS if sem_res.is_valid else GateStatus.FAIL,
+            status=t2_status,
             details=sem_res.evaluator_notes,
             failures=sem_res.critical_inversions + sem_res.action_mismatches,
             warnings=sem_res.warnings,
+            affected_paragraphs=sem_res.affected_paragraphs,
         )
 
+        # -------------------------------------------------------------
         # Gate T3: Omission Detection
-        om_res = evaluate_omissions(source_map, target_text, call_llm_fn)
+        # -------------------------------------------------------------
+        om_res = evaluate_omissions(
+            source_map=source_map,
+            target_text=target_text,
+            call_llm_fn=call_llm_fn,
+            target_map=target_map,
+        )
+        if om_res.affected_paragraphs:
+            all_affected_paras.extend(om_res.affected_paragraphs)
+
+        t3_status = GateStatus(om_res.status)
         gates["T3_omission"] = GateResult(
             gate_id="T3",
             gate_name="Omission Detection",
-            status=GateStatus.PASS if om_res.is_valid else GateStatus.WARN,
+            status=t3_status,
             details=om_res.evaluator_notes,
             failures=om_res.omitted_dialogue_beats + om_res.omitted_actions,
             warnings=om_res.warnings,
+            affected_paragraphs=om_res.affected_paragraphs,
         )
 
+        # -------------------------------------------------------------
         # Gate T4: Addition / Hallucination Detection
-        add_res = evaluate_additions(source_map, target_text, call_llm_fn)
+        # -------------------------------------------------------------
+        add_res = evaluate_additions(
+            source_map=source_map,
+            target_text=target_text,
+            call_llm_fn=call_llm_fn,
+        )
+        if add_res.affected_paragraphs:
+            all_affected_paras.extend(add_res.affected_paragraphs)
+
+        t4_status = GateStatus(add_res.status)
         gates["T4_addition"] = GateResult(
             gate_id="T4",
             gate_name="Addition & Hallucination Detection",
-            status=GateStatus.PASS if add_res.is_valid else GateStatus.FAIL,
+            status=t4_status,
             details=add_res.evaluator_notes,
             failures=add_res.hallucinated_actions + add_res.unsupported_fabrications,
             warnings=add_res.warnings,
+            affected_paragraphs=add_res.affected_paragraphs,
         )
 
+        # -------------------------------------------------------------
         # Gate T6: Relationship, Pronoun & Memory Continuity (Memory 2.0)
+        # -------------------------------------------------------------
         if memory_context is not None and hasattr(memory_context, "get_character_performance_guidance"):
             t6_warnings: List[str] = []
             rels_checked = 0
@@ -169,68 +253,116 @@ class TranslationCertifier:
                 warnings=t6_warnings,
             )
 
+        # -------------------------------------------------------------
         # Gate T7: Character Voice Profile Alignment
+        # -------------------------------------------------------------
         cv_res = evaluate_character_voices(scene_plan.active_characters, target_text, book_bible, call_llm_fn)
+        t7_status = GateStatus(cv_res.status) if hasattr(cv_res, "status") else (
+            GateStatus.PASS if cv_res.is_valid else GateStatus.WARN
+        )
         gates["T7_character_voice"] = GateResult(
             gate_id="T7",
             gate_name="Character Language Profile Alignment",
-            status=GateStatus.PASS if cv_res.is_valid else GateStatus.WARN,
+            status=t7_status,
             details=cv_res.evaluator_notes,
             failures=cv_res.character_voice_drifts,
             warnings=cv_res.warnings + cv_res.honorific_mismatches,
         )
 
-        # Gate T8: Mature Register & Intensity Preservation (Soft ±0.75 Heuristic)
-        if source_intensity and target_intensity:
-            int_res = IntensityEvaluator.compare_vectors(source_intensity, target_intensity)
-            gates["T8_intensity"] = GateResult(
-                gate_id="T8",
-                gate_name="Mature Register & Intensity Preservation",
-                status=GateStatus(int_res.status),
-                details=f"Max delta: {int_res.max_delta}",
-                failures=int_res.failure_reasons,
-                warnings=int_res.warnings,
+        # -------------------------------------------------------------
+        # Gate T8: Mature Register & Intensity Preservation (Calibrated)
+        # -------------------------------------------------------------
+        if source_intensity is None:
+            source_intensity = IntensityEvaluator.estimate_source_intensity(
+                source_text, semantic_map=source_map, call_llm_fn=call_llm_fn
             )
-        else:
-            gates["T8_intensity"] = GateResult(
-                gate_id="T8",
-                gate_name="Mature Register & Intensity Preservation",
-                status=GateStatus.PASS,
-                details="Uncalibrated vectors; default passed.",
+        if target_intensity is None:
+            target_intensity = IntensityEvaluator.estimate_target_intensity(
+                target_text, target_map=target_map, source_vector=source_intensity, call_llm_fn=call_llm_fn
             )
 
-        # Gate T9 & T10: Literary Naturalness & Register
+        int_res = IntensityEvaluator.compare_vectors(source_intensity, target_intensity)
+        gates["T8_intensity"] = GateResult(
+            gate_id="T8",
+            gate_name="Mature Register & Intensity Preservation",
+            status=GateStatus(int_res.status),
+            details=f"Max delta: {int_res.max_delta} across 7 dimensions",
+            failures=int_res.failure_reasons,
+            warnings=int_res.warnings,
+        )
+
+        # -------------------------------------------------------------
+        # Gate T9: Hindi / Hindustani Literary Naturalness
+        # -------------------------------------------------------------
         nat_res = evaluate_literary_naturalness(target_text, call_llm_fn)
+        t9_status = GateStatus(nat_res.status) if hasattr(nat_res, "status") else (
+            GateStatus.PASS if nat_res.is_valid else GateStatus.WARN
+        )
         gates["T9_naturalness"] = GateResult(
             gate_id="T9",
             gate_name="Hindi / Hindustani Literary Naturalness",
-            status=GateStatus.PASS if nat_res.is_valid else GateStatus.WARN,
+            status=t9_status,
             details=nat_res.evaluator_notes,
             failures=nat_res.antipatterns_detected,
             warnings=nat_res.warnings + nat_res.translatese_passages,
         )
 
-        # Determine overall certification status
-        has_critical_failure = any(g.status == GateStatus.FAIL for g in gates.values())
-        has_warnings = any(g.status == GateStatus.WARN for g in gates.values())
+        # -------------------------------------------------------------
+        # Gate T10: Register Balance & Advisory Lexicon Check
+        # -------------------------------------------------------------
+        reg_engine = HindustaniRegisterEngine()
+        reg_audit = reg_engine.audit_text(target_text)
+        reg_status = GateStatus.PASS if reg_audit.is_balanced else GateStatus.WARN
+        reg_warnings = []
+        if not reg_audit.is_balanced:
+            reg_warnings.append(f"Register imbalance (seasoning count: {reg_audit.seasoning_count})")
 
-        if not has_critical_failure:
-            overall = "PASS"
-            certified = True
-        else:
-            # Check if failures can be auto-repaired
-            only_term_or_anti = all(
-                k in ("T5_terminology", "T9_naturalness")
-                for k, g in gates.items() if g.status == GateStatus.FAIL
-            )
-            if only_term_or_anti:
+        gates["T10_register_balance"] = GateResult(
+            gate_id="T10",
+            gate_name="Register Balance & Advisory Lexicon Check",
+            status=reg_status,
+            details=f"Seasoning words: {len(reg_audit.detected_seasoning_words)}",
+            warnings=reg_warnings,
+        )
+
+        # -------------------------------------------------------------
+        # Final Certification State Machine (PASS, PASS_WITH_WARNINGS, REVIEW_REQUIRED, BLOCKED)
+        # -------------------------------------------------------------
+        fail_gates = [k for k, g in gates.items() if g.status == GateStatus.FAIL]
+        warn_gates = [k for k, g in gates.items() if g.status == GateStatus.WARN]
+        critical_warns = [k for k in warn_gates if k in CRITICAL_GATES]
+
+        dedup_affected_paras = sorted(list(set(all_affected_paras)))
+
+        if is_blocked:
+            overall = "BLOCKED"
+            certified = False
+        elif fail_gates:
+            # Check if only deterministic repairs are required (Level 1 candidates)
+            only_term_or_anti = all(k in ("T5_terminology", "T9_naturalness") for k in fail_gates)
+            if only_term_or_anti and not critical_warns:
                 overall = "AUTO_REPAIR"
                 certified = True
             else:
                 overall = "REVIEW_REQUIRED"
                 certified = False
+        elif critical_warns or len(warn_gates) >= 3:
+            # Critical warnings cannot silently become PASS!
+            overall = "REVIEW_REQUIRED"
+            certified = False
+        elif warn_gates:
+            # 1-2 advisory warnings produce PASS_WITH_WARNINGS (certified!)
+            overall = "PASS_WITH_WARNINGS"
+            certified = True
+        else:
+            overall = "PASS"
+            certified = True
 
-        summary_msg = f"Certification completed for {scene_plan.scene_id}: {overall} (Gates Passed: {sum(1 for g in gates.values() if g.status == GateStatus.PASS)}/{len(gates)})"
+        pass_count = sum(1 for g in gates.values() if g.status == GateStatus.PASS)
+        summary_msg = (
+            f"Certification completed for {scene_plan.scene_id}: {overall} "
+            f"(Passed: {pass_count}/{len(gates)}, Warned: {len(warn_gates)}, Failed: {len(fail_gates)})"
+        )
 
         return GateAuditResult(
             chapter_num=chapter_num,
@@ -238,6 +370,7 @@ class TranslationCertifier:
             overall_status=overall,
             certified=certified,
             gates=gates,
+            affected_paragraphs=dedup_affected_paras,
             summary=summary_msg,
         )
 
@@ -251,6 +384,7 @@ class TranslationCertifier:
         scene_plan: ScenePlan,
         audit_result: GateAuditResult,
         provenance_dict: Dict[str, Any],
+        target_map: Optional[TargetSemanticMap] = None,
     ):
         """
         Saves the complete, inspectable chapter/scene artifact directory.
@@ -265,6 +399,9 @@ class TranslationCertifier:
             f.write(target_text)
 
         source_map.save(output_dir / "semantic_map.json")
+
+        if target_map is not None:
+            target_map.save(output_dir / "target_semantic_map.json")
 
         with open(output_dir / "scene_plan.json", "w", encoding="utf-8") as f:
             json.dump(scene_plan.model_dump(), f, ensure_ascii=False, indent=2)

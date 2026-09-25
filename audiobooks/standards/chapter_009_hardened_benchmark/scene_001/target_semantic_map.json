@@ -1,0 +1,3592 @@
+{
+  "scene_id": "scene_001",
+  "total_beats": 196,
+  "target_hash": "f518783924941f07",
+  "semantic_map_version": "2.0",
+  "propositions": [
+    {
+      "beat_id": "scene_001_tgt_b001",
+      "paragraph_idx": 0,
+      "target_sentence": "# ५: तर्क की आवाज़",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b002",
+      "paragraph_idx": 1,
+      "target_sentence": "\"गेराल्ट!",
+      "actors_hi": [
+        "गेराल्ट"
+      ],
+      "action_hi": "\"गेराल्ट",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "गेराल्ट"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "गेराल्ट",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b003",
+      "paragraph_idx": 1,
+      "target_sentence": "अरे!",
+      "actors_hi": [],
+      "action_hi": "अरे",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b004",
+      "paragraph_idx": 1,
+      "target_sentence": "कहाँ हो?",
+      "actors_hi": [],
+      "action_hi": "कहाँ हो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b005",
+      "paragraph_idx": 1,
+      "target_sentence": "सुन रहे हो?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b006",
+      "paragraph_idx": 2,
+      "target_sentence": "उसने रॉड्रिक डी नोवम्ब्रे की *'दुनिया का इतिहास'* के खुरदरे, पीले पड़ चुके पन्नों से सिर उठाया—एक दिलचस्प मगर खासी विवादास्पद किताब, जिसका मुताला वह कल से ही कर रहा था।",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "कर रहा था",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b007",
+      "paragraph_idx": 3,
+      "target_sentence": "\"यहीं हूँ।",
+      "actors_hi": [],
+      "action_hi": "\"यहीं हूँ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b008",
+      "paragraph_idx": 3,
+      "target_sentence": "क्या हुआ, नेनेके?",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "नेनेके",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "नेनेके",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b009",
+      "paragraph_idx": 3,
+      "target_sentence": "कोई काम था मुझसे?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b010",
+      "paragraph_idx": 4,
+      "target_sentence": "\"तुम्हारा एक मेहमान आया है।\"",
+      "actors_hi": [
+        "हम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "हम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "हम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b011",
+      "paragraph_idx": 5,
+      "target_sentence": "\"फिर से?",
+      "actors_hi": [],
+      "action_hi": "\"फिर से",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b012",
+      "paragraph_idx": 5,
+      "target_sentence": "इस बार कौन?",
+      "actors_hi": [],
+      "action_hi": "इस बार कौन",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b013",
+      "paragraph_idx": 5,
+      "target_sentence": "खुद ड्यूक हेयरवार्ड?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b014",
+      "paragraph_idx": 6,
+      "target_sentence": "\"नहीं।",
+      "actors_hi": [],
+      "action_hi": "\"नहीं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b015",
+      "paragraph_idx": 6,
+      "target_sentence": "इस बार तुम्हारा वही लंगोटिया यार आया है—डैंडेलियन।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "यार आया है—डैंडेलियन",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "डैंडेलियन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b016",
+      "paragraph_idx": 6,
+      "target_sentence": "वह निठल्ला, परजीवी और हरामखोर!",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "परजीवी और हरामखोर",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "वह",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b017",
+      "paragraph_idx": 6,
+      "target_sentence": "कला का तथाकथित पुजारी, प्रेम-गीतों और गाथाओं का चमकता हुआ सितारा!",
+      "actors_hi": [],
+      "action_hi": "चमकता हुआ सितारा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b018",
+      "paragraph_idx": 6,
+      "target_sentence": "हमेशा की तरह अपनी शोहरत के नशे में चूर, सूअर के फुकने की तरह फूला हुआ, और बीयर की सड़ांध मारता हुआ।",
+      "actors_hi": [
+        "हम"
+      ],
+      "action_hi": "सड़ांध मारता हुआ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "हम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "हम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b019",
+      "paragraph_idx": 6,
+      "target_sentence": "मिलना चाहते हो उससे?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b020",
+      "paragraph_idx": 7,
+      "target_sentence": "\"बेशक।",
+      "actors_hi": [],
+      "action_hi": "\"बेशक",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b021",
+      "paragraph_idx": 7,
+      "target_sentence": "आखिर मेरा दोस्त है वह।\"",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "वह",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b022",
+      "paragraph_idx": 8,
+      "target_sentence": "नेनेके ने चिढ़कर कंधे उचका दिए।",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "कंधे उचका दिए",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b023",
+      "paragraph_idx": 8,
+      "target_sentence": "\"मुझे तो तुम्हारी यह दोस्ती कभी समझ नहीं आई।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "समझ नहीं आई",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b024",
+      "paragraph_idx": 8,
+      "target_sentence": "वह तुम्हारा बिल्कुल उलट है।\"",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "वह",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b025",
+      "paragraph_idx": 9,
+      "target_sentence": "\"उलट स्वभाव वाले ही एक-दूसरे को खींचते हैं।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b026",
+      "paragraph_idx": 10,
+      "target_sentence": "\"दिख रहा है।",
+      "actors_hi": [],
+      "action_hi": "\"दिख रहा है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b027",
+      "paragraph_idx": 10,
+      "target_sentence": "लो, आ ही गया,\" उसने सिर के इशारे से जताया।",
+      "actors_hi": [],
+      "action_hi": "इशारे से जताया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b028",
+      "paragraph_idx": 10,
+      "target_sentence": "\"तुम्हारा मशहूर शायर।\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b029",
+      "paragraph_idx": 11,
+      "target_sentence": "\"वह सचमुच एक मशहूर शायर है, नेनेके।",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "नेनेके",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "नेनेके",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b030",
+      "paragraph_idx": 11,
+      "target_sentence": "तुम यह तो नहीं कह सकतीं कि तुमने उसके गीत कभी सुने ही नहीं।\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b031",
+      "paragraph_idx": 12,
+      "target_sentence": "\"सुने हैं मैंने,\" पुजारिन का चेहरा घिन से सिकुड़ गया।",
+      "actors_hi": [
+        "पुजारिन"
+      ],
+      "action_hi": "से सिकुड़ गया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "पुजारिन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "पुजारिन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b032",
+      "paragraph_idx": 12,
+      "target_sentence": "\"हाँ, सुने तो हैं।",
+      "actors_hi": [],
+      "action_hi": "सुने तो हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b033",
+      "paragraph_idx": 12,
+      "target_sentence": "खैर, मुझे शायरी की ज़्यादा समझ तो नहीं, लेकिन दिल को छू लेने वाली नफ़ासत से सीधे गंदी गालियों और फूहड़पन पर उतर आना अगर कोई हुनर है, तो होगा भाई!",
+      "actors_hi": [],
+      "action_hi": "तो होगा भाई",
+      "recipients_hi": [
+        "अगर"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b034",
+      "paragraph_idx": 12,
+      "target_sentence": "मुझे माफ़ करना, मैं तुम दोनों के साथ नहीं बैठने वाली।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "नहीं बैठने वाली",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b035",
+      "paragraph_idx": 12,
+      "target_sentence": "मेरा दिमाग़ इस वक़्त न तो उसकी शायरी झेलने के मूड में है और न ही उसकी घटिया बकचोदी।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b036",
+      "paragraph_idx": 13,
+      "target_sentence": "दहलीज़ के पार गलियारे में एक ज़ोरदार ठहाका गूँजा और साथ ही ल्यूट के तारों की झंकार सुनाई दी।",
+      "actors_hi": [],
+      "action_hi": "झंकार सुनाई दी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b037",
+      "paragraph_idx": 13,
+      "target_sentence": "और फिर, लाइब्रेरी की चौखट पर डैंडेलियन खड़ा नज़र आया।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "खड़ा नज़र आया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b038",
+      "paragraph_idx": 13,
+      "target_sentence": "उसने जामुनी रंग का कुरता पहन रखा था, जिसकी आस्तीनों पर लेसदार कफ़ लगे थे, और टोपी सिर पर तिरछी टिकी थी।",
+      "actors_hi": [],
+      "action_hi": "तिरछी टिकी थी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b039",
+      "paragraph_idx": 13,
+      "target_sentence": "नेनेके को देखते ही उस भांड ने कुछ ज़्यादा ही झुककर एक बनावटी सलाम ठोका।",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "बनावटी सलाम ठोका",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b040",
+      "paragraph_idx": 13,
+      "target_sentence": "उसकी टोपी पर लगा बगुले का पंख फ़र्श को छू गया।",
+      "actors_hi": [],
+      "action_hi": "को छू गया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b041",
+      "paragraph_idx": 14,
+      "target_sentence": "\"मेरी आदरणीय माता जी के चरणों में सादर प्रणाम,\" वह बेवक़ूफ़ों की तरह मचलती आवाज़ में बोला।",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "आवाज़ में बोला",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "वह",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b042",
+      "paragraph_idx": 14,
+      "target_sentence": "\"महान मेलीतेले और उनकी पुजारिनों की जय हो, जो शराफ़त और हिकमत का जीता-जागता चश्मा हैं—\"",
+      "actors_hi": [
+        "पुजारिन"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "पुजारिन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "पुजारिन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b043",
+      "paragraph_idx": 15,
+      "target_sentence": "\"अपनी ये बकचोदी बंद करो!\" नेनेके ने नाक सिकोड़ते हुए डाँटा।",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "सिकोड़ते हुए डाँटा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "नेनेके",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b044",
+      "paragraph_idx": 15,
+      "target_sentence": "\"और मुझे 'माँ' कहना तो बिल्कुल बंद कर दो!",
+      "actors_hi": [],
+      "action_hi": "बंद कर दो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b045",
+      "paragraph_idx": 15,
+      "target_sentence": "यह सोचकर ही मेरी रूह काँप उठती है कि तुम्हारे जैसा कोई लफ़ंगा मेरा बेटा हो सकता है।\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [
+        "जैसा"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b046",
+      "paragraph_idx": 16,
+      "target_sentence": "वह पैर पटकती हुई मुड़ी और वहाँ से चली गई, उसके लंबे लबादे की सरसराहट पीछे छूट गई।",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "पीछे छूट गई",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b047",
+      "paragraph_idx": 16,
+      "target_sentence": "डैंडेलियन ने मुँह बनाकर उसकी नकल उतारी और एक मज़ाकिया अंदाज़ में फिर से झुका।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "फिर से झुका",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b048",
+      "paragraph_idx": 17,
+      "target_sentence": "\"बिल्कुल नहीं बदलीं यह,\" वह खिलखिलाते हुए बोला।",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "खिलखिलाते हुए बोला",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "वह",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b049",
+      "paragraph_idx": 17,
+      "target_sentence": "\"ज़रा-सा मज़ाक भी बर्दाश्त नहीं होता इनसे।",
+      "actors_hi": [],
+      "action_hi": "नहीं होता इनसे",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b050",
+      "paragraph_idx": 17,
+      "target_sentence": "भड़की हुई हैं, क्योंकि जब मैं यहाँ पहुँचा, तो दरवाज़े पर खड़ी पहरेदार लड़की से थोड़ी छेड़छाड़ कर बैठा।",
+      "actors_hi": [
+        "लड़की"
+      ],
+      "action_hi": "छेड़छाड़ कर बैठा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "लड़की"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "लड़की",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b051",
+      "paragraph_idx": 17,
+      "target_sentence": "यार, क्या गज़ब की गोरी-चिट्टी लड़की थी!",
+      "actors_hi": [
+        "लड़की"
+      ],
+      "action_hi": "गोरी-चिट्टी लड़की थी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "लड़की"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "लड़की",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b052",
+      "paragraph_idx": 17,
+      "target_sentence": "लंबी-लंबी पलकें, और उस कमसिन लड़की की लंबी चोटी नीचे उसकी सुडौल छोटी गांड तक लटक रही थी... अब ऐसी गांड पर चिकोटी न काटना तो सीधे-सीधे गुनाह होता!",
+      "actors_hi": [
+        "लड़की"
+      ],
+      "action_hi": "सीधे-सीधे गुनाह होता",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [
+        "लड़की"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "लड़की",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b053",
+      "paragraph_idx": 17,
+      "target_sentence": "सो मैंने काट ली!",
+      "actors_hi": [
+        "मैं"
+      ],
+      "action_hi": "मैंने काट ली",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "मैं"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "मैं",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b054",
+      "paragraph_idx": 17,
+      "target_sentence": "और ऐन उसी वक़्त नेनेके वहाँ आ धमकीं... खैर, जो भी हो।",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "जो भी हो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "नेनेके",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b055",
+      "paragraph_idx": 17,
+      "target_sentence": "सलाम, गेराल्ट!\"",
+      "actors_hi": [
+        "गेराल्ट"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "गेराल्ट"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "गेराल्ट",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b056",
+      "paragraph_idx": 18,
+      "target_sentence": "\"सलाम, डैंडेलियन।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "डैंडेलियन",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "डैंडेलियन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b057",
+      "paragraph_idx": 18,
+      "target_sentence": "तुम्हें कैसे पता चला मैं यहाँ हूँ?\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b058",
+      "paragraph_idx": 19,
+      "target_sentence": "शायर ने तनकर खड़े होते हुए अपनी पतलून ऊपर खींची।",
+      "actors_hi": [],
+      "action_hi": "पतलून ऊपर खींची",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b059",
+      "paragraph_idx": 19,
+      "target_sentence": "\"मैं विज़िम में था,\" उसने कहा।",
+      "actors_hi": [],
+      "action_hi": "\" उसने कहा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b060",
+      "paragraph_idx": 19,
+      "target_sentence": "\"मैंने उस स्ट्रिगा के बारे में सुना, और यह भी कि तुम ज़ख़्मी हो गए थे।",
+      "actors_hi": [
+        "मैं"
+      ],
+      "action_hi": "हो गए थे",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "मैं"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "मैं",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b061",
+      "paragraph_idx": 19,
+      "target_sentence": "मुझे अंदाज़ा था कि तुम अपनी हड्डियाँ जुड़वाने और दम लेने कहाँ आओगे।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "लेने कहाँ आओगे",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b062",
+      "paragraph_idx": 19,
+      "target_sentence": "वैसे, अब तुम भले-चंगे दिख रहे हो, है न?\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b063",
+      "paragraph_idx": 20,
+      "target_sentence": "\"दिख तो सही रहा हूँ, मगर ज़रा यह बात नेनेके को समझाकर दिखाओ।",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "को समझाकर दिखाओ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "नेनेके",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b064",
+      "paragraph_idx": 20,
+      "target_sentence": "बैठो, बैठ कर बात करते हैं।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b065",
+      "paragraph_idx": 21,
+      "target_sentence": "डैंडेलियन बैठ गया और उसने मेज़ पर खुली रखी किताब में झाँका।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "किताब में झाँका",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b066",
+      "paragraph_idx": 21,
+      "target_sentence": "\"इतिहास?\" वह मुस्कुराया।",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "\" वह मुस्कुराया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "वह",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b067",
+      "paragraph_idx": 21,
+      "target_sentence": "\"रोड्रिक डी नोवम्ब्रे?",
+      "actors_hi": [
+        "रोड्रिक डी नोवम्ब्रे"
+      ],
+      "action_hi": "\"रोड्रिक डी नोवम्ब्रे",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "रोड्रिक डी नोवम्ब्रे"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "रोड्रिक डी नोवम्ब्रे",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b068",
+      "paragraph_idx": 21,
+      "target_sentence": "अरे, इसे तो मैं पढ़ चुका हूँ।",
+      "actors_hi": [],
+      "action_hi": "पढ़ चुका हूँ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b069",
+      "paragraph_idx": 21,
+      "target_sentence": "ओक्सनफर्ट की अकादमी में जब मैं पढ़ता था, तो इतिहास मेरे पसंदीदा विषयों की फेहरिस्त में दूसरे नंबर पर था।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b070",
+      "paragraph_idx": 22,
+      "target_sentence": "\"और पहले नंबर पर क्या था?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b071",
+      "paragraph_idx": 23,
+      "target_sentence": "\"भूगोल,\" शायर ने पूरी संजीदगी से कहा।",
+      "actors_hi": [],
+      "action_hi": "संजीदगी से कहा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b072",
+      "paragraph_idx": 23,
+      "target_sentence": "\"उसका एटलस काफ़ी बड़ा होता था, तो उसके पीछे वोदका की सुराही छुपाना सबसे आसान रहता था।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b073",
+      "paragraph_idx": 24,
+      "target_sentence": "गेराल्ट हल्के-से हँसा।",
+      "actors_hi": [
+        "गेराल्ट"
+      ],
+      "action_hi": "गेराल्ट हल्के-से हँसा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "गेराल्ट"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b074",
+      "paragraph_idx": 24,
+      "target_sentence": "वह उठा, उसने शेल्फ़ से ल्यूनिन और टायर्स की लिखी किताब *'जादू और कीमिया के रहस्यमय भेद'* हटाई, और उस भारी-भरकम जिल्द के पीछे से भूसे में लिपटी, गोल पेट वाली एक मटकी निकालकर बाहर रख दी।",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "बाहर रख दी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b075",
+      "paragraph_idx": 25,
+      "target_sentence": "\"ओहो!\" गवैये का चेहरा पल भर में खिल उठा।",
+      "actors_hi": [],
+      "action_hi": "में खिल उठा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b076",
+      "paragraph_idx": 25,
+      "target_sentence": "\"तो लाइब्रेरियों में अब भी अक्ल और इल्हाम दोनों ढूँढ़े जा सकते हैं!",
+      "actors_hi": [],
+      "action_hi": "जा सकते हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b077",
+      "paragraph_idx": 25,
+      "target_sentence": "आहा!",
+      "actors_hi": [],
+      "action_hi": "आहा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b078",
+      "paragraph_idx": 25,
+      "target_sentence": "मज़ा आ गया!",
+      "actors_hi": [],
+      "action_hi": "मज़ा आ गया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b079",
+      "paragraph_idx": 25,
+      "target_sentence": "बेर की शराब है न?",
+      "actors_hi": [],
+      "action_hi": "शराब है न",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b080",
+      "paragraph_idx": 25,
+      "target_sentence": "वाह, असली कीमियागरी तो इसे कहते हैं!",
+      "actors_hi": [],
+      "action_hi": "इसे कहते हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b081",
+      "paragraph_idx": 25,
+      "target_sentence": "यह है वो पारस पत्थर, जिसकी गहराई में उतरना चाहिए।",
+      "actors_hi": [],
+      "action_hi": "में उतरना चाहिए",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b082",
+      "paragraph_idx": 25,
+      "target_sentence": "तुम्हारी सेहत के नाम, मेरे भाई!",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "मेरे भाई",
+      "recipients_hi": [
+        "तुम्हारी"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b083",
+      "paragraph_idx": 25,
+      "target_sentence": "उफ़्फ़, यह तो प्लेग की तरह तेज़ और जानलेवा है!\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b084",
+      "paragraph_idx": 26,
+      "target_sentence": "\"यहाँ किस सिलसिले में आना हुआ?\" गेराल्ट ने उससे शराब की मटकी ली, एक घूँट भरा और अपनी पट्टी बंधी गर्दन पर हाथ फेरते हुए बुरी तरह खाँसने लगा।",
+      "actors_hi": [
+        "गेराल्ट"
+      ],
+      "action_hi": "तरह खाँसने लगा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "गेराल्ट"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "गेराल्ट",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b085",
+      "paragraph_idx": 26,
+      "target_sentence": "\"कहाँ जा रहे हो?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b086",
+      "paragraph_idx": 27,
+      "target_sentence": "\"कहीं नहीं।",
+      "actors_hi": [],
+      "action_hi": "\"कहीं नहीं",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b087",
+      "paragraph_idx": 27,
+      "target_sentence": "मतलब, जहाँ तुम जाओगे, मैं भी वहीं चल पड़ूँगा।",
+      "actors_hi": [
+        "वह"
+      ],
+      "action_hi": "वहीं चल पड़ूँगा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "वह"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "वह",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b088",
+      "paragraph_idx": 27,
+      "target_sentence": "तुम्हारी हमराही कर लूँगा।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "हमराही कर लूँगा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b089",
+      "paragraph_idx": 27,
+      "target_sentence": "यहाँ और कितने दिन रुकने का इरादा है?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b090",
+      "paragraph_idx": 28,
+      "target_sentence": "\"ज़्यादा दिन नहीं।",
+      "actors_hi": [],
+      "action_hi": "\"ज़्यादा दिन नहीं",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b091",
+      "paragraph_idx": 28,
+      "target_sentence": "यहाँ के ड्यूक ने साफ़ लफ़्ज़ों में जता दिया है कि मेरा यहाँ रहना उसे गवारा नहीं।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b092",
+      "paragraph_idx": 29,
+      "target_sentence": "\"हेरिवर्ड ने?\" डैंडेलियन जारुगा से लेकर ड्रैगन पहाड़ों तक के सारे राजाओं, सामंतों और जागीरदारों की नस-नस से वाकिफ़ था।",
+      "actors_hi": [
+        "डैंडेलियन",
+        "राजा"
+      ],
+      "action_hi": "से वाकिफ़ था",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन",
+        "राजा"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "डैंडेलियन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b093",
+      "paragraph_idx": 29,
+      "target_sentence": "\"अरे, उसकी परवाह मत करो!",
+      "actors_hi": [],
+      "action_hi": "परवाह मत करो",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "मत"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b094",
+      "paragraph_idx": 29,
+      "target_sentence": "उस चूहे की इतनी औक़ात नहीं कि वह नेनेके या मेलीतेले से पंगा ले सके।",
+      "actors_hi": [
+        "नेनेके"
+      ],
+      "action_hi": "पंगा ले सके",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "नेनेके"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "नेनेके",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b095",
+      "paragraph_idx": 29,
+      "target_sentence": "जनता उसके महल में आग लगा देगी।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b096",
+      "paragraph_idx": 30,
+      "target_sentence": "\"मुझे कोई बखेड़ा नहीं चाहिए।",
+      "actors_hi": [],
+      "action_hi": "बखेड़ा नहीं चाहिए",
+      "recipients_hi": [
+        "\"मुझे"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b097",
+      "paragraph_idx": 30,
+      "target_sentence": "और वैसे भी, मैं यहाँ बहुत दिनों से पड़ा हूँ।",
+      "actors_hi": [],
+      "action_hi": "से पड़ा हूँ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b098",
+      "paragraph_idx": 30,
+      "target_sentence": "मैं दक्षिण जा रहा हूँ, डैंडेलियन।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "डैंडेलियन",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "डैंडेलियन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b099",
+      "paragraph_idx": 30,
+      "target_sentence": "बहुत दूर।",
+      "actors_hi": [],
+      "action_hi": "बहुत दूर",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b100",
+      "paragraph_idx": 30,
+      "target_sentence": "यहाँ मुझे कोई काम नहीं मिलने वाला।",
+      "actors_hi": [],
+      "action_hi": "नहीं मिलने वाला",
+      "recipients_hi": [
+        "मुझे"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b101",
+      "paragraph_idx": 30,
+      "target_sentence": "सभ्यता!",
+      "actors_hi": [],
+      "action_hi": "सभ्यता",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b102",
+      "paragraph_idx": 30,
+      "target_sentence": "आखिर इन लोगों को यहाँ एक विचर की ज़रूरत क्या है?",
+      "actors_hi": [
+        "विचर"
+      ],
+      "action_hi": "ज़रूरत क्या है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "विचर"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "विचर",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b103",
+      "paragraph_idx": 30,
+      "target_sentence": "जब मैं काम माँगता हूँ, तो ये मुझे ऐसे देखते हैं जैसे मैं कोई अजीब चिड़िया या अजूबा हूँ।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [
+        "मैं"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b104",
+      "paragraph_idx": 31,
+      "target_sentence": "\"क्या बकवास कर रहे हो?",
+      "actors_hi": [],
+      "action_hi": "कर रहे हो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b105",
+      "paragraph_idx": 31,
+      "target_sentence": "कैसी सभ्यता?",
+      "actors_hi": [],
+      "action_hi": "कैसी सभ्यता",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b106",
+      "paragraph_idx": 31,
+      "target_sentence": "मैं एक हफ़्ते पहले बुइना नदी पार करके आया हूँ और रास्ते भर तरह-तरह की कहानियाँ सुनी हैं।",
+      "actors_hi": [],
+      "action_hi": "कहानियाँ सुनी हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b107",
+      "paragraph_idx": 31,
+      "target_sentence": "सुना है यहाँ जलपरियाँ हैं, मायरीपोडन्स हैं, चिमेरा हैं, उड़ने वाले ड्रेक हैं—हर तरह की बलाएँ फैली हैं।",
+      "actors_hi": [],
+      "action_hi": "बलाएँ फैली हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b108",
+      "paragraph_idx": 31,
+      "target_sentence": "तुम्हें तो काम में आकंठ डूबा होना चाहिए था।\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b109",
+      "paragraph_idx": 32,
+      "target_sentence": "\"कहानियाँ... हाँ, मैंने भी सुनी हैं।",
+      "actors_hi": [
+        "मैं"
+      ],
+      "action_hi": "भी सुनी हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "मैं"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "मैं",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b110",
+      "paragraph_idx": 32,
+      "target_sentence": "उनमें से आधी तो मनगढ़ंत हैं या बढ़ा-चढ़ाकर बताई गई हैं।",
+      "actors_hi": [],
+      "action_hi": "बताई गई हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b111",
+      "paragraph_idx": 32,
+      "target_sentence": "नहीं, डैंडेलियन।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "डैंडेलियन",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "डैंडेलियन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b112",
+      "paragraph_idx": 32,
+      "target_sentence": "दुनिया बदल रही है।",
+      "actors_hi": [],
+      "action_hi": "बदल रही है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b113",
+      "paragraph_idx": 32,
+      "target_sentence": "कुछ ऐसा है जो अपने अंत की ओर बढ़ रहा है।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [
+        "अंत"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b114",
+      "paragraph_idx": 33,
+      "target_sentence": "कवि ने सुराही से एक लंबा घूँट लिया, आँखें सिकोड़ीं और गहरी आह भरी।",
+      "actors_hi": [
+        "कवि"
+      ],
+      "action_hi": "गहरी आह भरी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "कवि"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b115",
+      "paragraph_idx": 33,
+      "target_sentence": "\"क्या तुम फिर से अपने विचर होने के दुखड़े रो रहे हो?",
+      "actors_hi": [
+        "विचर"
+      ],
+      "action_hi": "रो रहे हो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "विचर"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "विचर",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b116",
+      "paragraph_idx": 33,
+      "target_sentence": "और ऊपर से ये दार्शनिक ज्ञान?",
+      "actors_hi": [],
+      "action_hi": "ये दार्शनिक ज्ञान",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b117",
+      "paragraph_idx": 33,
+      "target_sentence": "मुझे लगता है ये सब अनचाही किताबें चाटने का नतीजा है।",
+      "actors_hi": [],
+      "action_hi": "का नतीजा है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b118",
+      "paragraph_idx": 33,
+      "target_sentence": "दुनिया बदलने वाली बात तो उस बुड्ढे खर्राट रोड्रिक डी नोवम्ब्रे को भी सूझ गई थी।",
+      "actors_hi": [
+        "रोड्रिक डी नोवम्ब्रे"
+      ],
+      "action_hi": "सूझ गई थी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "रोड्रिक डी नोवम्ब्रे"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "रोड्रिक डी नोवम्ब्रे",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b119",
+      "paragraph_idx": 33,
+      "target_sentence": "दुनिया का बदलना ही इकलौती ऐसी बात है जिससे इत्तेफ़ाक़ रखा जा सकता है, लेकिन ये इतना बड़ा कोई इल्हाम नहीं है कि तुम मुझे ये ज्ञान पेलते फिरो और एक महान मुफ़क्किर का चेहरा बनाओ—जो तुम पर रत्ती भर भी नहीं जँचता।\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [
+        "बड़ा"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b120",
+      "paragraph_idx": 34,
+      "target_sentence": "जवाब देने के बजाय, गेराल्ट ने मटकी से एक और घूँट भर लिया।",
+      "actors_hi": [
+        "गेराल्ट"
+      ],
+      "action_hi": "घूँट भर लिया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "गेराल्ट"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b121",
+      "paragraph_idx": 35,
+      "target_sentence": "\"हाँ, हाँ,\" डैंडेलियन ने फिर आह भरी।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "फिर आह भरी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "डैंडेलियन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b122",
+      "paragraph_idx": 35,
+      "target_sentence": "\"दुनिया बदल रही है, सूरज ढल रहा है, और सुराही की शराब खत्म हो रही है।",
+      "actors_hi": [],
+      "action_hi": "हो रही है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b123",
+      "paragraph_idx": 35,
+      "target_sentence": "और तुम्हारी राय में क्या खत्म हो रहा है, मेरे फ़लसफ़ाई दोस्त?\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b124",
+      "paragraph_idx": 36,
+      "target_sentence": "\"मैं तुम्हें दो-चार मिसालें देता हूँ,\" थोड़ी देर की खामोशी के बाद गेराल्ट बोला, \"सब की सब बुइना के इस पार पिछले दो महीनों की हैं।",
+      "actors_hi": [
+        "गेराल्ट"
+      ],
+      "action_hi": "महीनों की हैं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "गेराल्ट"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "गेराल्ट",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b125",
+      "paragraph_idx": 36,
+      "target_sentence": "एक दिन मैं घोड़े पर सवार होकर निकला और क्या देखता हूँ?",
+      "actors_hi": [],
+      "action_hi": "क्या देखता हूँ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b126",
+      "paragraph_idx": 36,
+      "target_sentence": "एक पुल!",
+      "actors_hi": [],
+      "action_hi": "एक पुल",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b127",
+      "paragraph_idx": 36,
+      "target_sentence": "और उस पुल के नीचे बैठा है एक ट्रोल, जो हर आने-जाने वाले से टोल टैक्स वसूल रहा है।",
+      "actors_hi": [],
+      "action_hi": "वसूल रहा है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b128",
+      "paragraph_idx": 36,
+      "target_sentence": "जो देने से मना करे, उसकी एक टाँग तोड़ देता है, कभी-कभी तो दोनों।",
+      "actors_hi": [],
+      "action_hi": "कभी-कभी तो दोनों",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b129",
+      "paragraph_idx": 36,
+      "target_sentence": "सो मैं गाँव के मुखिया के पास गया: 'उस ट्रोल को ठिकाने लगाने का क्या दोगे?'",
+      "actors_hi": [
+        "मुखिया"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "मुखिया"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "मुखिया",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b130",
+      "paragraph_idx": 37,
+      "target_sentence": "वो चौंककर मुझे देखने लगा।",
+      "actors_hi": [],
+      "action_hi": "मुझे देखने लगा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b131",
+      "paragraph_idx": 37,
+      "target_sentence": "'पागल हो गए हो क्या?' उसने पूछा।",
+      "actors_hi": [],
+      "action_hi": "' उसने पूछा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b132",
+      "paragraph_idx": 37,
+      "target_sentence": "'अगर ट्रोल नहीं रहा तो पुल की मरम्मत कौन करेगा?",
+      "actors_hi": [],
+      "action_hi": "मरम्मत कौन करेगा",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b133",
+      "paragraph_idx": 37,
+      "target_sentence": "वो अपने माथे के पसीने से उसे रोज़ चकाचक रखता है, पुख्ता काम, अव्वल दर्जे का!",
+      "actors_hi": [],
+      "action_hi": "अव्वल दर्जे का",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b134",
+      "paragraph_idx": 37,
+      "target_sentence": "उसे टोल देना नया पुल बनाने से कहीं सस्ता पड़ता है।' मैं आगे बढ़ा, तो क्या देखता हूँ?",
+      "actors_hi": [],
+      "action_hi": "क्या देखता हूँ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b135",
+      "paragraph_idx": 37,
+      "target_sentence": "एक फ़ॉर्कटेल ड्रैगन!",
+      "actors_hi": [],
+      "action_hi": "एक फ़ॉर्कटेल ड्रैगन",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b136",
+      "paragraph_idx": 37,
+      "target_sentence": "बहुत बड़ा नहीं, चोंच से पूँछ तक कोई चार गज़ का।",
+      "actors_hi": [],
+      "action_hi": "चार गज़ का",
+      "recipients_hi": [
+        "तक"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b137",
+      "paragraph_idx": 37,
+      "target_sentence": "अपने पंजों में एक भेड़ दबोचे उड़ रहा था।",
+      "actors_hi": [],
+      "action_hi": "उड़ रहा था",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b138",
+      "paragraph_idx": 37,
+      "target_sentence": "मैं बस्ती में गया।",
+      "actors_hi": [],
+      "action_hi": "बस्ती में गया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b139",
+      "paragraph_idx": 37,
+      "target_sentence": "'कितना दोगे,' मैंने पूछा, 'अगर मैं उस फ़ॉर्कटेल का काम तमाम कर दूँ?' किसान सीधे घुटनों के बल गिर पड़े।",
+      "actors_hi": [
+        "किसान"
+      ],
+      "action_hi": "बल गिर पड़े",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "किसान"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b140",
+      "paragraph_idx": 38,
+      "target_sentence": "'नहीं सरकार!' वे गिड़गिड़ाए।",
+      "actors_hi": [],
+      "action_hi": "' वे गिड़गिड़ाए",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b141",
+      "paragraph_idx": 38,
+      "target_sentence": "'यह हमारे बैरन की सबसे छोटी लाडली का पालतू ड्रैगन है!",
+      "actors_hi": [
+        "हम"
+      ],
+      "action_hi": "पालतू ड्रैगन है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "हम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b142",
+      "paragraph_idx": 38,
+      "target_sentence": "अगर उसकी पीठ से एक भी छिलका गिरा, तो बैरन हमारा पूरा गाँव फूँक देगा और हमारी चमड़ी उधेड़ कर भूसा भर देगा।' मैं आगे बढ़ गया, और मेरी भूख से अंतड़ियाँ कुलकुलाने लगीं।",
+      "actors_hi": [
+        "हम"
+      ],
+      "action_hi": "अंतड़ियाँ कुलकुलाने लगीं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "हम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b143",
+      "paragraph_idx": 38,
+      "target_sentence": "मैंने काम की टोह ली।",
+      "actors_hi": [
+        "मैं"
+      ],
+      "action_hi": "की टोह ली",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "मैं"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b144",
+      "paragraph_idx": 38,
+      "target_sentence": "काम तो था, लेकिन कैसा?",
+      "actors_hi": [],
+      "action_hi": "लेकिन कैसा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b145",
+      "paragraph_idx": 38,
+      "target_sentence": "किसी को बिस्तर गर्म करने के लिए रुसाल्का पकड़वानी है, किसी को निम्फ़ चाहिए, तो किसी को ड्रायड... साले पूरी तरह पगला चुके हैं—गाँव में जीती-जागती लड़कियाँ भरी पड़ी हैं, पर इन्हें परियाँ और अप्सराएँ फाँसनी हैं!",
+      "actors_hi": [],
+      "action_hi": "अप्सराएँ फाँसनी हैं",
+      "recipients_hi": [
+        "करने"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b146",
+      "paragraph_idx": 38,
+      "target_sentence": "एक और आया, कहता है कि किसी मेकोपटेरन को मार कर उसके पंजे की हड्डी ला दो, क्योंकि उसे कूटकर सूप में पीने से नामर्दी और लिंग की कमज़ोरी दूर होती है—\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b147",
+      "paragraph_idx": 39,
+      "target_sentence": "\"ये सब कोरी बकवास है,\" डैंडेलियन ने बात काटते हुए कहा।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "काटते हुए कहा",
+      "recipients_hi": [
+        "सब"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "डैंडेलियन",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b148",
+      "paragraph_idx": 39,
+      "target_sentence": "\"मैंने खुद आज़माया है।",
+      "actors_hi": [
+        "मैं"
+      ],
+      "action_hi": "खुद आज़माया है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "मैं"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "मैं",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b149",
+      "paragraph_idx": 39,
+      "target_sentence": "न तो उससे कुछ कड़ा होता है और ऊपर से सूप का स्वाद पुराने सड़े हुए मोज़ों जैसा हो जाता है।",
+      "actors_hi": [],
+      "action_hi": "हो जाता है",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b150",
+      "paragraph_idx": 39,
+      "target_sentence": "लेकिन अगर लोग अंधे होकर यकीन करते हैं और जेब ढीली करने को तैयार हैं—\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b151",
+      "paragraph_idx": 40,
+      "target_sentence": "\"मैं किसी मेकोपटेरन को नहीं मारने वाला।",
+      "actors_hi": [],
+      "action_hi": "नहीं मारने वाला",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b152",
+      "paragraph_idx": 40,
+      "target_sentence": "और न ही किसी बेज़रर जीव को।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b153",
+      "paragraph_idx": 41,
+      "target_sentence": "\"तो फिर भूखे मरो!",
+      "actors_hi": [],
+      "action_hi": "फिर भूखे मरो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b154",
+      "paragraph_idx": 41,
+      "target_sentence": "जब तक कि तुम अपना पेशा न बदल लो।\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b155",
+      "paragraph_idx": 42,
+      "target_sentence": "\"और क्या करूँ?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b156",
+      "paragraph_idx": 43,
+      "target_sentence": "\"कुछ भी!",
+      "actors_hi": [],
+      "action_hi": "\"कुछ भी",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b157",
+      "paragraph_idx": 43,
+      "target_sentence": "पादरी बन जाओ।",
+      "actors_hi": [],
+      "action_hi": "पादरी बन जाओ",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b158",
+      "paragraph_idx": 43,
+      "target_sentence": "तुम्हारे इन उसूलों, इस अख़लाक़ और इंसानों की रग-रग की पहचान के साथ तुम खासे कामयाब पादरी बनोगे।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "कामयाब पादरी बनोगे",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b159",
+      "paragraph_idx": 43,
+      "target_sentence": "और रही बात किसी खुदा पर यकीन न होने की, तो उसकी फिक्र छोड़ो—मैं जितने पादरियों को जानता हूँ, उनमें से शायद ही कोई खुदा को मानता हो!",
+      "actors_hi": [],
+      "action_hi": "को मानता हो",
+      "recipients_hi": [
+        "ही"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b160",
+      "paragraph_idx": 43,
+      "target_sentence": "पादरी बनो और खुद पर तरस खाना बंद करो।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b161",
+      "paragraph_idx": 44,
+      "target_sentence": "\"मैं खुद पर तरस नहीं खा रहा।",
+      "actors_hi": [],
+      "action_hi": "नहीं खा रहा",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b162",
+      "paragraph_idx": 44,
+      "target_sentence": "मैं बस हकीकत बयान कर रहा हूँ।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b163",
+      "paragraph_idx": 45,
+      "target_sentence": "डैंडेलियन ने एक टाँग दूसरी टाँग पर चढ़ाई और बड़े गौर से अपने घिसे हुए जूते के तले का मुआयना करने लगा।",
+      "actors_hi": [
+        "डैंडेलियन"
+      ],
+      "action_hi": "मुआयना करने लगा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "डैंडेलियन"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b164",
+      "paragraph_idx": 46,
+      "target_sentence": "\"तुम मुझे उस बूढ़े मछुआरे की याद दिलाते हो, गेराल्ट, जो अपनी उम्र की ढलान पर आकर यह रोना रोता है कि मछलियों से बदबू आती है और समंदर की सर्द हवा से उसकी हड्डियों में दर्द होता है।",
+      "actors_hi": [
+        "गेराल्ट"
+      ],
+      "action_hi": "दर्द होता है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "गेराल्ट"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "गेराल्ट",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b165",
+      "paragraph_idx": 46,
+      "target_sentence": "अपनी बातों में थोड़ा ठहराव लाओ भाई।",
+      "actors_hi": [],
+      "action_hi": "ठहराव लाओ भाई",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b166",
+      "paragraph_idx": 46,
+      "target_sentence": "अफ़सोस जताने और बड़बड़ाने से पेट नहीं भरता।",
+      "actors_hi": [],
+      "action_hi": "पेट नहीं भरता",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b167",
+      "paragraph_idx": 46,
+      "target_sentence": "अगर मुझे कभी यह लगा कि शायरी और नग्मों की कद्र खत्म हो गई है, तो मैं अपनी ल्यूट दीवार पर टाँग दूँगा और माली बन जाऊँगा।",
+      "actors_hi": [],
+      "action_hi": "माली बन जाऊँगा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b168",
+      "paragraph_idx": 46,
+      "target_sentence": "गुलाब के फूल उगाऊँगा।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b169",
+      "paragraph_idx": 47,
+      "target_sentence": "\"बकवास।",
+      "actors_hi": [],
+      "action_hi": "\"बकवास",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b170",
+      "paragraph_idx": 47,
+      "target_sentence": "तुम अपनी ल्यूट कभी छोड़ ही नहीं सकते।\"",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b171",
+      "paragraph_idx": 48,
+      "target_sentence": "\"खैर,\" शायर ने अपने जूते के तले को घूरते हुए हामी भरी, \"शायद तुम सही कह रहे हो।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "कह रहे हो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b172",
+      "paragraph_idx": 48,
+      "target_sentence": "लेकिन हमारे और तुम्हारे पेशे में ज़मीन-आसमान का फ़र्क है।",
+      "actors_hi": [
+        "हम"
+      ],
+      "action_hi": "का फ़र्क है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "हम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "हम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b173",
+      "paragraph_idx": 48,
+      "target_sentence": "नग्मों और ल्यूट के तारों की खनक की चाहत कभी कम नहीं होगी।",
+      "actors_hi": [],
+      "action_hi": "कम नहीं होगी",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b174",
+      "paragraph_idx": 48,
+      "target_sentence": "मगर तुम्हारे धंधे के साथ मामला उल्टा है।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "मामला उल्टा है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b175",
+      "paragraph_idx": 48,
+      "target_sentence": "तुम विचर लोग, दरअसल अपने ही हाथों अपने पैरों पर कुल्हाड़ी मार रहे हो, आहिस्ता-आहिस्ता मगर यक़ीनी तौर पर।",
+      "actors_hi": [
+        "विचर"
+      ],
+      "action_hi": "यक़ीनी तौर पर",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "विचर"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "विचर",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b176",
+      "paragraph_idx": 48,
+      "target_sentence": "तुम जितना मुस्तैदी और ईमानदारी से काम करोगे, तुम्हारे लिए काम उतना ही घटता जाएगा।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "ही घटता जाएगा",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b177",
+      "paragraph_idx": 48,
+      "target_sentence": "आखिर तुम्हारा मक़सद तो एक ऐसी दुनिया बनाना है जहाँ कोई हैवान या दरिंदा न बचे, एक ऐसी दुनिया जो पुरअमन और महफ़ूज़ हो।",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "और महफ़ूज़ हो",
+      "recipients_hi": [
+        "जहाँ"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b178",
+      "paragraph_idx": 48,
+      "target_sentence": "एक ऐसी दुनिया जहाँ किसी विचर की कोई ज़रूरत ही न रहे!",
+      "actors_hi": [
+        "विचर"
+      ],
+      "action_hi": "ही न रहे",
+      "recipients_hi": [
+        "की"
+      ],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [
+        "विचर"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "विचर",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b179",
+      "paragraph_idx": 48,
+      "target_sentence": "एक अजीब विडंबना है, है न?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b180",
+      "paragraph_idx": 49,
+      "target_sentence": "\"सच है।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b181",
+      "paragraph_idx": 50,
+      "target_sentence": "\"पुराने ज़माने में, जब यूनिकॉर्न हुआ करते थे, तो कुँवारी लड़कियों की एक पूरी जमात अपनी आबरू और कौमार्य की हिफ़ाज़त करती थी ताकि उनका शिकार कर सकें।",
+      "actors_hi": [],
+      "action_hi": "शिकार कर सकें",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b182",
+      "paragraph_idx": 50,
+      "target_sentence": "याद है तुम्हें?",
+      "actors_hi": [
+        "तुम"
+      ],
+      "action_hi": "याद है तुम्हें",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "तुम"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": "तुम",
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b183",
+      "paragraph_idx": 50,
+      "target_sentence": "और वो बाँसुरी बजाकर चूहे भगाने वाले?",
+      "actors_hi": [],
+      "action_hi": "चूहे भगाने वाले",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b184",
+      "paragraph_idx": 50,
+      "target_sentence": "एक दौर था जब लोग उनकी मिन्नतें करते थे।",
+      "actors_hi": [],
+      "action_hi": "मिन्नतें करते थे",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b185",
+      "paragraph_idx": 50,
+      "target_sentence": "लेकिन फिर कीमियागरों ने अपने ज़हरीले चूर्ण ईजाद कर लिए, और उसके बाद पालतू नेवलों और बिज्जूओं ने उनका काम सँभाल लिया।",
+      "actors_hi": [],
+      "action_hi": "काम सँभाल लिया",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b186",
+      "paragraph_idx": 50,
+      "target_sentence": "वे नन्हे जानवर सस्ते भी थे, मासूम भी, और इतनी शराब भी नहीं गटकते थे।",
+      "actors_hi": [],
+      "action_hi": "नहीं गटकते थे",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "नहीं"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b187",
+      "paragraph_idx": 50,
+      "target_sentence": "समझ रहे हो ना मैं क्या कह रहा हूँ?\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "ना"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b188",
+      "paragraph_idx": 51,
+      "target_sentence": "\"समझ रहा हूँ।\"",
+      "actors_hi": [],
+      "action_hi": "",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b189",
+      "paragraph_idx": 52,
+      "target_sentence": "\"तो दूसरों के तजुर्बों से सबक लो!",
+      "actors_hi": [],
+      "action_hi": "से सबक लो",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b190",
+      "paragraph_idx": 52,
+      "target_sentence": "उन यूनिकॉर्न वाली कुँवारियों ने, जैसे ही उनकी रोज़ी-रोटी छिनी, फौरन अपनी सील तुड़वा ली!",
+      "actors_hi": [],
+      "action_hi": "सील तुड़वा ली",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b191",
+      "paragraph_idx": 52,
+      "target_sentence": "और बरसों के त्याग की कसर निकालने के लिए, उनमें से कई अपनी फनकारी, तकनीक और बिस्तर के जोश के चलते दूर-दूर तक मशहूर हो गईं!",
+      "actors_hi": [],
+      "action_hi": "मशहूर हो गईं",
+      "recipients_hi": [
+        "निकालने"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": true,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b192",
+      "paragraph_idx": 53,
+      "target_sentence": "और वो चूहे पकड़ने वाले... खैर, उनकी नकल करने की गलती मत करना, क्योंकि वे साले सब के सब शराब में डूबे और कुत्तों की मौत मरे।",
+      "actors_hi": [],
+      "action_hi": "की मौत मरे",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "मत"
+      ],
+      "key_entities_hi": [],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b193",
+      "paragraph_idx": 53,
+      "target_sentence": "खैर, अब लगता है विचरों का भी वही दौर आ पहुँचा है।",
+      "actors_hi": [
+        "विचर"
+      ],
+      "action_hi": "आ पहुँचा है",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "विचर"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b194",
+      "paragraph_idx": 53,
+      "target_sentence": "तुम रोड्रिक डी नोवम्ब्रे पढ़ रहे हो न?",
+      "actors_hi": [
+        "रोड्रिक डी नोवम्ब्रे"
+      ],
+      "action_hi": "रहे हो न",
+      "recipients_hi": [],
+      "has_negation": true,
+      "negation_keywords_hi": [
+        "न"
+      ],
+      "key_entities_hi": [
+        "रोड्रिक डी नोवम्ब्रे"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b195",
+      "paragraph_idx": 53,
+      "target_sentence": "जहाँ तक मुझे याद है, उसमें शुरुआती विचरों का ज़िक्र है, जिन्होंने कोई तीन सौ साल पहले यह काम शुरू किया था।",
+      "actors_hi": [
+        "विचर"
+      ],
+      "action_hi": "शुरू किया था",
+      "recipients_hi": [
+        "जिन्होंने"
+      ],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "विचर"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    },
+    {
+      "beat_id": "scene_001_tgt_b196",
+      "paragraph_idx": 53,
+      "target_sentence": "उस दौर में, जब किसान हथियारों से लैस होकर टोली बनाकर फसल काटने निकलते थे, जब गाँव तिहरी लकड़ी की दीवारों से घिरे होते थे, जब सौदागरों के काफिले किसी फ़ौज की तरह कूच करते थे, और गिने-चुने शहरों की फसीलों पर दिन-रात मंजनीकें तैनात रहती थीं।",
+      "actors_hi": [
+        "किसान"
+      ],
+      "action_hi": "तैनात रहती थीं",
+      "recipients_hi": [],
+      "has_negation": false,
+      "negation_keywords_hi": [],
+      "key_entities_hi": [
+        "किसान"
+      ],
+      "key_objects_hi": [],
+      "is_dialogue": false,
+      "speaker_hi": null,
+      "time_marker_hi": "",
+      "location_marker_hi": ""
+    }
+  ]
+}

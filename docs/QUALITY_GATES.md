@@ -47,24 +47,37 @@ flowchart LR
 
 ---
 
-### Gates T0 – T11: Literary Translation Intelligence Certification Suite (Pillar 2)
+### Gates T0 – T11: Literary Translation Intelligence Certification Suite (Pillar 2 — Hardening v2.0)
 *(See full architectural manual: [`docs/LITERARY_TRANSLATION_INTELLIGENCE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md))*
-- **Function**: `TranslationCertifier.certify_scene(...) -> SceneCertificationReport`
-- **Modules**: [`audiobook_factory/translation/certification.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/certification.py), [`terminology_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/terminology_auditor.py), [`semantic_fidelity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/semantic_fidelity.py), [`omission_detector.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/omission_detector.py), [`addition_detector.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/addition_detector.py), [`character_voice_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_voice_auditor.py), [`intensity_model.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/intensity_model.py), [`naturalness_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/naturalness_auditor.py), [`provenance.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/provenance.py)
-- **Pipeline Stage**: Executed per scene inside [`IntelligentTranslationPipeline.translate_chapter()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/pipeline.py). Any failed mandatory gate triggers the 3-tier [`TieredRepairEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/repair_engine.py) (Tier 1: 0ms deterministic regex & SQLite `AdvisoryLexiconDB` $\rightarrow$ Tier 2: surgical single-paragraph LLM rewrite $\rightarrow$ Tier 3: full scene retranslation).
+- **Function**: `TranslationCertifier.certify_scene(...) -> GateAuditResult`
+- **Modules**: [`audiobook_factory/translation/certification.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/certification.py), [`source_semantic_map.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/source_semantic_map.py), [`terminology_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/terminology_auditor.py), [`semantic_fidelity.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/semantic_fidelity.py), [`omission_detector.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/omission_detector.py), [`addition_detector.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/addition_detector.py), [`character_voice_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_voice_auditor.py), [`intensity_model.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/intensity_model.py), [`naturalness_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/naturalness_auditor.py), [`hindustani_register.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/hindustani_register.py), [`repair_engine.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/repair_engine.py), [`provenance.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/provenance.py)
+- **Pipeline Stage**: Executed per scene inside [`IntelligentTranslationPipeline.translate_chapter()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/orchestrator.py). Any failed mandatory gate triggers the 3-tier [`TieredRepairEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/repair_engine.py) (Level 1: 0ms deterministic regex & calque normalization $\rightarrow$ Level 2: surgical paragraph rewrite on `affected_paragraphs` $\rightarrow$ Level 3: full scene retranslation).
 - **The 12 Scene Certification Gates**:
-  - **Gate T0 (Source & Word Sanity)**: Target translation must contain $\ge 5$ words and achieve $\ge 40\%$ of source word count.
-  - **Gate T1 (Terminology Compliance)**: Deterministic regex audit against `BookBible.terminology_variants` and entity `forbidden_variants`.
-  - **Gate T2 (Semantic & Negation Fidelity)**: Runs `deterministic_negation_audit()` against `SourceSemanticMap` beats with `has_negation=True` (checking Hindi negation markers `नहीं`, `न`, `मत`, `बिना`, `कभी नहीं`, `कोई नहीं`) followed by an isolated LLM proposition auditor (`temperature=0.1`).
-  - **Gate T3 (Omission & Quote Parity)**: Runs `deterministic_omission_check()` verifying paragraph ratio $\ge 50\%$ and dialogue quote parity ($\ge 60\%$ when source has $\ge 4$ quotes), followed by LLM beat omission detection.
-  - **Gate T4 (Addition & Fabrication Detector)**: Audits that the translation did not invent actions, characters, or lore absent from the English source.
-  - **Gate T5 (Entity & Script Purity)**: Scans for untransliterated Latin proper nouns ($\ge 4$ chars) leaked into Devanagari narrative prose.
+  - **Gate T0 (Source Text Integrity & Word Count Sanity)**: Target translation must contain $\ge 5$ words and achieve $\ge 35\%$ of source word count. Empty translations or severe truncation trigger immediate `FAIL` and resolve status to `BLOCKED`.
+  - **Gate T1 (Terminology Compliance)**: Deterministic regex audit against `BookBible.terminology_variants` and entity `forbidden_variants`. Triggers `FAIL` on forbidden spelling variants (eligible for Level 1 auto-repair).
+  - **Gate T2 (Semantic Fidelity & Action Integrity)**: Employs `SemanticAligner.align()` to compare `SourceSemanticMap` against `TargetSemanticMap` at paragraph and beat levels. Audits expanded lexical negation parity (including *नहीं, मत, ना, न, बिना, बग़ैर, कभी नहीं, कुछ नहीं, कोई नहीं, इनकार, रोका, मना, नाकाम*), actor retention, and action continuity. Confirmed meaning distortion triggers `FAIL`; localized discrepancies record paragraph indices in `affected_paragraphs`.
+  - **Gate T3 (Omission & Quote Parity)**: Runs `deterministic_omission_check()` verifying paragraph ratio $\ge 50\%$ and dialogue quote parity ($\ge 60\%$ when source has $\ge 4$ quotes), followed by LLM beat omission detection. Missing story beats trigger `FAIL` and index `affected_paragraphs`.
+  - **Gate T4 (Addition & Hallucination Detector)**: Audits whether translator invented actions, characters, or lore absent from the English source. Emits `FAIL` on fabricated plot facts.
+  - **Gate T5 (Entity & Script Purity)**: Scans for untransliterated Latin proper nouns ($\ge 4$ chars) leaked into Devanagari narrative prose. Emits `FAIL` on leaked Latin strings.
   - **Gate T6 (Relationship, Pronoun & Memory Continuity - `T6_relationship_memory`)**: Audits active speaker/target pairs against `MemoryContext.get_character_performance_guidance()`, verifying that recommended Hindi pronouns (`आप`, `तुम`, `तू`) and socio-linguistic registers match established narrative relationships without unmotivated honorific drift.
-  - **Gate T7 (Character Language Profile Alignment - `T7_character_voice`)**: Audits dialogue lines against each speaker's [`CharacterLanguageProfile`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_profile.py) archetype.
-  - **Gate T8 (7D Literary Intensity Preservation)**: Compares 7D `LiteraryIntensityVector` (`profanity`, `sexual_intimacy`, `violence`, `emotional_intensity`, `formality`, `urdu_register`, `colloquiality`). Enforces **"Nothing Above Source"** with a soft heuristic threshold of $\pm 0.75$ (`WARN`, `is_valid=True`) and a hard failure threshold of $|\Delta| > 2.0$ (`FAIL`, `is_valid=False`).
-  - **Gate T9 (Literary Naturalness & Anachronism Guard)**: Runs `sanitizer.audit_literary_register()` to block modern clinical English loanwords (`डिप्रेशन`, `ट्रॉमा`, `स्ट्रेस`), literal calques (`सुनहरी लड़की`), and anachronistic greetings (`नमस्ते`), paired with an LLM translatese critic (minimum score $3.5 / 5.0$).
-  - **Gate T10 (Hindustani Register Balance)**: `HindustaniRegisterEngine.audit_text()` verifies contextual Urdu seasoning density stays within organic bounds ($0.2\% - 8.0\%$ per 100 words).
-  - **Gate T11 (Provenance & Cache Seal)**: Seals the 24-character SHA-256 `composite_cache_key` (`source_hash:bible_version_hash:policy_version:prompt_version:model:advisory_version`) into `provenance.json`.
+  - **Gate T7 (Character Language Profile Alignment - `T7_character_voice`)**: Audits dialogue lines against each speaker's [`CharacterLanguageProfile`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/character_profile.py) archetype. Advisory gate emitting `WARN` on minor voice breaks and `FAIL` on severe character drift.
+  - **Gate T8 (7D Literary Intensity Preservation)**: Quantifies source and target scenes across 7 dimensions (`violence`, `sexual_intimacy`, `profanity`, `emotional_intensity`, `formality`, `urdu_register`, `colloquiality`) via [`LiteraryIntensityVector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/intensity_model.py#L17-L25). Enforces **"Nothing Above Source"** with calibrated variance:
+    - Directional delta $|\Delta| \le 0.75$: Clean `PASS`.
+    - Soft heuristic band $0.75 < |\Delta| \le 2.0$: Emits `WARN` (`is_valid=True`), accommodating natural Devanagari keyword density without brittle false rejections.
+    - Extreme distortion $|\Delta| > 2.0$: Hard failure `FAIL` (`is_valid=False`), halting critical moral sanitization ($\Delta < -2.0$) or gratuitous amplification ($\Delta > +2.0$).
+  - **Gate T9 (Literary Naturalness & Anachronism Guard)**: Enforces **Non-Destructive Sanitizer Separation** ([`sanitizer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sanitizer.py)): blocks modern clinical English loanwords (`डिप्रेशन`, `ट्रॉमा`, `स्ट्रेस`) and literal calques (`सुनहरी लड़की`, `कुंवारी चोटी`) while preserving authentic rustic vocabulary (`नमस्ते`, `राम-राम`, `दारू`, `सोने की लड़की`). Paired with an LLM translatese critic (minimum score $3.5 / 5.0$).
+  - **Gate T10 (Hindustani Register Balance)**: [`HindustaniRegisterEngine.audit_text()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/hindustani_register.py#L112-L135) verifies contextual Urdu seasoning density stays within organic bounds ($0.2\% - 8.0\%$ per 100 words on scenes $> 300$ words). Advisory gate emitting `WARN` if over- or under-seasoned.
+  - **Gate T11 (Provenance & Cache Seal)**: Cryptographically seals an 11-dimension SHA-256 composite cache key (`source_hash:bible_version_hash:policy_version:prompt_version:translator_version:evaluator_version:semantic_map_version:semantic_map_hash:repair_version:model:advisory_version`) into `provenance.json`.
+- **The 4-Tier Certification State Machine**:
+  - `PASS` (`certified=True`): All gates pass cleanly; ready for downstream screenplay synthesis.
+  - `PASS_WITH_WARNINGS` (`certified=True`): Zero gate failures and at most 1–2 advisory warnings (from gates `T7`, `T9`, or `T10`). Certified to proceed without expensive regeneration loops.
+  - `AUTO_REPAIR` (`certified=True`): Failures isolated strictly to deterministic terminology (`T5`) or registered calques (`T9`), immediately resolved by Level 1 repair without LLM re-prompting.
+  - `REVIEW_REQUIRED` (`certified=False`): Critical gate failures (`T0`, `T2`, `T3`, `T4`, `T5`, `T6`, `T8`), any critical gate warning, or $\ge 3$ advisory warnings. Automatically triggers Level 2 surgical paragraph rewrite or Level 3 scene retranslation.
+  - `BLOCKED` (`certified=False`): Fatal structural defect (completely empty translation or severe truncation $< 35\%$).
+- **Fail-Closed Gate Halting**:
+  - When a scene reaches `BLOCKED` status, the pipeline raises `RuntimeError(f"Scene {scene.scene_id} certification BLOCKED: ...")` in [`orchestrator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/orchestrator.py#L508-L511), immediately halting chapter production before corrupted text reaches screenplay or TTS stages.
+  - Operator override is permitted only via `--force-gate`.
+  - When `REVIEW_REQUIRED` persists after all repair levels, actionable diagnostics are written to `certification.json` to enable human-in-the-loop review.
 
 ---
 
@@ -240,14 +253,14 @@ You can audit any active project directory or document extraction directly using
 
 ```bash
 # Ingestion extraction audit with fail-closed Gate 0.1 enforcement
-python audiobook_cli.py extract books/the_witcher.epub
+python audiobook_cli.py extract books/sample_novel.epub
 
 # Ingestion extraction with Gate 0.1 override (bypass REVIEW failure)
-python audiobook_cli.py extract books/the_witcher.epub --force-gate
+python audiobook_cli.py extract books/sample_novel.epub --force-gate
 
 # Full project master certification (Gates 6A, 6B, 6C, 6D)
-python audiobook_cli.py audit audiobooks/projects/witcher1
+python audiobook_cli.py audit audiobooks/projects/my_project
 
 # Verify individual chapter script compliance (Gate 2)
-python audiobook_cli.py script audiobooks/projects/witcher1 --audit-only
+python audiobook_cli.py script audiobooks/projects/my_project --audit-only
 ```

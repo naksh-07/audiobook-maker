@@ -9,9 +9,16 @@ from .relationship_state import DynamicRelationshipState, RelationshipStateEngin
 from .intensity_model import LiteraryIntensityVector, IntensityEvaluator
 from .hindustani_register import HindustaniRegisterEngine
 from .scene_planner import ScenePlanner, ScenePlan, ChapterPlan
-from .narrative_state import NarrativeContinuityState, NarrativeStateEngine
-from .source_semantic_map import SourceSemanticMap, SemanticProposition, build_source_semantic_map
-from .provenance import TranslationProvenanceTracker
+from .source_semantic_map import (
+    SourceSemanticMap,
+    SemanticProposition,
+    build_source_semantic_map,
+    TargetSemanticMap,
+    TargetSemanticProposition,
+    build_target_semantic_map,
+    SemanticAligner,
+    SemanticAlignmentResult,
+)
 from .repair_engine import TieredRepairEngine
 from .certification import TranslationCertifier, GateAuditResult, GateStatus
 from .orchestrator import IntelligentTranslationPipeline
@@ -66,6 +73,11 @@ __all__ = [
     "SourceSemanticMap",
     "SemanticProposition",
     "build_source_semantic_map",
+    "TargetSemanticMap",
+    "TargetSemanticProposition",
+    "build_target_semantic_map",
+    "SemanticAligner",
+    "SemanticAlignmentResult",
     "TranslationProvenanceTracker",
     "TieredRepairEngine",
     "TranslationCertifier",

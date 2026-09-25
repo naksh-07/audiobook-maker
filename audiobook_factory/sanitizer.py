@@ -242,44 +242,58 @@ def sanitize_screenplay_segment(segment: Dict[str, Any], is_hindi: bool = True) 
     return cleaned_seg
 
 
-def audit_literary_register(text: str) -> Tuple[bool, str, List[str]]:
+# Unambiguous robotic literalisms and clinical loanwords eligible for deterministic normalization
+UNAMBIGUOUS_CALQUE_REPAIRS = {
+    r"सुनहरी\s+लड़की": "गोरी-चिट्टी लड़की",
+    r"क[ुंँ]+वारी\s+चोटी": "कमसिन लड़की की चोटी",
+    r"(?<![\u0900-\u097F])डिप्रेशन(?![\u0900-\u097F])": "उदासी का साया",
+    r"(?<![\u0900-\u097F])ट्रॉमा(?![\u0900-\u097F])": "गहरा सदमा",
+    r"(?<![\u0900-\u097F])स्ट्रेस(?![\u0900-\u097F])": "तनाव",
+}
+
+# Contextual dialectal / register expressions: valid in rustic/tavern/folklore dialogue, NEVER auto-replaced!
+CONTEXTUAL_REGISTER_ADVISORIES = {
+    r"सोने\s+की\s+लड़की": "Contextual poetic descriptor (सोने की लड़की) - preserved",
+    r"(?<![\u0900-\u097F])नमस्ते(?![\u0900-\u097F])": "Contextual greeting (नमस्ते) - preserved for character voice",
+    r"(?<![\u0900-\u097F])राम-राम(?![\u0900-\u097F])": "Contextual rustic greeting (राम-राम) - preserved for character voice",
+    r"(?<![\u0900-\u097F])नमस्कार(?![\u0900-\u097F])": "Contextual greeting (नमस्कार) - preserved for character voice",
+    r"(?<![\u0900-\u097F])दारू(?![\u0900-\u097F])": "Contextual rustic term (दारू) - preserved for peasant/tavern register",
+}
+
+
+def audit_literary_register(
+    text: str,
+    apply_substitutions: bool = False,
+) -> Tuple[bool, str, List[str]]:
     """
     Meso-Tier Literary Register Guard:
-    Scans generated Hindi text against the dynamic Literary Advisory DB for robotic literalisms,
-    inappropriate modern slang, or immersion-breaking textbook vocabulary.
+    Scans generated Hindi text for robotic literalisms, clinical English loanwords,
+    or immersion-breaking vocabulary.
+    By default (apply_substitutions=False), it acts as a non-destructive diagnostic auditor.
+    When apply_substitutions=True is explicitly requested, only UNAMBIGUOUS calques are replaced.
+    Legitimate literary and dialectal choices ('नमस्ते', 'राम-राम', 'नमस्कार', 'दारू', 'सोने की लड़की')
+    are NEVER automatically overwritten.
     Returns (is_clean, cleaned_text, detected_warnings).
     """
     if not text:
         return True, text, []
 
-    from audiobook_factory.advisory_lexicon import get_advisory_db
-    advisory_db = get_advisory_db()
-    antipatterns = advisory_db.get_banned_antipatterns_map()
-
     warnings: List[str] = []
     cleaned_text = text
 
-    # Contextual replacement map for robotic antipatterns
-    replacements = {
-        r"सुनहरी\s+लड़की": "गोरी-चिट्टी लड़की",
-        r"सोने\s+की\s+लड़की": "गोरी-निखरी लड़की",
-        r"क[ुंँ]+वारी\s+चोटी": "कमसिन लड़की की चोटी",
-        r"(?<![\u0900-\u097F])नमस्ते(?![\u0900-\u097F])": "सलाम",
-        r"(?<![\u0900-\u097F])राम-राम(?![\u0900-\u097F])": "सलाम",
-        r"(?<![\u0900-\u097F])नमस्कार(?![\u0900-\u097F])": "आदाब",
-        r"(?<![\u0900-\u097F])डिप्रेशन(?![\u0900-\u097F])": "उदासी का साया",
-        r"(?<![\u0900-\u097F])ट्रॉमा(?![\u0900-\u097F])": "गहरा सदमा",
-        r"(?<![\u0900-\u097F])स्ट्रेस(?![\u0900-\u097F])": "तनाव",
-        r"(बेर|शराब|मदिरा|वाइन|जाम)\s*की\s*दारू": r"\1 की शराब",
-        r"दारू\s+की\s+(सुराही|बोतल)": r"शराब की \1",
-        r"(?<![\u0900-\u097F])दारू(?![\u0900-\u097F])": "शराब",
-    }
-
-    for pattern, replacement in replacements.items():
+    # Check unambiguous calques (auto-repaired only if apply_substitutions is True)
+    for pattern, replacement in UNAMBIGUOUS_CALQUE_REPAIRS.items():
         if re.search(pattern, cleaned_text):
             matches = re.findall(pattern, cleaned_text)
             warnings.append(f"Antipattern detected: {matches[0]} -> normalized to '{replacement}'")
-            cleaned_text = re.sub(pattern, replacement, cleaned_text)
+            if apply_substitutions:
+                cleaned_text = re.sub(pattern, replacement, cleaned_text)
+
+    # Check contextual register advisories (never mutated, informative note only)
+    for pattern, advisory_desc in CONTEXTUAL_REGISTER_ADVISORIES.items():
+        if re.search(pattern, cleaned_text):
+            matches = re.findall(pattern, cleaned_text)
+            warnings.append(f"Advisory register observation: {matches[0]} ({advisory_desc})")
 
     is_clean = len(warnings) == 0
     return is_clean, cleaned_text, warnings

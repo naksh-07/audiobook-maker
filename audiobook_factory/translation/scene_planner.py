@@ -11,6 +11,9 @@ from typing import Dict, Any, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 
+from .intensity_model import LiteraryIntensityVector, IntensityEvaluator
+
+
 class ScenePlan(BaseModel):
     scene_id: str
     scene_title: str
@@ -24,6 +27,7 @@ class ScenePlan(BaseModel):
     emotional_state: str = "neutral"
     key_objects: List[str] = Field(default_factory=list)
     register_flavor: str = "balanced_dramatic"
+    intensity_vector: Optional[LiteraryIntensityVector] = None
 
     def get_prompt_context(self) -> str:
         """Formats the structured scene plan as clean context for translation prompts."""
@@ -89,6 +93,7 @@ class ScenePlanner:
                 text_block=chapter_text,
                 active_characters=active_chars,
                 register_flavor="cinematic_dramatic",
+                intensity_vector=IntensityEvaluator.estimate_source_intensity(chapter_text),
             )
             return ChapterPlan(
                 chapter_title=chapter_title,
@@ -144,6 +149,7 @@ class ScenePlanner:
                 danger_level=cls._infer_danger(scene_text),
                 emotional_state=cls._infer_emotion(scene_text),
                 register_flavor="cinematic_dramatic",
+                intensity_vector=IntensityEvaluator.estimate_source_intensity(scene_text),
             )
             scenes.append(plan)
 

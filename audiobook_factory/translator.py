@@ -18,6 +18,8 @@ from typing import Dict, Any, List, Optional, Tuple
 DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
 MODEL_CANDIDATES = ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite")
 ADULT_LITERARY_MODE = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
+TRANSLATOR_VERSION = "2.0"
+PROMPT_VERSION = "2.0.0"
 
 
 from audiobook_factory.key_manager import get_persistent_key_pool
@@ -535,18 +537,32 @@ def translate_chapter(
     rolling_ctx = effective_context
     for i, chunk in enumerate(chunks, 1):
         chunk_words = len(chunk.split())
+        import hashlib
+        chunk_hash = hashlib.sha256(chunk.encode("utf-8")).hexdigest()[:12]
+        chunk_fp = f"{chunk_hash}:{TRANSLATOR_VERSION}:{PROMPT_VERSION}:{model}"
+
         cache_file = (cache_dir / f"{chapter_title}_part_{i}.txt") if cache_dir and chapter_title else None
-        if cache_file and cache_file.exists() and cache_file.stat().st_size > 10:
-            with open(cache_file, "r", encoding="utf-8") as f:
-                trans_part = f.read().strip()
-            is_valid, cleaned_part, err = validate_and_sanitize_translation(trans_part, is_hindi=True)
-            if is_valid:
-                translated_pieces.append(cleaned_part)
-                rolling_ctx = cleaned_part[-500:]
-                print(f"    [CACHED] [Part {i}/{len(chunks)}] Loaded from cache ({len(cleaned_part)} chars).", flush=True)
-                continue
-            else:
-                print(f"    [INVALID CACHE] [Part {i}/{len(chunks)}] Cache failed guardrail ({err}). Re-translating...", flush=True)
+        fp_file = (cache_dir / f"{chapter_title}_part_{i}.fp") if cache_dir and chapter_title else None
+
+        if cache_file and cache_file.exists() and cache_file.stat().st_size > 10 and fp_file and fp_file.exists():
+            try:
+                with open(fp_file, "r", encoding="utf-8") as f:
+                    saved_fp = f.read().strip()
+                if saved_fp == chunk_fp:
+                    with open(cache_file, "r", encoding="utf-8") as f:
+                        trans_part = f.read().strip()
+                    is_valid, cleaned_part, err = validate_and_sanitize_translation(trans_part, is_hindi=True)
+                    if is_valid:
+                        translated_pieces.append(cleaned_part)
+                        rolling_ctx = cleaned_part[-500:]
+                        print(f"    [CACHED] [Part {i}/{len(chunks)}] Loaded from cache ({len(cleaned_part)} chars).", flush=True)
+                        continue
+                    else:
+                        print(f"    [INVALID CACHE] [Part {i}/{len(chunks)}] Cache failed guardrail ({err}). Re-translating...", flush=True)
+                else:
+                    print(f"    [STALE CACHE] [Part {i}/{len(chunks)}] Cache fingerprint mismatch. Re-translating...", flush=True)
+            except Exception:
+                pass
 
         print(f"    -> [Part {i}/{len(chunks)}] Translating {chunk_words} words...", flush=True)
         chunk_title = f"{chapter_title} (Part {i}/{len(chunks)})" if chapter_title else f"Part {i}/{len(chunks)}"
@@ -554,6 +570,9 @@ def translate_chapter(
         if cache_file:
             with open(cache_file, "w", encoding="utf-8") as f:
                 f.write(trans_part)
+            if fp_file:
+                with open(fp_file, "w", encoding="utf-8") as f:
+                    f.write(chunk_fp)
         translated_pieces.append(trans_part)
         rolling_ctx = trans_part[-500:]
     full_trans = "\n\n".join(translated_pieces)
@@ -570,8 +589,17 @@ def translate_chapter(
     return full_trans
 
 
-def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Path:
-    """Batch translates all extracted chapters in a project into Hindi."""
+def translate_book_project(
+    project_dir: Path,
+    model: str = DEFAULT_MODEL,
+    use_intelligent_pipeline: bool = True,
+    force_gate: bool = False,
+) -> Path:
+    """
+    Batch translates all extracted chapters in a project into Hindi.
+    Defaults to IntelligentTranslationPipeline (Pillar 2 Intelligence) with
+    automatic fail-safe gate certification and full artifact persistence.
+    """
     extracted_dir = project_dir / "extracted"
     if not extracted_dir.exists() and (project_dir / "chapters").exists():
         extracted_dir = project_dir / "chapters"
@@ -626,11 +654,37 @@ def translate_book_project(project_dir: Path, model: str = DEFAULT_MODEL) -> Pat
     except Exception:
         pass
 
-    # Step 2: Translate chapters in order
     chapter_files = sorted(extracted_dir.glob("chapter_*.md"))
     total = len(chapter_files)
-    print(f"[*] Starting literary translation of {total} chapters using {model}...", flush=True)
 
+    # Step 2: Intelligent Pipeline Translation (Default, Decision A1)
+    if use_intelligent_pipeline:
+        print(f"[*] Starting Intelligent Literary Translation Pipeline for {total} chapters using {model}...", flush=True)
+        from audiobook_factory.translation import IntelligentTranslationPipeline
+
+        pipeline = IntelligentTranslationPipeline(project_dir=project_dir, model=model)
+
+        for idx, chap_file in enumerate(chapter_files, 1):
+            target_file = trans_dir / f"{chap_file.stem}_hi.md"
+            with open(chap_file, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            print(f"[*] [{idx}/{total}] Processing Intelligent Translation for {chap_file.name}...", flush=True)
+            pipeline.translate_chapter(
+                chapter_text=content,
+                chapter_num=idx,
+                chapter_title=chap_file.stem,
+                call_llm_fn=call_gemini,
+                use_cache=True,
+                force_gate=force_gate,
+            )
+            print(f"[+] [{idx}/{total}] Successfully translated and certified -> {target_file.name}", flush=True)
+
+        print(f"[DONE] All chapters intelligently translated into Hindi successfully -> {trans_dir}")
+        return trans_dir
+
+    # Fallback: Legacy Chunk-Based Translation Loop
+    print(f"[*] Starting legacy chunk translation of {total} chapters using {model}...", flush=True)
     preceding_summary = f"Novel title: {meta.get('title')}. Setting out on journey."
 
     for idx, chap_file in enumerate(chapter_files, 1):

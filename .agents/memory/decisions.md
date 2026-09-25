@@ -393,3 +393,45 @@
      - Implemented `book.get_literary_chapters()` (reunites split chunks back into unified parent chapters sorted by source number) and `book.get_production_chunks()` (returns execution units for batch processing).
      - Tracked in `ExtractionQualityReport`: `detected_literary_chapters`, `production_chunks`, `used_fallback_chunking`, and logged warnings on fallback chunking.
 - **Rationale:** Permanently eliminates multi-column layout corruption, guarantees byte-accurate traceability back to original document pages and lines, protects against LLM hallucinations and conversational leakage, cleanly separates authorial book structure from pipeline batch limits, and completes the production hardening of Pillar 1.
+
+---
+
+## ADR-033: Literary Translation Hardening v2.0 (Proposition Slots, Semantic Aligner, 4-Tier Certification & Multi-Tier Orchestrated Repair)
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:**
+  1. The translation engine audit revealed 7 critical architectural vulnerabilities:
+     - `SourceSemanticMap` extracted an empty `actions=[]` list, failing to capture WHO $\rightarrow$ DID WHAT $\rightarrow$ TO WHOM $\rightarrow$ OBJECT $\rightarrow$ NEGATION $\rightarrow$ TIME/LOCATION.
+     - Semantic QA lacked a target representation or alignment layer, evaluating Hindi translations heuristically without comparing against a structured semantic proposition graph.
+     - Certification logic allowed critical warning conditions on semantic fidelity, beat omissions, and register balance to silently pass overall certification as `PASS`.
+     - The 7-dimensional `LiteraryIntensityVector` and `IntensityEvaluator` were never wired into the execution loop, causing Gate `T8` to default-pass when vectors were missing.
+     - `TieredRepairEngine` lacked multi-paragraph and scene-level orchestration, bounded retry loops, and actionable failure attribution.
+     - `sanitizer.py` (`audit_literary_register`) performed aggressive deterministic regex replacements modifying legitimate literary choices (e.g., `नमस्ते`, `राम-राम`, `नमस्कार`, `दारू`, `सोने की लड़की`).
+     - Provenance tracking lacked semantic and intensity fingerprints, and `translate_book_project` defaulted to legacy character chunking rather than the hardened scene pipeline.
+- **Decision:**
+  1. **Source Proposition Slot Extraction (`source_semantic_map.py` v2.0):**
+     - Upgraded `SourceSemanticMap` to v2.0 with full semantic slot extraction (`actors`, `action`, `recipients`, `key_objects`, `negation`, `time_marker`, `location_marker`, `quotes`).
+     - Implemented dual deterministic regex fallback and LLM JSON extraction capturing complete narrative clause propositions.
+  2. **Target Semantic Representation & Alignment Layer (`source_semantic_map.py`, `semantic_fidelity.py`):**
+     - Introduced `TargetSemanticProposition`, `TargetSemanticMap`, and `SemanticAligner`.
+     - Maps target Hindi propositions to source English propositions with beat coverage, character voice validation, and paragraph-indexed negation auditing (`affected_paragraphs: List[int]`).
+  3. **Strict 4-Tier Certification State Machine (`certification.py` v2.0):**
+     - Upgraded `TranslationCertifier` to v2.0 with four explicit certification states: `PASS`, `PASS_WITH_WARNINGS`, `REVIEW_REQUIRED`, and `BLOCKED`.
+     - Hardened Gate `T8` to execute calibrated intensity evaluations rather than default-passing.
+     - Activated Gate `T10_register_balance` into the evaluation loop.
+     - Enforced fail-closed pipeline halting on `BLOCKED` unless `--force-gate` is explicitly passed.
+  4. **End-to-End Intensity Model Wiring (`intensity_model.py`, `scene_planner.py`, `orchestrator.py`):**
+     - Populated `ScenePlan.intensity_vector` via `estimate_source_intensity()`.
+     - Evaluated target translation intensity against source vectors across all 7 dimensions (`violence`, `eroticism`, `profanity`, `tension`, `darkness`, `substance`, `emotional_distress`), enforcing the "Nothing Above Source" principle ($\pm 0.75$ soft warning, $> 2.0$ hard failure).
+  5. **Hierarchical Repair Engine Orchestration (`repair_engine.py`, `orchestrator.py`):**
+     - Implemented multi-tier automated self-healing with bounded retry limits:
+       - Tier 1: 0ms deterministic Book Bible entity & unambiguous calque correction.
+       - Tier 2: Surgical paragraph-level LLM targeted rewrites (`MAX_PARAGRAPH_ATTEMPTS = 2`) isolating only failing paragraphs.
+       - Tier 3: Full scene retranslation (`MAX_SCENE_ATTEMPTS = 1`) with strict critique injection.
+  6. **Literary Sanitizer Role Separation (`sanitizer.py`):**
+     - Separated security sanitization (stripping LLM chatter, refusals, markdown wrappers) from literary editing.
+     - Made `audit_literary_register(..., apply_substitutions=False)` non-destructive by default, strictly preserving authorial cultural vocabulary (`नमस्ते`, `राम-राम`, `दारू`, `सोने की लड़की`), while delegating unambiguous calque correction (`सुनहरी लड़की`, `कुंवारी चोटी`, `डिप्रेशन`) to the repair engine.
+  7. **11-Dimension Provenance Sealing & Production Pipeline Default (`provenance.py`, `translator.py`):**
+     - Upgraded `TranslationProvenanceTracker` to compute cache keys across 11 dimensions (`source_hash`, `prompt_hash`, `model_name`, `temperature`, `bible_version_hash`, `policy_hash`, `memory_state_hash`, `scene_plan_hash`, `semantic_map_hash`, `intensity_vector_hash`, `evaluator_version`).
+     - Wired `translate_book_project()` to default to `IntelligentTranslationPipeline` (`TranslationOrchestrator`) and assemble top-level `chapter_XXX_hi.md` for downstream screenplay and TTS synthesis stages.
+- **Rationale:** Eliminates silent quality degradation, guarantees provable semantic alignment and authentic Hindustani register, provides bounded automated self-healing without human intervention, and ensures complete backward compatibility across the studio pipeline.

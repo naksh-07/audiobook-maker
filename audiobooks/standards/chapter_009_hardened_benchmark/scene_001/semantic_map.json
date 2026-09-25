@@ -1,0 +1,3660 @@
+{
+  "scene_id": "scene_001",
+  "total_beats": 191,
+  "source_hash": "b88b2fe2bd15d68e",
+  "semantic_map_version": "2.0",
+  "propositions": [
+    {
+      "beat_id": "scene_001_b001",
+      "paragraph_idx": 0,
+      "source_sentence": "# 5: THE VOICE OF REASON",
+      "actors": [],
+      "action": "reason",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "voice of"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b002",
+      "paragraph_idx": 1,
+      "source_sentence": "THE VOICE OF REASON",
+      "actors": [],
+      "action": "reason",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "voice of"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b003",
+      "paragraph_idx": 2,
+      "source_sentence": "\"Geralt!",
+      "actors": [
+        "Geralt"
+      ],
+      "action": "geralt",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Geralt"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Geralt",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b004",
+      "paragraph_idx": 2,
+      "source_sentence": "Hey!",
+      "actors": [],
+      "action": "hey",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b005",
+      "paragraph_idx": 2,
+      "source_sentence": "Are you there?\"",
+      "actors": [
+        "You"
+      ],
+      "action": "are you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b006",
+      "paragraph_idx": 3,
+      "source_sentence": "He raised his head from the coarse, yellowed pages of  The History of theWorld by Roderick de Novembre, an interesting if controversial work which he had been studying since the previous day.",
+      "actors": [
+        "Roderick de Novembre"
+      ],
+      "action": "he",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Roderick de Novembre"
+      ],
+      "key_objects": [
+        "head from",
+        "coarse",
+        "history of",
+        "interesting if"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the coarse"
+    },
+    {
+      "beat_id": "scene_001_b007",
+      "paragraph_idx": 4,
+      "source_sentence": "\"Yes, I am.",
+      "actors": [
+        "I"
+      ],
+      "action": "yes",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b008",
+      "paragraph_idx": 4,
+      "source_sentence": "What's happened, Nenneke?",
+      "actors": [
+        "Nenneke"
+      ],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Nenneke",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b009",
+      "paragraph_idx": 4,
+      "source_sentence": "Do you need me?\"",
+      "actors": [
+        "You"
+      ],
+      "action": "do you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b010",
+      "paragraph_idx": 5,
+      "source_sentence": "\"You've got a guest.\"",
+      "actors": [],
+      "action": "you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "guest"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b011",
+      "paragraph_idx": 6,
+      "source_sentence": "\"Again?",
+      "actors": [],
+      "action": "again",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b012",
+      "paragraph_idx": 6,
+      "source_sentence": "Who's it this time?",
+      "actors": [
+        "It"
+      ],
+      "action": "who",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "It",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b013",
+      "paragraph_idx": 6,
+      "source_sentence": "Duke Hereward himself?\"",
+      "actors": [],
+      "action": "duke",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b014",
+      "paragraph_idx": 7,
+      "source_sentence": "\"No.",
+      "actors": [],
+      "action": "no",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "no"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b015",
+      "paragraph_idx": 7,
+      "source_sentence": "It's Dandilion this time, your fellow.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "it",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Dandilion",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b016",
+      "paragraph_idx": 7,
+      "source_sentence": "That idler, parasite and good-for-nothing, that priest of art, the bright-shining star of the ballad and love poem.",
+      "actors": [
+        "the priest"
+      ],
+      "action": "that",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "nothing"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "idler",
+        "priest of",
+        "bright",
+        "ballad and"
+      ],
+      "is_dialogue": true,
+      "speaker": "the priest",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b017",
+      "paragraph_idx": 7,
+      "source_sentence": "As usual, he's radiant with fame, puffed up like a pig's bladder and stinking of beer.",
+      "actors": [],
+      "action": "as",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b018",
+      "paragraph_idx": 7,
+      "source_sentence": "Do you want to see him?\"",
+      "actors": [
+        "You"
+      ],
+      "action": "do you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b019",
+      "paragraph_idx": 8,
+      "source_sentence": "\"Of course.",
+      "actors": [],
+      "action": "course",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b020",
+      "paragraph_idx": 8,
+      "source_sentence": "He's my friend, after all.\"",
+      "actors": [],
+      "action": "he",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "after",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b021",
+      "paragraph_idx": 9,
+      "source_sentence": "Nenneke,  peeved,  shrugged  her  shoulders.",
+      "actors": [
+        "Nenneke"
+      ],
+      "action": "nenneke",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [
+        "shoulders"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b022",
+      "paragraph_idx": 9,
+      "source_sentence": "\"I  can't  understand  that friendship.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "can't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "friendship"
+      ],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b023",
+      "paragraph_idx": 9,
+      "source_sentence": "He's your absolute opposite.\"",
+      "actors": [],
+      "action": "he",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b024",
+      "paragraph_idx": 10,
+      "source_sentence": "\"Opposites attract.\"",
+      "actors": [],
+      "action": "opposites",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b025",
+      "paragraph_idx": 11,
+      "source_sentence": "\"Obviously.",
+      "actors": [],
+      "action": "obviously",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b026",
+      "paragraph_idx": 11,
+      "source_sentence": "There,  he's  coming.\"  She  indicated  with  her  head.",
+      "actors": [],
+      "action": "there",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b027",
+      "paragraph_idx": 11,
+      "source_sentence": "\"Your famous poet.\"",
+      "actors": [
+        "the poet"
+      ],
+      "action": "your",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "the poet",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b028",
+      "paragraph_idx": 12,
+      "source_sentence": "\"He really is a famous poet, Nenneke.",
+      "actors": [
+        "the poet"
+      ],
+      "action": "he",
+      "recipients": [
+        "Nenneke"
+      ],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [
+        "famous poet"
+      ],
+      "is_dialogue": true,
+      "speaker": "the poet",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b029",
+      "paragraph_idx": 12,
+      "source_sentence": "Surely you're not going to claim you've never heard his ballads.\"",
+      "actors": [],
+      "action": "surely",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not",
+        "never"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "ballads"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b030",
+      "paragraph_idx": 13,
+      "source_sentence": "\"I've  heard  them.\"  The  priestess  winced.",
+      "actors": [
+        "the priestess"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "priestess  winced"
+      ],
+      "is_dialogue": true,
+      "speaker": "the priestess",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b031",
+      "paragraph_idx": 13,
+      "source_sentence": "\"Yes,  indeed.",
+      "actors": [],
+      "action": "yes",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b032",
+      "paragraph_idx": 13,
+      "source_sentence": "Well,  I  don't know much about it, but maybe the ability to jump from touching lyricism to obscenities so easily is a talent.",
+      "actors": [
+        "I"
+      ],
+      "action": "well",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "don't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "ability to",
+        "talent"
+      ],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b033",
+      "paragraph_idx": 13,
+      "source_sentence": "Never mind.",
+      "actors": [],
+      "action": "never mind",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "never"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b034",
+      "paragraph_idx": 13,
+      "source_sentence": "Forgive me, but I won't keep you company.",
+      "actors": [],
+      "action": "forgive",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "won't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b035",
+      "paragraph_idx": 13,
+      "source_sentence": "I'm not in the mood for either his poetry or his vulgar jokes.\"",
+      "actors": [],
+      "action": "i",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "mood for",
+        "poetry or",
+        "vulgar jokes"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b036",
+      "paragraph_idx": 14,
+      "source_sentence": "A peal of laughter and the strumming of a lute resounded in the corridor and there, on the threshold of the library, stood Dandilion in a lilac jerkin with lace cuffs, his hat askew.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "laughter",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [
+        "peal of",
+        "strumming of",
+        "lute resounded",
+        "corridor and"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the corridor"
+    },
+    {
+      "beat_id": "scene_001_b037",
+      "paragraph_idx": 14,
+      "source_sentence": "The troubadour bowed exaggeratedly at the sight of Nenneke, the heron feather pinned to his hat sweeping the floor.",
+      "actors": [
+        "Nenneke"
+      ],
+      "action": "bowed",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [
+        "troubadour bowed",
+        "sight of",
+        "heron feather",
+        "hat sweeping"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the sight of Nenneke"
+    },
+    {
+      "beat_id": "scene_001_b038",
+      "paragraph_idx": 15,
+      "source_sentence": "\"My deepest respects, venerable mother,\" he whined stupidly.",
+      "actors": [],
+      "action": "my",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b039",
+      "paragraph_idx": 15,
+      "source_sentence": "\"Praise be the Great Melitele and her priestesses, the springs of virtue and wisdom — \"",
+      "actors": [],
+      "action": "praise",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "great melitele",
+        "priestesses",
+        "springs of"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b040",
+      "paragraph_idx": 16,
+      "source_sentence": "\"Stop  talking  bullshit,\"  snorted  Nenneke.",
+      "actors": [
+        "Nenneke"
+      ],
+      "action": "snorted",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Nenneke",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b041",
+      "paragraph_idx": 16,
+      "source_sentence": "\"And  don't  call  me  mother.",
+      "actors": [],
+      "action": "t",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "don't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b042",
+      "paragraph_idx": 17,
+      "source_sentence": "The very idea that you could be my son fills me with horror.\"",
+      "actors": [],
+      "action": "idea",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "very idea",
+        "you could"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b043",
+      "paragraph_idx": 18,
+      "source_sentence": "She  turned  on  her  heel  and  left,  her  trailing  robe  rustling.",
+      "actors": [
+        "She"
+      ],
+      "action": "she",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "heel  and",
+        "trailing  robe"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b044",
+      "paragraph_idx": 18,
+      "source_sentence": "Dandilion, aping her, sketched a parody bow.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "dandilion",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [
+        "parody bow"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b045",
+      "paragraph_idx": 19,
+      "source_sentence": "\"She hasn't changed a bit,\" he said cheerfully.",
+      "actors": [
+        "She"
+      ],
+      "action": "she",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "hasn't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "She",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b046",
+      "paragraph_idx": 19,
+      "source_sentence": "\"She still can't take a joke.",
+      "actors": [
+        "She"
+      ],
+      "action": "she",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "can't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "joke"
+      ],
+      "is_dialogue": true,
+      "speaker": "She",
+      "time_marker": "still",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b047",
+      "paragraph_idx": 20,
+      "source_sentence": "She's  furious  because  I  chatted  a  bit  to  the  gatekeeper  when  I  got  here,  a pretty blonde with long lashes and a virgin's plait reaching down to her cute little bottom, which it would be a sin not to pinch.",
+      "actors": [],
+      "action": "she",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "bit  to",
+        "gatekeeper  when",
+        "pretty blonde",
+        "virgin"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b048",
+      "paragraph_idx": 20,
+      "source_sentence": "So I did and Nenneke, who had just arrived...Ah, what the deuce.",
+      "actors": [
+        "Nenneke"
+      ],
+      "action": "so",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [
+        "deuce"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b049",
+      "paragraph_idx": 20,
+      "source_sentence": "Greetings, Geralt.\"",
+      "actors": [
+        "Geralt"
+      ],
+      "action": "greetings",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Geralt"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Geralt",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b050",
+      "paragraph_idx": 21,
+      "source_sentence": "\"Greetings, Dandilion.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "greetings",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Dandilion",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b051",
+      "paragraph_idx": 21,
+      "source_sentence": "How did you know I was here?\"",
+      "actors": [
+        "You"
+      ],
+      "action": "how",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b052",
+      "paragraph_idx": 22,
+      "source_sentence": "The  poet  straightened  himself  and  yanked  his  trousers  up.",
+      "actors": [
+        "the poet"
+      ],
+      "action": "straightened",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "poet  straightened",
+        "trousers  up"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b053",
+      "paragraph_idx": 22,
+      "source_sentence": "\"I  was  in Wyzim,\" he said.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b054",
+      "paragraph_idx": 22,
+      "source_sentence": "\"I heard about the striga, and that you were wounded.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "striga",
+        "you were"
+      ],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b055",
+      "paragraph_idx": 22,
+      "source_sentence": "I guessed  where  you  would  come  to  recuperate.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b056",
+      "paragraph_idx": 22,
+      "source_sentence": "I  see  you're  well  now,  are you?\"",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "now",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b057",
+      "paragraph_idx": 23,
+      "source_sentence": "\"You see correctly, but try explaining that to Nenneke.",
+      "actors": [
+        "Nenneke"
+      ],
+      "action": "you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [
+        "to nenneke"
+      ],
+      "is_dialogue": true,
+      "speaker": "Nenneke",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b058",
+      "paragraph_idx": 23,
+      "source_sentence": "Sit, let's talk.\"",
+      "actors": [],
+      "action": "sit",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b059",
+      "paragraph_idx": 24,
+      "source_sentence": "Dandilion sat and peeped into the book lying on the lectern.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "dandilion",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [
+        "book lying",
+        "lectern"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b060",
+      "paragraph_idx": 24,
+      "source_sentence": "\"History?\"",
+      "actors": [],
+      "action": "history",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b061",
+      "paragraph_idx": 25,
+      "source_sentence": "He  smiled.",
+      "actors": [
+        "He"
+      ],
+      "action": "he",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b062",
+      "paragraph_idx": 25,
+      "source_sentence": "\"Roderick  de  Novembre?",
+      "actors": [],
+      "action": "roderick",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b063",
+      "paragraph_idx": 25,
+      "source_sentence": "I've  read  him,  I  have.",
+      "actors": [],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b064",
+      "paragraph_idx": 25,
+      "source_sentence": "History  was second on my list of favorite subjects when I was studying at the Academy in Oxenfurt.\"",
+      "actors": [],
+      "action": "history",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "academy in"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the Academy in Oxenfurt"
+    },
+    {
+      "beat_id": "scene_001_b065",
+      "paragraph_idx": 26,
+      "source_sentence": "\"What was first?\"",
+      "actors": [],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b066",
+      "paragraph_idx": 27,
+      "source_sentence": "\"Geography,\" said the poet seriously.",
+      "actors": [
+        "the poet"
+      ],
+      "action": "geography",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "poet seriously"
+      ],
+      "is_dialogue": true,
+      "speaker": "the poet",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b067",
+      "paragraph_idx": 27,
+      "source_sentence": "\"The atlas was bigger and it was easier to hide a demijohn of vodka behind it.\"",
+      "actors": [],
+      "action": "was",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "atlas was",
+        "demijohn of"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b068",
+      "paragraph_idx": 28,
+      "source_sentence": "Geralt  laughed  dryly,  got  up,  removed  Lunin  and  Tyrss's   The  ArcaneMysteries of Magic and Alchemy from the shelf and pulled a round-bellied vessel wrapped in straw from behind the bulky volume and into the light of day.",
+      "actors": [
+        "Geralt"
+      ],
+      "action": "geralt",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Geralt"
+      ],
+      "key_objects": [
+        "arcanemysteries of",
+        "shelf and",
+        "round",
+        "bulky volume"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the shelf"
+    },
+    {
+      "beat_id": "scene_001_b069",
+      "paragraph_idx": 29,
+      "source_sentence": "\"Oho.\" The bard visibly cheered up.",
+      "actors": [
+        "the bard"
+      ],
+      "action": "oho",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "bard visibly"
+      ],
+      "is_dialogue": true,
+      "speaker": "the bard",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b070",
+      "paragraph_idx": 29,
+      "source_sentence": "\"Wisdom and inspiration, I see, are still to be found in libraries.",
+      "actors": [],
+      "action": "wisdom",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "still",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b071",
+      "paragraph_idx": 29,
+      "source_sentence": "Oooh!",
+      "actors": [],
+      "action": "oooh",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b072",
+      "paragraph_idx": 29,
+      "source_sentence": "I like this!",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b073",
+      "paragraph_idx": 29,
+      "source_sentence": "Plum, isn't it?",
+      "actors": [
+        "It"
+      ],
+      "action": "plum",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "isn't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "It",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b074",
+      "paragraph_idx": 29,
+      "source_sentence": "Yes, this is true alchemy.",
+      "actors": [],
+      "action": "yes",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "is true"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b075",
+      "paragraph_idx": 29,
+      "source_sentence": "This  is  a  philosopher's  stone  well  worth  studying.",
+      "actors": [],
+      "action": "this",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "is  a"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b076",
+      "paragraph_idx": 29,
+      "source_sentence": "Your  health, brother.",
+      "actors": [],
+      "action": "your",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b077",
+      "paragraph_idx": 29,
+      "source_sentence": "Ooooh, it's strong as the plague!\"",
+      "actors": [],
+      "action": "ooooh",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "plague"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b078",
+      "paragraph_idx": 30,
+      "source_sentence": "\"What brings you here?\" Geralt took the demijohn over from the poet, took  a  sip  and  started  to  cough,  fingering  his  bandaged  neck.",
+      "actors": [
+        "Geralt"
+      ],
+      "action": "what",
+      "recipients": [
+        "the poet",
+        "poet"
+      ],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Geralt"
+      ],
+      "key_objects": [
+        "demijohn over",
+        "sip  and",
+        "bandaged  neck"
+      ],
+      "is_dialogue": true,
+      "speaker": "Geralt",
+      "time_marker": "",
+      "location_marker": "in the poet"
+    },
+    {
+      "beat_id": "scene_001_b079",
+      "paragraph_idx": 30,
+      "source_sentence": "\"Where  are you going?\"",
+      "actors": [
+        "You"
+      ],
+      "action": "where",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b080",
+      "paragraph_idx": 31,
+      "source_sentence": "\"Nowhere.",
+      "actors": [],
+      "action": "nowhere",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "nowhere"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b081",
+      "paragraph_idx": 31,
+      "source_sentence": "That  is,  I  could  go  where  you're  going.",
+      "actors": [
+        "I"
+      ],
+      "action": "that",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b082",
+      "paragraph_idx": 31,
+      "source_sentence": "I  could  keep  you company.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b083",
+      "paragraph_idx": 31,
+      "source_sentence": "Do you intend staying here long?\"",
+      "actors": [
+        "You"
+      ],
+      "action": "do you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b084",
+      "paragraph_idx": 32,
+      "source_sentence": "\"Not long.",
+      "actors": [],
+      "action": "not long",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b085",
+      "paragraph_idx": 32,
+      "source_sentence": "The local duke let it be known I'm not welcome.\"",
+      "actors": [],
+      "action": "duke",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "local duke"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b086",
+      "paragraph_idx": 33,
+      "source_sentence": "\"Hereward?\"  Dandilion  knew  all  the  kings,  princes,  lords  and  feudal lords  from  Jaruga  to  the  Dragon  Mountains.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "hereward",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [
+        "kings",
+        "dragon  mountains"
+      ],
+      "is_dialogue": true,
+      "speaker": "Dandilion",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b087",
+      "paragraph_idx": 33,
+      "source_sentence": "\"Don't  you  give  a  damn.",
+      "actors": [
+        "You"
+      ],
+      "action": "don",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "don't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "damn"
+      ],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b088",
+      "paragraph_idx": 33,
+      "source_sentence": "He won't dare fall foul of Nenneke, or Melitele.",
+      "actors": [
+        "Nenneke"
+      ],
+      "action": "he",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "won't"
+      ],
+      "key_entities": [
+        "Nenneke"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Nenneke",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b089",
+      "paragraph_idx": 33,
+      "source_sentence": "The people would set fire to his castle.\"",
+      "actors": [],
+      "action": "would",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "people would",
+        "castle"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b090",
+      "paragraph_idx": 34,
+      "source_sentence": "\"I  don't  want  any  trouble.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "don't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b091",
+      "paragraph_idx": 34,
+      "source_sentence": "And  I've  been  sitting  here  for  too  long anyway.",
+      "actors": [],
+      "action": "ve",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b092",
+      "paragraph_idx": 34,
+      "source_sentence": "I'm going south, Dandilion.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Dandilion",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b093",
+      "paragraph_idx": 34,
+      "source_sentence": "Far south.",
+      "actors": [],
+      "action": "far",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b094",
+      "paragraph_idx": 34,
+      "source_sentence": "I won't find any work here.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "won't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b095",
+      "paragraph_idx": 35,
+      "source_sentence": "Civilization.",
+      "actors": [],
+      "action": "civilization",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b096",
+      "paragraph_idx": 35,
+      "source_sentence": "What  the  hell  do  they  need  a  witcher  here  for?",
+      "actors": [
+        "the witcher"
+      ],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "hell  do",
+        "witcher  here"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b097",
+      "paragraph_idx": 35,
+      "source_sentence": "When  I  ask after employment, they look at me as if I'm a freak.\"",
+      "actors": [
+        "I"
+      ],
+      "action": "when",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "freak"
+      ],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "after",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b098",
+      "paragraph_idx": 36,
+      "source_sentence": "\"What are you talking about?",
+      "actors": [
+        "You"
+      ],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b099",
+      "paragraph_idx": 36,
+      "source_sentence": "What civilization?",
+      "actors": [],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b100",
+      "paragraph_idx": 36,
+      "source_sentence": "I crossed Buina a week ago and heard all sorts of stories as I rode through the country.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "week ago",
+        "country"
+      ],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": "in the country"
+    },
+    {
+      "beat_id": "scene_001_b101",
+      "paragraph_idx": 36,
+      "source_sentence": "Apparently there  are  water  sprites  here,  myriapodans,  chimera,  flying  drakes,  every possible filth.",
+      "actors": [],
+      "action": "apparently",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b102",
+      "paragraph_idx": 36,
+      "source_sentence": "You should be up to your ears in work.\"",
+      "actors": [
+        "You"
+      ],
+      "action": "you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b103",
+      "paragraph_idx": 37,
+      "source_sentence": "\"Stories, well, I've heard them too.",
+      "actors": [],
+      "action": "stories",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b104",
+      "paragraph_idx": 37,
+      "source_sentence": "Half of them are either made up or exaggerated.",
+      "actors": [],
+      "action": "half",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b105",
+      "paragraph_idx": 37,
+      "source_sentence": "No, Dandilion.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "no",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "no"
+      ],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Dandilion",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b106",
+      "paragraph_idx": 37,
+      "source_sentence": "The world is changing.",
+      "actors": [],
+      "action": "is",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "world is"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b107",
+      "paragraph_idx": 37,
+      "source_sentence": "Something's coming to an end.\"",
+      "actors": [],
+      "action": "something",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b108",
+      "paragraph_idx": 38,
+      "source_sentence": "The poet took a long pull at the demijohn, narrowed his eyes and sighed heavily.",
+      "actors": [
+        "the poet"
+      ],
+      "action": "took",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "poet took",
+        "long pull",
+        "demijohn",
+        "eyes and"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the demijohn"
+    },
+    {
+      "beat_id": "scene_001_b109",
+      "paragraph_idx": 38,
+      "source_sentence": "\"Are  you  crying  over  your  sad  fate  as  a  witcher  again?",
+      "actors": [
+        "the witcher"
+      ],
+      "action": "are  you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "witcher  again"
+      ],
+      "is_dialogue": true,
+      "speaker": "the witcher",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b110",
+      "paragraph_idx": 38,
+      "source_sentence": "And philosophizing  on  top  of  that?",
+      "actors": [],
+      "action": "top",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b111",
+      "paragraph_idx": 38,
+      "source_sentence": "I  perceive  the  disastrous  effects  of inappropriate literature, because the fact that the world is changing occurred even to that old fart Roderick de Novembre.",
+      "actors": [
+        "Roderick de Novembre"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Roderick de Novembre"
+      ],
+      "key_objects": [
+        "disastrous  effects",
+        "fact that",
+        "world is",
+        "old fart"
+      ],
+      "is_dialogue": true,
+      "speaker": "Roderick de Novembre",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b112",
+      "paragraph_idx": 38,
+      "source_sentence": "The changeability of the world is, as it happens, the only thesis in this treatise you can agree with.",
+      "actors": [],
+      "action": "world",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "changeability of",
+        "world is",
+        "only thesis",
+        "treatise you"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b113",
+      "paragraph_idx": 38,
+      "source_sentence": "But it's not so innovative you have to ply me with it and put on the face of a great thinker — which doesn't suit you in the least.\"",
+      "actors": [],
+      "action": "s",
+      "recipients": [
+        "it"
+      ],
+      "has_negation": true,
+      "negation_keywords": [
+        "not",
+        "doesn't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "face of",
+        "great thinker",
+        "least"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the least"
+    },
+    {
+      "beat_id": "scene_001_b114",
+      "paragraph_idx": 39,
+      "source_sentence": "Instead of answering, Geralt took a sip from the demijohn.",
+      "actors": [
+        "Geralt"
+      ],
+      "action": "instead",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Geralt"
+      ],
+      "key_objects": [
+        "sip from",
+        "demijohn"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": "in the demijohn"
+    },
+    {
+      "beat_id": "scene_001_b115",
+      "paragraph_idx": 40,
+      "source_sentence": "\"Yes, yes,\" sighed Dandilion anew.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "sighed",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Dandilion",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b116",
+      "paragraph_idx": 40,
+      "source_sentence": "\"The world is changing, the sun sets, and the vodka is coming to an end.",
+      "actors": [],
+      "action": "is",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "world is",
+        "sun sets",
+        "vodka is"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b117",
+      "paragraph_idx": 40,
+      "source_sentence": "What else, in your opinion, is coming to an end?",
+      "actors": [],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b118",
+      "paragraph_idx": 40,
+      "source_sentence": "You mentioned something about endings, philosopher.\"",
+      "actors": [
+        "You"
+      ],
+      "action": "you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b119",
+      "paragraph_idx": 41,
+      "source_sentence": "\"I'll  give  you  a  couple  of  examples,\"  said  Geralt  after  a  moment's silence, \"all from two months this side of the Buina.",
+      "actors": [
+        "Geralt"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Geralt"
+      ],
+      "key_objects": [
+        "couple  of",
+        "side of",
+        "buina"
+      ],
+      "is_dialogue": true,
+      "speaker": "Geralt",
+      "time_marker": "after",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b120",
+      "paragraph_idx": 41,
+      "source_sentence": "One day I ride up and what  do  I  see?",
+      "actors": [
+        "I"
+      ],
+      "action": "one",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b121",
+      "paragraph_idx": 41,
+      "source_sentence": "A  bridge.",
+      "actors": [],
+      "action": "bridge",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "bridge"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b122",
+      "paragraph_idx": 41,
+      "source_sentence": "And  under  that  bridge  sits  a  troll  and  demands every passerby pays him.",
+      "actors": [],
+      "action": "that",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "bridge  sits",
+        "troll  and"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b123",
+      "paragraph_idx": 41,
+      "source_sentence": "Those who refuse have a leg injured, sometimes both.",
+      "actors": [],
+      "action": "those",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "leg injured"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b124",
+      "paragraph_idx": 41,
+      "source_sentence": "So I go to the alderman: 'How much will you give me for that troll?'",
+      "actors": [
+        "the alderman"
+      ],
+      "action": "so",
+      "recipients": [
+        "alderman"
+      ],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "troll"
+      ],
+      "is_dialogue": true,
+      "speaker": "the alderman",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b125",
+      "paragraph_idx": 42,
+      "source_sentence": "He's amazed.",
+      "actors": [],
+      "action": "he",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b126",
+      "paragraph_idx": 42,
+      "source_sentence": "'What are you talking about?' he asks.",
+      "actors": [
+        "You"
+      ],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b127",
+      "paragraph_idx": 42,
+      "source_sentence": "'Who will repair the bridge if the troll's not there?",
+      "actors": [],
+      "action": "who",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "bridge if",
+        "troll"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b128",
+      "paragraph_idx": 42,
+      "source_sentence": "He repairs it regularly with the sweat of his brow,  solid  work,  first  rate.",
+      "actors": [
+        "He"
+      ],
+      "action": "he",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "sweat of",
+        "brow"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b129",
+      "paragraph_idx": 42,
+      "source_sentence": "It's  cheaper  to  pay  his  toll.'  So  I  ride  on,  and what do I see?",
+      "actors": [],
+      "action": "it",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "toll"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b130",
+      "paragraph_idx": 42,
+      "source_sentence": "A forktail.",
+      "actors": [],
+      "action": "forktail",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "forktail"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b131",
+      "paragraph_idx": 42,
+      "source_sentence": "Not very big, about four yards nose-tip to tail-tip.",
+      "actors": [],
+      "action": "not very",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b132",
+      "paragraph_idx": 43,
+      "source_sentence": "It's flying, carrying a sheep in its talons.",
+      "actors": [],
+      "action": "it",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "sheep in"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b133",
+      "paragraph_idx": 43,
+      "source_sentence": "I go to the village.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "village"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b134",
+      "paragraph_idx": 43,
+      "source_sentence": "'How much,' I ask,  'will  you  pay  me  for  the  forktail?'  The  peasants  fall  on  their  knees.",
+      "actors": [
+        "the peasants"
+      ],
+      "action": "how",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "forktail",
+        "peasants  fall",
+        "knees"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b135",
+      "paragraph_idx": 44,
+      "source_sentence": "'No!' they shout.",
+      "actors": [
+        "They"
+      ],
+      "action": "no",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "no"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b136",
+      "paragraph_idx": 44,
+      "source_sentence": "'It's our baron's youngest daughter's favorite dragon.",
+      "actors": [],
+      "action": "it",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b137",
+      "paragraph_idx": 44,
+      "source_sentence": "If a scale falls from its back, the baron will burn our hamlet, and skin us.' I ride on, and I'm getting hungrier and hungrier.",
+      "actors": [],
+      "action": "if",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "scale falls",
+        "baron will"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b138",
+      "paragraph_idx": 44,
+      "source_sentence": "I ask around for work.",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b139",
+      "paragraph_idx": 44,
+      "source_sentence": "Certainly it's  there,  but  what  work?",
+      "actors": [],
+      "action": "certainly",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b140",
+      "paragraph_idx": 44,
+      "source_sentence": "To  catch  a  rusalka  for  one  man,  a  nymph  for another,  a  dryad  for  a  third...They've  gone  completely  mad — the  villages are teeming with girls but they want humanoids.",
+      "actors": [
+        "the man"
+      ],
+      "action": "rusalka",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "rusalka  for",
+        "nymph  for",
+        "dryad  for",
+        "third"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b141",
+      "paragraph_idx": 44,
+      "source_sentence": "Another asks me to kill a mecopteran  and  bring  him  a  bone  from  its  hand  because,  crushed  and poured into a soup, it cures impotence — \"",
+      "actors": [],
+      "action": "another",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "mecopteran  and",
+        "bone  from",
+        "soup"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b142",
+      "paragraph_idx": 45,
+      "source_sentence": "\"That's  rubbish,\"  interrupted  Dandilion.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "interrupted",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "Dandilion",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b143",
+      "paragraph_idx": 45,
+      "source_sentence": "\"I've  tried  it.",
+      "actors": [
+        "It"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "It",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b144",
+      "paragraph_idx": 45,
+      "source_sentence": "It  doesn't strengthen anything and it makes the soup taste of old socks.",
+      "actors": [
+        "It"
+      ],
+      "action": "it",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "doesn't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "soup taste"
+      ],
+      "is_dialogue": true,
+      "speaker": "It",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b145",
+      "paragraph_idx": 45,
+      "source_sentence": "But if people believe it and are inclined to pay — \"",
+      "actors": [],
+      "action": "people",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b146",
+      "paragraph_idx": 46,
+      "source_sentence": "\"I'm not going to kill mecopterans.",
+      "actors": [],
+      "action": "i",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b147",
+      "paragraph_idx": 46,
+      "source_sentence": "Nor any other harmless creatures.\"",
+      "actors": [],
+      "action": "nor",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "nor"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b148",
+      "paragraph_idx": 47,
+      "source_sentence": "\"Then you'll go hungry.",
+      "actors": [],
+      "action": "then",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "then",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b149",
+      "paragraph_idx": 47,
+      "source_sentence": "Unless you change your line of work.\"",
+      "actors": [
+        "You"
+      ],
+      "action": "unless",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b150",
+      "paragraph_idx": 48,
+      "source_sentence": "\"To what?\"",
+      "actors": [],
+      "action": "what",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b151",
+      "paragraph_idx": 49,
+      "source_sentence": "\"Whatever.",
+      "actors": [],
+      "action": "whatever",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b152",
+      "paragraph_idx": 49,
+      "source_sentence": "Become  a  priest.",
+      "actors": [
+        "the priest"
+      ],
+      "action": "become",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "the priest",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b153",
+      "paragraph_idx": 49,
+      "source_sentence": "You  wouldn't  be  bad  at  it  with  all  your scruples, your morality, your knowledge of people and of everything.",
+      "actors": [
+        "You"
+      ],
+      "action": "you",
+      "recipients": [
+        "it"
+      ],
+      "has_negation": true,
+      "negation_keywords": [
+        "wouldn't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b154",
+      "paragraph_idx": 49,
+      "source_sentence": "The fact  that  you  don't  believe  in  any  gods  shouldn't  be  a  problem — I  don't know  many  priests  who  do.",
+      "actors": [],
+      "action": "that",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "don't",
+        "shouldn't",
+        "don't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "fact  that",
+        "problem"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b155",
+      "paragraph_idx": 49,
+      "source_sentence": "Become  a  priest  and  stop  feeling  sorry  for yourself.\"",
+      "actors": [
+        "the priest"
+      ],
+      "action": "become",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "priest  and"
+      ],
+      "is_dialogue": true,
+      "speaker": "the priest",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b156",
+      "paragraph_idx": 50,
+      "source_sentence": "\"I'm not feeling sorry for myself.",
+      "actors": [],
+      "action": "i",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b157",
+      "paragraph_idx": 50,
+      "source_sentence": "I'm stating the facts.\"",
+      "actors": [],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "facts"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b158",
+      "paragraph_idx": 51,
+      "source_sentence": "Dandilion  crossed  his  legs  and  examined  his  worn  sole  with  interest.",
+      "actors": [
+        "Dandilion"
+      ],
+      "action": "dandilion",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Dandilion"
+      ],
+      "key_objects": [
+        "legs  and",
+        "worn  sole"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b159",
+      "paragraph_idx": 52,
+      "source_sentence": "\"You  remind  me,  Geralt,  of  an  old  fisherman  who,  toward  the  end  of  his life, discovers that fish stink and the breeze from the sea makes your bones ache.",
+      "actors": [
+        "Geralt"
+      ],
+      "action": "you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Geralt"
+      ],
+      "key_objects": [
+        "old  fisherman",
+        "end  of",
+        "life",
+        "fish stink"
+      ],
+      "is_dialogue": true,
+      "speaker": "Geralt",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b160",
+      "paragraph_idx": 52,
+      "source_sentence": "Be  consistent.",
+      "actors": [],
+      "action": "be",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b161",
+      "paragraph_idx": 52,
+      "source_sentence": "Talking  and  regretting  won't  get  you  anywhere.",
+      "actors": [],
+      "action": "talking",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "won't"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b162",
+      "paragraph_idx": 52,
+      "source_sentence": "If  I were to find that the demand for poetry had come to an end, I'd hang up my lute and become a gardener.",
+      "actors": [
+        "I"
+      ],
+      "action": "if",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "the demand",
+        "gardener"
+      ],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b163",
+      "paragraph_idx": 52,
+      "source_sentence": "I'd grow roses.\"",
+      "actors": [],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b164",
+      "paragraph_idx": 53,
+      "source_sentence": "\"Nonsense.",
+      "actors": [],
+      "action": "nonsense",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b165",
+      "paragraph_idx": 53,
+      "source_sentence": "You're not capable of giving it up.\"",
+      "actors": [],
+      "action": "you",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b166",
+      "paragraph_idx": 54,
+      "source_sentence": "\"Well,\"  agreed  the  poet,  still  staring  at  his  sole,  \"maybe  not.",
+      "actors": [
+        "the poet"
+      ],
+      "action": "well",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "sole"
+      ],
+      "is_dialogue": true,
+      "speaker": "the poet",
+      "time_marker": "still",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b167",
+      "paragraph_idx": 54,
+      "source_sentence": "But  our professions differ somewhat.",
+      "actors": [],
+      "action": "professions",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b168",
+      "paragraph_idx": 54,
+      "source_sentence": "The demand for poetry and the sound of lute strings will never decline.",
+      "actors": [],
+      "action": "poetry",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "never"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "demand for",
+        "sound of"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b169",
+      "paragraph_idx": 54,
+      "source_sentence": "It's worse with your trade.",
+      "actors": [],
+      "action": "it",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b170",
+      "paragraph_idx": 54,
+      "source_sentence": "You witchers, after all, deprive  yourselves  of  work,  slowly  but  surely.",
+      "actors": [
+        "You"
+      ],
+      "action": "you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "after",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b171",
+      "paragraph_idx": 54,
+      "source_sentence": "The  better  and  the  more conscientiously you work, the less work there is for you.",
+      "actors": [],
+      "action": "more",
+      "recipients": [
+        "you"
+      ],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "better  and",
+        "more conscientiously",
+        "less work"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b172",
+      "paragraph_idx": 54,
+      "source_sentence": "After all, your goal is a world without monsters, a world which is peaceful and safe.",
+      "actors": [],
+      "action": "after",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "without"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "world without",
+        "world which"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "after",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b173",
+      "paragraph_idx": 54,
+      "source_sentence": "A world where witchers are unnecessary.",
+      "actors": [],
+      "action": "where",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "world where"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b174",
+      "paragraph_idx": 54,
+      "source_sentence": "A paradox, isn't it?\"",
+      "actors": [],
+      "action": "isn",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "isn't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "paradox"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b175",
+      "paragraph_idx": 55,
+      "source_sentence": "\"True.\"",
+      "actors": [],
+      "action": "true",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b176",
+      "paragraph_idx": 56,
+      "source_sentence": "\"In the past, when unicorns still existed, there was quite a large group of girls who took care of their virtue in order to be able to hunt them.",
+      "actors": [],
+      "action": "when",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "past",
+        "large group",
+        "virtue in"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "still",
+      "location_marker": "in the past"
+    },
+    {
+      "beat_id": "scene_001_b177",
+      "paragraph_idx": 56,
+      "source_sentence": "Do you remember?",
+      "actors": [
+        "You"
+      ],
+      "action": "do you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "You",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b178",
+      "paragraph_idx": 56,
+      "source_sentence": "And  the  ratcatchers  with  pipes?",
+      "actors": [],
+      "action": "pipes",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "ratcatchers  with"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b179",
+      "paragraph_idx": 56,
+      "source_sentence": "Everybody  was  fighting  over their services.",
+      "actors": [],
+      "action": "everybody",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "services"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b180",
+      "paragraph_idx": 56,
+      "source_sentence": "But they were finished off by alchemists and their effective poisons and then domesticated ferrets and weasels.",
+      "actors": [
+        "They"
+      ],
+      "action": "were",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "effective poisons"
+      ],
+      "is_dialogue": true,
+      "speaker": "They",
+      "time_marker": "then",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b181",
+      "paragraph_idx": 56,
+      "source_sentence": "The little animals were cheaper, nicer and didn't guzzle so much beer.",
+      "actors": [],
+      "action": "animals",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "didn't"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "little animals"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b182",
+      "paragraph_idx": 56,
+      "source_sentence": "Notice the analogy?\"",
+      "actors": [],
+      "action": "notice",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "analogy"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b183",
+      "paragraph_idx": 57,
+      "source_sentence": "\"I do.\"",
+      "actors": [
+        "I"
+      ],
+      "action": "i",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": "I",
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b184",
+      "paragraph_idx": 58,
+      "source_sentence": "\"So use other people's experiences.",
+      "actors": [],
+      "action": "so",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b185",
+      "paragraph_idx": 58,
+      "source_sentence": "The unicorn virgins, when they lost their jobs, immediately popped their cherry.",
+      "actors": [],
+      "action": "virgins",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "unicorn virgins",
+        "jobs",
+        "cherry"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b186",
+      "paragraph_idx": 58,
+      "source_sentence": "Some, eager to make up for the years of sacrifice, became famous far and wide for their technique and zeal.",
+      "actors": [],
+      "action": "some",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "years of",
+        "technique and"
+      ],
+      "is_dialogue": true,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b187",
+      "paragraph_idx": 59,
+      "source_sentence": "The ratcatchers...Well, you'd better not copy them, because they, to a man, took to drink and went to the dogs.",
+      "actors": [
+        "the man"
+      ],
+      "action": "well",
+      "recipients": [],
+      "has_negation": true,
+      "negation_keywords": [
+        "not"
+      ],
+      "key_entities": [],
+      "key_objects": [
+        "ratcatchers",
+        "dogs"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b188",
+      "paragraph_idx": 59,
+      "source_sentence": "Well, now it looks as if the time's come for witchers.",
+      "actors": [
+        "It"
+      ],
+      "action": "well",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "now",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b189",
+      "paragraph_idx": 59,
+      "source_sentence": "You're reading Roderick de Novembre?",
+      "actors": [
+        "Roderick de Novembre"
+      ],
+      "action": "you",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [
+        "Roderick de Novembre"
+      ],
+      "key_objects": [],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b190",
+      "paragraph_idx": 59,
+      "source_sentence": "As far as I remember, there  are  mentions  of  witchers  there,  of  the  first  ones  who  started  work some three hundred years ago.",
+      "actors": [],
+      "action": "as",
+      "recipients": [],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "first  ones"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    },
+    {
+      "beat_id": "scene_001_b191",
+      "paragraph_idx": 59,
+      "source_sentence": "In the days when the peasants used to go to reap the harvest in armed bands, when villages were surrounded by a triple stockade, when merchant caravans looked like the march of regular troops, and loaded catapults stood on the ramparts of the few towns night and day.",
+      "actors": [
+        "the peasants"
+      ],
+      "action": "when",
+      "recipients": [
+        "the merchant"
+      ],
+      "has_negation": false,
+      "negation_keywords": [],
+      "key_entities": [],
+      "key_objects": [
+        "days when",
+        "peasants used",
+        "harvest in",
+        "triple stockade"
+      ],
+      "is_dialogue": false,
+      "speaker": null,
+      "time_marker": "",
+      "location_marker": ""
+    }
+  ]
+}
