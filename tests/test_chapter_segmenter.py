@@ -94,6 +94,13 @@ Geralt arrived at the gates of Wyzim on a cold autumn evening.
         self.assertEqual(parts[1]["title"], "Chapter 1 (Part 2)")
         self.assertLessEqual(parts[0]["words"], 12000)
         self.assertLessEqual(parts[1]["words"], 12000)
+        self.assertIn("* * *", parts[0]["content"])
+
+        # Also verify section subheading (### Heading) is preserved at the start of Part 2
+        long_with_sub = part_a + "\n\n### The Secret Chamber\n\n" + part_b
+        sub_parts = split_large_chapter_on_semantic_boundary("Chapter 1", long_with_sub, max_words=12000)
+        self.assertEqual(len(sub_parts), 2)
+        self.assertIn("### The Secret Chamber", sub_parts[1]["content"])
 
     def test_semantic_splitting_on_paragraph_boundary(self):
         # No scene break, but two large paragraphs
@@ -105,7 +112,52 @@ Geralt arrived at the gates of Wyzim on a cold autumn evening.
         self.assertEqual(len(parts), 2)
         self.assertIn("Part 1", parts[0]["title"])
         self.assertIn("Part 2", parts[1]["title"])
+        # Verify split parts are marked as production chunks linked to parent literary chapter
+        for idx, p in enumerate(parts, 1):
+            self.assertEqual(p["unit_type"], "production_chunk")
+            self.assertFalse(p["is_literary_chapter"])
+            self.assertTrue(p["is_production_chunk"])
+            self.assertEqual(p["boundary_origin"], "semantic_split_chunk")
+            self.assertEqual(p["parent_chapter_title"], "Chapter 2")
+            self.assertEqual(p["chunk_index"], idx)
+            self.assertEqual(p["total_chunks"], 2)
+
+    def test_fallback_chunks_distinguished_from_literary_chapters(self):
+        """
+        Improvement 4: Verify that unchaptered continuous prose is segmented into
+        artificial production chunks ('Production Chunk N') rather than fake literary chapters.
+        """
+        para = "The caravan traveled across the endless golden dunes under a blazing sun. " * 60  # ~720 words
+        unchaptered_text = "\n\n".join([para] * 6)  # ~4,320 words, no chapter headings
+
+        units = segment_chapters_from_text(unchaptered_text)
+        self.assertEqual(len(units), 2)
+        for idx, u in enumerate(units, 1):
+            self.assertEqual(u["title"], f"Production Chunk {idx}")
+            self.assertEqual(u["unit_type"], "production_chunk")
+            self.assertFalse(u["is_literary_chapter"])
+            self.assertTrue(u["is_production_chunk"])
+            self.assertEqual(u["boundary_origin"], "fallback_production_chunk")
+            self.assertIsNone(u["literary_chapter_number"])
+            self.assertIsNone(u["parent_chapter_title"])
+            self.assertEqual(u["chunk_index"], idx)
+            self.assertEqual(u["total_chunks"], 2)
+
+        # Contrast with real detected literary chapters
+        chaptered_text = (
+            "Chapter 1: The Oasis\n\n" + para + "\n\n"
+            "Chapter 2: The Mirage\n\n" + para
+        )
+        lit_units = segment_chapters_from_text(chaptered_text)
+        self.assertEqual(len(lit_units), 2)
+        for idx, lu in enumerate(lit_units, 1):
+            self.assertEqual(lu["unit_type"], "literary_chapter")
+            self.assertTrue(lu["is_literary_chapter"])
+            self.assertFalse(lu["is_production_chunk"])
+            self.assertEqual(lu["boundary_origin"], "detected_heading")
+            self.assertEqual(lu["literary_chapter_number"], idx)
 
 
 if __name__ == "__main__":
     unittest.main()
+

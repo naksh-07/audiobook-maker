@@ -71,7 +71,8 @@ def extract_chapters(source: str | Path) -> List[Dict[str, Any]]:
     """
     Universal chapter extractor: accepts file path or raw text string.
     Enforces Meso-Tier 12,000 word ceiling by splitting oversized chapters on semantic boundaries.
-    Maintains 100% backward compatibility with legacy API.
+    Preserves provenance and literary-chapter vs. production-chunk metadata while maintaining
+    100% backward compatibility with legacy API.
     """
     raw_chapters: List[Dict[str, Any]] = []
 
@@ -98,17 +99,48 @@ def extract_chapters(source: str | Path) -> List[Dict[str, Any]]:
                         raw_chapters.extend(sub)
                     else:
                         raw_chapters.append({
-                            "title": f"Chapter {idx}",
+                            "title": f"Production Chunk {idx}",
                             "content": item,
                             "words": len(item.split()),
+                            "unit_type": "production_chunk",
+                            "is_literary_chapter": False,
+                            "is_production_chunk": True,
+                            "boundary_origin": "spine_fallback",
+                            "literary_chapter_number": None,
+                            "parent_chapter_title": None,
+                            "chunk_index": idx,
+                            "total_chunks": 1,
                         })
         elif ext in (".txt", ".md"):
             with open(source_path, "r", encoding="utf-8", errors="ignore") as f:
                 raw_text = clean_book_text(f.read())
             raw_chapters = segment_chapters_from_text(raw_text)
         elif ext == ".pdf":
-            raw_text = extract_gemini_pdf(source_path)
-            raw_chapters = segment_chapters_from_text(raw_text)
+            pdf_engine = ForensicPDFEngine(source_path)
+            cleaned_pages, page_audits, escalated_pages = pdf_engine.extract_pages()
+            canon_chaps = pdf_engine.segment_into_canonical_chapters(
+                cleaned_pages, page_audits, escalated_pages=escalated_pages, max_words=12000
+            )
+            guarded_pdf_chapters: List[Dict[str, Any]] = []
+            for c in canon_chaps:
+                guarded_pdf_chapters.append({
+                    "title": c.title,
+                    "content": c.to_plain_text(),
+                    "words": c.words,
+                    "unit_type": c.unit_type,
+                    "is_literary_chapter": c.is_literary_chapter,
+                    "is_production_chunk": c.is_production_chunk,
+                    "boundary_origin": c.boundary_origin,
+                    "literary_chapter_number": c.literary_chapter_number,
+                    "parent_chapter_id": c.parent_chapter_id,
+                    "parent_chapter_title": c.parent_chapter_title,
+                    "chunk_index": c.chunk_index,
+                    "total_chunks": c.total_chunks_in_chapter,
+                    "page_start": c.page_start,
+                    "page_end": c.page_end,
+                    "source_location": c.source_location,
+                })
+            return guarded_pdf_chapters
         else:
             raise ValueError(f"Unsupported file format: {ext}")
     else:
@@ -121,14 +153,36 @@ def extract_chapters(source: str | Path) -> List[Dict[str, Any]]:
         title = chap.get("title", "Chapter")
         content = chap.get("content", "")
         words = chap.get("words", len(content.split()))
+        is_lit = bool(chap.get("is_literary_chapter", True))
+        b_origin = str(chap.get("boundary_origin", "detected_heading"))
+        lit_num = chap.get("literary_chapter_number")
+        c_start = int(chap.get("char_start", 0))
+
         if words > 12000:
-            split_parts = split_large_chapter_on_semantic_boundary(title, content, max_words=12000)
+            split_parts = split_large_chapter_on_semantic_boundary(
+                title,
+                content,
+                max_words=12000,
+                base_char_start=c_start,
+                is_literary_chapter=is_lit,
+                boundary_origin=b_origin,
+                literary_chapter_number=lit_num,
+            )
             guarded_chapters.extend(split_parts)
         else:
             guarded_chapters.append({
+                **chap,
                 "title": title,
                 "content": content,
                 "words": words,
+                "unit_type": chap.get("unit_type", "literary_chapter" if is_lit else "production_chunk"),
+                "is_literary_chapter": is_lit,
+                "is_production_chunk": bool(chap.get("is_production_chunk", not is_lit)),
+                "boundary_origin": b_origin,
+                "literary_chapter_number": lit_num,
+                "parent_chapter_title": chap.get("parent_chapter_title", title if is_lit else None),
+                "chunk_index": chap.get("chunk_index", 1),
+                "total_chunks": chap.get("total_chunks", 1),
             })
 
     return guarded_chapters
@@ -215,62 +269,21 @@ def process_book_file(
     elif ext == ".pdf":
         pdf_engine = ForensicPDFEngine(input_file)
         cleaned_pages, page_audits, escalated_pages = pdf_engine.extract_pages()
-        raw_full_text = "\n\n".join(p for p in cleaned_pages if p.strip())
-        
-        # Segment into chapters
-        chap_dicts = segment_chapters_from_text(raw_full_text)
-        canonical_chapters: List[CanonicalChapter] = []
-
-        for idx, cd in enumerate(chap_dicts, 1):
-            title = cd.get("title", f"Chapter {idx}")
-            content = cd.get("content", "")
-            words = cd.get("words", len(content.split()))
-
-            # Check 12k word ceiling
-            if words > 12000:
-                splits = split_large_chapter_on_semantic_boundary(title, content, max_words=12000)
-            else:
-                splits = [{"title": title, "content": content, "words": words}]
-
-            for part_idx, part in enumerate(splits, 1):
-                p_title = part["title"]
-                p_content = part["content"]
-                p_words = part["words"]
-
-                # Build blocks with provenance
-                blocks: List[CanonicalBlock] = []
-                for p_block_idx, para in enumerate(re.split(r"\n{2,}", p_content), 1):
-                    para_clean = para.strip()
-                    if not para_clean:
-                        continue
-                    b_type = "scene_break" if re.match(r"^(\*|\-|\_)\s*\1\s*\1+$", para_clean) else "paragraph"
-                    prov = SourceProvenance(
-                        source_file=str(input_file),
-                        source_type="pdf",
-                        reading_order=len(blocks) + 1,
-                        extraction_method="pdf_pypdf_selective",
-                    )
-                    norm_para, _ = normalize_block_text(para_clean)
-                    block = CanonicalBlock(
-                        id=f"b-ch{len(canonical_chapters)+1:03d}-{p_block_idx:04d}",
-                        type=b_type,
-                        raw_text=para_clean,
-                        normalized_text=norm_para,
-                        provenance=prov,
-                    )
-                    blocks.append(block)
-
-                chap_num = len(canonical_chapters) + 1
-                canonical_chap = CanonicalChapter(
-                    id=f"ch-{chap_num:03d}",
-                    number=chap_num,
-                    title=p_title,
-                    blocks=blocks,
-                    words=p_words,
-                )
-                canonical_chapters.append(canonical_chap)
+        canonical_chapters = pdf_engine.segment_into_canonical_chapters(
+            cleaned_pages,
+            page_audits,
+            escalated_pages=escalated_pages,
+            max_words=12000,
+        )
 
         suspicious_nums = [a.page_number for a in page_audits if a.is_suspicious]
+        page_warnings: List[str] = []
+        for a in page_audits:
+            for w in a.warnings:
+                msg = f"Page {a.page_number}: {w}"
+                if msg not in page_warnings:
+                    page_warnings.append(msg)
+
         report = ExtractionQualityReport(
             source_type="pdf",
             source_path=str(input_file),
@@ -282,6 +295,7 @@ def process_book_file(
             suspicious_pages=suspicious_nums,
             fallback_pages=escalated_pages,
             fallback_used=len(escalated_pages) > 0,
+            warnings=page_warnings,
         )
 
         canonical_book = CanonicalBook(
@@ -298,57 +312,135 @@ def process_book_file(
         with open(input_file, "r", encoding="utf-8", errors="ignore") as f:
             raw_text = f.read()
 
-        norm_text = clean_book_text(raw_text)
-        chap_dicts = segment_chapters_from_text(norm_text)
+        # Preserve sacred raw text (only normalize CRLF line endings for offset indexing)
+        raw_doc = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+
+        # Build line-offset lookup table for accurate line_start/line_end provenance
+        line_offsets: List[Tuple[int, int, int]] = []
+        ln_cursor = 0
+        for ln_num, ln_str in enumerate(raw_doc.splitlines(keepends=True), 1):
+            line_offsets.append((ln_cursor, ln_cursor + len(ln_str.rstrip("\n")), ln_num))
+            ln_cursor += len(ln_str)
+
+        chap_dicts = segment_chapters_from_text(raw_doc)
         canonical_chapters = []
+        global_reading_order = 0
 
         for idx, cd in enumerate(chap_dicts, 1):
             title = cd.get("title", f"Chapter {idx}")
             content = cd.get("content", "")
             words = cd.get("words", len(content.split()))
+            c_char_start = int(cd.get("char_start", 0))
+            is_lit = bool(cd.get("is_literary_chapter", True))
+            b_origin = str(cd.get("boundary_origin", "detected_heading"))
+            lit_num = cd.get("literary_chapter_number")
+            parent_id = f"lit-ch-{lit_num:03d}" if lit_num is not None else None
 
             if words > 12000:
-                splits = split_large_chapter_on_semantic_boundary(title, content, max_words=12000)
+                splits = split_large_chapter_on_semantic_boundary(
+                    title,
+                    content,
+                    max_words=12000,
+                    base_char_start=c_char_start,
+                    is_literary_chapter=is_lit,
+                    boundary_origin=b_origin,
+                    literary_chapter_number=lit_num,
+                    parent_chapter_id=parent_id,
+                )
             else:
-                splits = [{"title": title, "content": content, "words": words}]
+                splits = [{
+                    **cd,
+                    "title": title,
+                    "content": content,
+                    "words": words,
+                    "char_start": c_char_start,
+                    "char_end": int(cd.get("char_end", c_char_start + len(content))),
+                    "parent_chapter_id": parent_id,
+                }]
 
-            char_cursor = 0
             for part in splits:
                 p_title = part["title"]
                 p_content = part["content"]
                 p_words = part["words"]
+                p_char_start = int(part.get("char_start", c_char_start))
+                p_unit_type = part.get("unit_type", "literary_chapter" if is_lit else "production_chunk")
+                p_is_lit = bool(part.get("is_literary_chapter", is_lit))
+                p_is_prod = bool(part.get("is_production_chunk", not p_is_lit))
+                p_origin = part.get("boundary_origin", b_origin)
+                p_lit_num = part.get("literary_chapter_number", lit_num)
+                p_parent_id = part.get("parent_chapter_id", parent_id)
+                p_parent_title = part.get("parent_chapter_title", title if is_lit else None)
+                p_chunk_idx = part.get("chunk_index", 1)
+                p_total_chunks = part.get("total_chunks", 1)
 
                 blocks = []
-                for p_block_idx, para in enumerate(re.split(r"\n{2,}", p_content), 1):
-                    para_clean = para.strip()
+                p_block_idx = 0
+                for match in re.finditer(r"(?:[^\n]+(?:\n(?!\n)[^\n]*)*)", p_content):
+                    raw_para = match.group(0)
+                    lstrip_len = len(raw_para) - len(raw_para.lstrip())
+                    para_clean = raw_para.strip()
                     if not para_clean:
                         continue
+
+                    norm_para, norm_warnings = normalize_block_text(para_clean)
+                    if not norm_para:
+                        continue
+
+                    p_block_idx += 1
+                    global_reading_order += 1
+                    block_doc_start = p_char_start + match.start() + lstrip_len
+                    block_doc_end = block_doc_start + len(para_clean)
+
+                    matching_lines = [
+                        ln_num
+                        for l_s, l_e, ln_num in line_offsets
+                        if l_e >= block_doc_start and l_s <= block_doc_end
+                    ]
+                    l_start = matching_lines[0] if matching_lines else 1
+                    l_end = matching_lines[-1] if matching_lines else l_start
+
                     b_type = "scene_break" if re.match(r"^(\*|\-|\_)\s*\1\s*\1+$", para_clean) else "paragraph"
                     prov = SourceProvenance(
                         source_file=str(input_file),
                         source_type=ext.lstrip("."),
-                        reading_order=len(blocks) + 1,
-                        char_offset=char_cursor,
+                        line_start=l_start,
+                        line_end=l_end,
+                        reading_order=global_reading_order,
+                        char_offset=block_doc_start,
                         extraction_method="text_parser",
                     )
-                    char_cursor += len(para) + 2
-                    norm_para, _ = normalize_block_text(para_clean)
+                    meta: Dict[str, Any] = {}
+                    if norm_warnings:
+                        meta["normalization_warnings"] = norm_warnings
+
                     block = CanonicalBlock(
                         id=f"b-ch{len(canonical_chapters)+1:03d}-{p_block_idx:04d}",
                         type=b_type,
                         raw_text=para_clean,
                         normalized_text=norm_para,
                         provenance=prov,
+                        semantic_metadata=meta,
                     )
                     blocks.append(block)
 
                 chap_num = len(canonical_chapters) + 1
+                chap_conf = "MEDIUM" if p_origin == "fallback_production_chunk" else "HIGH"
                 canonical_chap = CanonicalChapter(
                     id=f"ch-{chap_num:03d}",
                     number=chap_num,
                     title=p_title,
                     blocks=blocks,
+                    confidence=chap_conf,
                     words=p_words,
+                    unit_type=p_unit_type,
+                    is_literary_chapter=p_is_lit,
+                    is_production_chunk=p_is_prod,
+                    boundary_origin=p_origin,
+                    parent_chapter_id=p_parent_id,
+                    parent_chapter_title=p_parent_title,
+                    literary_chapter_number=p_lit_num,
+                    chunk_index=p_chunk_idx,
+                    total_chunks_in_chapter=p_total_chunks,
                 )
                 canonical_chapters.append(canonical_chap)
 

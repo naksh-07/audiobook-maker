@@ -5,8 +5,12 @@
 
 ## Live Sprint State
 - **Branch**: `main` (PR #1 `book_extractor` + PR #2 & PR #3 `translator` MERGED TO `main`, commit `2ff94a6`).
-- **Forensic Ingestion Engine (Pillar 1, PR #1)**:
-  - Canonical `CanonicalBook` AST (`canonical/book.json`), structural EPUB/PDF parsers, Meso-tier 12k splitting, fail-closed quality gates.
+- **Forensic Ingestion Engine (Pillar 1 Upgrades Complete & Verified)**:
+  - Canonical `CanonicalBook` AST (`canonical/book.json`), non-destructive normalization (sacred `raw_text` vs. speech `normalized_text` purging `\x00`, `\x07`, `\u00ad`), fail-closed Gate 0.1.
+  - Upgrade 1: `PDFLayoutReconstructor` recursive XY-cut multi-column reading order, gutter detection, spanning banner cuts, column wrap healing.
+  - Upgrade 2: End-to-end PDF `_PDFPageSpanRecord` provenance indexing (`page_number`, `page_end`, lines, offsets) across chapter splits.
+  - Upgrade 3: Multi-signal `PDFQualityAnalyzer.compare_extraction_candidates` escalation gate with composite scoring & hard refusal/repetition/truncation disqualifiers.
+  - Upgrade 4: Explicit `literary_chapter` vs `production_chunk` distinction with boundary origins (`###`/`* * *` preservation) & `get_literary_chapters()` / `get_production_chunks()`.
 - **Literary Translation Intelligence Engine (Pillar 2, PR #3)**:
   - Canonical `BookBible` store with legacy `glossary.json` projection & decoupled `terminology_variants`.
   - Contextual Hindustani register ("Aate mein Namak jitni Urdu") & soft $\pm 0.75$ heuristic intensity model ("Nothing Above Source").

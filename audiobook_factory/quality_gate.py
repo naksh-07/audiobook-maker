@@ -70,6 +70,20 @@ class ExtractionQualityAuditor:
             if w not in warnings:
                 warnings.append(w)
 
+        detected_lit = len(book.get_literary_chapters())
+        prod_chunks = len(book.get_production_chunks())
+        used_fallback = any(
+            c.boundary_origin in ("fallback_production_chunk", "spine_fallback")
+            for c in book.chapters
+        )
+        if used_fallback and detected_lit == 0 and prod_chunks > 0:
+            fb_warn = (
+                f"No literary chapter headings detected; segmented into {prod_chunks} "
+                f"artificial production chunk(s) for processing limits."
+            )
+            if fb_warn not in warnings:
+                warnings.append(fb_warn)
+
         # Evaluate Gate Status
         if errors:
             gate_status: GateStatus = "REVIEW"
@@ -91,6 +105,9 @@ class ExtractionQualityAuditor:
             total_pages_or_docs=existing_report.total_pages_or_docs,
             total_words=total_words,
             total_chapters=total_chapters,
+            detected_literary_chapters=detected_lit,
+            production_chunks=prod_chunks,
+            used_fallback_chunking=used_fallback,
             total_blocks=total_blocks,
             suspicious_pages=suspicious_pages,
             fallback_pages=existing_report.fallback_pages,

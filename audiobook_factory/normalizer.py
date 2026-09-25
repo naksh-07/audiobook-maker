@@ -11,7 +11,8 @@ import unicodedata
 from typing import Tuple, List, Dict
 
 
-ZERO_WIDTH_CHARS = ("\u200b", "\u200c", "\u200d", "\ufeff", "\u2060")
+ZERO_WIDTH_CHARS = ("\u200b", "\u200c", "\u200d", "\ufeff", "\u2060", "\u00ad")
+CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 
 PUNCTUATION_REPLACEMENTS = {
     "\u2018": "'",   # Left single quote
@@ -32,7 +33,7 @@ def clean_book_text(text: str, preserve_literary_quotes: bool = False) -> str:
     Retains 100% backward compatibility for existing callers.
     
     Operations:
-    0. Unicode NFC normalization & invisible zero-width character hygiene.
+    0. Unicode NFC normalization & invisible zero-width/control character hygiene.
     1. Broken hyphenated linebreak healing (e.g. "impor-\\ntant" -> "important").
     2. Smart quote & dash normalization (unless preserve_literary_quotes is True).
     3. Safe footnote reference removal (e.g. "[1]", "[23]").
@@ -42,13 +43,18 @@ def clean_book_text(text: str, preserve_literary_quotes: bool = False) -> str:
     if not text:
         return ""
 
-    # 0. Unicode NFC normalization & invisible zero-width character hygiene
+    # 0. Unicode NFC normalization & invisible zero-width / C0-C1 control character hygiene
     text = unicodedata.normalize("NFC", text)
     for zw in ZERO_WIDTH_CHARS:
         text = text.replace(zw, "")
+    text = CONTROL_CHARS_RE.sub("", text)
 
-    # 1. Fix broken hyphenated linebreaks across lines
-    text = re.sub(r"(\b[a-zA-Z\u0900-\u097F]{2,})-\n+([a-zA-Z\u0900-\u097F]{2,}\b)", r"\1\2", text)
+    # 1. Fix broken hyphenated linebreaks across lines (ASCII, Accented Latin, Devanagari)
+    text = re.sub(
+        r"(\b[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\u0900-\u097F]{2,})-\n+([a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\u0900-\u097F]{2,}\b)",
+        r"\1\2",
+        text,
+    )
 
     # 2. Punctuation normalization
     if not preserve_literary_quotes:
@@ -83,6 +89,8 @@ def normalize_block_text(raw_text: str, preserve_literary_quotes: bool = False) 
     # Check for unhandled control or replacement characters
     if "\ufffd" in raw_text:
         warnings.append("Block contains Unicode replacement character (\\ufffd) indicating character decode defect.")
+    if CONTROL_CHARS_RE.search(raw_text):
+        warnings.append("Block contained ASCII/C1 control characters which were stripped during normalization.")
 
     # Check for excessive broken words
     hyphen_breaks = len(re.findall(r"\b\w+-\n+\w+\b", raw_text))

@@ -360,3 +360,36 @@
   6. Implemented selective 7-tier + Narrative Salience retrieval in `MemoryRetriever` and `MemoryContext` with an enforced $\le 800$ token budget cap.
   7. Implemented conservative performance guidance in `apply_performance_guidance_to_segment()`, strictly preserving explicit nested `acting.delivery_style` while injecting physical vocal constraints (`strained_breath`, `fatigued_low_energy`) into `ScreenplaySegment` contracts and Gemini TTS `speechMetadata.style`.
 - **Rationale:** Guarantees unbreakable narrative, epistemic, and physical continuity across 100+ chapter novels without context window blowup, prevents ghost event corruption, and enriches vocal performance with true character physical state.
+
+---
+
+## ADR-032: Pillar 1 Forensic Extraction Upgrades & Multi-Signal Quality Gate Hardening
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:**
+  1. Multi-column PDF documents suffered from reading-order interleaving across column gutters, where sentences from Column 1 were haphazardly fused with Column 2 on the same horizontal scanline, while single-column dialogue and indented epigraphs were at risk of false column splitting.
+  2. PDF block extraction lacked character-accurate source provenance across page boundaries; mid-sentence paragraph continuations lost track of starting and ending pages, and raw text was vulnerable to destructive mutations from control codes (`\x00`, `\x07`) and soft hyphens (`\u00ad`).
+  3. Escalation to Gemini multimodal vision was prone to accepting hallucinated outputs, conversational LLM preamble/refusal leakage, 4-gram repetition loops, and severe text truncation simply because an escalation candidate had a high word count.
+  4. Pipelines blurred the line between authentic authorial literary chapters and artificial execution chunks, causing 12k-word semantic splits and fallback chunks (`Production Chunk N`) to distort chapter numbering and table-of-contents generation.
+- **Decision:**
+  1. **Upgrade 1 — Geometric PDF Reading Order & XY-Cut Layout Reconstructor (`PDFLayoutReconstructor` in `pdf_engine.py`):**
+     - Extracts positioned glyph and word spans directly from `pypdf` content streams (`TextStateManager`, `recurse_to_target_op`, `resolve_font`, `displaced_tx`, `space_tx`).
+     - Groups spans by horizontal baseline tolerance ($0.45 \times \max(fh, 8.0)$) and merges intra-line words while splitting on column gutters exceeding $\max(3.5 \times sw, 14.0\text{ pt})$.
+     - Detects vertical column gutters with strict false-split defense for single-column dialogue and epigraphs, requiring vertical band overlap, parallel row pairs (`same_row_pairs \ge 2`), or dense column stacks (`median_dy \le 2.2 \times fh`), and spanning banner dominance.
+     - Recursively decomposes pages via XY-cut: horizontal splits around spanning banners/headers/footers and vertical splits across column gutters (Left Column $\rightarrow$ Right Column).
+     - Merges cross-column mid-sentence continuations and heals broken hyphens (`prev_p[:-1] + curr_p`).
+     - Implements whitespace-aligned multi-column de-interleaving fallback (`reconstruct_multicolumn_text`) for layout-spaced raw text with 4+ space gutters.
+  2. **Upgrade 2 — End-to-End PDF Source Provenance (`ForensicPDFEngine` & `SourceProvenance` in `pdf_engine.py`, `book_model.py`):**
+     - Implemented `_PDFPageSpanRecord` indexing mapping joined document character ranges `[doc_char_start, doc_char_end)` back to exact `page_number`, `page_end`, `line_start`, `line_end`, page-relative `char_offset`, `reading_order`, `extraction_method`, and `confidence`.
+     - Joins pages with `\n` when paragraphs continue mid-sentence, recording dual-page bounds (`page_number` + `page_end`) on cross-page blocks.
+     - Preserves complete provenance through `segment_into_canonical_chapters()` into `CanonicalChapter` and `CanonicalBlock`.
+     - Enforces the **Sacred Source Invariant**: `raw_text` remains 100% unmutated, while `normalized_text` purges C0/C1 control characters (`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]`, e.g. `\x00`, `\x07`) and soft hyphens (`\u00ad`) for speech synthesis.
+  3. **Upgrade 3 — Multi-Signal Gemini Escalation Quality Gate (`PDFQualityAnalyzer` in `pdf_engine.py`):**
+     - Computes normalized quality metrics across Reading Order (40%), Text Integrity (45%), and Sentence Coherence (15%), supporting ASCII, Accented Latin (`\u00C0-\u024F\u1E00-\u1EFF`), and Devanagari (`\u0900-\u097F`).
+     - In `compare_extraction_candidates()`, rejects naive word-count preference and enforces hard disqualifiers on Gemini output: conversational LLM refusals (`"I cannot extract"`, `"As an AI"`, markdown fences), 4-gram repetition loops ($\ge 5\times$, $> 30\%$ words), replacement char (`\ufffd`) regressions, low integrity ($< 0.65$), and clean prose truncation ($> 45\%$ clean word loss).
+  4. **Upgrade 4 — Literary Chapter vs. Production Chunk Architecture (`CanonicalBook`, `CanonicalChapter`, `ChapterSegmenter`, `ForensicEPUBParser`):**
+     - Added explicit `unit_type` (`"literary_chapter" | "production_chunk"`), `is_literary_chapter`, `is_production_chunk`, and `boundary_origin` (`"detected_heading" | "toc_navigation" | "inferred_prologue" | "semantic_split_chunk" | "fallback_production_chunk" | "spine_fallback"`).
+     - Preserves section subheadings (`###`) at the start of Part 2 and scene breaks (`* * *`) at the tail of Part 1 during Meso-tier >12k semantic splits across TXT, MD, PDF, and EPUB.
+     - Implemented `book.get_literary_chapters()` (reunites split chunks back into unified parent chapters sorted by source number) and `book.get_production_chunks()` (returns execution units for batch processing).
+     - Tracked in `ExtractionQualityReport`: `detected_literary_chapters`, `production_chunks`, `used_fallback_chunking`, and logged warnings on fallback chunking.
+- **Rationale:** Permanently eliminates multi-column layout corruption, guarantees byte-accurate traceability back to original document pages and lines, protects against LLM hallucinations and conversational leakage, cleanly separates authorial book structure from pipeline batch limits, and completes the production hardening of Pillar 1.

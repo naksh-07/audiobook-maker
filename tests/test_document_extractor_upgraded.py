@@ -225,10 +225,28 @@ A woman in a hooded cloak watched the witcher from across the fountain.
 
             # 14,000 words auto-split into 2 parts
             self.assertEqual(meta["total_chapters"], 2)
+            self.assertEqual(meta["detected_literary_chapters"], 1)
+            self.assertEqual(meta["production_chunks"], 2)
+            self.assertFalse(meta["used_fallback_chunking"])
             self.assertEqual(meta["chapters"][0]["title"], "Chapter 1: The March (Part 1)")
             self.assertEqual(meta["chapters"][1]["title"], "Chapter 1: The March (Part 2)")
+            self.assertEqual(meta["chapters"][0]["unit_type"], "production_chunk")
+            self.assertFalse(meta["chapters"][0]["is_literary_chapter"])
+            self.assertTrue(meta["chapters"][0]["is_production_chunk"])
+            self.assertEqual(meta["chapters"][0]["parent_chapter_title"], "Chapter 1: The March")
+            self.assertEqual(meta["chapters"][0]["literary_chapter_number"], 1)
             self.assertLessEqual(meta["chapters"][0]["words"], 12000)
             self.assertLessEqual(meta["chapters"][1]["words"], 12000)
+
+            # Verify CanonicalBook reconstructs the 1 true literary chapter while tracking 2 production chunks
+            book_dir = projects_dir / meta["book_id"]
+            book = CanonicalBook.model_validate_json((book_dir / "canonical" / "book.json").read_text(encoding="utf-8"))
+            lit_chaps = book.get_literary_chapters()
+            prod_chunks = book.get_production_chunks()
+            self.assertEqual(len(lit_chaps), 1)
+            self.assertEqual(lit_chaps[0].title, "Chapter 1: The March")
+            self.assertTrue(lit_chaps[0].is_literary_chapter)
+            self.assertEqual(len(prod_chunks), 2)
 
     def test_05_source_manifest_and_orchestrator_force_gate(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -254,6 +272,46 @@ A woman in a hooded cloak watched the witcher from across the fountain.
             self.assertIn("force_gate", sig.parameters)
             self.assertEqual(sig.parameters["force_gate"].default, False)
 
+    def test_06_unchaptered_fallback_chunks_and_raw_text_preservation(self):
+        """
+        Verifies:
+        - Unchaptered documents produce explicit 'production_chunk' units (not fake literary chapters).
+        - Sacred raw_text on CanonicalBlock is preserved unmutated while normalized_text is cleaned.
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            unchaptered_txt = tmp_path / "raw_manuscript.txt"
+            raw_paragraph = "“Evil is evil[1],” Geralt said—looking into the dark woods…"
+            unchaptered_txt.write_text(
+                (raw_paragraph + "\n\n") * 8,
+                encoding="utf-8",
+            )
+            projects_dir = tmp_path / "projects"
+
+            meta = process_book_file(unchaptered_txt, projects_dir)
+            self.assertEqual(meta["detected_literary_chapters"], 0)
+            self.assertEqual(meta["production_chunks"], 1)
+            self.assertTrue(meta["used_fallback_chunking"])
+            self.assertEqual(meta["chapters"][0]["title"], "Production Chunk 1")
+            self.assertEqual(meta["chapters"][0]["unit_type"], "production_chunk")
+            self.assertFalse(meta["chapters"][0]["is_literary_chapter"])
+            self.assertTrue(meta["chapters"][0]["is_production_chunk"])
+
+            book_dir = projects_dir / meta["book_id"]
+            book = CanonicalBook.model_validate_json((book_dir / "canonical" / "book.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(book.get_literary_chapters()), 0)
+            self.assertEqual(len(book.get_production_chunks()), 1)
+
+            # Verify sacred raw_text is unmutated while normalized_text has normalized quotes/footnotes
+            first_block = book.chapters[0].blocks[0]
+            self.assertEqual(first_block.raw_text, raw_paragraph)
+            self.assertIn("[1]", first_block.raw_text)
+            self.assertIn("“", first_block.raw_text)
+            self.assertNotIn("[1]", first_block.normalized_text)
+            self.assertIn('"Evil is evil,"', first_block.normalized_text)
+            self.assertEqual(first_block.provenance.line_start, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
+

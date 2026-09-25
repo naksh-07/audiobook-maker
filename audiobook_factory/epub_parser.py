@@ -381,17 +381,35 @@ class ForensicEPUBParser:
                             source_location=spine_file,
                             confidence="HIGH",
                             words=word_count,
+                            unit_type="literary_chapter",
+                            is_literary_chapter=True,
+                            is_production_chunk=False,
+                            boundary_origin="toc_navigation",
+                            literary_chapter_number=chap_num,
+                            parent_chapter_title=title,
+                            chunk_index=1,
+                            total_chunks_in_chapter=1,
                         )
                         chapters.append(canonical_chap)
                         legacy_items.append({
                             "title": title,
                             "content": clean_text,
                             "words": word_count,
+                            "unit_type": "literary_chapter",
+                            "is_literary_chapter": True,
+                            "is_production_chunk": False,
+                            "boundary_origin": "toc_navigation",
+                            "literary_chapter_number": chap_num,
+                            "parent_chapter_title": title,
+                            "chunk_index": 1,
+                            "total_chunks": 1,
+                            "source_location": spine_file,
                         })
 
             # Fallback to sequential spine document traversal
             if not chapters:
                 global_order = 0
+                lit_counter = 0
                 for item_path in spine_items:
                     try:
                         content = zf.read(item_path).decode("utf-8", errors="ignore")
@@ -411,40 +429,51 @@ class ForensicEPUBParser:
                     word_count = len(clean_text.split())
                     if word_count >= 30:
                         chap_num = len(chapters) + 1
-                        title = f"Chapter {chap_num}"
-                        # Check if first block is a heading
-                        if blocks and blocks[0].type == "heading":
+                        has_heading = bool(blocks and blocks[0].type == "heading")
+                        if has_heading:
+                            lit_counter += 1
                             title = blocks[0].normalized_text.strip()
+                            unit_type = "literary_chapter"
+                            is_lit = True
+                            is_prod = False
+                            origin = "detected_heading"
+                            lit_num: Optional[int] = lit_counter
+                            parent_title: Optional[str] = title
+                        else:
+                            title = f"Production Chunk {chap_num}"
+                            unit_type = "production_chunk"
+                            is_lit = False
+                            is_prod = True
+                            origin = "spine_fallback"
+                            lit_num = None
+                            parent_title = None
+
                         canonical_chap = CanonicalChapter(
                             id=f"ch-{chap_num:03d}",
                             number=chap_num,
                             title=title,
                             blocks=blocks,
                             source_location=item_path,
-                            confidence="MEDIUM",
+                            confidence="HIGH" if is_lit else "MEDIUM",
                             words=word_count,
+                            unit_type=unit_type,
+                            is_literary_chapter=is_lit,
+                            is_production_chunk=is_prod,
+                            boundary_origin=origin,
+                            literary_chapter_number=lit_num,
+                            parent_chapter_title=parent_title,
+                            chunk_index=1 if is_lit else chap_num,
+                            total_chunks_in_chapter=1,
                         )
                         chapters.append(canonical_chap)
-                        legacy_items.append({
-                            "title": title,
-                            "content": clean_text,
-                            "words": word_count,
-                        })
+
+        # Meso-Tier 12k-word Semantic Split for oversized EPUB chapters
+        chapters, legacy_items = self._split_oversized_epub_chapters(chapters, max_words=12000)
 
         # Build Quality Report
         total_words = sum(c.words for c in chapters)
         total_blocks = sum(len(c.blocks) for c in chapters)
-        report = ExtractionQualityReport(
-            overall_confidence="HIGH" if len(chapters) > 0 and total_words > 100 else "LOW",
-            gate_status="PASS" if len(chapters) > 0 and total_words > 100 else "REVIEW",
-            source_type="epub",
-            source_path=str(self.file_path),
-            extraction_engine="epub_dom_structural",
-            total_pages_or_docs=len(spine_items),
-            total_words=total_words,
-            total_chapters=len(chapters),
-            total_blocks=total_blocks,
-        )
+        used_fallback = any(c.boundary_origin in ("fallback_production_chunk", "spine_fallback") for c in chapters)
 
         book_slug = re.sub(r"[^\w\-]", "_", self.file_path.stem.lower()).strip("_")
         canonical_book = CanonicalBook(
@@ -454,12 +483,170 @@ class ForensicEPUBParser:
             source_type="epub",
             source_path=str(self.file_path),
             extraction_engine="epub_dom_structural",
-            quality_report=report,
             chapters=chapters,
             raw_metadata=metadata,
         )
+        detected_lit = len(canonical_book.get_literary_chapters())
+        prod_chunks = len(canonical_book.get_production_chunks())
+
+        report = ExtractionQualityReport(
+            overall_confidence="HIGH" if len(chapters) > 0 and total_words > 100 and not used_fallback else ("MEDIUM" if used_fallback else "LOW"),
+            gate_status="PASS" if len(chapters) > 0 and total_words > 100 else "REVIEW",
+            source_type="epub",
+            source_path=str(self.file_path),
+            extraction_engine="epub_dom_structural",
+            total_pages_or_docs=len(spine_items),
+            total_words=total_words,
+            total_chapters=len(chapters),
+            detected_literary_chapters=detected_lit,
+            production_chunks=prod_chunks,
+            used_fallback_chunking=used_fallback,
+            total_blocks=total_blocks,
+        )
+        canonical_book.quality_report = report
 
         return canonical_book, legacy_items
+
+    @staticmethod
+    def _split_oversized_epub_chapters(
+        chapters: List[CanonicalChapter], max_words: int = 12000
+    ) -> Tuple[List[CanonicalChapter], List[Dict[str, Any]]]:
+        """
+        Applies the 12,000-word Meso-Tier semantic split to any oversized EPUB CanonicalChapter
+        while preserving block-level SourceProvenance and parent literary chapter links.
+        """
+        from audiobook_factory.chapter_segmenter import split_large_chapter_on_semantic_boundary
+        from audiobook_factory.normalizer import normalize_block_text
+
+        def _expand_oversized_blocks(blocks: List[CanonicalBlock]) -> List[CanonicalBlock]:
+            expanded: List[CanonicalBlock] = []
+            for blk in blocks:
+                blk_words = len(blk.normalized_text.split())
+                if blk_words <= max_words:
+                    expanded.append(blk)
+                    continue
+                sub_parts = split_large_chapter_on_semantic_boundary(
+                    "Block", blk.raw_text, max_words=max_words, base_char_start=blk.provenance.char_offset or 0
+                )
+                for sp_idx, sp in enumerate(sub_parts, 1):
+                    norm_txt, warns = normalize_block_text(sp["content"])
+                    prov_copy = blk.provenance.model_copy(
+                        update={"char_offset": sp.get("char_start", blk.provenance.char_offset)}
+                    )
+                    expanded.append(
+                        CanonicalBlock(
+                            id=f"{blk.id}-p{sp_idx}",
+                            type=blk.type,
+                            raw_text=sp["content"],
+                            normalized_text=norm_txt,
+                            provenance=prov_copy,
+                            warnings=warns,
+                        )
+                    )
+            return expanded
+
+        def _partition_blocks(blocks: List[CanonicalBlock]) -> List[List[CanonicalBlock]]:
+            total_w = sum(len(b.normalized_text.split()) for b in blocks)
+            if total_w <= max_words or len(blocks) <= 1:
+                return [blocks]
+            target_w = total_w / 2.0
+            cum_w = 0
+            best_idx = 1
+            best_score = float("inf")
+            for idx in range(1, len(blocks)):
+                cum_w += len(blocks[idx - 1].normalized_text.split())
+                if cum_w == 0 or cum_w >= total_w:
+                    continue
+                dist = abs(cum_w - target_w)
+                # Prefer splitting right after a scene_break or right before a heading in central 20%-80%
+                if 0.20 * total_w <= cum_w <= 0.80 * total_w:
+                    if blocks[idx - 1].type == "scene_break":
+                        dist *= 0.25
+                    elif blocks[idx].type == "heading":
+                        dist *= 0.35
+                if dist < best_score:
+                    best_score = dist
+                    best_idx = idx
+            left = _partition_blocks(blocks[:best_idx])
+            right = _partition_blocks(blocks[best_idx:])
+            return left + right
+
+        final_chapters: List[CanonicalChapter] = []
+        legacy_items: List[Dict[str, Any]] = []
+        seq_num = 0
+
+        for ch in chapters:
+            if ch.words <= max_words:
+                seq_num += 1
+                updated_ch = ch.model_copy(update={"id": f"ch-{seq_num:03d}", "number": seq_num})
+                final_chapters.append(updated_ch)
+                clean_text = "\n\n".join(b.normalized_text for b in updated_ch.blocks if b.normalized_text.strip())
+                legacy_items.append({
+                    "title": updated_ch.title,
+                    "content": clean_text,
+                    "words": updated_ch.words,
+                    "unit_type": updated_ch.unit_type,
+                    "is_literary_chapter": updated_ch.is_literary_chapter,
+                    "is_production_chunk": updated_ch.is_production_chunk,
+                    "boundary_origin": updated_ch.boundary_origin,
+                    "literary_chapter_number": updated_ch.literary_chapter_number,
+                    "parent_chapter_title": updated_ch.parent_chapter_title,
+                    "chunk_index": updated_ch.chunk_index,
+                    "total_chunks": updated_ch.total_chunks_in_chapter,
+                    "source_location": updated_ch.source_location,
+                })
+                continue
+
+            expanded_blocks = _expand_oversized_blocks(ch.blocks)
+            groups = _partition_blocks(expanded_blocks)
+            total_parts = len(groups)
+            parent_id = ch.parent_chapter_id or (
+                f"lit-ch-{ch.literary_chapter_number:03d}" if ch.literary_chapter_number else ch.id
+            )
+            parent_title = ch.title if ch.is_literary_chapter else ch.parent_chapter_title
+            split_origin = "semantic_split_chunk" if ch.is_literary_chapter else ch.boundary_origin
+
+            for part_idx, grp in enumerate(groups, 1):
+                seq_num += 1
+                part_title = f"{ch.title} (Part {part_idx})" if total_parts > 1 else ch.title
+                clean_text = "\n\n".join(b.normalized_text for b in grp if b.normalized_text.strip())
+                part_words = len(clean_text.split())
+                chunk_chap = CanonicalChapter(
+                    id=f"ch-{seq_num:03d}",
+                    number=seq_num,
+                    title=part_title,
+                    blocks=grp,
+                    source_location=ch.source_location,
+                    confidence=ch.confidence,
+                    words=part_words,
+                    unit_type="production_chunk",
+                    is_literary_chapter=False,
+                    is_production_chunk=True,
+                    boundary_origin=split_origin,
+                    parent_chapter_id=parent_id,
+                    parent_chapter_title=parent_title,
+                    literary_chapter_number=ch.literary_chapter_number,
+                    chunk_index=part_idx,
+                    total_chunks_in_chapter=total_parts,
+                )
+                final_chapters.append(chunk_chap)
+                legacy_items.append({
+                    "title": part_title,
+                    "content": clean_text,
+                    "words": part_words,
+                    "unit_type": "production_chunk",
+                    "is_literary_chapter": False,
+                    "is_production_chunk": True,
+                    "boundary_origin": split_origin,
+                    "parent_chapter_id": parent_id,
+                    "parent_chapter_title": parent_title,
+                    "literary_chapter_number": ch.literary_chapter_number,
+                    "chunk_index": part_idx,
+                    "total_chunks": total_parts,
+                    "source_location": ch.source_location,
+                })
+
+        return final_chapters, legacy_items
 
 
 def extract_epub(file_path: Path) -> Tuple[Dict[str, Any], List[Any]]:
