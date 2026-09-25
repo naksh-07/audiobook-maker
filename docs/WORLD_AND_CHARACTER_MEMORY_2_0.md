@@ -4,7 +4,7 @@
 
 [![Package](https://img.shields.io/badge/Package-audiobook__factory.translation.memory-blue.svg)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/memory/)
 [![Architecture](https://img.shields.io/badge/Architecture-Event--Driven%20State%20Deltas-purple.svg)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)
-[![Verification](https://img.shields.io/badge/Tests-340%20Passed%20(17%20Subtests)-brightgreen.svg)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/translation/memory/)
+[![Verification](https://img.shields.io/badge/Tests-368%20Passed%20(17%20Subtests)-brightgreen.svg)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/translation/memory/)
 [![Token Budget](https://img.shields.io/badge/Token%20Budget-%E2%89%A4%20800%20tokens-orange.svg)](#7-token-budget-enforcement--tiered-memory-retrieval)
 
 ---
@@ -12,7 +12,7 @@
 ## 📑 Table of Contents
 
 1. [Executive Overview & Core Invariants](#1-executive-overview--core-invariants)
-2. [The 4 Architectural Refinements](#2-the-4-architectural-refinements)
+2. [The 4 Architectural Refinements & Production Hardening](#2-the-4-architectural-refinements--production-hardening)
 3. [The 6-Stage Scene Memory Lifecycle](#3-the-6-stage-scene-memory-lifecycle)
 4. [Module-by-Module Technical Reference](#4-module-by-module-technical-reference)
    - [4.1 `state.py`: Pure Deterministic State Transition Engine](#41-statepy-pure-deterministic-state-transition-engine)
@@ -48,9 +48,13 @@ Generating a multi-hour audio drama from a 100+ chapter novel requires an unbrea
 ### The Invariants of Memory 2.0
 1. **Deterministic State Invariant**: State transitions are 100% deterministic functions of validated `StateDelta` objects applied to current state. The LLM only *proposes* candidate events; pure Python code calculates deltas and validates invariants.
 2. **Zero Ghost Event Pollution Invariant**: Rejected contradictory events are permanently quarantined in `store.rejected_events` and recorded in `MemoryValidationReport.flagged_conflicts`. They never pollute active event ledgers (`store.events`), timeline points (`world_state.timeline`), character recent event logs, or high-salience dramatic memory queries.
-3. **Hard Canon Immutability Invariant**: No dynamic event or delta can mutate locked BookBible attributes (`canonical_name`, `gender`, `canonical_role`, `voice_id`, `locked_pronoun`, `locked_register`) without raising a `canon_contradiction` conflict.
-4. **Epistemic Isolation Invariant**: What the listener/reader knows is strictly partitioned from what individual characters know. A character cannot act upon or reference unlearned secrets without triggering a `knowledge_violation`.
+3. **Hard Canon Immutability Invariant**: No dynamic event or delta can mutate locked BookBible attributes (`canonical_name`, `gender`, `canonical_role`, `voice_id`, `locked_pronoun`, `locked_register`) without raising a `canon_contradiction` conflict. Dynamic relationship progressions (active pronouns, trust, tension) live exclusively in `MemoryStore` with zero writeback to `BookBible`.
+4. **Epistemic Isolation Invariant**: What the listener/reader knows is strictly partitioned from what individual characters know. A character cannot act upon or transmit unlearned secrets without triggering a `knowledge_violation`. Valid revelation events allow recipient characters to transition `UNKNOWN` $\to$ `KNOWN`.
 5. **Acoustic Performance Respect Invariant**: Performance guidance injected by Memory 2.0 conservatively supplies physical context (`memory_vocal_constraint`, `recommended_pronoun`, `recommended_register`) but **never blindly overrides explicit screenplay acting directives** (`acting.delivery_style` or bracketed tags).
+6. **Fail-Closed Persistence Invariant**: Silent state wipes on corrupted or unreadable memory JSON are strictly prohibited. The engine creates verified `.bak` backups before every atomic write, validates backup integrity (schema version `2.0`, required containers, commit version match), and raises fail-closed `MemoryPersistenceError` if unrecoverable.
+7. **Transactional Deep Snapshot Invariant**: Scene commits are fully atomic transactions. `_create_snapshot()` takes deep copies of all mutable state collections (`model_copy(deep=True)`). If any stage of validation or application fails, `_restore_snapshot()` restores pre-commit state with zero ghost or partial mutations.
+8. **Strict Event Atomicity Invariant**: A story event is an indivisible narrative occurrence. If any delta of an event is rejected due to a conflict, all companion deltas for that event are purged and the event is marked rejected.
+9. **Multi-Script Director Supremacy Invariant**: Screenplay directives in any script (including Devanagari parentheticals like `(धीमी आवाज़ में)`, Latin brackets `[...]`, and nested `acting.delivery_style`) represent inviolate creative authority and can never be overwritten by long-term memory fallbacks.
 
 ---
 
@@ -491,22 +495,33 @@ flowchart LR
 
 ## 6. Verification, Audit Remediation & Stress Testing Suite
 
-The Memory 2.0 system is verified by 7 dedicated test suites in [`tests/translation/memory/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/translation/memory/) contributing to the project's **340 passed unit tests (17 subtests passed)**:
+The Memory 2.0 system is verified by 8 dedicated test suites in [`tests/translation/memory/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/translation/memory/) contributing to the project's **368 passed unit and regression tests (17 subtests passed)**:
 
 ```text
 tests/translation/memory/
-├── test_audit_remediation.py           # 5 independent audit probes + Pass 2 polish items
-├── test_character_and_knowledge.py     # Epistemic boundaries, MUST_NOT_KNOW, arc tracking
+├── test_adversarial_expert_audit.py     # 7 adversarial chaos, script contract & fail-closed probes
+├── test_audit_remediation.py           # 7 independent audit probes + strict director supremacy
+├── test_character_and_knowledge.py     # Epistemic boundaries, transmitting vs receiving, arc tracking
 ├── test_events_and_deltas.py           # StoryEvent hashing, delta projection, location conditions
 ├── test_golden_novel_continuity.py     # 10-chapter Golden Novel end-to-end continuity test
 ├── test_relationships_and_register.py  # 7D relationship mutations, pronoun resolution
-├── test_retriever_and_store.py         # 7-tier retrieval, atomic persistence, version hashing
+├── test_retriever_and_store.py         # 7-tier retrieval, atomic persistence, backup recovery & rollback
 └── test_world_and_validator.py         # WorldState, timeline, 7 contradiction classes
 ```
 
 ### Key Verification Highlights
 
-#### 1. The 100-Chapter Stress & Token Budget Test (`test_audit_remediation.py`)
+#### 1. The Adversarial Audit & Hardening Probe Suite (`test_adversarial_expert_audit.py`)
+Executes 7 hostile penetration tests against core memory invariants:
+- **Devanagari Director Supremacy**: Verified that Hindi stage directions `(धीमी आवाज़ में)` are shielded from memory emotion stomping via Unicode regex `r"\([^)]*[^\s)]+[^)]*\)"`.
+- **Strict Event Atomicity**: Verifies that when a secret transmission delta is rejected, all companion narrative deltas are purged, preventing ghost threads.
+- **Epistemic Revealer Expansion**: Verifies that revealer validation catches unpossessed secrets across `knower`, `revealer`, `revealed_by`, `speaker`, and `participants[0]`.
+- **Case-Insensitive Normalization**: Verifies `KnowledgeFact.get_status_for_character()` correctly resolves lowercase and titlecase queries without false `UNKNOWN` designations.
+- **Transactional Rollback Deep Snapshot Isolation**: Verifies that `_restore_snapshot()` achieves 100% deep isolation without lingering object references or zombie mutations.
+- **Corrupted Backup Fail-Closed**: Verifies that an invalid/legacy backup schema version (`"1.0"`) strictly raises `MemoryPersistenceError` rather than silently loading bad state.
+- **1,000-Event Long-Novel Stress**: Verifies that 1,000 events, 50 characters, and 100 relationships across 100 chapters strictly stay bounded within the $\le 800$ tokens budget.
+
+#### 2. The 100-Chapter Stress & Token Budget Test (`test_audit_remediation.py`)
 Simulates an epic 100-chapter novel containing:
 - **600 StoryEvents**
 - **55 Characters**
@@ -514,25 +529,28 @@ Simulates an epic 100-chapter novel containing:
 - **105 Objects**
 - **Results**: Verified that even after 100 chapters and 600 events, `MemoryRetriever.retrieve_for_scene()` strictly enforces the **$\le 800$ token budget limit**, while successfully retrieving a high-salience betrayal from Chapter 5.
 
-#### 2. The 10-Chapter Golden Novel Continuity Test (`test_golden_novel_continuity.py`)
+#### 3. The 10-Chapter Golden Novel Continuity Test (`test_golden_novel_continuity.py`)
 Executes a multi-character dark-fantasy novel across 10 contiguous chapters:
-- Chapter 1: Introduction of protagonist and mentor.
+- Chapter 1: Introduction of protagonist and mentor; false belief assigned.
 - Chapter 3: Severe injury sustained in battle; vocal constraints verified.
-- Chapter 5: Secret oath and discovery of a hidden artifact.
-- Chapter 7: Death of mentor; verifies dead-character action prohibition in present time.
+- Chapter 5: Sacrifice of mentor; verifies dead-character action prohibition in present time.
+- Chapter 6: Secret revealed; verifies disproven false belief exemption and object transfer.
 - Chapter 8: Flashback to mentor's youth; verifies deceased mentor *can* speak in `FLASHBACK` mode without raising contradictions.
-- Chapter 10: Final confrontation; verifies dramatic memory retrieval of Chapter 5 oath.
+- Chapter 10: Final confrontation; verifies dramatic memory retrieval of high-salience oaths.
 
-#### 3. Execution Commands
+#### 4. Execution Commands
 ```powershell
-# Run the entire Memory 2.0 test suite
-python -m unittest discover tests/translation/memory -p "test_*.py"
+# Run the entire Memory 2.0 test suite (34 tests)
+uv run pytest tests/translation/memory/ -v
 
-# Run the 5 Forensic Audit Remediation probes
-python -m unittest tests/translation/memory/test_audit_remediation.py
+# Run the 7 Adversarial Expert Audit probes
+uv run pytest tests/translation/memory/test_adversarial_expert_audit.py -v
 
-# Run the full project regression test suite (340 tests)
-python -m unittest discover tests -p "test_*.py"
+# Run the multi-script zero-hardcoding contract tests (4 tests)
+uv run pytest tests/test_zero_hardcoding_contracts.py -v
+
+# Run the full project regression test suite (368 tests, 17 subtests)
+uv run pytest -q
 ```
 
 ---

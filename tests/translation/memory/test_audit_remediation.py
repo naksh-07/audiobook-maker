@@ -495,6 +495,90 @@ class TestAuditRemediationProbes(unittest.TestCase):
             self.assertEqual(len(store_after.commit_history), 1)
             self.assertEqual(store_after.character_states["Vikram"].physical_condition, "injured")
 
+    def test_07_strict_director_supremacy_preserves_screenplay_intent(self):
+        """
+        Issue 5 & Confirmed Alignment: Strict Director Supremacy in MemoryContext.
+        Screenplay cues (nested acting.emotion, bracketed [...], parenthetical (...),
+        custom vocal_tags, director_notes) are NEVER overridden by fallback memory guidance.
+        Memory guidance ONLY applies to completely neutral/unspecified segments.
+        """
+        from audiobook_factory.translation.memory import MemoryContext, CharacterState, LocationState
+
+        ctx = MemoryContext(
+            chapter=3,
+            scene_id="scene_02",
+            location_state=LocationState(location_name="Cavern", acoustic_env="deep_cavern_echo"),
+            active_character_states={
+                "Vikram": CharacterState(
+                    character_name="Vikram",
+                    physical_condition="injured",
+                    active_injuries=["arrow wound"],
+                    energy=0.2,
+                    current_emotion="furious",
+                    emotion_intensity=0.9,
+                )
+            },
+        )
+
+        # Case 1: Parenthetical cue "(whispering)" -> Directorial Intent preserved
+        seg_paren = {
+            "speaker": "Vikram",
+            "type": "dialogue",
+            "text": "(whispering) Chup raho, koi sun lega.",
+            "emotion": "neutral",
+        }
+        res_paren = ctx.apply_performance_guidance_to_segment(seg_paren)
+        self.assertEqual(res_paren["emotion"], "neutral")
+        self.assertNotIn("memory_vocal_constraint", res_paren)
+        self.assertEqual(res_paren["acoustic_env"], "deep_cavern_echo")
+
+        # Case 2: Bracketed cue "[screaming]" -> Directorial Intent preserved
+        seg_bracket = {
+            "speaker": "Vikram",
+            "type": "dialogue",
+            "text": "[screaming] Bhag yahan se!",
+            "emotion": "neutral",
+        }
+        res_bracket = ctx.apply_performance_guidance_to_segment(seg_bracket)
+        self.assertEqual(res_bracket["emotion"], "neutral")
+        self.assertNotIn("memory_vocal_constraint", res_bracket)
+
+        # Case 3: Nested acting object with explicit emotion -> Directorial Intent preserved
+        seg_nested = {
+            "speaker": "Vikram",
+            "type": "dialogue",
+            "text": "Main haar nahi manunga.",
+            "emotion": "neutral",
+            "acting": {"emotion": "defiant", "delivery_style": "steely_grit"},
+        }
+        res_nested = ctx.apply_performance_guidance_to_segment(seg_nested)
+        self.assertEqual(res_nested["emotion"], "neutral")
+        self.assertNotIn("memory_vocal_constraint", res_nested)
+
+        # Case 4: Explicit vocal_tags or director_notes -> Directorial Intent preserved
+        seg_vocal = {
+            "speaker": "Vikram",
+            "type": "dialogue",
+            "text": "Kalam pakdo.",
+            "emotion": "neutral",
+            "vocal_tags": ["hoarse_raspy"],
+        }
+        res_vocal = ctx.apply_performance_guidance_to_segment(seg_vocal)
+        self.assertEqual(res_vocal["emotion"], "neutral")
+        self.assertNotIn("memory_vocal_constraint", res_vocal)
+
+        # Case 5: Completely neutral segment without explicit tags or notes -> Receives memory context
+        seg_clean_neutral = {
+            "speaker": "Vikram",
+            "type": "dialogue",
+            "text": "Rasta kahan hai?",
+            "emotion": "neutral",
+        }
+        res_neutral = ctx.apply_performance_guidance_to_segment(seg_clean_neutral)
+        self.assertEqual(res_neutral["emotion"], "strained")
+        self.assertEqual(res_neutral["memory_vocal_constraint"], "strained_breath")
+        self.assertEqual(res_neutral["acoustic_env"], "deep_cavern_echo")
+
 
 if __name__ == "__main__":
     unittest.main()

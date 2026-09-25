@@ -17,9 +17,12 @@
   - Fix 5: Multi-tier `TieredRepairEngine` orchestration (Level 1 deterministic -> Level 2 paragraph LLM [max 2] -> Level 3 scene [max 1]).
   - Fix 6: Sanitizer separation: `sanitizer.py` non-destructive by default; calque fixing moved to repair engine.
   - Fix 7: 11-field `TranslationProvenanceTracker` sealing + `translate_book_project` defaulted to `IntelligentTranslationPipeline`.
-- **World + Character Memory 2.0 (`audiobook_factory/translation/memory/`)**:
-  - Event-driven state deltas (`StoryEvent`, `TemporalMode`, `SceneChangeDetector`, `StateDeltaEngine`), epistemic isolation (`CharacterKnowledgeEngine`), 7 contradiction guardrails (`MemoryValidator`), and narrative-salience retrieval (<= 800 tokens).
+- **World + Character Memory 2.0 Hardening & Dual Expert Audit (COMPLETE & VERIFIED)**:
+  - Hard Canon separation (zero BookBible writebacks, evolving dynamic state strictly in MemoryStore).
+  - Persistence safety (fail-closed MemoryPersistenceError, atomic write/rename, schema & integrity verified .bak recovery).
+  - Deep snapshot rollback (`_create_snapshot` / `_restore_snapshot`) on scene commit failure.
+  - Epistemic isolation & Strict Event Atomicity (conflicting event companion deltas purged, disproven beliefs exempted).
+  - Multi-script Director Supremacy (Devanagari/Latin parentheticals, nested acting & vocal tags inviolate).
 - **Repo Hygiene & Verification**:
-  - Multi-script Devanagari/Latin zero-hardcoding contract (`tests/test_zero_hardcoding_contracts.py`); **355/355 tests passing**.
-  - Chapter 9 Hardened Benchmark: 100% action extraction (191/191 Scene 1, 48/48 Scene 2) & calibrated Gate T8 intensity.
+  - Multi-script Devanagari/Latin contracts; **368/368 tests passing** (17 subtests passing).
 - **Quality Standards**: EBU R128 (-19 LUFS), zero hardcoding, fail-closed gates with provenance ledgering.

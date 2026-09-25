@@ -8,6 +8,8 @@ WorldState, StoryEvent ledger, and deterministic MemoryCommitRecord history.
 from __future__ import annotations
 import hashlib
 import json
+import logging
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -27,6 +29,13 @@ from .state import (
     apply_world_or_narrative_delta,
     record_events_on_timeline,
 )
+
+logger = logging.getLogger(__name__)
+
+
+class MemoryPersistenceError(RuntimeError):
+    """Raised when MemoryStore persistence fails, is corrupted, or cannot safely recover state."""
+    pass
 
 
 class MemoryCommitRecord(BaseModel):
@@ -69,6 +78,46 @@ class MemoryStore(BaseModel):
     def default_store_path(project_dir: Path) -> Path:
         """Returns canonical disk path for MemoryStore JSON inside a project directory."""
         return Path(project_dir) / "memory" / "memory_store.json"
+
+    def _create_snapshot(self) -> Dict[str, Any]:
+        """Creates a deep, isolated snapshot of all mutable state in MemoryStore."""
+        return {
+            "schema_version": self.schema_version,
+            "memory_version": self.memory_version,
+            "version_hash": self.version_hash,
+            "book_bible_hash": self.book_bible_hash,
+            "character_states": {
+                k: v.model_copy(deep=True) for k, v in self.character_states.items()
+            },
+            "relationships": {
+                k: v.model_copy(deep=True) for k, v in self.relationships.items()
+            },
+            "facts_registry": {
+                k: v.model_copy(deep=True) for k, v in self.facts_registry.items()
+            },
+            "world_state": self.world_state.model_copy(deep=True),
+            "events": {k: v.model_copy(deep=True) for k, v in self.events.items()},
+            "rejected_events": {
+                k: v.model_copy(deep=True) for k, v in self.rejected_events.items()
+            },
+            "commit_history": [c.model_copy(deep=True) for c in self.commit_history],
+            "flagged_conflicts": [f.model_copy(deep=True) for f in self.flagged_conflicts],
+        }
+
+    def _restore_snapshot(self, snapshot: Dict[str, Any]) -> None:
+        """Restores MemoryStore state from a snapshot exactly, leaving zero partial mutation."""
+        self.schema_version = snapshot["schema_version"]
+        self.memory_version = snapshot["memory_version"]
+        self.version_hash = snapshot["version_hash"]
+        self.book_bible_hash = snapshot["book_bible_hash"]
+        self.character_states = snapshot["character_states"]
+        self.relationships = snapshot["relationships"]
+        self.facts_registry = snapshot["facts_registry"]
+        self.world_state = snapshot["world_state"]
+        self.events = snapshot["events"]
+        self.rejected_events = snapshot["rejected_events"]
+        self.commit_history = snapshot["commit_history"]
+        self.flagged_conflicts = snapshot["flagged_conflicts"]
 
     def resolve_canonical_character_name(
         self,
@@ -175,137 +224,127 @@ class MemoryStore(BaseModel):
     ) -> MemoryValidationReport:
         """
         Executes the EXTRACT -> CALCULATE DELTAS -> VALIDATE -> COMMIT lifecycle for a scene.
-        Only validated deltas are applied; rejected deltas are recorded in FlaggedConflicts.
+        Guarantees transactional atomicity: if an exception occurs during execution, the
+        complete pre-commit state is restored exactly.
+        BookBible remains strictly immutable Hard Canon (no dynamic writes back to BookBible).
         """
-        if book_bible is not None:
-            self.seed_from_book_bible(book_bible)
+        snapshot = self._create_snapshot()
+        try:
+            if book_bible is not None:
+                self.seed_from_book_bible(book_bible)
 
-        # Canonicalize participant names in events if BookBible is available
-        if book_bible is not None:
-            for ev in events:
-                ev.participants = [
-                    self.resolve_canonical_character_name(p, book_bible)
-                    for p in ev.participants
-                ]
-                if ev.location and ev.location != "Unspecified":
-                    p_name = book_bible.find_place(ev.location)
-                    if p_name is not None:
-                        ev.location = p_name
+            # Canonicalize participant names in events if BookBible is available
+            if book_bible is not None:
+                for ev in events:
+                    ev.participants = [
+                        self.resolve_canonical_character_name(p, book_bible)
+                        for p in ev.participants
+                    ]
+                    if ev.location and ev.location != "Unspecified":
+                        p_name = book_bible.find_place(ev.location)
+                        if p_name is not None:
+                            ev.location = p_name
 
-        if deltas is None:
-            candidate_deltas = StateDeltaEngine.compute_deltas_for_events(
-                events=events,
+            if deltas is None:
+                candidate_deltas = StateDeltaEngine.compute_deltas_for_events(
+                    events=events,
+                    character_states=self.character_states,
+                    relationships=self.relationships,
+                    facts_registry=self.facts_registry,
+                    world_state=self.world_state,
+                )
+            else:
+                candidate_deltas = list(deltas)
+
+            events_by_id = {e.event_id: e for e in events}
+            events_by_id.update(self.events)
+
+            validation_report = MemoryValidator.validate_deltas(
+                deltas=candidate_deltas,
+                book_bible=book_bible,
                 character_states=self.character_states,
                 relationships=self.relationships,
                 facts_registry=self.facts_registry,
                 world_state=self.world_state,
+                events_by_id=events_by_id,
             )
-        else:
-            candidate_deltas = list(deltas)
 
-        events_by_id = {e.event_id: e for e in events}
-        events_by_id.update(self.events)
+            rejected_set = set(validation_report.rejected_event_ids)
+            accepted_events: List[StoryEvent] = []
+            for ev in events:
+                if ev.event_id in rejected_set:
+                    self.rejected_events[ev.event_id] = ev
+                else:
+                    self.events[ev.event_id] = ev
+                    accepted_events.append(ev)
 
-        validation_report = MemoryValidator.validate_deltas(
-            deltas=candidate_deltas,
-            book_bible=book_bible,
-            character_states=self.character_states,
-            relationships=self.relationships,
-            facts_registry=self.facts_registry,
-            world_state=self.world_state,
-            events_by_id=events_by_id,
-        )
+            # Apply accepted deltas deterministically
+            for delta in validation_report.accepted_deltas:
+                if delta.domain == DeltaDomain.CHARACTER:
+                    apply_character_delta(self.character_states, self.world_state, delta)
+                elif delta.domain == DeltaDomain.RELATIONSHIP:
+                    apply_relationship_delta(self.relationships, delta)
+                elif delta.domain == DeltaDomain.KNOWLEDGE:
+                    apply_knowledge_delta(self.facts_registry, self.character_states, delta)
+                elif delta.domain in (DeltaDomain.WORLD, DeltaDomain.NARRATIVE):
+                    apply_world_or_narrative_delta(self.world_state, self.character_states, delta)
 
-        rejected_set = set(validation_report.rejected_event_ids)
-        accepted_events: List[StoryEvent] = []
-        for ev in events:
-            if ev.event_id in rejected_set:
-                self.rejected_events[ev.event_id] = ev
-            else:
-                self.events[ev.event_id] = ev
-                accepted_events.append(ev)
-
-        # Apply accepted deltas deterministically
-        for delta in validation_report.accepted_deltas:
-            if delta.domain == DeltaDomain.CHARACTER:
-                apply_character_delta(self.character_states, self.world_state, delta)
-            elif delta.domain == DeltaDomain.RELATIONSHIP:
-                apply_relationship_delta(self.relationships, delta)
-            elif delta.domain == DeltaDomain.KNOWLEDGE:
-                apply_knowledge_delta(self.facts_registry, self.character_states, delta)
-            elif delta.domain in (DeltaDomain.WORLD, DeltaDomain.NARRATIVE):
-                apply_world_or_narrative_delta(self.world_state, self.character_states, delta)
-
-        # Update timeline with accepted scene events only
-        eff_location = location
-        if eff_location == "Unspecified" and accepted_events:
-            for ev in accepted_events:
-                if ev.location and ev.location != "Unspecified":
-                    eff_location = ev.location
-                    break
-
-        record_events_on_timeline(
-            world_state=self.world_state,
-            events=accepted_events,
-            chapter=chapter,
-            scene=scene_id,
-            location=eff_location,
-            time_marker=time_marker,
-        )
-
-        # Record conflicts in MemoryStore
-        for fc in validation_report.flagged_conflicts:
-            self.flagged_conflicts.append(fc)
-
-        # Sync updated relationships back to BookBible if provided
-        if book_bible is not None:
-            for rel_state in self.relationships.values():
-                matched = False
-                for b_rel in book_bible.relationships:
-                    if b_rel.from_entity == rel_state.speaker and b_rel.to_entity == rel_state.target:
-                        b_rel.current_pronoun = rel_state.active_pronoun
-                        matched = True
+            # Update timeline with accepted scene events only
+            eff_location = location
+            if eff_location == "Unspecified" and accepted_events:
+                for ev in accepted_events:
+                    if ev.location and ev.location != "Unspecified":
+                        eff_location = ev.location
                         break
-                if not matched:
-                    from audiobook_factory.translation.book_bible import DynamicRelationship
-                    book_bible.relationships.append(
-                        DynamicRelationship(
-                            from_entity=rel_state.speaker,
-                            to_entity=rel_state.target,
-                            default_pronoun=rel_state.active_pronoun,
-                            current_pronoun=rel_state.active_pronoun,
-                        )
-                    )
 
+            record_events_on_timeline(
+                world_state=self.world_state,
+                events=accepted_events,
+                chapter=chapter,
+                scene=scene_id,
+                location=eff_location,
+                time_marker=time_marker,
+            )
 
-        # Compute deterministic commit hash & version
-        prev_ver = self.memory_version
-        next_ver = prev_ver + 1
-        src_hash = hashlib.sha256((source_text or f"{chapter}:{scene_id}").encode("utf-8")).hexdigest()[:16]
-        delta_digest_payload = json.dumps(
-            [d.model_dump() for d in validation_report.accepted_deltas],
-            sort_keys=True,
-             ensure_ascii=False,
-        )
-        ver_hash_input = f"{self.version_hash}|{next_ver}|{chapter}|{scene_id}|{src_hash}|{delta_digest_payload}"
-        ver_hash = hashlib.sha256(ver_hash_input.encode("utf-8")).hexdigest()[:16]
+            # Record conflicts in MemoryStore
+            for fc in validation_report.flagged_conflicts:
+                self.flagged_conflicts.append(fc)
 
-        commit_record = MemoryCommitRecord(
-            memory_version=next_ver,
-            previous_version=prev_ver,
-            version_hash=ver_hash,
-            scene_id=scene_id,
-            chapter=chapter,
-            source_hash=src_hash,
-            event_ids=[e.event_id for e in accepted_events],
-            state_deltas=validation_report.accepted_deltas,
-            rejected_deltas=validation_report.rejected_deltas,
-        )
-        self.memory_version = next_ver
-        self.version_hash = ver_hash
-        self.commit_history.append(commit_record)
+            # NOTE: BookBible remains Hard Canon. Dynamic relationship state
+            # (active_pronoun, trust, etc.) lives strictly in MemoryStore.relationships.
+            # No writes are made back to BookBible.
 
-        return validation_report
+            # Compute deterministic commit hash & version
+            prev_ver = self.memory_version
+            next_ver = prev_ver + 1
+            src_hash = hashlib.sha256((source_text or f"{chapter}:{scene_id}").encode("utf-8")).hexdigest()[:16]
+            delta_digest_payload = json.dumps(
+                [d.model_dump() for d in validation_report.accepted_deltas],
+                sort_keys=True,
+                ensure_ascii=False,
+            )
+            ver_hash_input = f"{self.version_hash}|{next_ver}|{chapter}|{scene_id}|{src_hash}|{delta_digest_payload}"
+            ver_hash = hashlib.sha256(ver_hash_input.encode("utf-8")).hexdigest()[:16]
+
+            commit_record = MemoryCommitRecord(
+                memory_version=next_ver,
+                previous_version=prev_ver,
+                version_hash=ver_hash,
+                scene_id=scene_id,
+                chapter=chapter,
+                source_hash=src_hash,
+                event_ids=[e.event_id for e in accepted_events],
+                state_deltas=validation_report.accepted_deltas,
+                rejected_deltas=validation_report.rejected_deltas,
+            )
+            self.memory_version = next_ver
+            self.version_hash = ver_hash
+            self.commit_history.append(commit_record)
+
+            return validation_report
+        except Exception:
+            self._restore_snapshot(snapshot)
+            raise
 
     def trace_mutations(
         self,
@@ -332,27 +371,122 @@ class MemoryStore(BaseModel):
         return results
 
     def save(self, path: Path) -> None:
-        """Atomically persists MemoryStore to JSON on disk."""
+        """
+        Atomically persists MemoryStore to JSON on disk.
+        Creates a verified backup copy (.bak) of the existing file before replacing.
+        """
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = target.with_suffix(".json.tmp")
         tmp_path.write_text(self.model_dump_json(indent=2), encoding="utf-8")
+
+        # Before replacing target, if target already exists and is non-empty, back it up
+        if target.exists() and target.stat().st_size > 0:
+            bak_path = target.with_name(target.name + ".bak")
+            try:
+                shutil.copy2(target, bak_path)
+            except Exception as e:
+                logger.warning(f"Failed to create backup at {bak_path}: {e}")
+
         tmp_path.replace(target)
 
     @classmethod
-    def load(cls, path: Path, book_bible: Optional[BookBible] = None) -> MemoryStore:
-        """Loads MemoryStore from disk or initializes a fresh store seeded from BookBible."""
-        target = Path(path)
-        if target.exists():
-            try:
-                raw = json.loads(target.read_text(encoding="utf-8"))
-                store = cls.model_validate(raw)
-                if book_bible is not None:
-                    store.seed_from_book_bible(book_bible)
-                return store
-            except Exception:
-                pass
-        store = cls()
-        if book_bible is not None:
-            store.seed_from_book_bible(book_bible)
+    def _validate_store_integrity(cls, data: Any, source_path: Path) -> MemoryStore:
+        """
+        Validates JSON structure, required schema fields, model types, and version consistency.
+        """
+        if not isinstance(data, dict):
+            raise ValueError(f"Root JSON at {source_path} must be an object, got {type(data).__name__}")
+
+        schema_ver = data.get("schema_version")
+        if not schema_ver or str(schema_ver) not in ("2.0", "2.0.0"):
+            raise ValueError(f"Incompatible or missing schema_version '{schema_ver}' in {source_path} (expected '2.0')")
+
+        for field in ("character_states", "relationships", "facts_registry", "world_state", "events", "commit_history"):
+            if field not in data:
+                raise ValueError(f"Corrupted MemoryStore structure: missing essential field '{field}' in {source_path}")
+
+        store = cls.model_validate(data)
+
+        # Integrity check: commit_history version consistency
+        if store.memory_version > 0 and store.commit_history:
+            last_commit = store.commit_history[-1]
+            if last_commit.memory_version != store.memory_version:
+                raise ValueError(
+                    f"Integrity check failed in {source_path}: store.memory_version={store.memory_version} "
+                    f"does not match latest commit version {last_commit.memory_version}"
+                )
+
         return store
+
+    @classmethod
+    def load(cls, path: Path, book_bible: Optional[BookBible] = None) -> MemoryStore:
+        """
+        Loads MemoryStore from disk or initializes a fresh store seeded from BookBible.
+        Never silently resets to a fresh store when the primary file is corrupted.
+        Attempts recovery from a validated backup (.bak), and fails closed with clear
+        diagnostics if unrecoverable.
+        """
+        target = Path(path)
+        if not target.exists():
+            store = cls()
+            if book_bible is not None:
+                store.seed_from_book_bible(book_bible)
+            return store
+
+        # Primary load attempt
+        primary_err: Optional[Exception] = None
+        try:
+            raw_text = target.read_text(encoding="utf-8")
+            if not raw_text.strip():
+                raise ValueError("Empty primary MemoryStore file (0 bytes)")
+            raw = json.loads(raw_text)
+            store = cls._validate_store_integrity(raw, target)
+            if book_bible is not None:
+                store.seed_from_book_bible(book_bible)
+            return store
+        except Exception as e:
+            primary_err = e
+            logger.error(
+                f"[MemoryStore] Primary memory file at '{target}' is corrupted or invalid: {e}. "
+                f"Attempting recovery from backup."
+            )
+
+        # Recovery attempt from backup
+        bak_candidates = [
+            target.with_name(target.name + ".bak"),
+            target.with_suffix(".bak"),
+        ]
+        backup_err: Optional[Exception] = None
+        for bak_path in bak_candidates:
+            if bak_path.exists():
+                try:
+                    bak_text = bak_path.read_text(encoding="utf-8")
+                    if not bak_text.strip():
+                        raise ValueError("Backup file is empty (0 bytes)")
+                    bak_raw = json.loads(bak_text)
+                    recovered_store = cls._validate_store_integrity(bak_raw, bak_path)
+                    if book_bible is not None:
+                        recovered_store.seed_from_book_bible(book_bible)
+                    logger.warning(
+                        f"[MemoryStore] Successfully recovered MemoryStore from backup at '{bak_path}' "
+                        f"following primary file corruption."
+                    )
+                    return recovered_store
+                except Exception as b_err:
+                    backup_err = b_err
+                    logger.error(
+                        f"[MemoryStore] Backup file at '{bak_path}' failed integrity validation: {b_err}"
+                    )
+
+        # Both primary failed and backup missing/failed -> FAIL CLOSED
+        diag_msg = (
+            f"Failed to load MemoryStore from '{target}'. Primary file is corrupted/unreadable: {primary_err}. "
+        )
+        if backup_err:
+            diag_msg += f"Backup file also failed validation: {backup_err}. "
+        else:
+            diag_msg += "No valid backup (.bak) file found. "
+        diag_msg += "Silent reset is prevented to protect narrative continuity and character state."
+
+        raise MemoryPersistenceError(diag_msg) from primary_err

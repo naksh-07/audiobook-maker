@@ -6,6 +6,7 @@ a clean prompt context and conservative performance guidance adapter.
 """
 
 from __future__ import annotations
+import re
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -174,21 +175,38 @@ class MemoryContext(BaseModel):
         if guidance["recommended_register"] and not seg_dict.get("recommended_register"):
             seg_dict["recommended_register"] = guidance["recommended_register"]
 
-        # Only suggest emotion or delivery constraint if screenplay left it neutral/empty
-        existing_emotion = str(seg_dict.get("emotion") or "neutral").strip().lower()
+        # Strict Director Supremacy: Respect explicit screenplay, acting, or parenthetical cues
         acting_obj = seg_dict.get("acting")
-        nested_delivery = (
-            acting_obj.get("delivery_style")
-            if isinstance(acting_obj, dict)
-            else getattr(acting_obj, "delivery_style", "")
-        )
+        nested_emotion = str(
+            (acting_obj.get("emotion") if isinstance(acting_obj, dict) else getattr(acting_obj, "emotion", "")) or ""
+        ).strip()
+        nested_delivery = str(
+            (acting_obj.get("delivery_style") if isinstance(acting_obj, dict) else getattr(acting_obj, "delivery_style", "")) or ""
+        ).strip()
+
+        existing_emotion = str(seg_dict.get("emotion") or "neutral").strip().lower()
+        if existing_emotion in ("", "neutral", "standard") and nested_emotion:
+            existing_emotion = nested_emotion.lower()
+
         existing_delivery = str(
             seg_dict.get("delivery_style") or nested_delivery or seg_dict.get("pace") or ""
         ).strip().lower()
-        text_val = str(seg_dict.get("text") or "")
-        has_explicit_tag = "[" in text_val and "]" in text_val
 
-        if existing_emotion in ("", "neutral", "standard") and not has_explicit_tag:
+        text_val = str(seg_dict.get("text") or "")
+        has_bracket_tag = "[" in text_val and "]" in text_val
+        has_paren_tag = bool(re.search(r"\([^)]*[^\s)]+[^)]*\)", text_val))
+        has_nested_acting = bool(
+            (nested_emotion and nested_emotion.lower() not in ("", "neutral", "standard"))
+            or (nested_delivery and nested_delivery.lower() not in ("", "normal", "neutral", "standard"))
+        )
+        has_vocal_tags = bool(
+            seg_dict.get("vocal_tags")
+            or seg_dict.get("director_notes")
+            or seg_dict.get("artistic_direction")
+        )
+        has_explicit_directorial_intent = has_bracket_tag or has_paren_tag or has_vocal_tags or has_nested_acting
+
+        if existing_emotion in ("", "neutral", "standard") and not has_explicit_directorial_intent:
             if guidance["physical_condition"] in ("injured", "critical") and guidance["active_injuries"]:
                 seg_dict["emotion"] = "strained"
             elif guidance["physical_condition"] == "exhausted" or guidance["energy"] <= 0.3:
@@ -196,11 +214,12 @@ class MemoryContext(BaseModel):
             elif guidance["emotion_intensity"] >= 0.75 and guidance["baseline_emotion"] != "neutral":
                 seg_dict["emotion"] = guidance["baseline_emotion"]
 
-        if existing_delivery in ("", "normal", "neutral", "standard") and not has_explicit_tag:
-            if "restrained_breath_effort_due_to_injury" in guidance["vocal_constraints"]:
-                seg_dict["memory_vocal_constraint"] = "strained_breath"
-            elif "low_energy_fatigued_projection" in guidance["vocal_constraints"]:
-                seg_dict["memory_vocal_constraint"] = "fatigued_low_energy"
+        if existing_delivery in ("", "normal", "neutral", "standard") and not has_explicit_directorial_intent:
+            if not seg_dict.get("memory_vocal_constraint"):
+                if "restrained_breath_effort_due_to_injury" in guidance["vocal_constraints"]:
+                    seg_dict["memory_vocal_constraint"] = "strained_breath"
+                elif "low_energy_fatigued_projection" in guidance["vocal_constraints"]:
+                    seg_dict["memory_vocal_constraint"] = "fatigued_low_energy"
 
         return seg_dict
 
@@ -251,6 +270,9 @@ class MemoryContext(BaseModel):
 
         if self.epistemic_constraints:
             lines.append("EPISTEMIC ISOLATION (Strict Knowledge Boundaries):")
+            lines.append(
+                "CRITICAL EPISTEMIC GUARD: Characters must NEVER speak about, reference, or act upon facts listed in MUST_NOT_KNOW. Treat unrevealed secrets and unknown facts as strictly outside the character's awareness."
+            )
             for char_name, buckets in self.epistemic_constraints.items():
                 known = "; ".join(buckets.get("KNOWN", [])[:3])
                 suspected = "; ".join(buckets.get("SUSPECTED", [])[:2])

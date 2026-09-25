@@ -20,7 +20,12 @@ from audiobook_factory.translation.book_bible import BookBible, FlaggedConflict
 from audiobook_factory.translation.relationship_state import DynamicRelationshipState
 from .events import StoryEvent, StoryEventType, TemporalMode
 from .memory_delta import StateDelta, DeltaDomain, StateMutability
-from .character_memory import CharacterState, KnowledgeFact, KnowledgeStatus
+from .character_memory import (
+    CharacterState,
+    KnowledgeFact,
+    KnowledgeStatus,
+    CharacterKnowledgeEngine,
+)
 from .world_memory import WorldState
 
 
@@ -331,32 +336,99 @@ class MemoryValidator:
                     continue
 
             # 7. KNOWLEDGE VIOLATION CHECK (Rule 13: Epistemic Isolation)
-            if delta.domain == DeltaDomain.KNOWLEDGE:
-                payload = delta.new_value if isinstance(delta.new_value, dict) else {}
-                if payload.get("acted_upon_by"):
-                    actor = str(payload["acted_upon_by"])
-                    fact_id = str(payload.get("fact_id") or delta.target_entity)
-                    existing_fact = facts_registry.get(fact_id)
-                    char_st = character_states.get(actor)
-                    knows_fact = (
-                        (existing_fact is not None and actor in existing_fact.known_by)
-                        or (char_st is not None and fact_id in char_st.known_facts)
+            # Check 7A: Actions across ANY domain requiring prior knowledge
+            req_fact = delta.metadata.get("requires_knowledge")
+            if req_fact:
+                acting_char = delta.metadata.get("acted_upon_by") or (
+                    delta.target_entity if delta.domain == DeltaDomain.CHARACTER else None
+                )
+                if acting_char:
+                    status = CharacterKnowledgeEngine.get_character_knowledge_status(
+                        acting_char, str(req_fact), facts_registry, character_states
                     )
-                    if not knows_fact and not payload.get("known_by"):
+                    if status != KnowledgeStatus.KNOWN:
                         _record_conflict(
                             conflict_type="knowledge_violation",
-                            canonical_val=f"Fact '{fact_id}' is UNKNOWN to '{actor}'",
-                            candidate_val=f"Character '{actor}' acted upon unlearned fact '{fact_id}'",
-                            repair=f"Prevent '{actor}' from referencing or acting on '{fact_id}' until a KNOWLEDGE_LEARNED or SECRET_REVEALED event occurs.",
+                            canonical_val=f"Fact '{req_fact}' is {status.value} to '{acting_char}'",
+                            candidate_val=f"Character '{acting_char}' attempted action requiring unpossessed fact '{req_fact}'",
+                            repair=f"Character '{acting_char}' cannot perform action requiring '{req_fact}' because their epistemic status is {status.value}.",
                         )
                         continue
+
+            # Check 7B: Explicit Knowledge Domain deltas (Using / Transmitting vs Receiving)
+            if delta.domain == DeltaDomain.KNOWLEDGE:
+                payload = delta.new_value if isinstance(delta.new_value, dict) else {}
+                fact_id = str(payload.get("fact_id") or delta.target_entity)
+
+                # Transmitting / Revealing knowledge: Revealer MUST possess the knowledge (status == KNOWN)
+                revealer = (
+                    delta.metadata.get("revealed_by")
+                    or delta.metadata.get("transmitted_by")
+                    or payload.get("revealed_by")
+                    or (
+                        (
+                            source_event.metadata.get("knower")
+                            or source_event.metadata.get("revealer")
+                            or source_event.metadata.get("revealed_by")
+                            or source_event.metadata.get("speaker")
+                            or (source_event.participants[0] if source_event.participants else None)
+                        )
+                        if (source_event and source_event.event_type == StoryEventType.SECRET_REVEALED)
+                        else None
+                    )
+                )
+                is_disproving = (
+                    str(payload.get("status", "")).upper() in ("DISPROVEN", KnowledgeStatus.DISPROVEN.value)
+                    or delta.field_name == "belief_disproven"
+                    or (source_event and source_event.event_type == StoryEventType.FACT_DISPROVEN)
+                )
+                if revealer and not is_disproving:
+                    r_status = CharacterKnowledgeEngine.get_character_knowledge_status(
+                        str(revealer), fact_id, facts_registry, character_states
+                    )
+                    if r_status != KnowledgeStatus.KNOWN:
+                        _record_conflict(
+                            conflict_type="knowledge_violation",
+                            canonical_val=f"Fact '{fact_id}' is {r_status.value} to revealer '{revealer}'",
+                            candidate_val=f"Character '{revealer}' attempted to reveal or transmit unpossessed secret '{fact_id}'",
+                            repair=f"Character '{revealer}' cannot reveal secret '{fact_id}' because they do not know it (prior status: {r_status.value}).",
+                        )
+                        continue
+
+                # Using / Acting upon knowledge: Actor MUST possess the knowledge (status == KNOWN)
+                if payload.get("acted_upon_by"):
+                    actor = str(payload["acted_upon_by"])
+                    a_status = CharacterKnowledgeEngine.get_character_knowledge_status(
+                        actor, fact_id, facts_registry, character_states
+                    )
+                    if a_status != KnowledgeStatus.KNOWN:
+                        _record_conflict(
+                            conflict_type="knowledge_violation",
+                            canonical_val=f"Fact '{fact_id}' is {a_status.value} to '{actor}'",
+                            candidate_val=f"Character '{actor}' acted upon unlearned/unpossessed fact '{fact_id}'",
+                            repair=f"Prevent '{actor}' from referencing or acting on '{fact_id}' until a valid KNOWLEDGE_LEARNED or SECRET_REVEALED event occurs.",
+                        )
+                        continue
+
+                # Receiving knowledge: Characters in known_by are transitioning UNKNOWN -> KNOWN through valid event
+                # (Receiving is explicitly allowed; no conflict is raised for learners)
 
             if not conflict_found:
                 report.accepted_deltas.append(delta)
 
-        accepted_eids = {d.source_event_id for d in report.accepted_deltas if d.source_event_id}
+        # Strict Event Atomicity: If an event has any rejected delta, companion deltas
+        # for that same event are purged to prevent partial/ghost event mutations.
         rejected_eids = {d.source_event_id for d in report.rejected_deltas if d.source_event_id}
-        report.rejected_event_ids = sorted(rejected_eids - accepted_eids)
+        if rejected_eids:
+            purged_accepted = []
+            for d in report.accepted_deltas:
+                if d.source_event_id in rejected_eids:
+                    report.rejected_deltas.append(d)
+                else:
+                    purged_accepted.append(d)
+            report.accepted_deltas = purged_accepted
+
+        report.rejected_event_ids = sorted(rejected_eids)
 
         if report.flagged_conflicts:
             report.outcome = ValidationOutcome.CONFLICT

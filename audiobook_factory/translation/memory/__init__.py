@@ -49,6 +49,7 @@ from .memory_validator import (
 from .memory_store import (
     MemoryCommitRecord,
     MemoryStore,
+    MemoryPersistenceError,
 )
 from .memory_context import MemoryContext
 from .memory_retriever import MemoryRetriever
@@ -85,6 +86,7 @@ __all__ = [
     "MemoryValidator",
     "MemoryCommitRecord",
     "MemoryStore",
+    "MemoryPersistenceError",
     "MemoryContext",
     "MemoryRetriever",
 ]

@@ -39,8 +39,15 @@ class KnowledgeFact(BaseModel):
         """Returns the epistemic status of this fact for a specific character."""
         if character_name in self.character_statuses:
             return self.character_statuses[character_name]
+        c_clean = character_name.strip().lower()
+        for k, v in self.character_statuses.items():
+            if k.strip().lower() == c_clean:
+                return v
         if character_name in self.known_by:
             return self.status
+        for k in self.known_by:
+            if k.strip().lower() == c_clean:
+                return self.status
         return KnowledgeStatus.UNKNOWN
 
 

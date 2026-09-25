@@ -435,3 +435,39 @@
      - Upgraded `TranslationProvenanceTracker` to compute cache keys across 11 dimensions (`source_hash`, `prompt_hash`, `model_name`, `temperature`, `bible_version_hash`, `policy_hash`, `memory_state_hash`, `scene_plan_hash`, `semantic_map_hash`, `intensity_vector_hash`, `evaluator_version`).
      - Wired `translate_book_project()` to default to `IntelligentTranslationPipeline` (`TranslationOrchestrator`) and assemble top-level `chapter_XXX_hi.md` for downstream screenplay and TTS synthesis stages.
 - **Rationale:** Eliminates silent quality degradation, guarantees provable semantic alignment and authentic Hindustani register, provides bounded automated self-healing without human intervention, and ensures complete backward compatibility across the studio pipeline.
+
+## ADR-027: World + Character Memory 2.0 Production Hardening & Dual Independent Expert Audit
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:**
+  1. The World + Character Memory 2.0 system required a final production hardening pass and dual expert audit across 5 critical dimensions:
+     - BookBible canon pollution: Dynamic relationship updates (pronouns, trust, respect) were being written back into canonical `BookBible.relationships`.
+     - Silent memory amnesia: `MemoryStore.load()` contained `except Exception: pass`, resetting corrupted stores to empty state without warning.
+     - Partial transaction state leakage: Exceptions mid-commit could leave character health or location mutations applied without corresponding event logs.
+     - Epistemic boundary leaks: Unpossessed secrets could be revealed by characters who did not know them, and rejected knowledge deltas left companion narrative threads committed.
+     - Multi-script director cue stomping: Screenplay parenthetical stage directions in Devanagari (e.g. `(धीमी आवाज़ में)`) failed ASCII regex checks, allowing memory emotion guidance to override directorial intent.
+- **Decision:**
+  1. **Hard Canon Immutability (`memory_store.py`):**
+     - Completely removed BookBible writeback from `commit_scene_memory()`. BookBible remains byte-for-byte read-only Hard Canon.
+     - Evolving relationships live strictly in `MemoryStore.relationships`.
+  2. **Two-Tier Persistence Safety & Integrity Validation (`memory_store.py`):**
+     - Implemented atomic two-phase write with verified `.bak` creation before file replacement.
+     - Added `_validate_store_integrity()` verifying root JSON object, `schema_version == "2.0"`, required containers, and commit version consistency.
+     - Replaced silent `except: pass` with fail-closed `MemoryPersistenceError`.
+  3. **Transactional Deep Snapshot Rollback (`memory_store.py`):**
+     - Implemented `_create_snapshot()` and `_restore_snapshot()` performing true deep clones (`model_copy(deep=True)`) across all 11 mutable containers.
+     - Guaranteed 100% pre-commit state restoration upon any exception during delta computation, validation, or application.
+  4. **Epistemic Isolation & Strict Event Atomicity (`memory_validator.py`, `character_memory.py`):**
+     - Enforced that revealing unpossessed secrets or acting on unknown facts is strictly rejected (Check 7A/7B).
+     - Allowed recipient characters to transition `UNKNOWN` $\to$ `KNOWN` through valid revelation events.
+     - Exempted disproven false beliefs from revealer prior-knowledge requirements.
+     - Enforced strict event atomicity: if any delta of an event fails validation, all companion deltas are purged and the event is rejected.
+     - Added case-insensitive normalized character lookups in `KnowledgeFact.get_status_for_character()`.
+  5. **Multi-Script Director Supremacy (`memory_context.py`):**
+     - Replaced ASCII parenthetical regex with Unicode-agnostic `r"\([^)]*[^\s)]+[^)]*\)"`.
+     - Protected nested `acting.emotion` / `acting.delivery_style` and custom `vocal_tags` from memory overrides.
+  6. **Adversarial Verification Suite (`test_adversarial_expert_audit.py`):**
+     - Added 7 hostile penetration probes covering all attack vectors.
+     - Re-verified full test suite at **368 passed, 17 subtests passed (100% green)**.
+- **Rationale:** Guarantees absolute narrative and character continuity across 100+ chapter novels without risk of data loss, canon corruption, epistemic paradoxes, or artistic overrides.
+
