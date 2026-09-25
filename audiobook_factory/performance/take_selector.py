@@ -29,6 +29,8 @@ class IntelligentTakeSelector:
         takes: List[TakeVariant],
         text: str,
         direction: PerformanceDirection,
+        signature: Optional[Any] = None,
+        voice_dna: Optional[Any] = None,
     ) -> TakeVariant:
         """
         Evaluates and selects the winning take from a list of candidate TakeVariants.
@@ -45,6 +47,8 @@ class IntelligentTakeSelector:
                     audio_file=t.audio_path,
                     text=text,
                     direction=direction,
+                    signature=signature,
+                    voice_dna=voice_dna,
                 )
 
         # Single candidate take

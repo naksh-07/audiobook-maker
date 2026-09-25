@@ -103,3 +103,14 @@ The subsystem is continuously validated by three layers of automated testing:
    - [`tests/test_wave5_ensemble_performance.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_wave5_ensemble_performance.py) (Ensemble & Continuity)
 3. **Golden Audio Regression Suite ([`tests/test_golden_audio_regression_suite.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_audio_regression_suite.py))**:
    Runs 18 distinct dramatic scenarios offline with synthetic audio fixtures, asserting complete pipeline integrity in < 2 seconds.
+4. **TTS Integration & Remediation Test Matrix ([`tests/test_tts_integration_remediation.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_tts_integration_remediation.py))**:
+   Rigorous 10-point end-to-end integration suite verifying:
+   - Voice identity drift penalty in `IntelligentTakeSelector`
+   - Continuous risk engine take count calibration
+   - Scene emotional continuity trajectory smoothing in `PerformanceDirector`
+   - Voice DNA baseline grounding in actor delivery directives
+   - Audition engine synthesis and acoustic metric scoring
+   - TakeBank strategy plan prioritization
+   - End-to-end `TTSDispatcher` segment synthesis flow
+   - Multi-chapter character performance continuity persistence
+   - Sacred literary text immutability throughout the pipeline

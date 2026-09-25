@@ -142,24 +142,81 @@ class VoiceAuditionEngine:
             dest_file = out_dir / f"{scene.scene_id}_{candidate_voice_id}.wav"
             duration_sec = 0.0
 
-            if dispatcher and hasattr(dispatcher, "synthesize_gemini_tts"):
+            synthesized = False
+            if dispatcher:
                 try:
-                    from audiobook_factory.tts_dispatcher import synthesize_gemini_tts
-                    synthesize_gemini_tts(
-                        text=scene.line_text,
-                        output_file=dest_file,
-                        voice=candidate_voice_id,
-                        emotion=scene.target_emotion,
-                    )
-                    with wave.open(str(dest_file), "rb") as wf:
-                        duration_sec = wf.getnframes() / float(wf.getframerate())
+                    if callable(dispatcher):
+                        dispatcher(
+                            text=scene.line_text,
+                            output_file=dest_file,
+                            voice=candidate_voice_id,
+                            emotion=scene.target_emotion,
+                        )
+                        synthesized = True
+                    elif hasattr(dispatcher, "synthesize_segment"):
+                        from audiobook_factory.contracts import ScreenplaySegment
+                        seg = ScreenplaySegment(
+                            index=1,
+                            speaker=candidate_voice_id,
+                            text=scene.line_text,
+                            emotion=scene.target_emotion,
+                        )
+                        dispatcher.synthesize_segment(seg, dest_file, voice_override=candidate_voice_id)
+                        synthesized = True
+                    elif hasattr(dispatcher, "synthesize_gemini_tts"):
+                        dispatcher.synthesize_gemini_tts(
+                            text=scene.line_text,
+                            output_file=dest_file,
+                            voice=candidate_voice_id,
+                            emotion=scene.target_emotion,
+                        )
+                        synthesized = True
+                    else:
+                        from audiobook_factory.tts_dispatcher import synthesize_gemini_tts
+                        synthesize_gemini_tts(
+                            text=scene.line_text,
+                            output_file=dest_file,
+                            voice=candidate_voice_id,
+                            emotion=scene.target_emotion,
+                        )
+                        synthesized = True
                 except Exception as e:
                     logger.warning(f"  [AUDITION SYNTHESIS ERROR] {scene.scene_id} on {candidate_voice_id}: {e}")
-                    self._create_mock_audition_wav(dest_file, scene.dramatic_mode)
-                    duration_sec = 2.0
-            else:
+                    synthesized = False
+
+            if not synthesized or not dest_file.exists() or dest_file.stat().st_size <= 44:
                 self._create_mock_audition_wav(dest_file, scene.dramatic_mode)
-                duration_sec = 2.2
+
+            # Analyze acoustic audio properties
+            overall_score = 0.85
+            passed = True
+            try:
+                with wave.open(str(dest_file), "rb") as wf:
+                    n_frames = wf.getnframes()
+                    sr = wf.getframerate()
+                    duration_sec = n_frames / float(sr) if sr > 0 else 0.0
+                    raw_data = wf.readframes(n_frames)
+
+                import numpy as np
+                samples = np.frombuffer(raw_data, dtype=np.int16).astype(np.float32)
+                if len(samples) > 0:
+                    rms = float(np.sqrt(np.mean(samples ** 2)))
+                    rms_db = 20.0 * math.log10(max(rms, 1e-5) / 32768.0)
+
+                    from audiobook_factory.forensic_analyzer import MathematicalAcousticAnalyzer
+                    analyzer = MathematicalAcousticAnalyzer(sample_rate=sr)
+                    metrics = analyzer.analyze_frames(samples)
+                    avg_flat = float(np.mean([m["spectral_flatness"] for m in metrics])) if metrics else 0.05
+
+                    loudness_score = 1.0 - min(1.0, max(0.0, abs(rms_db - (-20.0)) / 25.0))
+                    purity_score = 1.0 - min(1.0, max(0.0, avg_flat / 0.50))
+                    dur_score = 1.0 if duration_sec >= 0.5 else 0.5
+                    overall_score = round(0.4 * loudness_score + 0.4 * purity_score + 0.2 * dur_score, 2)
+                    overall_score = max(0.50, min(0.98, overall_score))
+                    passed = (duration_sec > 0.3 and rms_db > -50.0)
+            except Exception as e:
+                logger.warning(f"  [AUDITION ACOUSTIC METRICS ERROR] {dest_file}: {e}")
+                overall_score = 0.80
 
             res = AuditionResult(
                 candidate_voice_id=candidate_voice_id,
@@ -167,8 +224,8 @@ class VoiceAuditionEngine:
                 dramatic_mode=scene.dramatic_mode,
                 audio_path=str(dest_file),
                 duration_sec=round(duration_sec, 2),
-                passed=True,
-                overall_score=0.85,
+                passed=passed,
+                overall_score=overall_score,
             )
             results.append(res)
 

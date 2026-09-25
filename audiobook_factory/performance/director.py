@@ -69,6 +69,8 @@ class PerformanceDirector:
         previous_direction: Optional[PerformanceDirection] = None,
         target_character: Optional[str] = None,
         performance_bible: Optional[PerformanceBible] = None,
+        scene_vector: Optional[Any] = None,
+        voice_dna: Optional[Any] = None,
     ) -> PerformanceDirection:
         """
         Directs a single screenplay segment into a complete PerformanceDirection.
@@ -149,6 +151,15 @@ class PerformanceDirector:
         articulation = char_profile.articulation if char_profile else "natural"
         restraint = char_profile.restraint_level if char_profile else 0.50
 
+        # Grounding with VoiceDNA if available
+        if voice_dna:
+            v_beh = getattr(voice_dna, "behavior", None)
+            if v_beh:
+                base_pace = getattr(v_beh, "baseline_pace", base_pace)
+                base_energy = getattr(v_beh, "baseline_energy", base_energy)
+                articulation = getattr(v_beh, "articulation", articulation)
+                restraint = getattr(v_beh, "restraint", restraint)
+
         # Narrator special handling
         if s_spk == "Narrator" or s_type == "narration":
             narr_style = pb.narrator_style or {}
@@ -175,12 +186,21 @@ class PerformanceDirector:
                 if emo_key in clean_emo:
                     surface_emotion = custom_style
                     break
+        elif voice_dna and hasattr(voice_dna, "get_emotional_tendency"):
+            custom_style = voice_dna.get_emotional_tendency(surface_emotion)
+            if custom_style and custom_style.lower() != surface_emotion.lower() and not custom_style.startswith(f"{surface_emotion} delivery with"):
+                surface_emotion = custom_style
 
         # Pitch & Resonance Modulation
         pitch_behavior: PitchBehavior = "neutral"
         resonance: ResonancePlacement = "chest"
         breath_behavior: BreathBehavior = "steady"
         vocal_texture: VocalTexture = "smooth"
+
+        if voice_dna and hasattr(voice_dna, "identity"):
+            dna_res = getattr(voice_dna.identity, "resonance", None)
+            if dna_res and dna_res in ("chest", "throat", "head", "whisper_air"):
+                resonance = dna_res
 
         if restraint >= 0.75:
             # High restraint: suppressed emotion, low resonant pitch, controlled breathing
@@ -210,6 +230,18 @@ class PerformanceDirector:
             effective_energy = min(0.95, base_energy + 0.15)
         elif s_intensity == "low":
             effective_energy = max(0.35, base_energy - 0.20)
+
+        # Smooth with SceneEmotionalVector if provided
+        if scene_vector:
+            sc_energy = getattr(scene_vector, "energy", None)
+            if sc_energy is not None:
+                effective_energy = round(0.6 * effective_energy + 0.4 * float(sc_energy), 2)
+            sc_restraint = getattr(scene_vector, "restraint", None)
+            if sc_restraint is not None:
+                restraint = round(0.6 * restraint + 0.4 * float(sc_restraint), 2)
+            sc_tension = getattr(scene_vector, "tension", None)
+            if sc_tension is not None:
+                s_t_before = round(0.5 * s_t_before + 0.5 * float(sc_tension), 2)
 
         # 4. Anti-Emotional Teleportation Defense
         if previous_direction and previous_direction.speaker == s_spk and s_spk != "Narrator":
@@ -412,16 +444,20 @@ class PerformanceDirector:
         script_segments: List[Any],
         dramatic_plan: Optional[DramaticPlan] = None,
         performance_bible: Optional[PerformanceBible] = None,
+        voice_dna_bank: Optional[Any] = None,
     ) -> List[PerformanceDirection]:
         """
         Directs an entire chapter's screenplay script into a continuous sequence of PerformanceDirections.
         Maintains emotional continuity across consecutive beats and dialogic turns.
         """
+        from .scene_emotional_state import SceneEmotionalStateTracker
+
         pb = performance_bible or self.performance_bible
         plan = dramatic_plan or self.dramatic_plan
 
         directions: List[PerformanceDirection] = []
         prev_dir: Optional[PerformanceDirection] = None
+        scene_tracker = SceneEmotionalStateTracker(scene_id="chapter_script")
 
         # Build beat lookup if plan is present
         all_beats: List[DramaticBeat] = []
@@ -443,10 +479,29 @@ class PerformanceDirector:
             # Resolve target character by looking backward at previous dialogue speaker
             target_char: Optional[str] = None
             curr_spk = seg.get("speaker") if isinstance(seg, dict) else getattr(seg, "speaker", None)
+            curr_emo = seg.get("emotion", "neutral") if isinstance(seg, dict) else (getattr(seg, "emotion", "neutral") or "neutral")
+            curr_int = seg.get("intensity_level", "medium") if isinstance(seg, dict) else (getattr(seg, "intensity_level", "medium") or "medium")
+            causal = seg.get("causal_trigger") if isinstance(seg, dict) else getattr(seg, "causal_trigger", None)
+
+            sc_vec = scene_tracker.update_state(
+                segment_index=i + 1,
+                speaker=curr_spk or "Narrator",
+                target_emotion=curr_emo,
+                intensity=curr_int,
+                causal_trigger=causal,
+            )
+
             for prev_s in reversed(directions):
                 if prev_s.speaker not in ("Narrator", "Foley", curr_spk):
                     target_char = prev_s.speaker
                     break
+
+            dna = None
+            if voice_dna_bank and curr_spk:
+                try:
+                    dna = voice_dna_bank.get_dna(curr_spk)
+                except Exception:
+                    dna = None
 
             direction = self.direct_segment(
                 segment=seg,
@@ -454,6 +509,8 @@ class PerformanceDirector:
                 previous_direction=prev_dir,
                 target_character=target_char,
                 performance_bible=pb,
+                scene_vector=sc_vec,
+                voice_dna=dna,
             )
             directions.append(direction)
             prev_dir = direction

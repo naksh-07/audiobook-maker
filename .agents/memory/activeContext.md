@@ -13,4 +13,5 @@
 - **Wave 6 (Hardening & Documentation)**: `GoldenAudioRegressionSuite` (18 dramatic cases, synthetic offline WAVs), Human Casting Console CLI (`scripts/casting_console.py`), Gate 1 & 6A cast lock enforcement, full architecture guides (`docs/TTS_CASTING_ARCHITECTURE.md`, `docs/TTS_GENERATION_ARCHITECTURE.md`).
 - **Zero-Hardcoding Compliance**: 100% verified by `test_zero_hardcoding_contracts.py`.
 - **Independent Audit Verdict**: CERTIFIED / PASS WITH ADVISORY (Architect: 9.5/10, QA: 9.8/10, Forensic Detective: 9.5/10, Security: 10/10).
-- **Remediation**: `PerformanceContinuityTracker.save_to_file()` hardened with atomic temp-swap (`os.replace`).
+- **Integration & Remediation Pass Complete**: "Better wiring, not more machinery" completed. Wires `VoiceDNA` + `ReferenceVoiceBank` to `IntelligentTakeSelector`, dynamic take count control via `GenerationRiskEngine` + `GenerationStrategyResolver`, `SceneEmotionalStateTracker` + `VoiceDNA` in `PerformanceDirector`, dynamic acoustic scoring in `VoiceAuditionEngine`.
+- **Test Integrity**: Dedicated 10-point test matrix (`tests/test_tts_integration_remediation.py`) 100% green; full test suite 531/531 tests passing (0 regressions); AST zero-hardcoding 100% compliant.

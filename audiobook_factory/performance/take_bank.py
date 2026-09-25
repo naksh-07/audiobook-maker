@@ -40,23 +40,23 @@ class TakeBank:
         text: str = "",
     ) -> List[str]:
         """Returns the list of intended variant types for a given PerformanceDirection."""
-        if strategy_plan and hasattr(strategy_plan, "target_variants"):
+        if strategy_plan and hasattr(strategy_plan, "target_variants") and strategy_plan.target_variants:
             return list(strategy_plan.target_variants)
 
-        # Explicit elevated priorities from director take precedence
+        if text:
+            try:
+                from .strategy_resolver import GenerationStrategyResolver
+                plan = GenerationStrategyResolver.resolve_strategy(direction, text=text)
+                if plan and plan.target_variants:
+                    return list(plan.target_variants)
+            except Exception:
+                pass
+
         prio = direction.performance_priority
-        if prio in ("climactic", "high", "focused"):
-            return list(self.PRIORITY_VARIANTS.get(prio, ["standard"]))
+        if prio and prio != "standard" and prio in self.PRIORITY_VARIANTS:
+            return list(self.PRIORITY_VARIANTS[prio])
 
-        try:
-            from .strategy_resolver import GenerationStrategyResolver
-            plan = GenerationStrategyResolver.resolve_strategy(direction, text=text)
-            if plan and plan.target_variants:
-                return list(plan.target_variants)
-        except Exception:
-            pass
-
-        return self.PRIORITY_VARIANTS.get(prio, ["standard"])
+        return ["standard"]
 
     def create_take(
         self,

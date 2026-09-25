@@ -215,6 +215,8 @@ def synthesize_gemini_tts(
     variant_type: str = "standard",
     max_retries: int = 4,
     rate_limiter: Optional[TokenBucketRateLimiter] = None,
+    voice_dna: Optional[Any] = None,
+    scene_vector: Optional[Any] = None,
 ) -> Tuple[Path, float]:
     clean_text = text.strip()
     # Strip surrounding punctuation/quotes for numeral lookup: e.g. "८.", "'IV'", "(1)", "3,"
@@ -977,6 +979,13 @@ class TTSDispatcher:
         from audiobook_factory.casting import CastLockManager
         self.cast_lock_manager = CastLockManager(self.project_dir)
 
+        # Character Voice DNA & Reference Subsystems (Wave 2 Upgrade)
+        from audiobook_factory.identity import VoiceDNABank, ReferenceVoiceBank
+        from audiobook_factory.performance.scene_emotional_state import SceneEmotionalStateTracker
+        self.voice_dna_bank = VoiceDNABank(self.project_dir)
+        self.reference_voice_bank = ReferenceVoiceBank(self.project_dir)
+        self.scene_tracker = SceneEmotionalStateTracker()
+
     def _load_character_roster(self) -> Tuple[Dict[str, str], Dict[str, str]]:
         """Loads character aliases and gender mappings from character_roster.json."""
         alias_map: Dict[str, str] = {}
@@ -1233,10 +1242,42 @@ class TTSDispatcher:
                 dur = 1.0
             return out_file, dur
 
+        # Resolve Character Voice DNA & Reference Signature
+        voice_dna = None
+        signature = None
+        if hasattr(self, "voice_dna_bank") and self.voice_dna_bank:
+            try:
+                voice_dna = self.voice_dna_bank.get_dna(speaker)
+            except Exception:
+                voice_dna = None
+        if hasattr(self, "reference_voice_bank") and self.reference_voice_bank:
+            try:
+                signature = self.reference_voice_bank.get_signature(speaker)
+            except Exception:
+                signature = None
+
+        # Update Scene Emotional State
+        scene_vector = None
+        if hasattr(self, "scene_tracker") and self.scene_tracker:
+            emotion_hint = segment.get("emotion", "neutral") if isinstance(segment, dict) else (getattr(segment, "emotion", "neutral") or "neutral")
+            intensity_hint = segment.get("intensity_level", "medium") if isinstance(segment, dict) else (getattr(segment, "intensity_level", "medium") or "medium")
+            causal_hint = segment.get("causal_trigger") if isinstance(segment, dict) else getattr(segment, "causal_trigger", None)
+            scene_vector = self.scene_tracker.update_state(
+                segment_index=seg_num,
+                speaker=speaker,
+                target_emotion=emotion_hint,
+                intensity=intensity_hint,
+                causal_trigger=causal_hint,
+            )
+
         # Resolve Performance Direction
         p_dir = performance_direction
         if not p_dir:
-            p_dir = self.performance_director.direct_segment(segment)
+            p_dir = self.performance_director.direct_segment(
+                segment,
+                scene_vector=scene_vector,
+                voice_dna=voice_dna,
+            )
 
         emotion = segment.get("emotion", "neutral") if isinstance(segment, dict) else getattr(segment, "emotion", "neutral")
         intensity = segment.get("intensity_level", "medium") if isinstance(segment, dict) else getattr(segment, "intensity_level", "medium")
@@ -1252,8 +1293,10 @@ class TTSDispatcher:
             segment.spoken_text = tts_text
             segment.pronunciation_metadata = [r.model_dump() for r in spoken_res.resolutions]
 
-        # Multi-Take Candidate Generation via TakeBank
-        candidate_variants = self.take_bank.get_candidate_variants(p_dir)
+        # Multi-Take Candidate Generation via TakeBank + GenerationStrategyResolver
+        from audiobook_factory.performance.strategy_resolver import GenerationStrategyResolver
+        strategy_plan = GenerationStrategyResolver.resolve_strategy(p_dir, text=tts_text)
+        candidate_variants = self.take_bank.get_candidate_variants(p_dir, strategy_plan=strategy_plan, text=tts_text)
         takes_for_seg = []
 
         for v_type in candidate_variants:
@@ -1274,6 +1317,8 @@ class TTSDispatcher:
                     performance_direction=p_dir,
                     variant_type=v_type,
                     rate_limiter=self.rate_limiter,
+                    voice_dna=voice_dna,
+                    scene_vector=scene_vector,
                 )
 
             take_var = self.take_bank.create_take(
@@ -1285,8 +1330,14 @@ class TTSDispatcher:
             )
             takes_for_seg.append(take_var)
 
-        # Intelligent Take Selection
-        winning_take = self.take_selector.select_best_take(takes_for_seg, text, p_dir)
+        # Intelligent Take Selection with Voice Identity & Reference Signature
+        winning_take = self.take_selector.select_best_take(
+            takes_for_seg,
+            text,
+            p_dir,
+            signature=signature,
+            voice_dna=voice_dna,
+        )
 
         # Pronunciation Audio QA & Targeted Take Repair
         qa_res = self.pronunciation_auditor.audit_take(
@@ -1446,7 +1497,7 @@ class TTSDispatcher:
 
         # Pre-direct chapter script with conversational chemistry
         from audiobook_factory.performance.chemistry import ConversationalChemistry
-        chapter_directions = self.performance_director.direct_chapter_script(script)
+        chapter_directions = self.performance_director.direct_chapter_script(script, voice_dna_bank=self.voice_dna_bank)
         chapter_directions = ConversationalChemistry.apply_conversational_chemistry(chapter_directions)
         dir_by_idx = {d.index: d for d in chapter_directions}
 

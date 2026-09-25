@@ -103,7 +103,18 @@ class GenerationRiskEngine:
             raw_score += 0.15
             factors.append("Complex subtextual social mask")
 
-        # 8. Pronunciation & Loanword Complexity
+        # 8. Director Performance Priority Elevation
+        if direction.performance_priority == "climactic":
+            raw_score += 0.40
+            factors.append("Climactic scene performance priority")
+        elif direction.performance_priority == "high":
+            raw_score += 0.25
+            factors.append("Elevated dramatic priority")
+        elif direction.performance_priority == "focused":
+            raw_score += 0.15
+            factors.append("Focused dramatic priority")
+
+        # 9. Pronunciation & Loanword Complexity
         if pronunciation_flags and len(pronunciation_flags) > 0:
             raw_score += 0.15
             factors.append(f"Pronunciation alert: {len(pronunciation_flags)} flagged tokens")

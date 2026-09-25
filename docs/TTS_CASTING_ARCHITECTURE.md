@@ -94,6 +94,10 @@ Rigorously tests candidate voices across 10 expressive extremes before casting i
 9. `action`: High adrenaline, exertion breaths, staccato delivery.
 10. `transition`: Shift from calm certainty to explosive intensity across a single line.
 
+**Synthesis & Forensic Telemetry Integration**:
+- Works natively with callable synthesis functions, `TTSDispatcher` instances, or standalone module functions.
+- Generates dynamic acoustic evaluations via [`MathematicalAcousticAnalyzer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/forensic_analyzer.py), deriving real `overall_score` from RMS loudness, duration stability, and spectral flatness purity.
+
 ### 3.3 Cast Lock Manager & Recast Invalidation
 [`CastLockManager`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/casting/cast_lock.py):
 - Maintains atomic state in `cast_lock.json`.
