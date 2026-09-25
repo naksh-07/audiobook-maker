@@ -137,11 +137,16 @@ class PerformanceEvaluator:
             voice_dna=voice_dna,
         )
 
-        align_conf = getattr(alignment_result, "confidence", 1.0) if alignment_result else 1.0
-        align_diags = (
-            [d.message for d in getattr(alignment_result, "diagnostics", [])]
-            if alignment_result else []
-        )
+        if alignment_result is not None:
+            align_conf = getattr(alignment_result, "confidence", None)
+            raw_diags = getattr(alignment_result, "diagnostics", [])
+            align_diags = [
+                d.message if hasattr(d, "message") else str(d)
+                for d in raw_diags
+            ]
+        else:
+            align_conf = None
+            align_diags = ["No alignment result provided; speech alignment unverified"]
 
         evidence = PerformanceEvidence(
             acoustic=acoustic_ev,
@@ -200,15 +205,40 @@ class PerformanceEvaluator:
         total_w = sum(active_weights.values()) or 1.0
         overall = sum(dimensions[k].score * (w / total_w) for k, w in active_weights.items())
 
-        # Alignment confidence penalty if severe mismatch was detected
-        if align_conf < 0.40:
-            overall = max(0.20, overall - 0.25)
-            diagnostics.append(f"[ALIGNMENT] Severe alignment uncertainty (confidence {align_conf:.2f})")
+        # Alignment confidence & critical diagnostics evaluation
+        align_hard_gate_failure = False
+        if align_conf is not None:
+            if align_conf < 0.40:
+                overall = max(0.20, overall - 0.25)
+                diagnostics.append(f"[ALIGNMENT] Severe alignment uncertainty (confidence {align_conf:.2f})")
+                if align_conf < 0.35:
+                    align_hard_gate_failure = True
+            elif align_conf < 0.60:
+                overall = max(0.20, overall - 0.10)
+                diagnostics.append(f"[ALIGNMENT] Low alignment confidence ({align_conf:.2f})")
+
+            # Check for critical alignment diagnostics
+            if alignment_result:
+                for d in getattr(alignment_result, "diagnostics", []):
+                    severity = getattr(d, "severity", "INFO")
+                    code = getattr(d, "code", "")
+                    if severity == "CRITICAL" or code in ("INSUFFICIENT_SPEECH", "AUDIO_FILE_DEFECT"):
+                        align_hard_gate_failure = True
+                        msg = getattr(d, "message", str(d))
+                        diagnostics.append(f"[ALIGNMENT CRITICAL] {msg}")
+        else:
+            diagnostics.append("[ALIGNMENT] Speech alignment unverified (no alignment result provided)")
 
         # Hard Gate & Passing Logic
         is_hard_gate = v_ident_ev.is_hard_gate_violation if v_ident_ev else False
         naturalness_score = dimensions["naturalness"].score
-        passed = (overall >= 0.70) and (naturalness_score >= 0.65) and (not v_drift) and (not is_hard_gate)
+        passed = (
+            (overall >= 0.70)
+            and (naturalness_score >= 0.65)
+            and (not v_drift)
+            and (not is_hard_gate)
+            and (not align_hard_gate_failure)
+        )
 
         rec = "accept"
         if not passed:

@@ -245,19 +245,23 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 - **Wave A — Forced Alignment 2.0 (`audiobook_factory/forced_aligner.py`, `alignment_contracts.py`)**:
   - First-class contracts: [`AlignmentResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L147-L189), [`WordAlignment`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L130-L146), [`PauseInterval`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L109-L129), [`SpeechRegion`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L96-L108).
   - Extracts millisecond-accurate word token spans ($\pm 20\text{ms}$) via Meta MMS_FA CTC emissions on CUDA RTX 4050 GPU with standard-library wave tensor loader.
+  - `align_batch_detailed()` executes full segment-by-segment token spans, CTC confidence, and pause intelligence under MMS_FA; returns explicit, honest fallback provenance (`method="energy_fallback"`, `confidence <= 0.50`, `confidence_category="LOW"`, `FALLBACK_ALIGNMENT` diagnostic) without fabricated timings or fake `0.88`/`mms_fa_ctc`.
   - 7 pause classes: `natural_pause`, `dramatic_pause`, `hesitation`, `interruption_gap`, `breath_pause`, `dead_air`, `synthetic_gap`.
   - 5-signal calibrated confidence: $C_{\text{align}} = 0.35 C_{\text{phonetic}} + 0.25 C_{\text{coverage}} + 0.20 C_{\text{timing}} + 0.10 C_{\text{speech}} + 0.10 C_{\text{boundary}}$.
   - Language-aware Devanagari romanization map (`DEVA_TO_ROMAN_MAP`), conjunct normalization, and transparent acoustic energy-valley fallback.
 - **Wave B — Performance Evidence & Evaluator 2.0 (`audiobook_factory/performance/evaluator.py`, `contracts.py`)**:
   - Empirical telemetry models: [`PerformanceEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L108-L122), [`AcousticEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L49-L64), [`ProsodyEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L65-L79), [`PacingEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L80-L93), [`VoiceIdentityEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L94-L107).
+  - Alignment wiring: `PerformanceEvidence.alignment_confidence` is `Optional[float] = Field(default=None)` — missing alignment is strictly unverified, never assumed 1.0; low alignment confidence ($< 0.35$) and critical alignment diagnostics fail take evaluation (`passed = False`), while confidence $< 0.40$ applies severe penalties.
   - Normalized autocorrelation fundamental pitch ($F_0$) tracking across 50ms frames with 25ms hops ($60\text{Hz} \le F_0 \le 400\text{Hz}$).
   - Crest factor dynamic range ($20 \log_{10}(\text{peak}/\text{RMS})$) and robotic monotonic pitch-lock detection ($\sigma_{F0} < 5.0\text{Hz}$ with whisper exemption).
   - Dramatic restraint vs. overacting enforcement: penalizes loud shouting ($peak \ge 31,000$ and $RMS > -15\text{dBFS}$) under high restraint ($\ge 0.75$).
   - Two-tier voice identity gates: catastrophic drift hard gate (similarity $< 0.45$ or $F_0$ shift $> 60\%$) vs. soft preference bonus ($+0.05$ on similarity $\ge 0.85$).
 - **Wave C — Take Selection 2.0 & Judicial Deliberation (`audiobook_factory/performance/take_selector.py`)**:
-  - Staged 1-3 hard gates: technical audio integrity ($\ge 12$ pinned samples, DC offset $> 1500$, duration $< 0.25\text{s}$ or $> 3.5\times$, dead air $> 2.0\text{s}$), alignment validity (confidence $< 0.35$), catastrophic voice drift (similarity $< 0.45$).
+  - Staged 1-3 hard gates: technical audio integrity ($\ge 12$ pinned samples, DC offset $> 1500$, duration $< 0.25\text{s}$ or $> 3.5\times$, dead air $> 2.0\text{s}$), alignment validity (confidence $< 0.35$ or critical diagnostics), catastrophic voice drift (similarity $< 0.45$).
+  - Single-take path gate integrity: solitary candidates are never assumed acceptable; they must pass all 3 hard gates and evaluation criteria (`ev.passed`). Any gate or evaluation defect flags `review_required=True` with degraded confidence ($0.35$).
+  - Auto-alignment: `IntelligentTakeSelector` auto-aligns unaligned candidate takes when equipped with an aligner.
   - Stage 4 contextual scoring: 6 dramatic modes (Exposition, Climax, Whisper, Anger, Grief, Standard Dialogue).
-  - Stage 5 Pairwise Judicial Deliberation: [`PairwiseTakeJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py#L34-L248) breaks close margins ($\Delta \le 0.05$) and climactic beats by deliberating on acoustic restraint, dramatic pauses vs. dead air, subtext, intent, voice stability, and chemistry.
+  - Stage 5 Pairwise Judicial Deliberation: [`PairwiseTakeJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/take_selector.py#L34-L248) breaks close margins ($\Delta \le 0.05$) and climactic beats by deliberating on acoustic restraint, dramatic pauses vs. dead air, subtext, intent, voice stability, and chemistry, with None-safe alignment handling.
   - Stage 6 First-Class Result: [`TakeSelectionResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L374-L390) with machine-readable reason codes (`BETTER_RESTRAINT`, `BETTER_DRAMATIC_PAUSE`, `BETTER_SUBTEXT`, `BETTER_VOICE_CONTINUITY`, `BETTER_CHEMISTRY`), runner-up provenance, and review flags. Circular recursion eliminated with `repr=False`.
 - **Wave D — Whole-Scene Selection & Ensemble Coupling (`audiobook_factory/performance/take_selector.py`, `chemistry.py`, `continuity.py`)**:
   - `select_scene_takes()` coordinates candidate takes across whole-scene performance arcs (`energy_curve`, `pace_curve`, `tension_curve`).
@@ -265,10 +269,11 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - Premature climax guard: suppresses explosive takes in opening 35% of scenes; climactic release reward ($+0.04$) in finales.
   - Interpersonal turn-taking modeling, latency adjustment based on power dynamics/tension, and realistic interruption snapping ($\le 40\text{ms}$) via `ConversationalChemistry`.
   - Character pace continuity tracking via `PerformanceContinuityTracker` with atomic persistence in `character_continuity.json`.
-- **Wave E — Golden Behavioral Benchmark Suite (`tests/test_golden_take_selection_benchmark.py`)**:
+- **Wave E — Golden Behavioral Benchmark Suite (`tests/test_golden_take_selection_benchmark.py`, `tests/test_alignment_and_take_selection_fixes.py`)**:
   - 7 behavioral benchmark proofs verifying that restraint beats loudness, dramatic pause beats dead air, voice stability beats pitch drift, chemistry beats isolated score, scene arc beats segment score, naturalness beats distortion, and subtext beats generic aggressive yelling.
+  - 10 targeted regression proofs for alignment fallback honesty, missing alignment unverified handling, single-take gate enforcement, and auto-alignment.
   - 100% AST zero-hardcoding compliance verified by `tests/test_zero_hardcoding_contracts.py`.
-  - 581/581 passing tests (100% green, 0 regressions).
+  - 591/591 passing tests (100% green, 0 regressions).
 
 ---
 

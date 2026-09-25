@@ -176,8 +176,10 @@ Categorization thresholds:
 - $\text{LOW}: 0.40 \le C_{\text{align}} < 0.65$
 - $\text{FAILED\_REVIEW\_REQUIRED}: C_{\text{align}} < 0.40$
 
-### 3.5 Transparent Energy-Valley Fallback
+### 3.5 Transparent Energy-Valley Fallback & Batch Honesty
 When CUDA TorchAudio is unavailable or CTC trellis decoding fails, [`_align_single_with_energy_fallback`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/forced_aligner.py#L445-L504) computes speech boundaries via true root-mean-square (RMS) energy valleys. Fallback alignments carry `method="energy_fallback"`, a score cap penalty ($0.45$), and diagnostic code `FALLBACK_ALIGNMENT`.
+
+In multi-segment batch alignment ([`align_batch_detailed`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/forced_aligner.py#L250-L330)), the engine extracts real phoneme token spans, CTC confidence scores, inter-word pauses, and multi-signal diagnostics for each segment when MMS_FA is active. If MMS_FA is unavailable or fails, it executes [`_align_batch_detailed_with_energy_fallback`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/forced_aligner.py#L332-L390), setting `method="energy_fallback"`, `source="energy_proportional"`, `confidence <= 0.50`, `confidence_category="LOW"`, and `FALLBACK_ALIGNMENT` diagnostics. The engine strictly forbids fabricating linear word durations, hardcoded $0.88$ confidence, or fake `mms_fa_ctc` provenance.
 
 ---
 
@@ -191,7 +193,39 @@ All telemetry is captured into typed contracts in [`audiobook_factory/performanc
 - **[`ProsodyEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L65-L79)**: Fundamental frequency ($F_0$) median (Hz), $F_0$ interquartile range (IQR), $F_0$ minimum/maximum, $F_0$ standard deviation ($\sigma_{F0}$), crest factor dynamic range (dB), energy variance, and robotic monotonic pitch lock indicator.
 - **[`PacingEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L80-L93)**: Speaking rate in words/second (WPS), target WPS, WPS ratio, active speech duration, pause duration, pause count, and dramatic timing adherence.
 - **[`VoiceIdentityEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L94-L107)**: Measured $F_0$ vs. baseline, $F_0$ deviation percentage, measured spectral centroid vs. baseline, acoustic similarity score $[0.0, 1.0]$, drift detection flag, and catastrophic drift hard gate flag.
-- **[`PerformanceEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L108-L122)**: Master aggregate encapsulating acoustic, prosodic, pacing, voice identity, and alignment evidence.
+- **[`PerformanceEvidence`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L108-L122)**: Master aggregate encapsulating acoustic, prosodic, pacing, voice identity, and alignment evidence. `alignment_confidence: Optional[float] = None` — unverified alignment is never assumed to be 1.0; low alignment confidence ($< 0.35$) and critical alignment diagnostics fail take evaluation (`passed = False`), while confidence $< 0.40$ applies a $-0.25$ penalty.
+
+---
+
+### 4.8 Alignment Wiring to Evaluator and Hard Gates
+When candidate takes are evaluated:
+1. `TakeVariant.alignment_result` propagates directly into `PerformanceEvidence.alignment_confidence` and `alignment_diagnostics`.
+2. Missing alignment records `[ALIGNMENT] Speech alignment unverified` without fabricating perfection.
+3. If alignment confidence falls below $0.35$ or critical diagnostics appear (`INSUFFICIENT_SPEECH`, `AUDIO_FILE_DEFECT`), `align_hard_gate_failure` triggers, forcing `passed = False` and `recommendation = "regenerate"`.
+
+---
+
+#### Stage 1: Technical Audio Integrity Hard Gate
+Rejects corrupt or defective takes:
+- Audio file missing or size $\le 44$ bytes (empty WAV header).
+- Duration $< 0.25\text{ s}$.
+- Excessive duration: $> 3.5\times$ target duration and $> 4.0\text{ s}$.
+- Rail clipping: $\ge 12$ consecutive samples pinned to digital rail.
+- DC bias anomaly: $|bias| > 1500.0$.
+- Dead air violation: trailing silence $> 2.0\text{ s}$.
+
+#### Stage 2: Alignment Validity Hard Gate
+- Alignment confidence $< 0.35$ ([`alignment_confidence_hard_gate`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L343)) or critical diagnostic (`CRITICAL`, `INSUFFICIENT_SPEECH`, `AUDIO_FILE_DEFECT`).
+- Word omission ratio $> 50.0\%$.
+
+#### Stage 3: Catastrophic Voice Identity Hard Gate
+- Acoustic similarity $< 0.45$ against golden reference signature.
+- Explicit `is_hard_gate_violation == True` from `VoiceIdentityEvidence`.
+
+#### Single-Take Path Gate Integrity
+A solitary candidate take is never assumed acceptable by default. It is audited against all three hard gates (Technical, Alignment, Voice Drift) and performance evaluation criteria (`ev.passed`). If any hard gate fails or performance evaluation fails, the single candidate is flagged with `review_required = True`, selection confidence drops to $0.35$, and explicit defect reasons are appended to `selection_reason`. Only pristine single takes passing all gates and evaluation standards receive `review_required = False` and `confidence = 1.0`.
+
+*Fail-Safe Behavior*: If all candidate takes violate hard gates, the engine does not abort; it enters a fail-safe review mode, selecting the best available take, marking `review_required = True`, and prepending `[REVIEW REQUIRED - ALL TAKES FAILED HARD GATES]`.
 
 ### 4.2 Normalized Autocorrelation F0 Tracking
 To track vocal pitch without external heavy pitch estimation libraries, `PerformanceEvaluator` runs a normalized autocorrelation method on 50ms centered audio frames with 25ms hops:

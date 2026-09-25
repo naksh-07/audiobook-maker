@@ -190,17 +190,18 @@ class PairwiseTakeJudge:
                         reason_codes.append("BETTER_CHEMISTRY")
 
         # 8. Alignment Uncertainty & Artifacts
-        align_a = ev_a.evidence.alignment_confidence if (ev_a and ev_a.evidence) else 0.85
-        align_b = ev_b.evidence.alignment_confidence if (ev_b and ev_b.evidence) else 0.85
-        if abs(align_a - align_b) >= 0.10:
-            if align_a > align_b:
-                adj_a += 0.02
-                if "LOWER_ALIGNMENT_UNCERTAINTY" not in reason_codes:
-                    reason_codes.append("LOWER_ALIGNMENT_UNCERTAINTY")
-            else:
-                adj_b += 0.02
-                if "LOWER_ALIGNMENT_UNCERTAINTY" not in reason_codes:
-                    reason_codes.append("LOWER_ALIGNMENT_UNCERTAINTY")
+        align_a = ev_a.evidence.alignment_confidence if (ev_a and ev_a.evidence and ev_a.evidence.alignment_confidence is not None) else None
+        align_b = ev_b.evidence.alignment_confidence if (ev_b and ev_b.evidence and ev_b.evidence.alignment_confidence is not None) else None
+        if align_a is not None and align_b is not None:
+            if abs(align_a - align_b) >= 0.10:
+                if align_a > align_b:
+                    adj_a += 0.02
+                    if "LOWER_ALIGNMENT_UNCERTAINTY" not in reason_codes:
+                        reason_codes.append("LOWER_ALIGNMENT_UNCERTAINTY")
+                else:
+                    adj_b += 0.02
+                    if "LOWER_ALIGNMENT_UNCERTAINTY" not in reason_codes:
+                        reason_codes.append("LOWER_ALIGNMENT_UNCERTAINTY")
 
         final_a = round(min(1.0, max(0.0, score_a + adj_a)), 3)
         final_b = round(min(1.0, max(0.0, score_b + adj_b)), 3)
@@ -258,9 +259,11 @@ class IntelligentTakeSelector:
         self,
         evaluator: Optional[PerformanceEvaluator] = None,
         config: Optional[TakeSelectorCalibrationConfig] = None,
+        aligner: Optional[Any] = None,
     ):
         self.evaluator = evaluator or PerformanceEvaluator()
         self.config = config or TakeSelectorCalibrationConfig()
+        self.aligner = aligner
 
     def _audit_technical_hard_gates(
         self,
@@ -319,10 +322,26 @@ class IntelligentTakeSelector:
         reasons: List[str] = []
         if take.evaluation and take.evaluation.evidence:
             ev = take.evaluation.evidence
-            if ev.alignment_confidence < self.config.alignment_confidence_hard_gate:
-                reasons.append(
-                    f"Alignment failure: confidence {ev.alignment_confidence:.2f} < {self.config.alignment_confidence_hard_gate}"
-                )
+            if ev.alignment_confidence is not None:
+                if ev.alignment_confidence < self.config.alignment_confidence_hard_gate:
+                    reasons.append(
+                        f"Alignment failure: confidence {ev.alignment_confidence:.2f} < {self.config.alignment_confidence_hard_gate}"
+                    )
+        # Also check take's direct alignment_result or diagnostics if present
+        align_res = getattr(take, "alignment_result", None)
+        if align_res is not None:
+            conf = getattr(align_res, "confidence", None)
+            if conf is not None and conf < self.config.alignment_confidence_hard_gate:
+                msg = f"Alignment failure: confidence {conf:.2f} < {self.config.alignment_confidence_hard_gate}"
+                if msg not in reasons:
+                    reasons.append(msg)
+            for d in getattr(align_res, "diagnostics", []):
+                sev = getattr(d, "severity", "")
+                code = getattr(d, "code", "")
+                if sev == "CRITICAL" or code in ("INSUFFICIENT_SPEECH", "AUDIO_FILE_DEFECT"):
+                    d_msg = f"Critical alignment failure: {getattr(d, 'message', str(d))}"
+                    if d_msg not in reasons:
+                        reasons.append(d_msg)
         return len(reasons) == 0, reasons
 
     def _audit_voice_identity_gate(
@@ -454,8 +473,20 @@ class IntelligentTakeSelector:
         if not takes:
             raise ValueError(f"No candidate takes provided for segment {direction.segment_uid}")
 
-        # Ensure all takes are evaluated
+        # Ensure all takes are evaluated and aligned
         for t in takes:
+            # If take does not have an alignment result and aligner is provided, run alignment
+            if getattr(t, "alignment_result", None) is None and self.aligner is not None:
+                try:
+                    t.alignment_result = self.aligner.align_segment(
+                        audio_path=t.audio_path,
+                        text=text,
+                        segment_uid=direction.segment_uid,
+                        direction=direction,
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to align take {t.take_id}: {e}")
+
             if t.evaluation is None:
                 t.evaluation = self.evaluator.evaluate_take(
                     take_id=t.take_id,
@@ -464,29 +495,69 @@ class IntelligentTakeSelector:
                     direction=direction,
                     signature=signature,
                     voice_dna=voice_dna,
+                    alignment_result=getattr(t, "alignment_result", None),
+                )
+            elif (
+                t.evaluation.evidence is not None
+                and t.evaluation.evidence.alignment_confidence is None
+                and getattr(t, "alignment_result", None) is not None
+            ):
+                t.evaluation = self.evaluator.evaluate_take(
+                    take_id=t.take_id,
+                    audio_file=t.audio_path,
+                    text=text,
+                    direction=direction,
+                    signature=signature,
+                    voice_dna=voice_dna,
+                    alignment_result=t.alignment_result,
                 )
 
-        # Single candidate take fast path
+        # Single candidate take path
         if len(takes) == 1:
             sole = takes[0]
             sole.is_selected = True
             ev = sole.evaluation
-            gate_pass, gate_reasons = self._audit_technical_hard_gates(sole, text, direction)
-            score = ev.overall_score if ev else 0.80
 
-            if gate_pass and ev and ev.passed:
+            all_reasons: List[str] = []
+            p_tech, r_tech = self._audit_technical_hard_gates(sole, text, direction)
+            if not p_tech:
+                all_reasons.extend(r_tech)
+
+            p_align, r_align = self._audit_alignment_hard_gates(sole)
+            if not p_align:
+                all_reasons.extend(r_align)
+
+            p_voice, r_voice = self._audit_voice_identity_gate(sole)
+            if not p_voice:
+                all_reasons.extend(r_voice)
+
+            gates_passed = (len(all_reasons) == 0)
+            score = ev.overall_score if ev else 0.80
+            eval_passed = ev.passed if ev else True
+
+            if gates_passed and eval_passed:
                 reason = (
                     f"Selected sole candidate ({sole.variant_type}): overall score {score:.2f} "
-                    f"satisfies performance standards."
+                    f"satisfies performance and technical standards."
                 )
                 review_req = False
+                confidence = 1.0
+                reason_codes = ["STRONGER_INTENT_MATCH"]
             else:
                 reason = (
-                    f"Selected sole candidate ({sole.variant_type}) as baseline (score: {score:.2f})."
+                    f"Selected sole candidate ({sole.variant_type}) as degraded baseline (score: {score:.2f})."
                 )
-                if not gate_pass:
-                    reason += f" [HARD GATE WARNING: {'; '.join(gate_reasons)}]"
-                review_req = not gate_pass
+                if not gates_passed:
+                    reason += f" [HARD GATE FAILURE: {'; '.join(all_reasons)}]"
+                if not eval_passed and ev:
+                    failed_dims = [k for k, d in ev.dimensions.items() if d.rating in ("weak", "unacceptable")]
+                    if failed_dims:
+                        reason += f" [EVALUATION DEFECTS: {', '.join(failed_dims)}]"
+                    elif ev.voice_drift_detected:
+                        reason += " [VOICE DRIFT DETECTED]"
+                review_req = True
+                confidence = 0.35
+                reason_codes = ["REVIEW_REQUIRED_GATE_FAILURE"] if not gates_passed else ["REVIEW_REQUIRED_LOW_QUALITY"]
 
             sole.selection_reason = reason
             result = TakeSelectionResult(
@@ -495,9 +566,13 @@ class IntelligentTakeSelector:
                 winner_score=round(score, 3),
                 runner_up_score=None,
                 margin=0.0,
-                confidence=1.0 if not review_req else 0.35,
-                reason_codes=["STRONGER_INTENT_MATCH"] if not review_req else [],
-                evidence={"gate_passed": gate_pass, "gate_reasons": gate_reasons},
+                confidence=confidence,
+                reason_codes=reason_codes,
+                evidence={
+                    "gate_passed": gates_passed,
+                    "gate_reasons": all_reasons,
+                    "eval_passed": eval_passed,
+                },
                 review_required=review_req,
             )
             sole.selection_result = result
