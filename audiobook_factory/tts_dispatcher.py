@@ -945,6 +945,10 @@ class TTSDispatcher:
         self.evaluator = PerformanceEvaluator()
         self.take_selector = IntelligentTakeSelector(evaluator=self.evaluator)
         self.continuity_tracker = PerformanceContinuityTracker()
+        for cand_cc in (self.project_dir / "character_continuity.json", self.project_dir / "performance" / "character_continuity.json"):
+            if cand_cc.exists():
+                self.continuity_tracker.load_from_file(cand_cc)
+                break
 
         # Pronunciation & Spoken Language QA Subsystem
         from audiobook_factory.pronunciation import (
@@ -968,6 +972,10 @@ class TTSDispatcher:
         self.spoken_text_engine = SpokenTextEngine(resolver=self.pronunciation_resolver)
         self.pronunciation_auditor = PronunciationAudioQA(forced_aligner=self.forced_aligner)
         self.pronunciation_repair = PronunciationRepairEngine(auditor=self.pronunciation_auditor)
+
+        # Formal Cast Lock Subsystem (Wave 1 Upgrade)
+        from audiobook_factory.casting import CastLockManager
+        self.cast_lock_manager = CastLockManager(self.project_dir)
 
     def _load_character_roster(self) -> Tuple[Dict[str, str], Dict[str, str]]:
         """Loads character aliases and gender mappings from character_roster.json."""
@@ -1038,6 +1046,14 @@ class TTSDispatcher:
         with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(self.voice_map, f, indent=2)
 
+        if hasattr(self, "cast_lock_manager") and self.cast_lock_manager:
+            self.cast_lock_manager.lock_character(
+                character_id=speaker.lower().replace(" ", "_"),
+                character_name=speaker,
+                voice_id=voice,
+                calibration_overrides={"speed": speed},
+            )
+
     def get_speaker_config(self, speaker: str, seg_type: str = "narration") -> Dict[str, Any]:
         """
         Resolves complete speaker configuration (backend, voice, speed, pitch, bass_boost_db).
@@ -1045,6 +1061,25 @@ class TTSDispatcher:
         """
         sp_clean = (speaker or "").strip()
         sp_lower = sp_clean.lower()
+
+        # 0. Formal Cast Lock Resolution (Wave 1 Cast Lock takes authoritative priority)
+        if hasattr(self, "cast_lock_manager") and self.cast_lock_manager:
+            lock = self.cast_lock_manager.get_lock(sp_clean)
+            if not lock and sp_lower in self.alias_map:
+                lock = self.cast_lock_manager.get_lock(self.alias_map[sp_lower])
+            if lock and lock.locked:
+                cfg = {
+                    "backend": "gemini_tts",
+                    "voice": lock.voice_id,
+                    "speed": lock.calibration_overrides.get("speed", 1.0),
+                    "pitch": lock.calibration_overrides.get("pitch", 1.0),
+                    "cast_locked": True,
+                    "casting_version": lock.casting_version,
+                }
+                for k, v in lock.calibration_overrides.items():
+                    if k not in cfg:
+                        cfg[k] = v
+                return cfg
 
         # 1. Exact match in voice_map
         if sp_clean in self.voice_map:
@@ -1371,6 +1406,7 @@ class TTSDispatcher:
 
         if p_dir:
             self.continuity_tracker.record_direction(p_dir, dur)
+            self.continuity_tracker.record_take(p_dir.speaker, take_id=out_path.stem, duration_sec=dur)
 
         return out_path, dur
 
@@ -1616,6 +1652,10 @@ class TTSDispatcher:
                 rep_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(rep_path, "w", encoding="utf-8") as rf:
                     rf.write(gate_report.model_dump_json(indent=2))
+
+            # Persist Long-Form Character Performance Continuity (Phase 18)
+            self.continuity_tracker.advance_chapter(f"chapter_{chapter_num:03d}")
+            self.continuity_tracker.save_to_file(self.project_dir / "character_continuity.json")
         except Exception as e:
             logger.warning(f"  [!] Performance Layer Gate 2.8 notice: {e}")
 

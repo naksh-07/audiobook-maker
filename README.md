@@ -8,7 +8,8 @@
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.8%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-Universal%20Director%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-443%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-521%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Casting & Acting Engine](https://img.shields.io/badge/Acting%20Engine-Studio%20Multi--Take%20%26%20CastLock-blue.svg)](docs/TTS_CASTING_ARCHITECTURE.md)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
@@ -222,6 +223,30 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 - **Scene-Bound BGM Underscore:** Upgraded Pass 2 Music Director in [`agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py) to support `until_segment` duration calculation, allowing musical cues to span full narrative scenes (25s to 240s) rather than arbitrary 30s chops, bounded by a strict 40% chapter music budget.
 - **Dynamic Multi-Scene Ambience Bed Partitioning:** In [`_partition_script_ambience_scenes()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py), shifts in screenplay `acoustic_env` (e.g. Castle Bath $\rightarrow$ Royal Banquet Hall $\rightarrow$ Dense Forest Night) automatically partition chapters into distinct acoustic environments, replacing flat 106-minute monolithic ambience loops.
 
+### 14. Commercial Studio Voice Casting, Identity & Acting Intelligence (ADR-023 / Waves 1–6)
+*(See authoritative architecture manuals: [`docs/TTS_CASTING_ARCHITECTURE.md`](docs/TTS_CASTING_ARCHITECTURE.md) and [`docs/TTS_GENERATION_ARCHITECTURE.md`](docs/TTS_GENERATION_ARCHITECTURE.md))*
+- **Multi-Pillar Voice Casting Engine (`audiobook_factory/casting/`)**:
+  - `CharacterCastingProfile`: 10-dimensional casting profiling (age bracket, gender, role hierarchy, vocal weight, texture, baseline pace, energy, restraint, dialect, emotional flexibility).
+  - `VoiceCandidateEngine`: Evaluates candidates against 12 flagship and regional personas, ranking by multi-dimensional distance.
+  - `VoiceAuditionEngine`: Tests candidate voices across 10 audition modes (`exposition`, `dramatic_climax`, `whisper`, `banter`, `grief`, `menace`, `sarcasm`, `fatigue`, `tenderness`, `urgent`).
+  - `CastingEvaluator` & `CastLockManager`: Evaluates timbre match, dynamic range, and vocal distinction. Atomically locks character-to-voice attribution in `cast_lock.json` with recast cache invalidation and automatic `voice_registry.json` backward compatibility.
+- **Acoustic Voice Identity & Drift Defense (`audiobook_factory/identity/`)**:
+  - `VoiceDNA`: 4-layer specification (Core Identity, Behavioral Rules, Emotional Elasticity, Forbidden Registers).
+  - `ReferenceVoiceBank`: Extracts and persists reference acoustic signatures ($F_0$ median/IQR via normalized autocorrelation with energy thresholding, spectral centroid, spectral flatness, RMS) into `reference_signatures.json`.
+  - `VoiceIdentityAnalyzer`: Calibrated pitch/timbre drift detector guarding against voice drift across 100+ chapter books.
+- **Acting Intelligence & Dramatic Continuity (`audiobook_factory/performance/`)**:
+  - `SceneEmotionalStateTracker`: Tracks 6D emotional vectors (`valence`, `arousal`, `dominance`, `tension`, `energy`, `restraint`) with trajectory smoothing.
+  - `PerformanceConstraintResolver`: Resolves scene context into concise, prioritized acting directives, eliminating adjective bloat.
+  - `Continuous Generation Risk Engine`: Evaluates scene difficulty $R \in [0.0, 1.0]$ based on emotional volatility, physical strain, dialogue speed, and multi-speaker density, triggering single vs. multi-take generation strategies.
+  - `TakeBank` & `IntelligentTakeSelector`: Generates targeted variants (`more_restrained`, `more_vulnerable`, `slower_heavier`, `colder`, `more_urgent`), evaluated across Acoustic, Performance, Voice Identity, and Relational dimensions.
+  - `ConversationalChemistry`: Interpersonal turn-taking modeling, latency adjustment based on power dynamics/tension, and realistic interruption snapping.
+  - `PerformanceContinuityTracker`: Tracks running character metrics (`paces[-200:]`, `energies[-200:]`, `restraints[-200:]`) across scenes and chapters in `character_continuity.json`, with atomic file persistence.
+- **Human Casting Console CLI (`scripts/casting_console.py`)**:
+  - Interactive CLI supporting `--status`, `--list-voices`, `--recommend`, `--audition`, `--lock`, and `--recast`. Fully UTF-8 encoded on Windows 11 PowerShell.
+- **Golden Audio Regression Suite & AST Zero-Hardcoding Contracts**:
+  - 18 dramatic test cases validated offline using synthetic multi-frequency PCM wave fixtures (`tests/test_golden_audio_regression_suite.py`).
+  - Static AST contract testing (`tests/test_zero_hardcoding_contracts.py`) guaranteeing zero hardcoded character names, chapter logic, or sound references in engine code.
+
 ---
 
 ## 📚 Complete Documentation Hub
@@ -232,6 +257,8 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 | **[🧠 Literary Translation Intelligence (Pillar 2)](docs/LITERARY_TRANSLATION_INTELLIGENCE.md)** | Complete guide to BookBible v2.0, Contextual Hindustani Register, 7D Relationship & Intensity models, Gates T0–T11, Tiered Repair, and Memory 2.0. |
 | **[🎭 Dramatic Adaptation & Screenplay (Stage 3)](docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Deep dive into the Stage 3 Dramaturgy Engine, SceneAnalyzer, BeatPlanner, beat-aligned chunk slicing, Performance Bible, and Gate 2.5 fidelity audits. |
 | **[🎭 Performance Realization & Gate 2.8](docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md)** | Authoritative guide to moment-level actor performance directions, multi-take banking, 8D acoustic evaluation, and Gate 2.8 pre-mix verification. |
+| **[🎙️ Commercial Studio Voice Casting Architecture](docs/TTS_CASTING_ARCHITECTURE.md)** | Complete architectural guide to Voice Candidate Engine, Audition Engine, Casting Evaluator, Cast Lock Manager (`cast_lock.json`), VoiceDNA, and Reference Voice Bank. |
+| **[🎬 Commercial Studio TTS Generation & Acting Intelligence](docs/TTS_GENERATION_ARCHITECTURE.md)** | Authoritative guide to Scene Emotional State Tracker (6D vectors), Constraint Resolver, Risk Engine ($R \in [0.0, 1.0]$), Multi-Take Banking, Dialogue Chemistry, and Continuity Tracking. |
 | **[🗣️ Pronunciation & Spoken QA (ADR-022)](docs/PRONUNCIATION_AND_SPOKEN_LANGUAGE_QA.md)** | Complete architectural guide to dual-layer text decoupling, 7-tier resolution, MMS_FA CTC acoustic alignment, single-take repairs, and Gate 6E cross-chapter drift audits. |
 | **[🏛️ Architecture Blueprint](docs/ARCHITECTURE.md)** | In-depth breakdown of the 4 rooms, 5 stems, 10 metadata bridges, Adult Literary Mode pipeline integration, and strict agent creative mandate. |
 | **[🎬 Cinematic Sound Design & Adult Fidelity](docs/CINEMATIC_SOUND_DESIGN_AND_ADULT_FIDELITY.md)** | Authoritative guide to Hollywood 3-layer combat design (ADR-017), Pottermore 4-stem decoupled scene acoustics (ADR-018), and unfiltered adult intimacy (ADR-019). |
@@ -314,12 +341,17 @@ python audiobook_cli.py bank stats
 
 ## 🧪 Verification & Test Suite
 
-The codebase maintains **443 passed unit tests (100% green)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (443/443 passed, 0 failures, 0 errors):
+The codebase maintains **521 passed unit tests (100% green)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (521/521 passed, 0 failures, 0 errors):
 
 ```powershell
-# Run full regression suite across all test suites (443 tests)
+# Run full regression suite across all test suites (521 tests)
 pytest tests/
-python -m unittest discover tests -p "test_*.py"
+
+# Commercial Studio Voice Casting, Identity & Generation Suites (Waves 1-6, 77 tests)
+pytest tests/test_wave1_casting.py tests/test_wave2_voice_identity.py tests/test_wave3_acting_intelligence.py tests/test_wave4_generation_quality.py tests/test_wave5_ensemble_performance.py -v
+
+# Golden Audio Regression Suite (18 dramatic cases offline)
+pytest tests/test_golden_audio_regression_suite.py -v
 
 # Run Dramatic Performance Realization & Gate 2.8 suite (23 tests, ADR-032)
 pytest tests/test_performance_realization.py -v

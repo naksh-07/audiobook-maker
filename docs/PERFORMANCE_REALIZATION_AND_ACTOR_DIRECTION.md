@@ -532,7 +532,8 @@ python audiobook_cli.py produce audiobooks/projects/witcher_blood_of_elves --cha
 The Dramatic Performance Realization Layer is fortified by a comprehensive test suite. All tests pass with 100% green integrity across Windows and POSIX environments.
 
 ### Verification Summary
-- **Overall Codebase Test Suite:** **443 tests passed, 17 subtests passed (100% green)**
+- **Overall Codebase Test Suite:** **521 tests passed, 17 subtests passed (100% green)**
+- **Commercial Studio Casting & Generation Waves (1-6):** **77 passed in 6.00s**
 - **Dedicated Performance Realization Test Suite:** [`tests/test_performance_realization.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_performance_realization.py) — **23 passed in 1.25s**
 - **Gate Auditor Test Suite:** [`tests/test_gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_gate_auditor.py) — **5 passed in 35s**
 

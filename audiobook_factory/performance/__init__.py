@@ -21,6 +21,7 @@ from .contracts import (
     PhysicalStagingState,
     EvaluationDimensionScore,
     PerformanceEvaluationResult,
+    ChemistryEvaluationResult,
     TakeVariant,
     PerformanceFidelityReport,
 )
@@ -51,6 +52,7 @@ __all__ = [
     "PhysicalStagingState",
     "EvaluationDimensionScore",
     "PerformanceEvaluationResult",
+    "ChemistryEvaluationResult",
     "TakeVariant",
     "PerformanceFidelityReport",
     "TimingRealizer",

@@ -6,7 +6,11 @@ consistent vocal identity without sacrificing dramatic expression.
 """
 
 from __future__ import annotations
-from typing import Dict, Any, List, Optional
+import os
+import uuid
+import json
+from pathlib import Path
+from typing import Dict, Any, List, Optional, Union
 from pydantic import BaseModel, Field, ConfigDict
 
 from audiobook_factory.logger import logger
@@ -14,7 +18,7 @@ from .contracts import PerformanceDirection
 
 
 class CharacterPerformanceTelemetry(BaseModel):
-    """Running performance metrics for a character across scenes."""
+    """Running performance metrics for a character across scenes and chapters."""
     model_config = ConfigDict(extra="ignore")
 
     character_name: str
@@ -24,6 +28,16 @@ class CharacterPerformanceTelemetry(BaseModel):
     energies: List[float] = Field(default_factory=list)
     restraints: List[float] = Field(default_factory=list)
     emotions_seen: List[str] = Field(default_factory=list)
+
+    # Long-form continuity fields (Phase 18)
+    last_emotional_state: Optional[str] = None
+    last_energy: Optional[float] = None
+    last_pace: Optional[float] = None
+    last_physical_state: Optional[str] = None
+    voice_identity_confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    scene_count: int = 0
+    chapter_count: int = 0
+    recent_take_ids: List[str] = Field(default_factory=list)
 
     @property
     def average_pace(self) -> float:
@@ -42,6 +56,7 @@ class PerformanceContinuityTracker:
     """
     Monitors character performance arcs across chapters to detect and prevent
     unintended actor drift or abrupt emotional rupture.
+    Maintains persistent telemetry across chapter and book boundaries.
     """
 
     def __init__(self):
@@ -69,6 +84,82 @@ class PerformanceContinuityTracker:
             telem.restraints = telem.restraints[-200:]
         if direction.surface_emotion not in telem.emotions_seen:
             telem.emotions_seen.append(direction.surface_emotion)
+
+        # Update last observed state
+        telem.last_emotional_state = direction.surface_emotion
+        telem.last_energy = direction.energy
+        telem.last_pace = direction.pace
+        telem.last_physical_state = direction.physical_state
+
+    def record_take(
+        self,
+        speaker: str,
+        take_id: str,
+        duration_sec: float = 0.0,
+        voice_identity_score: Optional[float] = None,
+    ) -> None:
+        """Records take generation metadata and updates voice identity confidence."""
+        if not speaker or speaker in ("Narrator", "Foley"):
+            return
+
+        if speaker not in self.characters:
+            self.characters[speaker] = CharacterPerformanceTelemetry(character_name=speaker)
+
+        telem = self.characters[speaker]
+        telem.recent_take_ids.append(take_id)
+        if len(telem.recent_take_ids) > 20:
+            telem.recent_take_ids = telem.recent_take_ids[-20:]
+
+        if voice_identity_score is not None:
+            # Running exponential moving average of acoustic consistency
+            telem.voice_identity_confidence = round(
+                0.85 * telem.voice_identity_confidence + 0.15 * voice_identity_score,
+                3,
+            )
+
+    def advance_chapter(self, chapter_id: str = "") -> None:
+        """Advances chapter counter across all active tracked characters."""
+        for telem in self.characters.values():
+            telem.chapter_count += 1
+
+    def audit_inter_chapter_transition(
+        self,
+        speaker: str,
+        new_direction: PerformanceDirection,
+    ) -> List[str]:
+        """
+        Audits continuity between previous chapter performance state and new chapter onset.
+        Guards against unmotivated physical recovery or violent energy leaps across breaks.
+        """
+        warnings: List[str] = []
+        if speaker not in self.characters:
+            return warnings
+
+        telem = self.characters[speaker]
+
+        # 1. Physical state continuity
+        if telem.last_physical_state in ("wounded", "exhausted"):
+            if new_direction.physical_state in ("combat_strain", "normal"):
+                warn = (
+                    f"Physical Continuity Alert: {speaker} abruptly transitioned from "
+                    f"'{telem.last_physical_state}' to '{new_direction.physical_state}' across boundary"
+                )
+                warnings.append(warn)
+                logger.warning(f"  [!] {warn}")
+
+        # 2. Vocal energy rupture
+        if telem.last_energy is not None:
+            energy_jump = abs(new_direction.energy - telem.last_energy)
+            if energy_jump > 0.55 and new_direction.intensity not in ("explosive", "high"):
+                warn = (
+                    f"Energy Continuity Alert: {speaker} exhibits unbuffered energy jump "
+                    f"({telem.last_energy:.2f} -> {new_direction.energy:.2f}) across chapter boundary"
+                )
+                warnings.append(warn)
+                logger.warning(f"  [!] {warn}")
+
+        self.drift_warnings.extend(warnings)
+        return warnings
 
     def audit_scene_continuity(
         self,
@@ -104,3 +195,49 @@ class PerformanceContinuityTracker:
 
         self.drift_warnings.extend(warnings)
         return warnings
+
+    def save_to_file(self, filepath: Union[Path, str]) -> None:
+        """Serializes character performance telemetry atomically to a JSON file."""
+        p = Path(filepath)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "version": "2.0.0",
+            "characters": {k: v.model_dump() for k, v in self.characters.items()},
+            "drift_warnings": self.drift_warnings[-100:],
+        }
+        tmp_file = p.with_suffix(f".tmp_{os.getpid()}_{uuid.uuid4().hex[:6]}")
+        try:
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            os.replace(tmp_file, p)
+        finally:
+            if tmp_file.exists():
+                try:
+                    tmp_file.unlink()
+                except OSError:
+                    pass
+        logger.info(f"  [CONTINUITY] Saved character performance telemetry to {p.name}")
+
+    def load_from_file(self, filepath: Union[Path, str]) -> None:
+        """Deserializes character performance telemetry from a JSON file."""
+        p = Path(filepath)
+        if not p.exists():
+            return
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            chars_data = data.get("characters", {})
+            for k, c_dict in chars_data.items():
+                self.characters[k] = CharacterPerformanceTelemetry.model_validate(c_dict)
+            self.drift_warnings = data.get("drift_warnings", [])
+            logger.info(f"  [CONTINUITY] Loaded continuity state for {len(self.characters)} characters from {p.name}")
+        except Exception as e:
+            logger.warning(f"  [CONTINUITY] Failed to load continuity file {p.name}: {e}")
+
+    def export_manifest(self) -> Dict[str, Any]:
+        """Exports in-memory telemetry as dictionary."""
+        return {
+            "characters": {k: v.model_dump() for k, v in self.characters.items()},
+            "drift_warnings": list(self.drift_warnings),
+        }
+

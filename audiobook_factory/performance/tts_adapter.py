@@ -42,6 +42,13 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
         "vulnerable": ["underlying vulnerability", "cracked composure", "subtext rising", "exposed hesitation"],
         "exposed": ["raw emotional intensity", "direct confrontation", "heightened adrenaline"],
         "alternative_cadence": ["rhythmic syncopation", "deliberate cadence", "pregnant pauses"],
+        "more_restrained": ["iron restraint", "understated delivery", "suppressed cold composure"],
+        "more_vulnerable": ["cracked composure", "underlying vulnerability", "softened exposure"],
+        "slower_heavier": ["deliberate measured cadence", "grounded heavy vocal weight"],
+        "colder": ["detached icy delivery", "clinical distance", "unforgiving tone"],
+        "less_energetic": ["weary delivery", "lowered vocal projection", "exhausted drawl"],
+        "more_intimate": ["intimate close-mic whisper", "gentle proximity", "low acoustic projection"],
+        "more_urgent": ["urgent accelerated cadence", "heightened adrenaline", "tense breath"],
     }
 
     def compose_style_descriptor(
@@ -127,26 +134,39 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
         text: str,
         direction: PerformanceDirection,
         variant_type: str = "standard",
+        voice_dna: Optional[Any] = None,
+        scene_vector: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Translates PerformanceDirection into Gemini TTS API payload format.
         Text is 100% sacred and unmutated.
         """
         clean_text = text.strip()
-        style_desc = self.compose_style_descriptor(direction, variant_type=variant_type)
+
+        # Resolve concise, prioritized constraints avoiding adjective bloat
+        try:
+            from .constraint_resolver import PerformanceConstraintResolver
+            resolved = PerformanceConstraintResolver.resolve_constraints(
+                direction=direction,
+                voice_dna=voice_dna,
+                scene_vector=scene_vector,
+                variant_type=variant_type,
+            )
+            style_desc = resolved.clean_style_descriptor
+            temp = resolved.effective_temperature
+        except Exception:
+            style_desc = self.compose_style_descriptor(direction, variant_type=variant_type)
+            temp = 0.70
+            if variant_type == "restraint":
+                temp = 0.65
+            elif variant_type == "exposed":
+                temp = 0.76
+            elif variant_type == "vulnerable":
+                temp = 0.72
 
         part_payload: Dict[str, Any] = {"text": clean_text}
         if style_desc and style_desc.lower() not in ("neutral", "standard"):
             part_payload["speechMetadata"] = {"style": style_desc}
-
-        # Temperature calibration: slight micro-entropy modulated by variant
-        temp = 0.70
-        if variant_type == "restraint":
-            temp = 0.65  # More disciplined, less random
-        elif variant_type == "exposed":
-            temp = 0.76  # More raw dynamic entropy
-        elif variant_type == "vulnerable":
-            temp = 0.72
 
         return {
             "part_payload": part_payload,

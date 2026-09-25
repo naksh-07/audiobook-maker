@@ -191,6 +191,30 @@ def audit_gate1_roster(
         collision_str = "; ".join(f"{c[0]} vs {c[1]} ({c[2]})" for c in collisions)
         raise GateAuditError(f"Gate 1 Failed: Voice collision detected: {collision_str}")
 
+    # Phase 24: Cast Lock Verification against Registry
+    if not isinstance(registry_file, dict):
+        try:
+            reg_p = Path(registry_file).resolve()
+            cast_lock_p = reg_p.parent / "cast_lock.json"
+            if cast_lock_p.exists():
+                with open(cast_lock_p, "r", encoding="utf-8") as clf:
+                    cl_data = json.load(clf)
+                    locks = cl_data.get("locks", {})
+                    for char, lk in locks.items():
+                        if isinstance(lk, dict) and lk.get("locked"):
+                            expected_v = lk.get("voice_id", "")
+                            actual_cfg = registry_data.get(char)
+                            actual_v = actual_cfg.get("voice") if isinstance(actual_cfg, dict) else actual_cfg
+                            if actual_v and expected_v and actual_v.lower() != expected_v.lower():
+                                raise GateAuditError(
+                                    f"Gate 1 Failed: Cast Lock violation for '{char}': "
+                                    f"locked to '{expected_v}', but voice registry has '{actual_v}'"
+                                )
+        except GateAuditError:
+            raise
+        except Exception as e:
+            logger.debug(f"Cast lock audit check skipped: {e}")
+
     return {
         "status": "PASS",
         "active_roles": len(active),
@@ -1257,6 +1281,20 @@ def audit_gate6a_voice_continuity(
                                 canonical_voices[dname] = vid
         except Exception as e:
             logger.warning(f"Failed to read character_roster.json: {e}")
+
+    cast_lock_file = pdir / "cast_lock.json"
+    if cast_lock_file.exists():
+        try:
+            with open(cast_lock_file, "r", encoding="utf-8") as f:
+                cl_data = json.load(f)
+                locks = cl_data.get("locks", {})
+                for char, lk in locks.items():
+                    if isinstance(lk, dict) and lk.get("locked"):
+                        vid = lk.get("voice_id")
+                        if vid:
+                            canonical_voices[char] = vid
+        except Exception as e:
+            logger.warning(f"Failed to read cast_lock.json: {e}")
 
     # 2. Check all chapter scripts for voice consistency
     scripts_dir = pdir / "scripts"

@@ -600,3 +600,42 @@
 - **Rationale:** Guarantees flawless spoken clarity and character entity continuity across full-novel audio drama productions without mutating authorial prose, corrupting subtitles, or exhausting generative AI quota.
 
 
+## ADR-023: Commercial Studio Audiobook TTS Casting, Voice Identity & Acting Intelligence Subsystem (Waves 1-6 Architecture)
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:**
+  1. Producing premium commercial audiobooks (Harry Potter / Pottermore caliber) requires moving beyond flat, single-pass TTS synthesis toward nuanced acting direction, multi-take candidate banking, acoustic voice identity preservation, conversational chemistry between characters, and cross-chapter performance continuity.
+  2. Subjective voice casting risked voice collisions and misaligned personas. Without empirical auditioning and immutable cast locking, cast assignments were fragile across re-runs.
+  3. Generative TTS models suffer from acoustic drift across takes and emotional extremes (shouting, whispers, crying). Without reference voice banking and spectral signature probing, character identity drifted over long chapters.
+  4. Abrupt emotional teleportation (e.g. calm to explosive fury without transitional grounding) degraded listener immersion.
+- **Decision:**
+  1. **Wave 1 — Empirical Casting & Cast Lock Authoritative Priority (`casting/`):**
+     - Built `CharacterCastingProfile`, `VoiceCandidateEngine` (12 Gemini TTS catalog voices across 6 acoustic/dramatic dimensions with explainable breakdown), and `VoiceAuditionEngine` (10 standardized dramatic modes).
+     - Implemented `CastLockManager` (`cast_lock.json`) providing authoritative priority in `TTSDispatcher` over raw registries, and automated recasting with previous audio take archival/invalidation.
+  2. **Wave 2 — Voice DNA & Acoustic Drift Defense (`identity/`):**
+     - Established 4-layer `VoiceDNA` (Identity, Behavior, Emotional, Forbidden) and `VoiceDNABank`.
+     - Built `ReferenceVoiceBank` extracting 4-dimensional acoustic signatures (Median F0, Spectral Centroid, Spectral Flatness, RMS dBFS).
+     - Built `VoiceIdentityAnalyzer` comparing synthesized takes against golden reference baselines with dynamic tolerance widening during dramatic extremes.
+  3. **Wave 3 — Acting Intelligence & Dynamic Risk Allocation (`performance/`):**
+     - Implemented `SceneEmotionalStateTracker` computing continuous 6D vectors $(\text{valence}, \text{arousal}, \text{tension}, \text{restraint}, \text{vulnerability}, \text{energy})$ with exponential smoothing ($\alpha = 0.35$).
+     - Built `PerformanceConstraintResolver` synthesizing concise, prioritized directives (Primary Intention, $\le 3$ Secondary Modifiers, Forbidden Behaviors) eliminating adjective pileup.
+     - Built `GenerationRiskEngine` computing continuous risk $R \in [0.0, 1.0]$ driving dynamic take allocation.
+  4. **Wave 4 — Generation Quality & Evaluator 2.0 (`performance/`):**
+     - Implemented `GenerationStrategyResolver` selecting generation mode (`CHUNKED_NARRATION`, `ISOLATED_SINGLE_TAKE`, `ISOLATED_MULTI_TAKE`, `CRITICAL_SCENE_TAKE`).
+     - Upgraded `TakeBank` with uncertainty-driven adaptive variants (`more_restrained`, `more_vulnerable`, `slower_heavier`, `colder`, `more_urgent`).
+     - Upgraded `PerformanceEvaluator 2.0` assessing 4 pillars (Acoustic, Performance, Voice Identity, Relational), and `IntelligentTakeSelector` with context-aware weighting and $-0.40$ drift penalty.
+  5. **Wave 5 — Ensemble Performance & Long-Form Continuity (`performance/`):**
+     - Extended `ConversationalChemistry` with post-synthesis `evaluate_dialogue_chemistry()` measuring pause fidelity, interruption sharpness ($\le 40\text{ ms}$ snapping), and dynamic energy contrast.
+     - Extended `PerformanceContinuityTracker` persisting character performance arcs across chapters to `character_continuity.json`, auditing inter-chapter physical recovery anomalies and unbuffered energy leaps.
+  6. **Wave 6 — Production Hardening & Documentation (`tests/`, `scripts/`, `docs/`):**
+     - Built `GoldenAudioRegressionSuite` (`tests/test_golden_audio_regression_suite.py`) testing 18 dramatic cases offline with synthetic WAV fixtures.
+     - Built Human Casting Console CLI (`scripts/casting_console.py`) supporting voice exploration, status display, recommendations, audition packs, locking, and recasting.
+     - Upgraded Pre-Mix Gate 1 and Gate 6A in `gate_auditor.py` to enforce Cast Locks.
+     - Authored complete architecture guides: [`docs/TTS_CASTING_ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TTS_CASTING_ARCHITECTURE.md) and [`docs/TTS_GENERATION_ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TTS_GENERATION_ARCHITECTURE.md).
+  7. **AST Zero-Hardcoding Contract Compliance:**
+     - 100% compliant with `tests/test_zero_hardcoding_contracts.py` (0 character names, 0 chapter branch hacks in engine files).
+     - Full repository test suite confirmed 100% green: 521/521 tests passing.
+- **Rationale:** Delivers commercial studio-quality, Harry Potter / Pottermore-caliber vocal performances with complete architectural provenance, zero character hardcoding, and zero regressions.
+
+
+

@@ -39,6 +39,8 @@ class PerformanceEvaluator:
         audio_file: Path | str,
         text: str,
         direction: PerformanceDirection,
+        signature: Optional[Any] = None,
+        voice_dna: Optional[Any] = None,
     ) -> PerformanceEvaluationResult:
         """
         Evaluates a candidate audio take against PerformanceDirection.
@@ -247,14 +249,40 @@ class PerformanceEvaluator:
         )
 
         # ---------------------------------------------------------------------
-        # Dimension 6: Character Consistency
+        # ---------------------------------------------------------------------
+        # Dimension 6: Character Consistency & Voice Identity (Wave 4 Upgrade)
         # ---------------------------------------------------------------------
         char_score = 0.90
         char_reasons = [f"Delivery matches {direction.speaker} persona profile"]
+        v_ident_score = None
+        v_drift = False
+
+        if signature:
+            try:
+                from audiobook_factory.identity import VoiceIdentityAnalyzer
+                analyzer = VoiceIdentityAnalyzer(sample_rate=self.sample_rate)
+                drift_res = analyzer.analyze_take_identity(
+                    take_id=take_id,
+                    audio_path=p,
+                    signature=signature,
+                    voice_dna=voice_dna,
+                    dramatic_emotion=direction.surface_emotion,
+                    intensity=direction.intensity,
+                )
+                v_ident_score = drift_res.similarity_score
+                v_drift = drift_res.drift_detected
+                char_score = min(char_score, drift_res.similarity_score)
+                if v_drift:
+                    char_reasons.append(f"Acoustic drift detected: {'; '.join(drift_res.diagnostics)}")
+                else:
+                    char_reasons.append(f"Acoustic identity verified (similarity: {drift_res.similarity_score:.2f})")
+            except Exception as e:
+                logger.warning(f"  [EVALUATOR] Voice identity probe notice: {e}")
+
         dimensions["character_consistency"] = EvaluationDimensionScore(
             dimension="character_consistency",
             score=round(char_score, 2),
-            rating="strong",
+            rating="strong" if char_score >= 0.80 else ("moderate" if char_score >= 0.65 else "unacceptable"),
             rationale="; ".join(char_reasons),
         )
 
@@ -313,7 +341,7 @@ class PerformanceEvaluator:
         total_w = sum(active_weights.values()) or 1.0
         overall = sum(dimensions[k].score * (w / total_w) for k, w in active_weights.items())
 
-        passed = overall >= 0.70 and naturalness_score >= 0.65
+        passed = overall >= 0.70 and naturalness_score >= 0.65 and not v_drift
 
         rec = "accept"
         if not passed:
@@ -333,4 +361,6 @@ class PerformanceEvaluator:
             dimensions=dimensions,
             diagnostics=diagnostics,
             recommendation=rec,
+            voice_identity_score=v_ident_score,
+            voice_drift_detected=v_drift,
         )

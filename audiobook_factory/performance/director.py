@@ -304,6 +304,36 @@ class PerformanceDirector:
         else:
             req_takes = 1
 
+        # Wave 3 Upgrade: Generation Risk Engine dynamic calibration
+        try:
+            from .risk_engine import GenerationRiskEngine
+            prelim_dir = PerformanceDirection(
+                direction_id=f"prelim_{s_idx:04d}",
+                index=s_idx,
+                speaker=s_spk,
+                narrative_mode=s_mode,
+                surface_emotion=surface_emotion,
+                intensity=s_intensity,
+                pace=round(effective_pace, 2),
+                physical_state=phys_state,
+                interruption_behavior=timing_dict.get("interruption_behavior", "none"),
+                social_mask=social_mask,
+                subtext_confidence=subtext_confidence,
+                proximity=s_prox,
+                intimacy_level=intimacy,
+            )
+            risk_rep = GenerationRiskEngine.calculate_segment_risk(prelim_dir, text=s_txt)
+            if prio_clean == "standard" and risk_rep.recommended_takes > 1:
+                req_takes = risk_rep.recommended_takes
+                if risk_rep.risk_tier == "critical":
+                    prio_typed = "climactic"
+                elif risk_rep.risk_tier == "elevated":
+                    prio_typed = "high"
+                else:
+                    prio_typed = "focused"
+        except Exception:
+            pass
+
         # 8. Delivery Intent Summary (Explainable Actor Directive)
         summary_parts = [
             f"Action: {effective_actioning}",

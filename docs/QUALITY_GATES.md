@@ -128,6 +128,7 @@ flowchart LR
   - Every character present in the chapter screenplay must have an entry in `character_roster.json` and `voice_registry.json`. Non-vocal action tags (`Foley`, `SFX`) are automatically excluded from vocal requirements.
   - Computes acoustic voice signature: `sig = f"{voice}_p{pitch:.2f}_s{speed:.2f}"`.
   - **Zero Voice Collision Mandate**: No two active characters in the same project can share the exact same voice signature unless explicitly configured as ensemble crowd voices.
+  - **Cast Lock Priority (ADR-023)**: If `cast_lock.json` is present, authoritative locked voice attributions take absolute precedence over legacy registries, verifying that locked characters are assigned their certified voices.
   - **Acoustic Gender Alignment Check (ADR-021)**: Cross-references roster `gender` with known Gemini persona gender profiles (`FEMALE_PERSONAS = {"aoede", "kore", "leda", "zephyr"}`, `MALE_PERSONAS = {"charon", "fenrir", "puck", "zeus", "orpheus", "achilles"}`). Emits clear acoustic gender warning logs if male roles are assigned female personas or vice versa.
 - **Fail Condition**: Raises `GateAuditError` detailing conflicting characters (e.g. `Harry vs Ron (Puck_p1.00_s1.00)`).
 
@@ -261,7 +262,8 @@ flowchart LR
 - **Audit Rules**:
   - Maps every character that speaks across multiple chapters.
   - Ensures the character has a persistent canonical voice assignment that does not mutate between Chapter 1, Chapter 2, etc.
-- **Fail Condition**: Returns `AuditResult(passed=False)` if a character changes voice mid-book.
+  - **Cast Lock Invariant (ADR-023)**: If `cast_lock.json` is present, verifies that character voice assignments strictly match locked voice IDs. Recasting requires explicit invalidation of affected chapter audio chunks.
+- **Fail Condition**: Returns `AuditResult(passed=False)` if a character changes voice mid-book without explicit recast invalidation.
 
 ---
 

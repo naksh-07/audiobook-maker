@@ -170,6 +170,29 @@ class PerformanceEvaluationResult(BaseModel):
     )
     diagnostics: List[str] = Field(default_factory=list, description="Diagnostic observations and feedback")
     recommendation: Literal["accept", "regenerate", "downgrade"] = Field(default="accept")
+    voice_identity_score: Optional[float] = Field(default=None, description="Acoustic similarity score against reference voice bank")
+    voice_drift_detected: bool = Field(default=False, description="Whether acoustic drift exceeded calibrated threshold")
+
+
+class ChemistryEvaluationResult(BaseModel):
+    """
+    Post-synthesis acoustic and dramatic chemistry evaluation across adjacent dialogue turns.
+    Evaluates response latency, interruption sharpness, and dynamic energy contrast.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    prev_take_id: str = Field(..., description="Unique take identifier of preceding turn")
+    curr_take_id: str = Field(..., description="Unique take identifier of responding turn")
+    prev_speaker: str = Field(..., description="Speaker of preceding turn")
+    curr_speaker: str = Field(..., description="Speaker of responding turn")
+    expected_gap_ms: int = Field(default=400, ge=0, description="Dramatically anticipated gap in milliseconds")
+    actual_gap_ms: Optional[int] = Field(default=None, description="Acoustic or assembled gap between turns")
+    pause_fidelity_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Turn-taking pause accuracy")
+    interruption_quality_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Interruption sharpness score")
+    energy_contrast_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Energy dynamic appropriateness")
+    composite_chemistry_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Composite conversational chemistry score")
+    passed: bool = Field(default=True, description="Whether conversational chemistry passes threshold")
+    diagnostics: List[str] = Field(default_factory=list, description="Diagnostic observations")
 
 
 class TakeVariant(BaseModel):
@@ -181,7 +204,20 @@ class TakeVariant(BaseModel):
     take_id: str = Field(..., description="Unique take identifier (e.g. 'c001_s0001_take_b')")
     segment_uid: str = Field(default="", description="Matching ScreenplaySegment UID")
     segment_index: int = Field(..., ge=1, description="1-indexed sequence number")
-    variant_type: Literal["restraint", "vulnerable", "exposed", "standard", "alternative_cadence"] = Field(
+    variant_type: Literal[
+        "restraint",
+        "vulnerable",
+        "exposed",
+        "standard",
+        "alternative_cadence",
+        "more_restrained",
+        "more_vulnerable",
+        "slower_heavier",
+        "colder",
+        "less_energetic",
+        "more_intimate",
+        "more_urgent",
+    ] = Field(
         default="standard",
         description="Artistic variation avenue"
     )

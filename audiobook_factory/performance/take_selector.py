@@ -64,9 +64,16 @@ class IntelligentTakeSelector:
                 )
             return sole
 
-        # Multi-take selection: Rank candidates by weighted composite priority
-        # Scoring logic:
-        # If character has high restraint (>= 0.70), heavily favor subtext and restraint over raw energy
+        # Multi-take selection: Rank candidates by context-aware weighted priority (Wave 4 Upgrade)
+        # Context-aware scoring:
+        # - Exposition: naturalness dominates
+        # - Climax: emotional truth & subtext dominate
+        # - Whisper: intimacy & intelligibility dominate
+        # - Voice drift: penalized heavily (-0.40) to enforce voice identity stability
+        is_whisper = direction.proximity == "close_mic" or direction.intimacy_level == "intimate" or "whisper" in direction.surface_emotion.lower()
+        is_climax = direction.intensity in ("high", "explosive") or direction.performance_priority in ("high", "climactic")
+        is_exposition = direction.narrative_mode == "narrator_exposition" or direction.speaker in ("Narrator", "Foley")
+
         scored_candidates = []
         for t in takes:
             ev = t.evaluation
@@ -77,14 +84,37 @@ class IntelligentTakeSelector:
             sub_score = ev.dimensions.get("subtext", None)
             rel_score = ev.dimensions.get("relationship_consistency", None)
             nat_score = ev.dimensions.get("naturalness", None)
+            emo_score = ev.dimensions.get("emotional_match", None)
 
             bonus = 0.0
-            # Restraint bonus
-            if direction.restraint >= 0.70 and sub_score and sub_score.score >= 0.85:
-                bonus += 0.06
-            # Relationship bonus
-            if rel_score and rel_score.score >= 0.85:
-                bonus += 0.04
+
+            # 1. Voice Identity & Drift Enforcement
+            if ev.voice_drift_detected:
+                bonus -= 0.40  # Heavy penalty for voice drift
+            elif ev.voice_identity_score and ev.voice_identity_score >= 0.85:
+                bonus += 0.05  # Bonus for rock-solid acoustic signature match
+
+            # 2. Context-Aware Weighting
+            if is_exposition:
+                if nat_score and nat_score.score >= 0.85:
+                    bonus += 0.08
+            elif is_climax:
+                if emo_score and emo_score.score >= 0.85:
+                    bonus += 0.08
+                if direction.restraint >= 0.70 and sub_score and sub_score.score >= 0.85:
+                    bonus += 0.06
+            elif is_whisper:
+                if t.variant_type in ("more_intimate", "vulnerable", "restraint"):
+                    bonus += 0.08
+                if nat_score and nat_score.score >= 0.80:
+                    bonus += 0.04
+            else:
+                # Standard Dialogue
+                if direction.restraint >= 0.70 and sub_score and sub_score.score >= 0.85:
+                    bonus += 0.05
+                if rel_score and rel_score.score >= 0.85:
+                    bonus += 0.04
+
             # Naturalness prerequisite
             if nat_score and nat_score.score < 0.70:
                 bonus -= 0.15

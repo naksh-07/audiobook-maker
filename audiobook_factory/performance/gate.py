@@ -100,6 +100,10 @@ class PerformanceFidelityGate:
                     issues.append(
                         f"Take {take.take_id} score ({ev.overall_score:.2f}) below critical threshold (0.65)."
                     )
+                if ev.voice_drift_detected:
+                    issues.append(
+                        f"Take {take.take_id} ({d.speaker}): Voice drift detected against reference acoustic signature."
+                    )
                 if not take.selection_reason:
                     issues.append(f"Take {take.take_id} lacks explainable selection rationale.")
 

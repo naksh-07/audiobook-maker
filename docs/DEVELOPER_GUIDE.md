@@ -46,10 +46,19 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **443 passed unit tests (17 subtests passed)** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
+The codebase maintains **521 passed unit tests (17 subtests passed)** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# Commercial Studio Voice Casting, Identity & Generation Suites (Waves 1-6, 77 tests)
+pytest tests/test_wave1_casting.py tests/test_wave2_voice_identity.py tests/test_wave3_acting_intelligence.py tests/test_wave4_generation_quality.py tests/test_wave5_ensemble_performance.py -v
+
+# Golden Audio Regression Suite (18 dramatic cases offline)
+pytest tests/test_golden_audio_regression_suite.py -v
+
+# AST Zero-Hardcoding Contracts Verification
+pytest tests/test_zero_hardcoding_contracts.py -v
+
 # Dramatic Performance Realization Layer & Gate 2.8 (ADR-032, 23 tests)
 pytest tests/test_performance_realization.py -v
 
