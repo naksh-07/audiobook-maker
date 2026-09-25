@@ -5,7 +5,8 @@
 [![Release](https://img.shields.io/badge/Release-v4.0.0--beta.1%20(Pre--Stable)-orange.svg)](https://github.com/naksh-07/audiobook-maker/releases)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-6.0%2B%20%7C%208.0-red.svg)](https://ffmpeg.org/)
-[![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.1%20Flash%20API-green.svg)](https://ai.google.dev/)
+[![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.8%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
+[![Voice Casting](https://img.shields.io/badge/Voice%20Casting-Universal%20Director%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
 [![Verification](https://img.shields.io/badge/Tests-420%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
@@ -75,7 +76,7 @@ The architecture orchestrates an end-to-end 6-stage lifecycle from raw document 
 1. **Stage 1: Forensic Document Ingestion & Canonical AST** ([`docs/FORENSIC_DOCUMENT_INGESTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/FORENSIC_DOCUMENT_INGESTION.md)): Single-pass DOM traversal, layout-aware PDF reading order reconstruction, sacred raw archival, and fail-closed Gate 0.1 extraction audits.
 2. **Stage 2: Literary Translation Intelligence & Memory 2.0** ([`docs/LITERARY_TRANSLATION_INTELLIGENCE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md)): Persistent BookBible v2.0, dual semantic maps, contextual Hindustani register, 7D calibrated intensity, World & Character Memory 2.0 epistemic continuity, and Gates T0–T11 certification.
 3. **Stage 3: Dramatic Adaptation & Screenplay Engine (v1.1)** ([`docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)): Transforms flat prose into multi-cast dramatic screenplays via the **Dramaturgy Engine** (`audiobook_factory/dramaturgy/`). Deploys 10 refined dramatic capabilities (Beat Causality 'therefore/but' chaining, Dramatic State Deltas, Relationship Evolution, Power/Epistemic Dynamics, Physical Blocking, Narrative Mode & POV Nuance, Adaptation Fidelity Policy, Long-Range Story Connections, Conversational Dynamics, Dramatic Silence Intent), **Beat-Aligned Chunk Slicing** (`slice_chapter_by_beats`) eliminating the historical 1,200-word cut boundary flaw, `PerformanceBibleGenerator` for sociolect archetypes (`COLD_CYNIC`, `CAUSTIC_ARISTOCRAT`, `THARKI_BARD`), and fail-closed **Gate 2.5 Dramatic Fidelity** 8-pillar validation (**420/420 tests green**).
-4. **Stage 4: Autonomous Agentic Directing (`AgentDirector`)** ([`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)): Autonomous 3-pass workflow executing $\ge 60\%$ acoustic silence carving, SQLite FTS5 leitmotif music scoring, and bilingual anchor Foley staging. Emits `CreativeManifest v3.0`.
+4. **Stage 4: Autonomous Directing & Gemini 3.8 Flash Speech Synthesis** ([`docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md) & [`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md)): Autonomous 3-pass workflow executing $\ge 60\%$ acoustic silence carving, SQLite FTS5 leitmotif music scoring, and bilingual anchor Foley staging. Emits `CreativeManifest v3.0` and dispatches multi-cast speech synthesis via `TTSDispatcher` to `gemini-3.8-flash-tts` with turn-level theatrical style directing, physical inline vocal tags (`<gasp>`, `<sigh>`, `<sob>`), and zero voice drift.
 5. **Stage 5: Acoustic Compositor & 5-Track DME Stem Mastering** ([`docs/AUDIO_ENGINEERING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)): Manifest rendering with whisper-safe sidechain ducking (-34.9 dBFS / 0.018 threshold), isolated 2.2kHz spectral notch, dynamic IR reverb, and discrete 5-track DME stem export audited by Gates 5, 5.2, and 5.3.
 6. **Stage 6: Master Packaging & M4B Delivery Container** ([`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)): Multi-chapter FFMETADATA1 generation, AAC safety auto-transcode, FastStart artwork embedding, and Gate 6A–6D master certification.
 
@@ -83,12 +84,14 @@ The architecture orchestrates an end-to-end 6-stage lifecycle from raw document 
 
 ## ✨ Key Technical Highlights
 
-### 1. Cloud Speech Synthesis & Quota Isolation
-- **Primary Engine:** **Google Gemini 3.1 Flash Cloud TTS API** (`gemini-3.1-flash-tts-preview`). Expressive personas tailored for multilingual cadence:
-  - `Aoede`: Polished, melodic feminine narration (top choice for Hindi / Hinglish).
-  - `Charon`: Deep, authoritative, resonant masculine cadence (ideal for fantasy / dark mystery).
-  - `Orus` / `Fenrir` / `Puck` / `Zephyr`: Distinct character dialogue casting.
-- **Quota Intelligence & Isolation:** Dedicated `service="text"` vs `service="tts"` key pool routing prevents auxiliary text prompts from depleting scarce 10 RPD Gemini TTS quotas. Multi-key persistent rotation pool with automatic date rollover, stealth cadence pacing, and automated `.env` quote stripping.
+### 1. Gemini 3.8 Flash Cloud Speech Synthesis & Theatrical Voice Casting
+*(See full technical guides: [`docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md) and [`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md))*
+- **Multimodal Generative Speech Modeling:** Powered by **Google Gemini 3.8 Flash TTS** (`models/gemini-3.8-flash-tts`) and **Gemini 3.8 Flash-Lite TTS** (`models/gemini-3.8-flash-lite-tts`). Replaces legacy phonemic text-splicing with an expansive **16,384 audio token output window** (~7–8 minutes of continuous dramatic audio per API invocation).
+- **Dual-Channel Theatrical Directing Engine:** Complete physical separation of verbatim dialogue (`text`) from dramatic performance directives (`speechMetadata.style`: tonal pitch, emotional intensity, vocal posture, cultural dialects).
+- **Physical Vocal Synthetics:** Native simulation of involuntary human vocal tract phenomena directly in speech text (`<breath>`, `<gasp>`, `<pant>`, `<sigh>`, `<laugh>`, `<sob>`, `<throat-clearing>`, `<short pause>`).
+- **Universal Character-to-Voice Matrix:** Invariant acoustic timbre profiling across 30 flagship voices (`Algenib`, `Puck`, `Kore`, `Fenrir`, `Aoede`, `Charon`, `Alnilam`, `Zephyr`, `Achernar`, `Achird`, `Leda`, `Orus`) and 120 dedicated regional Indian personas (`en-IN`) mapped to universal novel archetypes (`COLD_CYNIC`, `THEATRICAL_WIT`, `AUTHORITATIVE_MATRIARCH`, etc.).
+- **Zero Voice Drift Hardening (ADR-021):** Deterministic resolution of multi-script character aliases (English and Devanagari) via `character_roster.json` and `voice_registry.json`. Fails closed with zero-tolerance pre-flight sweeps before API dispatch.
+- **Quota Intelligence & Concurrency:** Thread-safe `TokenBucketRateLimiter` with organic anti-bot jitter (350ms–850ms) and automatic global pause on HTTP 429 `RetryInfo`. Dedicated key pool routing (`service="text"` vs `service="tts"`) prevents auxiliary LLM calls from depleting scarce 10 RPD Gemini TTS quotas.
 
 ### 2. Forensic Literary Ingestion Engine & Canonical AST (Pillar 1 Upgrades)
 *(See full technical guide: [`docs/FORENSIC_DOCUMENT_INGESTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/FORENSIC_DOCUMENT_INGESTION.md))*

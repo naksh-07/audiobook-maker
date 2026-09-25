@@ -1,0 +1,374 @@
+{
+  "catalog_version": "1.0.0",
+  "engine": "gemini-3.8-flash-tts",
+  "description": "Canonical machine-readable voice casting catalog for Audiobook Maker full-cast dramatization.",
+  "voices": {
+    "algenib": {
+      "id": "algenib",
+      "display_name": "Algenib",
+      "sex": "male",
+      "perceived_age": "mature_adult",
+      "age_range": "40-58",
+      "ethnicity_accent": "General American / Gritty Cinematic",
+      "pitch_category": "low",
+      "invariant_timbre": "Gravelly, raspy chest resonance, heavy vocal weight, grounded",
+      "elasticity": {
+        "styles_supported": [
+          "whispered urgently",
+          "cold suppressed menace",
+          "weary melancholic drawl",
+          "gravelly battle roar",
+          "laconic sarcasm"
+        ],
+        "pacing_range": "0.75x to 1.15x",
+        "forbidden_styles": [
+          "high-pitched bubbly youth",
+          "sweet melodic romance",
+          "cartoon panic"
+        ]
+      },
+      "archetypes": [
+        "Monster Hunter / Geralt",
+        "Hardboiled Detective",
+        "Hardened Veteran / Mercenary",
+        "Grimdark Narrator",
+        "Underworld Boss"
+      ],
+      "best_inline_tags": ["<sigh>", "<throat-clearing>", "<short pause>", "<pant>"]
+    },
+    "puck": {
+      "id": "puck",
+      "display_name": "Puck",
+      "sex": "male",
+      "perceived_age": "young_adult",
+      "age_range": "20-32",
+      "ethnicity_accent": "General American / Expressive Theatrical",
+      "pitch_category": "medium",
+      "invariant_timbre": "Upbeat, energetic tenor, clear articulation, agile formant shifts",
+      "elasticity": {
+        "styles_supported": [
+          "terrified stammering",
+          "witty boastful banter",
+          "panicked frantic pleading",
+          "theatrical romantic charm",
+          "fast tavern gossip"
+        ],
+        "pacing_range": "0.85x to 1.35x",
+        "forbidden_styles": [
+          "heavy bass guttural",
+          "stoic gravelly rasp",
+          "feeble dying elder"
+        ]
+      },
+      "archetypes": [
+        "Bard / Dandelion / Jaskier",
+        "Witty Companion / Sidekick",
+        "Charming Rogue / Pickpocket",
+        "Young Hero / Adventurer",
+        "Comic Relief"
+      ],
+      "best_inline_tags": ["<laugh>", "<laughter>", "<gasp>", "<snicker>", "<short pause>"]
+    },
+    "kore": {
+      "id": "kore",
+      "display_name": "Kore",
+      "sex": "female",
+      "perceived_age": "prime_adult",
+      "age_range": "28-42",
+      "ethnicity_accent": "General American / Crisp Continental",
+      "pitch_category": "medium_low",
+      "invariant_timbre": "Firm, resolute, rich chest resonance, commanding composure",
+      "elasticity": {
+        "styles_supported": [
+          "steely commanding authority",
+          "fierce defiance",
+          "restrained grief",
+          "urgent tactical warning",
+          "cold aristocratic dismissal"
+        ],
+        "pacing_range": "0.80x to 1.20x",
+        "forbidden_styles": [
+          "squeaky fragile child",
+          "breezy giggling flirt",
+          "exaggerated melodrama"
+        ]
+      },
+      "archetypes": [
+        "Warrior Heroine / Ciri (Adult)",
+        "Fierce Protector / Commander",
+        "Stoic Sorceress / Yennefer",
+        "Authoritative Matriarch",
+        "Rebel Leader"
+      ],
+      "best_inline_tags": ["<pant>", "<gasp>", "<breath>", "<short pause>"]
+    },
+    "fenrir": {
+      "id": "fenrir",
+      "display_name": "Fenrir",
+      "sex": "male",
+      "perceived_age": "prime_adult",
+      "age_range": "25-40",
+      "ethnicity_accent": "Raw / Explosive / Aggressive",
+      "pitch_category": "medium_low",
+      "invariant_timbre": "Fierce, husky, explosive attack transients, raw vocal cord friction",
+      "elasticity": {
+        "styles_supported": [
+          "explosive combat rage",
+          "guttural battle shout",
+          "rough taunting laughter",
+          "breathing heavily in exhaustion"
+        ],
+        "pacing_range": "0.85x to 1.30x",
+        "forbidden_styles": [
+          "whispered delicate scholar",
+          "courtly etiquette",
+          "soothing nursery tale"
+        ]
+      },
+      "archetypes": [
+        "Berserker Warrior",
+        "Ruthless Pirate",
+        "Street Thug",
+        "Aggressive Antagonist"
+      ],
+      "best_inline_tags": ["<pant>", "<cough>", "<snort>", "<pff>", "<laugh>"]
+    },
+    "aoede": {
+      "id": "aoede",
+      "display_name": "Aoede",
+      "sex": "female",
+      "perceived_age": "prime_adult",
+      "age_range": "25-38",
+      "ethnicity_accent": "Melodic / Continental / Narrative Flow",
+      "pitch_category": "medium",
+      "invariant_timbre": "Breezy, lyrical cadence, crystal-clear vowel projection, silky",
+      "elasticity": {
+        "styles_supported": [
+          "warm captivating narration",
+          "gentle nostalgic reflection",
+          "mysterious wonder",
+          "philosophical exposition"
+        ],
+        "pacing_range": "0.80x to 1.25x",
+        "forbidden_styles": [
+          "guttural demonic roar",
+          "frantic screeching"
+        ]
+      },
+      "archetypes": [
+        "Default Third-Person Narrator",
+        "Wise Sorceress",
+        "Worldly Chronicler",
+        "High Priestess"
+      ],
+      "best_inline_tags": ["<breath>", "<sigh>", "<short pause>"]
+    },
+    "charon": {
+      "id": "charon",
+      "display_name": "Charon",
+      "sex": "male",
+      "perceived_age": "mature_elder",
+      "age_range": "48-68",
+      "ethnicity_accent": "Measured / Oxford / Formal Resonance",
+      "pitch_category": "low_medium",
+      "invariant_timbre": "Resonant, calm, academic weight, measured cadence, authoritative composure",
+      "elasticity": {
+        "styles_supported": [
+          "slow philosophical observation",
+          "foreboding warning",
+          "somber historical delivery",
+          "calm courtroom authority"
+        ],
+        "pacing_range": "0.75x to 1.10x",
+        "forbidden_styles": [
+          "fast teenage slang",
+          "frantic screaming comedy"
+        ]
+      },
+      "archetypes": [
+        "Ancient Elder",
+        "Court Wizard / Mentor",
+        "High Judge",
+        "Arcane Scholar",
+        "Dark Narrative Host"
+      ],
+      "best_inline_tags": ["<throat-clearing>", "<sigh>", "<short pause>"]
+    },
+    "alnilam": {
+      "id": "alnilam",
+      "display_name": "Alnilam",
+      "sex": "male",
+      "perceived_age": "mature_adult",
+      "age_range": "35-52",
+      "ethnicity_accent": "Regal / Command Presence",
+      "pitch_category": "low_medium",
+      "invariant_timbre": "Resolute, unyielding, deep chest resonance with crisp regal articulation",
+      "elasticity": {
+        "styles_supported": [
+          "commanding battlefield general",
+          "regal imperial decree",
+          "cold calculating interrogation"
+        ],
+        "pacing_range": "0.80x to 1.15x",
+        "forbidden_styles": [
+          "timid stammering",
+          "subservient whining"
+        ]
+      },
+      "archetypes": [
+        "Emperor",
+        "Field Marshal",
+        "High Inquisitor",
+        "Sovereign King"
+      ],
+      "best_inline_tags": ["<short pause>", "<throat-clearing>"]
+    },
+    "zephyr": {
+      "id": "zephyr",
+      "display_name": "Zephyr",
+      "sex": "female",
+      "perceived_age": "youth",
+      "age_range": "18-26",
+      "ethnicity_accent": "Bright / Energetic / Curious",
+      "pitch_category": "medium_high",
+      "invariant_timbre": "Clear, forward formant placement, vibrant, breathy agility",
+      "elasticity": {
+        "styles_supported": [
+          "curious and determined",
+          "breathless excitement",
+          "sharp witty retort",
+          "frightened but brave"
+        ],
+        "pacing_range": "0.90x to 1.35x",
+        "forbidden_styles": [
+          "gravelly old grandmother",
+          "heavy soldier bass"
+        ]
+      },
+      "archetypes": [
+        "Young Heroine",
+        "Sorcery Apprentice",
+        "Clever Investigator",
+        "Spirited Princess"
+      ],
+      "best_inline_tags": ["<gasp>", "<laugh>", "<pant>", "<breath>"]
+    },
+    "achernar": {
+      "id": "achernar",
+      "display_name": "Achernar",
+      "sex": "female",
+      "perceived_age": "young_adult",
+      "age_range": "22-35",
+      "ethnicity_accent": "Gentle / Intimate / Melancholic",
+      "pitch_category": "high_medium",
+      "invariant_timbre": "Soft, air-rich, delicate harmonic overtone, profound emotional vulnerability",
+      "elasticity": {
+        "styles_supported": [
+          "tearful whispered confession",
+          "fragile melancholy",
+          "tender maternal comfort",
+          "pleading with trembling voice"
+        ],
+        "pacing_range": "0.75x to 1.10x",
+        "forbidden_styles": [
+          "barking military orders",
+          "aggressive vulgar taunts"
+        ]
+      },
+      "archetypes": [
+        "Tragic Heroine",
+        "Loving Mother",
+        "Gentle Healer",
+        "Dying Romantic Lead"
+      ],
+      "best_inline_tags": ["<sob>", "<sigh>", "<breath>", "<short pause>"]
+    },
+    "achird": {
+      "id": "achird",
+      "display_name": "Achird",
+      "sex": "male",
+      "perceived_age": "mature",
+      "age_range": "35-50",
+      "ethnicity_accent": "Smooth / Sibilant / Aristocratic",
+      "pitch_category": "medium",
+      "invariant_timbre": "Velvety, slight nasal resonance, precise sibilants, razor-sharp condescension",
+      "elasticity": {
+        "styles_supported": [
+          "silky patronizing condescension",
+          "whispered palace intrigue",
+          "mocking false courtesy"
+        ],
+        "pacing_range": "0.85x to 1.20x",
+        "forbidden_styles": [
+          "honest farmhand bluster",
+          "explosive barbarian rage"
+        ]
+      },
+      "archetypes": [
+        "Court Chancellor",
+        "Corrupt Diplomat",
+        "Treacherous Advisor",
+        "Poisoner"
+      ],
+      "best_inline_tags": ["<snicker>", "<pff>", "<short pause>"]
+    },
+    "leda": {
+      "id": "leda",
+      "display_name": "Leda",
+      "sex": "female",
+      "perceived_age": "young_adult",
+      "age_range": "20-30",
+      "ethnicity_accent": "Confident / Playful / Defiant",
+      "pitch_category": "medium_high",
+      "invariant_timbre": "Crisp, athletic cadence, warm midrange, agile tone shifts",
+      "elasticity": {
+        "styles_supported": [
+          "defiant sarcastic smirk",
+          "urgent scout report",
+          "playful competitive banter"
+        ],
+        "pacing_range": "0.90x to 1.30x",
+        "forbidden_styles": [
+          "feeble dying elder",
+          "submissive courtier"
+        ]
+      },
+      "archetypes": [
+        "Tomb Raider",
+        "Rebel Scout",
+        "Gunslinger Heroine",
+        "Outlaw Pilot"
+      ],
+      "best_inline_tags": ["<laugh>", "<pff>", "<gasp>", "<short pause>"]
+    },
+    "orus": {
+      "id": "orus",
+      "display_name": "Orus",
+      "sex": "male",
+      "perceived_age": "prime_adult",
+      "age_range": "30-45",
+      "ethnicity_accent": "Deep / Monosyllabic / Intimidating",
+      "pitch_category": "low",
+      "invariant_timbre": "Heavy sub-bass weight, slow envelope attack, laconic and blunt",
+      "elasticity": {
+        "styles_supported": [
+          "threatening low growl",
+          "blunt monosyllabic reply",
+          "calm professional killer"
+        ],
+        "pacing_range": "0.70x to 1.05x",
+        "forbidden_styles": [
+          "high frantic screaming",
+          "cheerful bard songs"
+        ]
+      },
+      "archetypes": [
+        "Bounty Hunter",
+        "Silent Bodyguard",
+        "Executioner",
+        "Criminal Enforcer"
+      ],
+      "best_inline_tags": ["<throat-clearing>", "<sigh>", "<short pause>"]
+    }
+  }
+}

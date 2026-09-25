@@ -427,7 +427,8 @@ def build_dramatized_script_llm(
 ```
 
 ### `TTSDispatcher` ([`audiobook_factory.tts_dispatcher`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))
-*Token-Bucket concurrent speech synthesizer with automatic failover.*
+*Token-Bucket concurrent speech synthesizer, multimodal audio director, and zero-voice-drift orchestrator.*  
+*(See comprehensive technical manuals: [`docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md) and [`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md))*
 
 ```python
 class UnregisteredSpeakerError(KeyError):
@@ -445,7 +446,7 @@ class TTSDispatcher:
         strict_speakers: bool = True,
     ):
         """
-        Orchestrates concurrent speech synthesis with TokenBucket rate limiting.
+        Orchestrates concurrent speech synthesis with TokenBucket rate limiting and SQLite ledger state.
         When strict_speakers=True (default), prohibits silent fallback to Narrator for dialogue.
         """
 
@@ -454,6 +455,11 @@ class TTSDispatcher:
     ) -> Dict[str, Any]:
         """Resolves complete speaker configuration, mapping roster aliases and checking whitelist."""
 
+    def synthesize_segment(
+        self, segment: Dict[str, Any], chapter_num: int, seg_num: int
+    ) -> Tuple[Path, float]:
+        """Synthesizes an individual dialogue or narration segment with SNR quality validation."""
+
     def synthesize_chapter_script(
         self,
         script_file: Path,
@@ -461,14 +467,36 @@ class TTSDispatcher:
     ) -> List[Path]:
         """Pre-flights all segments against voice registry, then synthesizes chunks concurrently."""
 
+def resolve_speech_metadata_style(
+    acting: Any,
+    emotion: str = "neutral",
+    intensity: str = "medium",
+    memory_vocal_constraint: Optional[str] = None,
+) -> str:
+    """Transforms screenplay acting directives into natural language descriptors for speechMetadata.style."""
+
 def synthesize_gemini_tts(
     text: str,
-    voice_name: str,
-    api_key: str,
-    model_id: str = "gemini-3.1-flash-tts-preview",
-    rate_limit_pause: float = 0.5,
-) -> bytes:
-    """Synthesizes PCM audio chunk with explicit safetySettings: [BLOCK_NONE] across all 4 categories."""
+    output_file: Path,
+    voice: str = DEFAULT_VOICE,
+    model: str = "gemini-3.8-flash-tts",
+    emotion: str = "neutral",
+    acting: Any = None,
+    intensity: str = "medium",
+    memory_vocal_constraint: Optional[str] = None,
+    max_retries: int = 4,
+    rate_limiter: Optional[TokenBucketRateLimiter] = None,
+) -> Tuple[Path, float]:
+    """Synthesizes unary 24kHz WAV speech chunk with explicit BLOCK_NONE safetySettings and SNR gatekeeping."""
+
+def synthesize_gemini_multispeaker_batch(
+    batch: BatchPlanItem,
+    output_file: Path,
+    voice_map: Dict[str, str],
+    model: str = "gemini-3.8-flash-tts",
+    rate_limiter: Optional[TokenBucketRateLimiter] = None,
+) -> Tuple[Path, float]:
+    """Synthesizes multi-speaker 2-character dialogue rallies using multiSpeakerVoiceConfig."""
 
 def probe_key_health(api_key: str) -> bool:
     """Verifies API key validity and active quota with Google AI Studio."""
