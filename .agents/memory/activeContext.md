@@ -4,7 +4,7 @@
 # Active Context: Audiobook Maker Core Engine & Production
 
 ## Live Sprint State
-- **Branch**: `main` (PR #1 `book_extractor` + PR #2 & PR #3 `translator` MERGED TO `main`, commit `2ff94a6`).
+- **Branch**: `main` (Pillar 1 Forensic Extraction Upgrades MERGED & VERIFIED, commit `ab931ca`).
 - **Forensic Ingestion Engine (Pillar 1 Upgrades Complete & Verified)**:
   - Canonical `CanonicalBook` AST (`canonical/book.json`), non-destructive normalization (sacred `raw_text` vs. speech `normalized_text` purging `\x00`, `\x07`, `\u00ad`), fail-closed Gate 0.1.
   - Upgrade 1: `PDFLayoutReconstructor` recursive XY-cut multi-column reading order, gutter detection, spanning banner cuts, column wrap healing.
