@@ -115,10 +115,14 @@ class SoundAssetRetriever:
             domestic_query = f"dish plate ceramic {surf_clean} tableware".strip()
             candidates = self.bank.search(domestic_query, category="foley", limit=4)
             for c in candidates:
-                fp = Path(c.get("filepath", ""))
+                cand_fp_str = c.get("filepath", "")
                 # Reject weapon clashes in dining context
-                if fp.exists() and not any(w in fp.name.lower() for w in ("sword", "blade", "clash", "parry", "dagger", "axe")):
-                    return self._wrap_asset_descriptor(fp, category="FOL", action=act_clean, exciter=exc_clean, resonator=surf_clean)
+                if not any(w in str(cand_fp_str).lower() for w in ("sword", "blade", "clash", "parry", "dagger", "axe")):
+                    cand_desc = self._resolve_or_download_candidate(
+                        c, category="FOL", action=act_clean, exciter=exc_clean, resonator=surf_clean
+                    )
+                    if cand_desc:
+                        return cand_desc
             return None  # Prefer silence over playing a sword clash during dining
 
         # 2. Semantic query formulation
@@ -145,9 +149,27 @@ class SoundAssetRetriever:
             search_results = self.bank.search(act_clean, category="foley", limit=3)
 
         for res in search_results:
-            cand_fp = Path(res.get("filepath", ""))
-            if cand_fp.exists():
-                return self._wrap_asset_descriptor(cand_fp, category="FOL", action=act_clean, exciter=exc_clean, resonator=surf_clean)
+            cand = self._resolve_or_download_candidate(
+                res, category="FOL", action=act_clean, exciter=exc_clean, resonator=surf_clean
+            )
+            if cand:
+                return cand
+
+        # 5. Virtual Catalog Search fallback (JIT)
+        if hasattr(self.bank, "search_virtual_catalog"):
+            v_results = self.bank.search_virtual_catalog(
+                query=query_str or act_clean,
+                category="foley",
+                exciter=exc_clean or None,
+                surface=surf_clean or None,
+                limit=3,
+            )
+            for v_res in v_results:
+                cand = self._resolve_or_download_candidate(
+                    v_res, category="FOL", action=act_clean, exciter=exc_clean, resonator=surf_clean
+                )
+                if cand:
+                    return cand
 
         return None
 
@@ -169,9 +191,16 @@ class SoundAssetRetriever:
             results = self.bank.search(clean_type, category="sfx", limit=4)
 
         for res in results:
-            fp = Path(res.get("filepath", ""))
-            if fp.exists():
-                return self._wrap_asset_descriptor(fp, category="SFX", action=sfx_type)
+            cand = self._resolve_or_download_candidate(res, category="SFX", action=sfx_type)
+            if cand:
+                return cand
+
+        if hasattr(self.bank, "search_virtual_catalog"):
+            v_results = self.bank.search_virtual_catalog(query=query_str, category="sfx", limit=4)
+            for v_res in v_results:
+                cand = self._resolve_or_download_candidate(v_res, category="SFX", action=sfx_type)
+                if cand:
+                    return cand
 
         return None
 
@@ -196,9 +225,16 @@ class SoundAssetRetriever:
             results = self.bank.search(f"magic {stage_clean}", category="sfx", limit=4)
 
         for res in results:
-            fp = Path(res.get("filepath", ""))
-            if fp.exists():
-                return self._wrap_asset_descriptor(fp, category="MAGC", action=stage)
+            cand = self._resolve_or_download_candidate(res, category="MAGC", action=stage)
+            if cand:
+                return cand
+
+        if hasattr(self.bank, "search_virtual_catalog"):
+            v_results = self.bank.search_virtual_catalog(query=query, category="sfx", limit=4)
+            for v_res in v_results:
+                cand = self._resolve_or_download_candidate(v_res, category="MAGC", action=stage)
+                if cand:
+                    return cand
 
         return None
 
@@ -221,9 +257,16 @@ class SoundAssetRetriever:
             results = self.bank.search(f"creature {elem_clean}", category="sfx", limit=4)
 
         for res in results:
-            fp = Path(res.get("filepath", ""))
-            if fp.exists():
-                return self._wrap_asset_descriptor(fp, category="CREA", action=element)
+            cand = self._resolve_or_download_candidate(res, category="CREA", action=element)
+            if cand:
+                return cand
+
+        if hasattr(self.bank, "search_virtual_catalog"):
+            v_results = self.bank.search_virtual_catalog(query=query, category="sfx", limit=4)
+            for v_res in v_results:
+                cand = self._resolve_or_download_candidate(v_res, category="CREA", action=element)
+                if cand:
+                    return cand
 
         return None
 
@@ -249,9 +292,16 @@ class SoundAssetRetriever:
             results = self.bank.search("room_tone", category="ambience", limit=2)
 
         for res in results:
-            fp = Path(res.get("filepath", ""))
-            if fp.exists():
-                return self._wrap_asset_descriptor(fp, category="AMB", action=tier)
+            cand = self._resolve_or_download_candidate(res, category="AMB", action=tier)
+            if cand:
+                return cand
+
+        if hasattr(self.bank, "search_virtual_catalog"):
+            v_results = self.bank.search_virtual_catalog(query=e_clean.replace("_", " "), category="ambience", limit=4)
+            for v_res in v_results:
+                cand = self._resolve_or_download_candidate(v_res, category="AMB", action=tier)
+                if cand:
+                    return cand
 
         return None
 
@@ -290,9 +340,16 @@ class SoundAssetRetriever:
         # 3. FTS5 search in music category
         results = self.bank.search(q_clean, category="music", limit=3)
         for res in results:
-            fp = Path(res.get("filepath", ""))
-            if fp.exists():
-                return self._wrap_asset_descriptor(fp, category="MUS", action=cue_type)
+            cand = self._resolve_or_download_candidate(res, category="MUS", action=cue_type)
+            if cand:
+                return cand
+
+        if hasattr(self.bank, "search_virtual_catalog"):
+            v_results = self.bank.search_virtual_catalog(query=q_clean, category="music", limit=4)
+            for v_res in v_results:
+                cand = self._resolve_or_download_candidate(v_res, category="MUS", action=cue_type)
+                if cand:
+                    return cand
 
         return None
 
@@ -322,11 +379,78 @@ class SoundAssetRetriever:
             results = self.bank.search(act_clean.replace("_", " "), category="ambience", limit=3)
 
         for res in results:
-            fp = Path(res.get("filepath", ""))
-            if fp.exists():
-                return self._wrap_asset_descriptor(fp, category="WALLA", action=density)
+            cand = self._resolve_or_download_candidate(res, category="WALLA", action=density)
+            if cand:
+                return cand
+
+        if hasattr(self.bank, "search_virtual_catalog"):
+            v_results = self.bank.search_virtual_catalog(query=query, category="ambience", limit=4)
+            for v_res in v_results:
+                cand = self._resolve_or_download_candidate(v_res, category="WALLA", action=density)
+                if cand:
+                    return cand
 
         return None
+
+    def _resolve_or_download_candidate(
+        self,
+        cand: Dict[str, Any],
+        category: str,
+        action: Optional[str] = None,
+        exciter: Optional[str] = None,
+        resonator: Optional[str] = None,
+    ) -> Optional[SoundAssetDescriptor]:
+        """
+        Resolves candidate row to a SoundAssetDescriptor:
+        1. If local audio file exists, wraps and returns it.
+        2. If audio file is missing or virtual, triggers JIT download and returns descriptor.
+        """
+        fp_str = cand.get("filepath")
+        if fp_str:
+            fp = Path(fp_str)
+            if fp.exists():
+                return self._wrap_asset_descriptor(
+                    fp,
+                    category=category,
+                    action=action,
+                    exciter=exciter,
+                    resonator=resonator,
+                    metadata_row=cand,
+                )
+
+        # Candidate file does not exist locally — check if downloadable virtual asset
+        asset_id = cand.get("id")
+        has_url = bool(cand.get("source_url") or cand.get("mirror_url"))
+        is_virtual = cand.get("is_downloaded") == 0 or has_url
+        if asset_id and is_virtual and hasattr(self.bank, "download_virtual_asset"):
+            try:
+                dl_path = self.bank.download_virtual_asset(asset_id)
+                if dl_path and dl_path.exists():
+                    return self._wrap_asset_descriptor(
+                        dl_path,
+                        category=category,
+                        action=action,
+                        exciter=exciter,
+                        resonator=resonator,
+                        metadata_row=cand,
+                    )
+            except Exception as e:
+                logger.warning(f"JIT virtual asset download failed for asset_id={asset_id}: {e}")
+
+        return None
+
+    def get_sound_card(self, asset_id: Union[int, str]) -> Optional[str]:
+        """Retrieves compact LLM-friendly Agent Sound Card for an asset."""
+        if hasattr(self.bank, "get_agent_sound_card"):
+            return self.bank.get_agent_sound_card(asset_id)
+        return None
+
+    def protect_active_render(self, asset_ids: List[Union[int, str]]):
+        """Context manager protecting assets from cache eviction during active rendering."""
+        if hasattr(self.bank, "cache_manager") and self.bank.cache_manager:
+            return self.bank.cache_manager.protect_active_render(asset_ids)
+        from contextlib import nullcontext
+        return nullcontext()
 
     def _wrap_asset_descriptor(
         self,
@@ -335,28 +459,34 @@ class SoundAssetRetriever:
         action: Optional[str] = None,
         exciter: Optional[str] = None,
         resonator: Optional[str] = None,
+        metadata_row: Optional[Dict[str, Any]] = None,
     ) -> SoundAssetDescriptor:
         """Wraps a validated audio file with complete provenance and sanity metrics."""
         is_sane, metrics = self.verify_asset_sanity(filepath)
         sha = self._compute_sha256(filepath)
+        row = metadata_row or {}
+
+        source_type = "approved_provider" if (row.get("source_collection") or row.get("source_url")) else "local_sound_bank"
+        license_str = row.get("license") or "CC0_PUBLIC_DOMAIN"
+        attribution_str = row.get("creator_attribution") or "AudioBookmaker Curated Sound Bank"
 
         provenance = AssetProvenance(
-            asset_id=filepath.stem,
+            asset_id=row.get("id") or filepath.stem,
             filepath=str(filepath.resolve()).replace("\\", "/"),
-            source="local_sound_bank",
-            license_type="CC0_PUBLIC_DOMAIN",
+            source=source_type,
+            license_type=license_str,
             sha256_checksum=sha,
-            creator_attribution="AudioBookmaker Curated Sound Bank",
+            creator_attribution=attribution_str,
         )
 
         return SoundAssetDescriptor(
-            asset_id=filepath.stem,
+            asset_id=str(row.get("id") or filepath.stem),
             filename=filepath.name,
             filepath=str(filepath.resolve()).replace("\\", "/"),
             category=category,  # type: ignore
-            action_type=action,
-            exciter_material=exciter,
-            resonator_surface=resonator,
+            action_type=action or row.get("action_type"),
+            exciter_material=exciter or row.get("exciter"),
+            resonator_surface=resonator or row.get("surface") or row.get("resonator"),
             duration_sec=metrics.get("duration_sec", 0.0),
             integrated_lufs=metrics.get("integrated_lufs", -23.0),
             true_peak_db=metrics.get("true_peak_db", -1.5),

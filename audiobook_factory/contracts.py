@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Literal
+from typing import List, Dict, Any, Optional, Literal, Tuple
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict, AliasChoices
 
 
@@ -430,6 +430,10 @@ class AcousticMetrics(BaseModel):
     bpm: float = Field(default=90.0, ge=0.0, le=300.0, description="Detected or canonical Tempo in BPM")
     intro_bed_end_sec: float = Field(default=0.0, ge=0.0, description="Second where subtle intro transitions into main progression")
     vocal_clash_risk: Literal["LOW", "MODERATE", "SEVERE"] = Field(default="LOW", description="Risk of frequency masking in vocal intelligibility range")
+    measurement_method: str = Field(default="ebur128_astats", description="DSP measurement pipeline identifier")
+    analyzer_version: str = Field(default="1.0", description="Analyzer version")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Measurement confidence")
+    measured_at: Optional[str] = Field(default=None, description="ISO timestamp of measurement")
 
 
 class SemanticAnnotations(BaseModel):
@@ -450,18 +454,175 @@ class SemanticAnnotations(BaseModel):
     narrative_archetypes: List[str] = Field(default_factory=list, description="Story archetypes e.g. ['TAVERN_BRAWL', 'MONSTER_HUNT']")
     slavic_instruments: List[str] = Field(default_factory=list, description="Identified lead timbres e.g. ['hurdy-gurdy', 'kemenche']")
     story_triggers: List[str] = Field(default_factory=list, description="Literary action triggers for SQLite FTS5 search")
+    confidence: float = Field(default=0.85, ge=0.0, le=1.0, description="Inference confidence")
+    inference_source: str = Field(default="gemini_flash", description="Model or taxonomy source")
+
+
+class PhysicalGenome(BaseModel):
+    """Physical event, materials, and interaction semantics."""
+    model_config = ConfigDict(extra="ignore")
+
+    source_object: str = Field(default="", description="Primary physical object (e.g. 'sword', 'boot', 'door')")
+    source_material: str = Field(default="", description="Primary material (e.g. 'steel', 'leather', 'wood')")
+    secondary_material: Optional[str] = Field(default=None, description="Secondary contact material (e.g. 'stone', 'chainmail')")
+    action_type: str = Field(default="", description="Physical action (e.g. 'clash', 'draw', 'footstep', 'creak', 'pour')")
+    interaction_type: str = Field(default="", description="Physical interaction (e.g. 'collision', 'friction', 'fluid', 'aerodynamic')")
+    surface_material: Optional[str] = Field(default=None, description="Ground or boundary surface (e.g. 'wet_stone', 'oak_floor')")
+    impact_force: Literal["delicate", "light", "medium", "heavy", "violent"] = Field(default="medium")
+    confidence: float = Field(default=0.8, ge=0.0, le=1.0)
+    knowledge_class: Literal["measured", "inferred", "curated"] = Field(default="inferred")
+
+
+class TemporalWaveGenome(BaseModel):
+    """Temporal evolution and acoustic wave shape characteristics."""
+    model_config = ConfigDict(extra="ignore")
+
+    temporal_class: Literal["instant", "transient", "short", "sustained", "evolving", "loopable"] = Field(default="transient")
+    wave_style: Literal[
+        "transient_percussive",
+        "sustained_bed",
+        "staccato_hit",
+        "textural_drone",
+        "harmonic_swell",
+        "rhythmic_loop",
+        "general"
+    ] = Field(default="general")
+    energy_envelope: Literal["subtle", "low", "medium", "high", "explosive"] = Field(default="medium")
+    texture: Literal["clean", "rough", "grainy", "metallic", "organic", "airy", "dark", "bright"] = Field(default="organic")
+    motion: Literal["static", "rising", "falling", "swelling", "pulsing", "chaotic", "rhythmic"] = Field(default="static")
+    attack_ms: Optional[float] = None
+    decay_ms: Optional[float] = None
+    sustain_level: Optional[float] = None
+    release_ms: Optional[float] = None
+    is_loopable: bool = False
+
+
+class SpatialGenome(BaseModel):
+    """Acoustic environment, perceived distance, and spatial geometry."""
+    model_config = ConfigDict(extra="ignore")
+
+    perspective: Literal["intimate", "close", "medium", "distant", "off_stage"] = Field(default="medium")
+    room_size: Optional[str] = Field(default=None, description="e.g. 'cathedral', 'large_hall', 'small_chamber', 'outdoor'")
+    reverb_character: Optional[str] = Field(default=None, description="e.g. 'dry', 'stone_reverberant', 'wooden_warm', 'subterranean'")
+    estimated_rt60_ms: Optional[int] = None
+    stereo_width: float = Field(default=1.0, ge=0.0, le=2.0)
+    mono_compatible: bool = True
+
+
+class EnvironmentalGenome(BaseModel):
+    """Scene environmental compatibility parameters."""
+    model_config = ConfigDict(extra="ignore")
+
+    environment_type: str = Field(default="", description="Setting type (e.g. 'castle_hall', 'dark_forest', 'tavern', 'dungeon')")
+    interior_exterior: Literal["interior", "exterior", "subterranean", "indeterminate"] = Field(default="indeterminate")
+    weather: Optional[str] = Field(default=None, description="e.g. 'rain', 'wind', 'storm', 'clear'")
+    time_of_day: Optional[str] = Field(default=None, description="e.g. 'night', 'day', 'dawn', 'dusk'")
+    acoustic_space: Optional[str] = Field(default=None)
+    environmental_density: Literal["sparse", "moderate", "dense", "chaotic"] = Field(default="moderate")
+
+
+class DramaticGenome(BaseModel):
+    """Dramatic storytelling intention and narrative impact."""
+    model_config = ConfigDict(extra="ignore")
+
+    narrative_function: str = Field(default="AMBIENT_BED")
+    dramatic_role: Literal[
+        "suspense_builder",
+        "action_confirmation",
+        "punctuation",
+        "emotional_resonance",
+        "ambient_grounding",
+        "threat_foreshadowing",
+        "relief_resolution",
+        "general"
+    ] = Field(default="general")
+    foreground_strength: float = Field(default=0.5, ge=0.0, le=1.0, description="0.0 = subliminal background, 1.0 = dominant hero event")
+    attention_demand: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "TEXTURE"] = Field(default="MEDIUM")
+    surprise_factor: float = Field(default=0.0, ge=0.0, le=1.0)
+    tension_effect: float = Field(default=0.0, ge=-1.0, le=1.0, description="-1.0 = relieves tension, +1.0 = spikes tension")
+    scene_roles_allowed: List[str] = Field(default_factory=list)
+    scene_roles_forbidden: List[str] = Field(default_factory=list)
+
+
+class MixCompatibilityGenome(BaseModel):
+    """Acoustic interaction constraints with narration, dialogue, and other audio layers."""
+    model_config = ConfigDict(extra="ignore")
+
+    voice_masking_risk: Literal["LOW", "MODERATE", "SEVERE"] = Field(default="LOW")
+    dialogue_compatibility: float = Field(default=0.8, ge=0.0, le=1.0)
+    whisper_compatibility: float = Field(default=0.5, ge=0.0, le=1.0)
+    recommended_clearance_ms: int = Field(default=0, ge=0)
+    ducking_recommendation_db: float = Field(default=-16.0)
+    recommended_gain_range_db: Tuple[float, float] = Field(default=(-24.0, -12.0))
+    spectral_vocal_pocket_needed: bool = False
+
+
+class MusicIntelligence(BaseModel):
+    """Specific musical attributes for melodic and underscore assets."""
+    model_config = ConfigDict(extra="ignore")
+
+    bpm: float = Field(default=0.0, ge=0.0)
+    key_tonality: Optional[str] = Field(default=None, description="e.g. 'D minor', 'C major', 'Atonal'")
+    mode: Optional[str] = Field(default=None, description="e.g. 'minor', 'major', 'dorian', 'phrygian'")
+    time_signature: str = Field(default="4/4")
+    lead_instruments: List[str] = Field(default_factory=list)
+    energy_level: int = Field(default=5, ge=1, le=10)
+    structure_sections: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class FoleyIntelligence(BaseModel):
+    """Specific Foley parameters for human or creature physical movement."""
+    model_config = ConfigDict(extra="ignore")
+
+    actor_type: str = Field(default="human")
+    body_weight: Literal["light", "medium", "heavy", "massive"] = Field(default="medium")
+    action: str = Field(default="step")
+    surface: str = Field(default="ground")
+    footwear: Optional[str] = Field(default=None)
+    clothing_texture: Optional[str] = Field(default=None)
+    movement_speed: Literal["stealth", "slow", "normal", "brisk", "running", "frantic"] = Field(default="normal")
+
+
+class RemoteAssetMetadata(BaseModel):
+    """Remote virtual asset provenance, mirror links, and availability tracking."""
+    model_config = ConfigDict(extra="ignore")
+
+    source_collection: str = Field(default="", description="e.g. 'Incompetech', 'BBC_Sound_Effects', 'Sonniss_GDC', 'Kenney'")
+    source_url: str = Field(default="", description="Primary direct download URL")
+    mirror_url: Optional[str] = Field(default=None, description="Backup/mirror download URL")
+    source_page_url: Optional[str] = Field(default=None, description="Source info / web landing page")
+    url_status: Literal["available", "unverified", "broken", "mirrored"] = Field(default="unverified")
+    last_verified_at: Optional[str] = None
+    license_type: str = Field(default="Royalty-Free")
+    creator: Optional[str] = None
+    attribution: Optional[str] = None
+    sha256_checksum: Optional[str] = None
 
 
 class SonicGenome(BaseModel):
-    """The Complete Sonic Genome for a soundtrack asset or stem."""
+    """The Complete Multi-Dimensional Sonic Genome (v2.0)."""
     model_config = ConfigDict(extra="ignore")
 
-    version: str = Field(default="1.0", description="Schema version")
+    version: str = Field(default="2.0", description="Schema version")
     track_id: int = Field(default=0, description="Catalog track ID")
     filename: str = Field(default="", description="Track filename")
+    
+    # Backward compatible fields
     acoustic: AcousticMetrics = Field(default_factory=AcousticMetrics)
     semantic: SemanticAnnotations = Field(default_factory=SemanticAnnotations)
     id3_metadata: Dict[str, Any] = Field(default_factory=dict, description="Embedded ID3 tag dictionary")
+
+    # Sonic Genome v2 Extended Dimensions
+    physical: PhysicalGenome = Field(default_factory=PhysicalGenome)
+    temporal: TemporalWaveGenome = Field(default_factory=TemporalWaveGenome)
+    spatial: SpatialGenome = Field(default_factory=SpatialGenome)
+    environmental: EnvironmentalGenome = Field(default_factory=EnvironmentalGenome)
+    dramatic: DramaticGenome = Field(default_factory=DramaticGenome)
+    mix: MixCompatibilityGenome = Field(default_factory=MixCompatibilityGenome)
+    music: MusicIntelligence = Field(default_factory=MusicIntelligence)
+    foley: FoleyIntelligence = Field(default_factory=FoleyIntelligence)
+    remote: RemoteAssetMetadata = Field(default_factory=RemoteAssetMetadata)
+    provenance_log: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class MusicCue(BaseModel):

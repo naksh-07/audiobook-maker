@@ -311,7 +311,7 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 | **[🎛️ Audio Engineering & DSP](docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, music-only 2.2kHz notch, whisper ducking, barrier occlusion, dynamic filter scripts, and reverb. |
 | **[🛡️ Quality Gates Manual](docs/QUALITY_GATES.md)** | Complete specification of Gates 0.1 through 6E and Translation Gates T0 through T15, thresholds, and CLI audit syntax. |
 | **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Comprehensive engineering report on P0-P3 fixes and all 13 ADR-020 forensic audit remediations. |
-| **[🎹 Sound Bank & Asset Catalog](docs/SOUND_BANK.md)** | SQLite FTS5 database schema, Sonic Genome indexing, UCS categories, and cloud CC0 seeding. |
+| **[🎹 Sonic Intelligence Catalog & JIT Sound Bank](docs/SOUND_BANK.md)** | SQLite FTS5 database schema, 18,133+ open-source virtual tracks, Sonic Genome v2.0, bounded 1.5GB LRU cache, and JIT audio streaming. |
 | **[🤖 AI Agent & MCP Integration](docs/MCP_AGENT_INTEGRATION.md)** | Autonomous agent workflows, Agent Skills (`novel-audiobook-factory`, `audio-engineer-ffmpeg`), and MCP tools. |
 | **[🛠️ Developer Guide](docs/DEVELOPER_GUIDE.md)** | Development environment setup, testing standards, and contribution guide. |
 
@@ -368,16 +368,22 @@ python audiobook_cli.py audit-book audiobooks/projects/my_novel
 python audiobook_cli.py audit my_novel --chapter 1
 ```
 
-### 🎹 Manage the SQLite Sound Bank
+### 🎹 Manage the Sonic Intelligence Catalog & JIT Sound Bank
 ```bash
-# Ingest local audio assets into Sound Bank
-python audiobook_cli.py bank ingest path/to/sound_assets/ --workers 4
+# View virtual catalog statistics and LRU cache capacity
+python audiobook_cli.py bank virtual-status
 
-# Search sound catalog
+# Search sound catalog with explainable Sonic Genome scoring
 python audiobook_cli.py bank search "battle drums tension" --limit 5
 
-# Check database statistics
-python audiobook_cli.py bank stats
+# Inspect complete 9D Sonic Genome for a specific sound asset
+python audiobook_cli.py bank inspect 8563
+
+# Prune LRU cache to disk budget (e.g. 1 GB)
+python audiobook_cli.py bank prune-cache --target-mb 1000
+
+# Ingest local audio assets or third-party source collection
+python audiobook_cli.py bank ingest-source path/to/sound_archive/ --source sonniss
 ```
 
 ---

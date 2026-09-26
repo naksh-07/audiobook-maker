@@ -1,18 +1,17 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: Studio Sound Design Quality Upgrade (Certified)
+# Active Context: Sonic Intelligence Catalog & Virtual JIT Sound Bank (Certified)
 
-## Live Sprint State: Final Sound Design Quality Upgrade (100% Green)
-- **Status**: Completed studio-grade quality upgrade across all 10 phases.
-- **Verification**: 70/70 sound design tests passing (including 20/20 golden benchmarks & 4/4 AST zero-hardcoding contracts).
-- **Core Quality Pillars Delivered**:
-  - **P0 Beat-Aware Music**: Dynamic cue timing (`pre_roll_ms`, `entry_type`, `development_arc`, `release_type`), dramatic turning point anchoring, and authentic NO-MUSIC negative space preservation in quiet/restrained scenes.
-  - **P0 Ambience Realism**: 5-tier layered architecture (`BASE`, `MIDGROUND`, `FOREGROUND`, `DISTANT`, `MICRO_TEXTURE`) modulated by `DramaticNarrativePhase` with persistent room tone across consecutive scenes.
-  - **P0 Cross-System Choreography**: 12 canonical interaction policies in `scene_state.py` mediating reactions across Magic, Creature, Hard SFX, Foley, Ambience, Walla, and Silence.
-  - **P1 Scene Context & Manner of Action**: Action manner extraction (stealth, forceful, hesitant, urgent) modulating Foley intensity, proximity, and priority.
-  - **P1 Creature & Magic Identities**: Persistent sonic registries (`CreatureSonicIdentityRegistry`, `MagicalSonicIdentityRegistry`) for acoustic continuity.
-  - **P1 Asset Integrity**: Zero placeholder paths (`foley.wav`, `temp.wav`); clean unresolved handling in blueprint, timeline, and adapter.
-  - **P1 Forensics QC**: `SoundDesignQCAuditor` upgraded with structured explainable `QCViolationRecord` outputs, deep dining vs weapon mismatch detection, and inter-scene chapter continuity validation.
-  - **P2 Golden Benchmarks**: Expanded to 20 canonical benchmarks in `golden_benchmarks.py` covering musicless grief, motif variations, changing locations, reveal sequences, and complex ensemble choreography.
-- **Boundaries Preserved**: Track 11 (Cinematic Mix), Track 12 (Mastering), and Track 13 (Gate QC) remain 100% untouched.
+## Live Sprint State: Sonic Intelligence Catalog & JIT Sound Bank (100% Green)
+- **Status**: Completed full studio upgrade of Sound Bank into Virtual JIT Catalog.
+- **Verification**: 45/45 regression & catalog tests passing (including 12/12 new virtual catalog tests & 4/4 AST zero-hardcoding contracts).
+- **Core Pillars Delivered**:
+  - **Zero Disk Bloat**: Cataloged 18,133 open-source tracks (Incompetech, BBC SFX, Sonniss GDC, Kenney CC0) as metadata-only entries with JIT remote streaming; ~200 GB raw audio replaced by ~45 MB SQLite index.
+  - **Sonic Genome v2.0**: Unified 9-dimensional schema separating measured DSP, inferred semantics, and curated sound bible metadata (`PhysicalGenome`, `TemporalWaveGenome`, `SpatialGenome`, `EnvironmentalGenome`, `DramaticGenome`, `MixCompatibilityGenome`, `MusicIntelligence`, `FoleyIntelligence`, `RemoteAssetMetadata`).
+  - **Bounded LRU Cache**: 1.5 GB default local cache with `protect_active_render` context manager, atomic eviction (`is_downloaded=0`, `filepath=NULL`), and metadata preservation.
+  - **Multi-Source Virtual Adapters**: Incompetech, BBC Sound Effects, Sonniss GDC, Kenney CC0 / OpenGameArt adapters with atomic batch upserts and gzip seed hydration (`virtual_catalog_seed.json.gz`).
+  - **Explainable Hybrid Search & Sound Cards**: `search_virtual_catalog` with multi-attribute filtering & `why_matched` explanations; LLM-ready Agent Sound Cards for zero-listening acoustic reasoning.
+  - **JIT Remote Audio Streaming**: Atomic thread-safe downloads with `.part` rename, mirror fallback, retry backoff, and corrupted/HTML payload rejection.
+  - **SoundAssetRetriever & CLI**: JIT resolution in `SoundAssetRetriever` and CLI commands (`bank virtual-status`, `search`, `inspect`, `prune-cache`, `prefetch`, `ingest-source`).
+- **Boundaries Preserved**: Master renderer, FFmpeg mix graph, and existing audio pipelines remain 100% intact.

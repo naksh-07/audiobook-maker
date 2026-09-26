@@ -415,6 +415,36 @@ Performs high-performance multi-threaded batch ingestion of an audio folder via 
 python audiobook_cli.py bank ingest /path/to/raw_sounds/ --workers 4
 ```
 
+#### `virtual-status`
+Displays total tracks in the virtual catalog, represented audio duration, downloaded vs virtual counts, and LRU cache usage:
+```bash
+python audiobook_cli.py bank virtual-status
+```
+
+#### `inspect <ID>`
+Displays the full 9-dimensional Sonic Genome, measured DSP facts, and source/mirror URLs for a specific sound ID:
+```bash
+python audiobook_cli.py bank inspect 8563
+```
+
+#### `prune-cache [--target-mb <MB>]`
+Prunes the least-recently-used (LRU) files in the cache while protecting currently active renders:
+```bash
+python audiobook_cli.py bank prune-cache --target-mb 1000
+```
+
+#### `prefetch <QUERY> [--limit <N>]`
+Pre-downloads remote audio assets matching a query so offline mastering runs with zero network latency:
+```bash
+python audiobook_cli.py bank prefetch "tavern crowd murmur" --limit 3
+```
+
+#### `ingest-source <DIR> --source <NAME>`
+Ingests and normalizes third-party sound libraries (e.g. `sonniss`, `bbc`, `incompetech`, `kenney`) into the Sonic Intelligence Catalog:
+```bash
+python audiobook_cli.py bank ingest-source /path/to/archive/ --source sonniss
+```
+
 #### Offline Composite Foley & Magic Asset Baking
 Pre-renders composite multi-phase tactile and magical audio assets (wand flick whoosh + electric ionization + 52Hz sub-bass thump) and auto-indexes them into SQLite FTS5:
 ```bash
@@ -433,6 +463,7 @@ Configure these in your [`.env`](file:///c:/Users/Suraj/Documents/Antigravity/Au
 | `TTS_PRIMARY_BACKEND` | `gemini_tts` | Primary speech engine (`gemini_tts`). |
 | `GEMINI_TTS_MODEL` | `gemini-3.1-flash-tts-preview` | Gemini TTS model endpoint identifier. |
 | `GEMINI_DEFAULT_VOICE` | `Aoede` | Default narration voice persona. |
+| `MAX_SOUND_BANK_CACHE_MB` | `1536` | Maximum disk capacity bound for Sound Bank LRU cache (1.5 GB default). |
 | `AUDIOBOOK_RETAIN_CHUNKS` | `0` | If set to `1`, auto-janitor preserves all raw WAV chunks for debugging. |
 | `AUDIOBOOK_PROJECTS_DIR` | `audiobooks/projects` | Directory where projects and stems are saved. |
 | `AUDIOBOOK_SOUND_BANK_DIR` | `audiobooks/sound_bank` | SQLite Sound Bank catalog directory. |

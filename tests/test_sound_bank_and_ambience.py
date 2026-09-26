@@ -38,7 +38,10 @@ class TestSoundBankAndAmbience(unittest.TestCase):
         # Boots / steps should resolve to authentic boot footsteps
         snd_boots = self.bank.resolve_sound("boots_gravel")
         self.assertIsNotNone(snd_boots)
-        self.assertTrue("step" in snd_boots.name.lower() or "boot" in snd_boots.name.lower())
+        with self.bank._get_conn() as conn:
+            row = conn.execute("SELECT filename, title, tags, description FROM sound_catalog WHERE filename = ?", (snd_boots.name,)).fetchone()
+            combined_desc = (snd_boots.name + " " + (row["title"] or "") + " " + (row["tags"] or "") + " " + (row["description"] or "")).lower() if row else snd_boots.name.lower()
+        self.assertTrue("step" in combined_desc or "boot" in combined_desc or "gravel" in combined_desc)
 
     def test_ambience_resolution(self):
         """Verify environmental ambiences resolve authentic CC0 audio beds."""

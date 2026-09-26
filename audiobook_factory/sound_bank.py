@@ -9,6 +9,7 @@ with ZERO context bloat for AI agents.
 import os
 import re
 import json
+import errno
 import shutil
 import sqlite3
 import contextlib
@@ -22,6 +23,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Generator, Union
 
 from audiobook_factory.logger import logger
+from audiobook_factory.sound_bank_cache import SoundBankCacheManager
 
 DEFAULT_BANK_DIR = Path(__file__).resolve().parent.parent / "audiobooks" / "sound_bank"
 DEFAULT_DB_PATH = DEFAULT_BANK_DIR / "sound_bank.db"
@@ -42,6 +44,7 @@ class SoundBank:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = Path(db_path or (self.bank_root / "sound_bank.db")).resolve()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.cache_manager = SoundBankCacheManager(db_path=self.db_path, cache_dir=self.cache_dir)
         self._init_db()
 
     @contextlib.contextmanager
@@ -60,16 +63,16 @@ class SoundBank:
             conn.close()
 
     def _init_db(self):
-        """Initialize relational metadata table and SQLite FTS5 index."""
+        """Initialize relational metadata table, FTS5 virtual table, and relationship index."""
         with self._get_conn() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS sound_catalog (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     filename TEXT NOT NULL,
-                    filepath TEXT UNIQUE NOT NULL,
-                    category TEXT,       -- AMB (Ambience), FOL (Foley), SFX (Sound FX), MUS (Music/Score)
-                    subcategory TEXT,    -- Weather, Tavern, Steps, Magic, Combat, Drone, Nature
-                    mood TEXT,           -- mysterious, tense, peaceful, epic, emotional, default
+                    filepath TEXT UNIQUE,
+                    category TEXT,       -- AMB, FOL, SFX, MUS, LEITMOTIF, CHAPTER_BED, DYNAMIC_STEM, STINGER
+                    subcategory TEXT,    -- Weather, Tavern, Steps, Magic, Combat, Drone, Nature, Props, etc.
+                    mood TEXT,           -- mysterious, tense, peaceful, epic, emotional, dark, default
                     tags TEXT,           -- Space-separated searchable tokens
                     duration_sec REAL DEFAULT 0.0,
                     size_bytes INTEGER DEFAULT 0,
@@ -79,44 +82,121 @@ class SoundBank:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
-            # Auto-migrate if older schema exists
-            cols = [c[1] for c in conn.execute("PRAGMA table_info(sound_catalog)").fetchall()]
-            if "source_url" not in cols:
-                conn.execute("ALTER TABLE sound_catalog ADD COLUMN source_url TEXT;")
-            if "is_downloaded" not in cols:
-                conn.execute("ALTER TABLE sound_catalog ADD COLUMN is_downloaded INTEGER DEFAULT 1;")
-            conn.execute("""
-                CREATE VIRTUAL TABLE IF NOT EXISTS sound_catalog_fts USING fts5(
-                    filename,
-                    category,
-                    subcategory,
-                    mood,
-                    tags,
-                    content='sound_catalog',
-                    content_rowid='id'
-                );
-            """)
+
+            # Non-destructively auto-migrate all Sonic Intelligence schema columns
+            existing_cols = {c[1] for c in conn.execute("PRAGMA table_info(sound_catalog)").fetchall()}
+            column_defs = [
+                ("title", "TEXT DEFAULT ''"),
+                ("description", "TEXT DEFAULT ''"),
+                ("source_collection", "TEXT DEFAULT ''"),
+                ("license", "TEXT DEFAULT 'Royalty-Free'"),
+                ("creator_attribution", "TEXT DEFAULT ''"),
+                ("source_url", "TEXT DEFAULT NULL"),
+                ("mirror_url", "TEXT DEFAULT NULL"),
+                ("source_page_url", "TEXT DEFAULT NULL"),
+                ("url_status", "TEXT DEFAULT 'unverified'"),
+                ("last_verified_at", "TIMESTAMP DEFAULT NULL"),
+                ("is_downloaded", "INTEGER DEFAULT 1"),
+                ("tempo_bpm", "REAL DEFAULT 0.0"),
+                ("key_tonality", "TEXT DEFAULT ''"),
+                ("time_signature", "TEXT DEFAULT '4/4'"),
+                ("wave_style", "TEXT DEFAULT 'general'"),
+                ("temporal_character", "TEXT DEFAULT 'transient'"),
+                ("energy_profile", "TEXT DEFAULT 'medium'"),
+                ("texture_profile", "TEXT DEFAULT 'organic'"),
+                ("exciter", "TEXT DEFAULT ''"),
+                ("resonator", "TEXT DEFAULT ''"),
+                ("action_type", "TEXT DEFAULT ''"),
+                ("surface", "TEXT DEFAULT ''"),
+                ("perspective", "TEXT DEFAULT 'medium'"),
+                ("acoustic_space", "TEXT DEFAULT ''"),
+                ("reverb_character", "TEXT DEFAULT ''"),
+                ("dramatic_role", "TEXT DEFAULT 'general'"),
+                ("foreground_strength", "REAL DEFAULT 0.5"),
+                ("voice_masking_risk", "TEXT DEFAULT 'LOW'"),
+                ("whisper_compatibility", "REAL DEFAULT 0.5"),
+                ("last_accessed_at", "TIMESTAMP DEFAULT NULL"),
+                ("cache_pin_status", "TEXT DEFAULT 'normal'"),
+                ("sonic_genome", "TEXT DEFAULT '{}'"),
+            ]
+            for col_name, col_type in column_defs:
+                if col_name not in existing_cols:
+                    conn.execute(f"ALTER TABLE sound_catalog ADD COLUMN {col_name} {col_type};")
+
+            # Check if FTS5 table needs upgrade to cover rich fields
+            fts_cols = set()
+            try:
+                fts_cols = {c[1] for c in conn.execute("PRAGMA table_info(sound_catalog_fts)").fetchall()}
+            except Exception:
+                pass
+
+            target_fts_cols = {"title", "description", "wave_style", "exciter", "resonator", "action_type", "dramatic_role"}
+            if not target_fts_cols.issubset(fts_cols):
+                conn.execute("DROP TRIGGER IF EXISTS sound_catalog_ai;")
+                conn.execute("DROP TRIGGER IF EXISTS sound_catalog_au;")
+                conn.execute("DROP TRIGGER IF EXISTS sound_catalog_ad;")
+                conn.execute("DROP TABLE IF EXISTS sound_catalog_fts;")
+                conn.execute("""
+                    CREATE VIRTUAL TABLE sound_catalog_fts USING fts5(
+                        filename,
+                        title,
+                        description,
+                        category,
+                        subcategory,
+                        mood,
+                        wave_style,
+                        exciter,
+                        resonator,
+                        action_type,
+                        dramatic_role,
+                        tags,
+                        content='sound_catalog',
+                        content_rowid='id'
+                    );
+                """)
+                # Populate FTS5 from existing content table
+                try:
+                    conn.execute("INSERT INTO sound_catalog_fts(sound_catalog_fts) VALUES('rebuild');")
+                except Exception:
+                    pass
+
             # Triggers to keep FTS5 synchronized with main catalog table
             conn.execute("""
                 CREATE TRIGGER IF NOT EXISTS sound_catalog_ai AFTER INSERT ON sound_catalog BEGIN
-                    INSERT INTO sound_catalog_fts(rowid, filename, category, subcategory, mood, tags)
-                    VALUES (new.id, new.filename, new.category, new.subcategory, new.mood, new.tags);
+                    INSERT INTO sound_catalog_fts(rowid, filename, title, description, category, subcategory, mood, wave_style, exciter, resonator, action_type, dramatic_role, tags)
+                    VALUES (new.id, new.filename, new.title, new.description, new.category, new.subcategory, new.mood, new.wave_style, new.exciter, new.resonator, new.action_type, new.dramatic_role, new.tags);
                 END;
             """)
             conn.execute("""
                 CREATE TRIGGER IF NOT EXISTS sound_catalog_ad AFTER DELETE ON sound_catalog BEGIN
-                    INSERT INTO sound_catalog_fts(sound_catalog_fts, rowid, filename, category, subcategory, mood, tags)
-                    VALUES ('delete', old.id, old.filename, old.category, old.subcategory, old.mood, old.tags);
+                    INSERT INTO sound_catalog_fts(sound_catalog_fts, rowid, filename, title, description, category, subcategory, mood, wave_style, exciter, resonator, action_type, dramatic_role, tags)
+                    VALUES ('delete', old.id, old.filename, old.title, old.description, old.category, old.subcategory, old.mood, old.wave_style, old.exciter, old.resonator, old.action_type, old.dramatic_role, old.tags);
                 END;
             """)
             conn.execute("""
                 CREATE TRIGGER IF NOT EXISTS sound_catalog_au AFTER UPDATE ON sound_catalog BEGIN
-                    INSERT INTO sound_catalog_fts(sound_catalog_fts, rowid, filename, category, subcategory, mood, tags)
-                    VALUES ('delete', old.id, old.filename, old.category, old.subcategory, old.mood, old.tags);
-                    INSERT INTO sound_catalog_fts(rowid, filename, category, subcategory, mood, tags)
-                    VALUES (new.id, new.filename, new.category, new.subcategory, new.mood, new.tags);
+                    INSERT INTO sound_catalog_fts(sound_catalog_fts, rowid, filename, title, description, category, subcategory, mood, wave_style, exciter, resonator, action_type, dramatic_role, tags)
+                    VALUES ('delete', old.id, old.filename, old.title, old.description, old.category, old.subcategory, old.mood, old.wave_style, old.exciter, old.resonator, old.action_type, old.dramatic_role, old.tags);
+                    INSERT INTO sound_catalog_fts(rowid, filename, title, description, category, subcategory, mood, wave_style, exciter, resonator, action_type, dramatic_role, tags)
+                    VALUES (new.id, new.filename, new.title, new.description, new.category, new.subcategory, new.mood, new.wave_style, new.exciter, new.resonator, new.action_type, new.dramatic_role, new.tags);
                 END;
             """)
+
+            # Asset Relationships Table for micro-sequencing and sound families
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS sound_asset_relationships (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_asset_id INTEGER NOT NULL,
+                    target_asset_id INTEGER NOT NULL,
+                    relationship_type TEXT NOT NULL, -- predecessor, successor, companion, variation, intensity_variant
+                    confidence REAL DEFAULT 1.0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (source_asset_id) REFERENCES sound_catalog(id) ON DELETE CASCADE,
+                    FOREIGN KEY (target_asset_id) REFERENCES sound_catalog(id) ON DELETE CASCADE
+                );
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_asset_rel_src ON sound_asset_relationships(source_asset_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_asset_rel_type ON sound_asset_relationships(relationship_type);")
             conn.commit()
 
             # Sound Track Sections table for intelligent cue-slicing & energy zones
@@ -216,6 +296,7 @@ class SoundBank:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_action ON sound_assets(action_type);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_exciter ON sound_assets(exciter);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_resonator ON sound_assets(resonator);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_lru ON sound_catalog(is_downloaded, cache_pin_status, last_accessed_at);")
             conn.commit()
 
             # Auto-seed sections if empty
@@ -468,61 +549,421 @@ class SoundBank:
 
         return stats
 
-    _download_lock = threading.Lock()
+    _asset_download_locks: Dict[int, threading.Lock] = {}
+    _asset_locks_guard = threading.Lock()
+
+    @classmethod
+    def _get_asset_download_lock(cls, sound_id: int) -> threading.Lock:
+        with cls._asset_locks_guard:
+            if sound_id not in cls._asset_download_locks:
+                cls._asset_download_locks[sound_id] = threading.Lock()
+            return cls._asset_download_locks[sound_id]
 
     def download_virtual_asset(
         self,
         sound_id: int,
-        source_url: str,
-        filename: str,
-        category: str = "SFX",
+        source_url: Optional[str] = None,
+        filename: Optional[str] = None,
+        category: Optional[str] = None,
+        mirror_url: Optional[str] = None,
+        max_retries: int = 2,
     ) -> Optional[Path]:
         """
         JIT downloads a virtual sound asset from remote URL directly to local cache.
-        Thread-safe and atomic with unique temporary files.
+        Thread-safe and atomic with unique temporary files, stream verification,
+        mirror URL fallback, and post-download local DSP enrichment.
         Updates sound_catalog so future lookups are local.
         """
-        if not source_url:
+        # If source_url or filename omitted, query from database
+        if not source_url or not filename:
+            with self._get_conn() as conn:
+                row = conn.execute(
+                    "SELECT filename, category, source_url, mirror_url FROM sound_catalog WHERE id = ?",
+                    (sound_id,)
+                ).fetchone()
+                if row:
+                    filename = filename or row["filename"]
+                    category = category or row["category"] or "SFX"
+                    source_url = source_url or row["source_url"]
+                    mirror_url = mirror_url or row["mirror_url"]
+
+        category = category or "SFX"
+        urls_to_try = [u for u in [source_url, mirror_url] if u]
+        if not urls_to_try or not filename:
             return None
 
         target_dir = self.cache_dir / category
         target_dir.mkdir(parents=True, exist_ok=True)
         target_path = target_dir / filename
 
-        with SoundBank._download_lock:
-            if target_path.exists() and target_path.stat().st_size > 0:
+        with SoundBank._get_asset_download_lock(sound_id):
+            if target_path.exists() and target_path.stat().st_size > 500:
+                with self._get_conn() as conn:
+                    conn.execute("UPDATE sound_catalog SET last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?", (sound_id,))
                 return target_path
 
-            temp_path = target_path.with_suffix(target_path.suffix + f".{uuid.uuid4().hex[:8]}.part")
-            try:
-                req = urllib.request.Request(
-                    source_url,
-                    headers={"User-Agent": "AudiobookFactory/2.0 (https://github.com/naksh-07/audiobook-maker)"}
-                )
-                with urllib.request.urlopen(req, timeout=15.0) as resp:
-                    with open(temp_path, "wb") as out_f:
-                        shutil.copyfileobj(resp, out_f)
+            downloaded = False
+            last_err = None
 
-                temp_path.replace(target_path)
-                size_bytes = target_path.stat().st_size
-                dur = self._extract_duration(target_path)
-                norm_path = str(target_path.resolve()).replace("\\", "/")
+            for url in urls_to_try:
+                for attempt in range(max_retries + 1):
+                    temp_path = target_path.with_suffix(target_path.suffix + f".{uuid.uuid4().hex[:8]}.part")
+                    try:
+                        req = urllib.request.Request(
+                            url,
+                            headers={"User-Agent": "AudiobookFactory/2.0 (https://github.com/naksh-07/audiobook-maker)"}
+                        )
+                        with urllib.request.urlopen(req, timeout=20.0) as resp:
+                            with open(temp_path, "wb") as out_f:
+                                shutil.copyfileobj(resp, out_f)
 
+                        # Sanity check: file exists and is not an HTML 404/403 page
+                        file_size = temp_path.stat().st_size
+                        if file_size <= 0:
+                            raise ValueError(f"Downloaded file empty ({file_size} bytes)")
+
+                        with open(temp_path, "rb") as check_f:
+                            head = check_f.read(128).lower()
+                            if b"<!doctype html" in head or b"<html" in head or b"404 not found" in head:
+                                raise ValueError("Remote server returned HTML error page instead of audio stream")
+
+                        temp_path.replace(target_path)
+                        downloaded = True
+                        break
+                    except Exception as e:
+                        last_err = e
+                        if isinstance(e, OSError) and getattr(e, "errno", None) == errno.ENOSPC:
+                            logger.error(f"  [CRITICAL] Out of disk space downloading {filename}: {e}")
+                            if temp_path.exists():
+                                try:
+                                    temp_path.unlink(missing_ok=True)
+                                except Exception:
+                                    pass
+                            return None
+
+                        if temp_path.exists():
+                            try:
+                                temp_path.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                        if attempt < max_retries:
+                            import time
+                            time.sleep(0.5 * (attempt + 1))
+                if downloaded:
+                    break
+
+            if not downloaded:
+                logger.warning(f"  [!] Failed to download virtual asset '{filename}' from all URLs: {last_err}")
                 with self._get_conn() as conn:
                     conn.execute("""
                         UPDATE sound_catalog
-                        SET filepath = ?, is_downloaded = 1, size_bytes = ?, duration_sec = ?
+                        SET url_status = 'broken', last_verified_at = CURRENT_TIMESTAMP
                         WHERE id = ?
-                    """, (norm_path, size_bytes, dur, sound_id))
-                return target_path
-            except Exception as e:
-                logger.warning(f"  [!] Failed to download virtual asset '{filename}' from {source_url}: {e}")
-                if temp_path.exists():
-                    try:
-                        temp_path.unlink(missing_ok=True)
-                    except Exception:
-                        pass
+                    """, (sound_id,))
                 return None
+
+            size_bytes = target_path.stat().st_size
+            dur = self._extract_duration(target_path)
+            norm_path = str(target_path.resolve()).replace("\\", "/")
+
+            # Post-download DSP Enrichment: extract measured metrics
+            measured_lufs = -23.0
+            measured_peak = -1.5
+            measured_spectral = 0.0
+            try:
+                from audiobook_factory.sound_bank_ingest import UniversalSoundBankIngester
+                ingester = UniversalSoundBankIngester(db_path=self.db_path, bank_root=self.bank_root)
+                dsp_metrics = ingester._extract_loudness_and_spectral_metrics(target_path)
+                measured_lufs = dsp_metrics.get("integrated_lufs", -23.0)
+                measured_peak = dsp_metrics.get("true_peak_db", -1.5)
+                measured_spectral = dsp_metrics.get("spectral_centroid_hz", 0.0)
+
+                # Upsert into sound_assets with measured facts
+                fmt_info = ingester._extract_format_info(target_path)
+                ingester.ingest_file(target_path)
+            except Exception as e:
+                logger.debug(f"Post-download DSP enrichment skipped/failed for {filename}: {e}")
+
+            with self._get_conn() as conn:
+                conn.execute("""
+                    UPDATE sound_catalog
+                    SET filepath = ?, is_downloaded = 1, size_bytes = ?, duration_sec = ?,
+                        url_status = 'available', last_verified_at = CURRENT_TIMESTAMP,
+                        last_accessed_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (norm_path, size_bytes, dur, sound_id))
+
+            # Maintain LRU cache quota
+            try:
+                self.cache_manager.prune_lru()
+            except Exception as e:
+                logger.debug(f"LRU pruning check encountered warning: {e}")
+
+            return target_path
+
+    def search_virtual_catalog(
+        self,
+        query: str = "",
+        category: Optional[str] = None,
+        subcategory: Optional[str] = None,
+        wave_style: Optional[str] = None,
+        exciter: Optional[str] = None,
+        resonator: Optional[str] = None,
+        action_type: Optional[str] = None,
+        dramatic_role: Optional[str] = None,
+        mood: Optional[str] = None,
+        min_bpm: Optional[float] = None,
+        max_bpm: Optional[float] = None,
+        min_duration: Optional[float] = None,
+        max_duration: Optional[float] = None,
+        whisper_safe_only: bool = False,
+        is_downloaded_only: bool = False,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """
+        Hybrid Sonic Intelligence Retrieval across local and virtual sound catalogs.
+        Evaluates multi-dimensional criteria (physical, temporal, dramatic, mix compatibility)
+        and returns explainable candidate cards with detailed scoring.
+        """
+        raw_words = re.findall(r"[a-zA-Z0-9]+", query.strip())
+        meaningful_words = [
+            w for w in raw_words
+            if w.lower() not in ("wav", "mp3", "flac", "ogg", "aiff", "m4a", "and", "or", "not", "near")
+        ]
+
+        where_clauses = []
+        params = []
+
+        fts_match = False
+        if meaningful_words:
+            fts_query_and = " AND ".join(f'"{w}"*' for w in meaningful_words)
+            where_clauses.append("c.id IN (SELECT rowid FROM sound_catalog_fts WHERE sound_catalog_fts MATCH ?)")
+            params.append(fts_query_and)
+            fts_match = True
+
+        if category:
+            cat_norm = category.upper()
+            if cat_norm in ("FOLEY", "FOL", "SFX"):
+                where_clauses.append("c.category IN ('FOL', 'SFX')")
+            elif cat_norm in ("MUSIC", "MUS"):
+                where_clauses.append("c.category IN ('MUS', 'LEITMOTIF', 'CHAPTER_BED', 'DYNAMIC_STEM')")
+            elif cat_norm in ("AMBIENCE", "AMB"):
+                where_clauses.append("c.category IN ('AMB', 'CHAPTER_BED')")
+            else:
+                where_clauses.append("c.category = ?")
+                params.append(cat_norm)
+
+        if subcategory:
+            where_clauses.append("LOWER(c.subcategory) = LOWER(?)")
+            params.append(subcategory)
+
+        if wave_style:
+            where_clauses.append("LOWER(c.wave_style) = LOWER(?)")
+            params.append(wave_style)
+
+        if exciter:
+            where_clauses.append("(LOWER(c.exciter) LIKE ? OR LOWER(c.tags) LIKE ?)")
+            params.extend([f"%{exciter.lower()}%", f"%{exciter.lower()}%"])
+
+        if resonator:
+            where_clauses.append("(LOWER(c.resonator) LIKE ? OR LOWER(c.tags) LIKE ?)")
+            params.extend([f"%{resonator.lower()}%", f"%{resonator.lower()}%"])
+
+        if action_type:
+            where_clauses.append("(LOWER(c.action_type) LIKE ? OR LOWER(c.tags) LIKE ?)")
+            params.extend([f"%{action_type.lower()}%", f"%{action_type.lower()}%"])
+
+        if dramatic_role:
+            where_clauses.append("LOWER(c.dramatic_role) = LOWER(?)")
+            params.append(dramatic_role)
+
+        if mood:
+            where_clauses.append("LOWER(c.mood) = LOWER(?)")
+            params.append(mood)
+
+        if min_bpm is not None:
+            where_clauses.append("c.tempo_bpm >= ?")
+            params.append(min_bpm)
+        if max_bpm is not None:
+            where_clauses.append("c.tempo_bpm <= ?")
+            params.append(max_bpm)
+
+        if min_duration is not None:
+            where_clauses.append("c.duration_sec >= ?")
+            params.append(min_duration)
+        if max_duration is not None:
+            where_clauses.append("c.duration_sec <= ?")
+            params.append(max_duration)
+
+        if whisper_safe_only:
+            where_clauses.append("c.whisper_compatibility >= 0.4 AND c.voice_masking_risk != 'SEVERE'")
+
+        if is_downloaded_only:
+            where_clauses.append("c.is_downloaded = 1")
+
+        sql = """
+            SELECT c.*,
+                   a.integrated_lufs as dsp_lufs,
+                   a.true_peak_db as dsp_peak,
+                   a.spectral_centroid_hz as dsp_centroid
+            FROM sound_catalog c
+            LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
+        """
+        if where_clauses:
+            sql += " WHERE " + " AND ".join(where_clauses)
+
+        sql += " ORDER BY c.is_downloaded DESC, c.id ASC LIMIT ?"
+        params.append(limit * 3)
+
+        with self._get_conn() as conn:
+            cur = conn.execute(sql, params)
+            candidates = [dict(row) for row in cur.fetchall()]
+
+        # If strict AND FTS yielded nothing, try broad recall fallback
+        if not candidates and fts_match and len(meaningful_words) > 1:
+            fts_query_or = " OR ".join(f"{w}*" for w in meaningful_words)
+            where_clauses[0] = "c.id IN (SELECT rowid FROM sound_catalog_fts WHERE sound_catalog_fts MATCH ?)"
+            params[0] = fts_query_or
+            sql_fallback = """
+                SELECT c.*,
+                       a.integrated_lufs as dsp_lufs,
+                       a.true_peak_db as dsp_peak,
+                       a.spectral_centroid_hz as dsp_centroid
+                FROM sound_catalog c
+                LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
+                WHERE """ + " AND ".join(where_clauses) + " ORDER BY c.is_downloaded DESC, c.id ASC LIMIT ?"
+            with self._get_conn() as conn:
+                cur = conn.execute(sql_fallback, params)
+                candidates = [dict(row) for row in cur.fetchall()]
+
+        # Explainable multi-signal scoring
+        scored_results = []
+        for cand in candidates:
+            score = 0.5
+            reasons = []
+
+            # Physical semantic alignment
+            if exciter and (exciter.lower() in cand.get("exciter", "").lower() or exciter.lower() in cand.get("tags", "").lower()):
+                score += 0.25
+                reasons.append(f"Physical exciter '{exciter}' matched")
+            if resonator and (resonator.lower() in cand.get("resonator", "").lower() or resonator.lower() in cand.get("tags", "").lower()):
+                score += 0.20
+                reasons.append(f"Resonator acoustic space '{resonator}' matched")
+            if action_type and action_type.lower() in cand.get("action_type", "").lower():
+                score += 0.20
+                reasons.append(f"Physical action '{action_type}' matched")
+
+            # Dramatic alignment
+            if mood and cand.get("mood", "").lower() == mood.lower():
+                score += 0.15
+                reasons.append(f"Dramatic mood '{mood}' matched")
+            if dramatic_role and cand.get("dramatic_role", "").lower() == dramatic_role.lower():
+                score += 0.15
+                reasons.append(f"Dramatic role '{dramatic_role}' matched")
+
+            # Mix safety
+            w_comp = float(cand.get("whisper_compatibility") or 0.5)
+            if whisper_safe_only:
+                score += (w_comp * 0.2)
+                reasons.append(f"Whisper compatibility {w_comp:.2f}")
+
+            v_risk = cand.get("voice_masking_risk", "LOW")
+            if v_risk == "SEVERE":
+                score -= 0.20
+                reasons.append("Severe voice masking penalty applied (-0.20)")
+
+            # Local availability bonus
+            if cand.get("is_downloaded"):
+                score += 0.05
+                reasons.append("Locally cached asset (+0.05)")
+
+            cand["retrieval_score"] = round(min(1.0, max(0.0, score)), 2)
+            cand["why_matched"] = reasons if reasons else ["General catalog text match"]
+            scored_results.append(cand)
+
+        scored_results.sort(key=lambda x: (x["retrieval_score"], x.get("is_downloaded", 0)), reverse=True)
+        return scored_results[:limit]
+
+    def get_agent_sound_card(self, asset_id: int) -> str:
+        """
+        Formats a compact, high-density Agent Sound Card for any asset in the catalog.
+        Allows the AI creative director to reason about sounds without listening to audio.
+        """
+        with self._get_conn() as conn:
+            cur = conn.execute("""
+                SELECT c.*,
+                       a.integrated_lufs as dsp_lufs,
+                       a.true_peak_db as dsp_peak,
+                       a.spectral_centroid_hz as dsp_centroid
+                FROM sound_catalog c
+                LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
+                WHERE c.id = ?
+            """, (asset_id,))
+            row = cur.fetchone()
+            if not row:
+                return f"[Sound Card] Asset ID {asset_id} not found in catalog."
+            cand = dict(row)
+
+        aid = cand["id"]
+        fname = cand["filename"]
+        title = cand.get("title") or fname
+        cat = cand.get("category", "SFX")
+        subcat = cand.get("subcategory", "General")
+        dur = float(cand.get("duration_sec") or 0.0)
+        status = "LOCAL (Cached)" if cand.get("is_downloaded") else "VIRTUAL (JIT Ready)"
+
+        exc = cand.get("exciter") or "unspecified"
+        res = cand.get("resonator") or "unspecified"
+        act = cand.get("action_type") or "unspecified"
+        surf = cand.get("surface") or "unspecified"
+
+        lufs = cand.get("dsp_lufs") or -23.0
+        peak = cand.get("dsp_peak") or -1.5
+        w_style = cand.get("wave_style") or "general"
+        d_role = cand.get("dramatic_role") or "general"
+        fg_str = float(cand.get("foreground_strength") or 0.5)
+
+        v_risk = cand.get("voice_masking_risk") or "LOW"
+        w_compat = float(cand.get("whisper_compatibility") or 0.5)
+        duck_db = -16.0 if v_risk == "SEVERE" else (-12.0 if v_risk == "MODERATE" else -6.0)
+
+        card = (
+            f"=== AGENT SOUND CARD: [ID: {aid}] {title} ===\n"
+            f"TYPE:      {cat} / {subcat} | Status: {status} ({dur:.2f}s)\n"
+            f"PHYSICAL:  exciter: {exc} | resonator: {res} | action: {act} | surface: {surf}\n"
+            f"ACOUSTIC:  wave_style: {w_style} | LUFS: {lufs:.1f} | Peak: {peak:.1f} dBTP\n"
+            f"DRAMATIC:  role: {d_role} | foreground_strength: {fg_str:.2f} | mood: {cand.get('mood', 'default')}\n"
+            f"MIX:       voice_masking: {v_risk} | whisper_compat: {w_compat:.2f} | rec_ducking: {duck_db:.0f}dB\n"
+            f"BEST USE:  {cand.get('description') or cand.get('tags') or 'dramatic underscore & action'}\n"
+            f"AVOID:     {'whispered dialogue' if w_compat < 0.4 else 'dense overlapping dialogue' if v_risk == 'SEVERE' else 'none'}\n"
+            f"SOURCE:    {cand.get('source_collection') or 'SoundBank'} ({cand.get('license', 'Royalty-Free')})"
+        )
+        return card
+
+    def link_assets(self, source_id: int, target_id: int, relationship_type: str, confidence: float = 1.0) -> bool:
+        """Creates a directional relationship between two sound assets."""
+        with self._get_conn() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO sound_asset_relationships (source_asset_id, target_asset_id, relationship_type, confidence)
+                VALUES (?, ?, ?, ?)
+            """, (source_id, target_id, relationship_type, confidence))
+            return True
+
+    def get_related_assets(self, asset_id: int, relationship_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Finds related assets (e.g. variations, predecessors, successors, companions)."""
+        sql = """
+            SELECT r.relationship_type, r.confidence, c.*
+            FROM sound_asset_relationships r
+            JOIN sound_catalog c ON c.id = r.target_asset_id
+            WHERE r.source_asset_id = ?
+        """
+        params = [asset_id]
+        if relationship_type:
+            sql += " AND r.relationship_type = ?"
+            params.append(relationship_type)
+        with self._get_conn() as conn:
+            cur = conn.execute(sql, params)
+            return [dict(row) for row in cur.fetchall()]
 
     def search(
         self,
@@ -612,10 +1053,11 @@ class SoundBank:
 
         # Helper to test candidate path existence and virtual download
         def _check_cand(cand: Dict[str, Any]) -> Optional[Path]:
-            raw_fp = cand.get("filepath", "")
-            cand_path = Path(raw_fp)
-            if cand_path.is_file() and cand_path.exists():
-                return cand_path
+            raw_fp = cand.get("filepath") or ""
+            if raw_fp:
+                cand_path = Path(raw_fp)
+                if cand_path.is_file() and cand_path.exists():
+                    return cand_path
 
             # Also check relative to bank_root if relative path or moved
             if cand.get("filename"):
@@ -630,12 +1072,13 @@ class SoundBank:
                         return cat_p
 
             # Virtual entry with remote source_url -> JIT download
-            if cand.get("source_url"):
+            if cand.get("source_url") or cand.get("mirror_url"):
                 downloaded = self.download_virtual_asset(
                     sound_id=cand["id"],
-                    source_url=cand["source_url"],
-                    filename=cand["filename"],
+                    source_url=cand.get("source_url"),
+                    filename=cand.get("filename"),
                     category=cand.get("category", "SFX") or "SFX",
+                    mirror_url=cand.get("mirror_url"),
                 )
                 if downloaded and downloaded.exists():
                     return downloaded

@@ -290,7 +290,7 @@ def cmd_audit_book(args):
 
 
 def cmd_bank(args):
-    """Manage and inspect local Sound Bank (SQLite FTS5 index)."""
+    """Manage and inspect local Sound Bank (SQLite FTS5 index) and Virtual Sonic Catalog."""
     from audiobook_factory.sound_bank import SoundBank
     bank = SoundBank()
 
@@ -310,13 +310,117 @@ def cmd_bank(args):
             WORKSPACE_DIR / "audiobooks" / "soundscapes" / "sfx",
         ])
         print(f"[+] Scan complete: {stats}")
+    elif action == "virtual-status":
+        stats = bank.stats()
+        cache_stats = bank.cache_manager.get_cache_stats()
+        with bank._get_conn() as conn:
+            virt_count = conn.execute("SELECT COUNT(*) FROM sound_catalog WHERE is_downloaded = 0").fetchone()[0]
+            dl_count = conn.execute("SELECT COUNT(*) FROM sound_catalog WHERE is_downloaded = 1").fetchone()[0]
+            sources = conn.execute("SELECT source_collection, COUNT(*) FROM sound_catalog GROUP BY source_collection").fetchall()
+        print("\n=======================================================")
+        print("   SONIC INTELLIGENCE CATALOG & JIT CACHE STATUS       ")
+        print("=======================================================")
+        print(f"  Total Indexed Assets: {stats['total_sounds']}")
+        print(f"  Downloaded (Local)  : {dl_count}")
+        print(f"  Virtual (Remote JIT): {virt_count}")
+        print(f"  Cache Usage         : {cache_stats['current_size_mb']:.1f} MB / {cache_stats['max_size_mb']:.1f} MB ({cache_stats['utilization_pct']:.1f}%)")
+        print(f"  Protected Files     : {cache_stats['protected_files']}")
+        print(f"  Evictable Files     : {cache_stats['evictable_files']}")
+        print("  Source Collections  :")
+        for sc, cnt in sources:
+            sc_label = sc if sc else "local_curated"
+            print(f"    - {sc_label}: {cnt} items")
+        print("=======================================================\n")
     elif action == "search":
-        results = bank.search(args.query, limit=args.limit)
-        print(f"\n[*] Found {len(results)} matches for '{args.query}':")
-        for r in results:
-            dl_tag = "[Downloaded]" if r.get("is_downloaded") else "[Cloud/Virtual]"
-            print(f"  [{r['category']}] {dl_tag} {r['filename']} (Mood: {r['mood']}, Dur: {r['duration_sec']:.1f}s)")
-            print(f"      Path: {r['filepath']}")
+        use_virtual = getattr(args, "virtual", False)
+        explain = getattr(args, "explain", False)
+        cat = getattr(args, "category", None)
+        if use_virtual or explain:
+            results = bank.search_virtual_catalog(args.query, category=cat, limit=args.limit)
+            print(f"\n[*] Found {len(results)} matches for '{args.query}' in Sonic Intelligence Catalog:")
+            for r in results:
+                dl_tag = "[Downloaded]" if r.get("is_downloaded") else "[Cloud/Virtual]"
+                print(f"  [{r.get('category', 'SFX')}] {dl_tag} {r.get('title') or r.get('filename')} (ID: {r.get('id')}, Dur: {r.get('duration_sec', 0.0):.1f}s)")
+                if explain and "why_matched" in r:
+                    print(f"      Score: {r.get('search_score', 0):.2f} | Reason: {', '.join(r['why_matched'])}")
+                if r.get("source_url"):
+                    print(f"      Remote URL: {r.get('source_url')}")
+                elif r.get("filepath"):
+                    print(f"      Path: {r.get('filepath')}")
+        else:
+            results = bank.search(args.query, category=cat, limit=args.limit)
+            print(f"\n[*] Found {len(results)} matches for '{args.query}':")
+            for r in results:
+                dl_tag = "[Downloaded]" if r.get("is_downloaded") else "[Cloud/Virtual]"
+                print(f"  [{r['category']}] {dl_tag} {r['filename']} (Mood: {r['mood']}, Dur: {r['duration_sec']:.1f}s)")
+                print(f"      Path: {r['filepath']}")
+    elif action == "inspect":
+        card = bank.get_agent_sound_card(args.asset_id)
+        if card:
+            print(card)
+        else:
+            print(f"[-] Asset not found in catalog: {args.asset_id}")
+    elif action == "prune-cache":
+        target = getattr(args, "target_mb", None)
+        pruned_bytes, pruned_count = bank.cache_manager.prune_to_budget(target_mb=target)
+        print(f"[+] Pruned {pruned_count} cache files ({pruned_bytes / (1024*1024):.2f} MB).")
+        stats = bank.cache_manager.get_cache_stats()
+        print(f"    Current Cache: {stats['current_size_mb']:.1f} MB / {stats['max_size_mb']:.1f} MB ({stats['utilization_pct']:.1f}%)")
+    elif action == "prefetch":
+        asset_ids = list(getattr(args, "asset_ids", []) or [])
+        query = getattr(args, "query", None)
+        if query:
+            cand_results = bank.search_virtual_catalog(query, limit=getattr(args, "limit", 5))
+            asset_ids.extend([c["id"] for c in cand_results if c.get("id")])
+        if not asset_ids:
+            print("[-] No assets specified to prefetch. Provide asset IDs or --query.")
+            return
+        print(f"[*] Prefetching {len(asset_ids)} virtual assets into local cache...")
+        success = 0
+        for aid in asset_ids:
+            try:
+                p = bank.download_virtual_asset(aid)
+                if p and p.exists():
+                    success += 1
+                    print(f"  [+] Downloaded: {p.name}")
+            except Exception as e:
+                print(f"  [-] Failed {aid}: {e}")
+        print(f"[OK] Prefetched {success}/{len(asset_ids)} assets.")
+    elif action == "ingest-source":
+        src = getattr(args, "source", "seed")
+        limit = getattr(args, "limit", None)
+        from audiobook_factory.virtual_catalog import (
+            IncompetechAdapter,
+            BBCSoundEffectsAdapter,
+            SonnissGDCAdapter,
+            KenneyOGAAdapter,
+            hydrate_from_seed,
+        )
+        if src == "seed":
+            print("[*] Hydrating virtual sound catalog from compressed seed...")
+            cnt = hydrate_from_seed(bank)
+            print(f"[+] Seed hydration complete: {cnt} records processed.")
+        elif src == "all":
+            adapters = [SonnissGDCAdapter(), KenneyOGAAdapter(), IncompetechAdapter(), BBCSoundEffectsAdapter()]
+            for adp in adapters:
+                print(f"[*] Ingesting from adapter {adp.source_name} (limit={limit})...")
+                res = adp.ingest_to_bank(bank, limit=limit)
+                print(f"  [+] {adp.source_name}: {res}")
+        else:
+            adapter_map = {
+                "incompetech": IncompetechAdapter,
+                "bbc_sfx": BBCSoundEffectsAdapter,
+                "sonniss_gdc": SonnissGDCAdapter,
+                "kenney_oga": KenneyOGAAdapter,
+            }
+            adp_cls = adapter_map.get(src)
+            if not adp_cls:
+                print(f"[-] Unknown source adapter: {src}")
+                return
+            adp = adp_cls()
+            print(f"[*] Ingesting from adapter {adp.source_name} (limit={limit})...")
+            res = adp.ingest_to_bank(bank, limit=limit)
+            print(f"[+] {adp.source_name} ingestion complete: {res}")
     elif action == "stats":
         s = bank.stats()
         print("\n=======================================================")
@@ -660,33 +764,48 @@ def main():
     p_produce.add_argument("--workers", default=3, type=int, help="TTS synthesis workers")
     p_produce.add_argument("--duck-db", default=-16.0, type=float, help="Sidechain attenuation dB")
 
+    def _setup_bank_subparsers(subs):
+        subs.add_parser("scan", help="Scan and index audio files into Sound Bank")
+        subs.add_parser("stats", help="Display Sound Bank statistics")
+        subs.add_parser("seed", help="Seed virtual sound catalog from cloud CC0 sources")
+        subs.add_parser("virtual-status", help="Display Sonic Intelligence virtual catalog & JIT cache status")
+
+        p_search = subs.add_parser("search", help="Search sounds by keywords/tags/genome")
+        p_search.add_argument("query", help="Keyword or search query")
+        p_search.add_argument("--limit", default=5, type=int, help="Maximum matches")
+        p_search.add_argument("--category", default=None, help="Filter category (foley, ambience, music, sfx)")
+        p_search.add_argument("--virtual", action="store_true", help="Include remote virtual assets in search")
+        p_search.add_argument("--explain", action="store_true", help="Display match scores and explainable breakdown")
+
+        p_inspect = subs.add_parser("inspect", help="Display LLM Agent Sound Card for an asset")
+        p_inspect.add_argument("asset_id", help="Asset ID or filename")
+
+        p_prune = subs.add_parser("prune-cache", help="Prune JIT audio cache to target budget")
+        p_prune.add_argument("--target-mb", type=float, default=None, help="Target cache size in MB")
+
+        p_prefetch = subs.add_parser("prefetch", help="Pre-download virtual sound assets into local cache")
+        p_prefetch.add_argument("asset_ids", nargs="*", help="Asset IDs to prefetch")
+        p_prefetch.add_argument("--query", default=None, help="Search query to select assets for prefetch")
+        p_prefetch.add_argument("--limit", default=5, type=int, help="Number of assets to prefetch when using --query")
+
+        p_ingest_src = subs.add_parser("ingest-source", help="Ingest open-source audio collection metadata into catalog")
+        p_ingest_src.add_argument("source", choices=["seed", "incompetech", "bbc_sfx", "sonniss_gdc", "kenney_oga", "all"], help="Source adapter name or 'seed'")
+        p_ingest_src.add_argument("--limit", type=int, default=None, help="Maximum items to ingest")
+
+        p_ingest = subs.add_parser("ingest", help="Ingest local audio directory into Sound Bank via UniversalSoundBankIngester")
+        p_ingest.add_argument("dir", help="Directory of sound assets to ingest")
+        p_ingest.add_argument("--no-recursive", action="store_true", help="Do not scan recursively")
+        p_ingest.add_argument("--workers", type=int, default=4, help="Concurrent worker threads")
+
     # bank
     p_bank = subparsers.add_parser("bank", help="Manage and search local Sound Bank (SQLite FTS5)")
     p_bank_subs = p_bank.add_subparsers(dest="action", help="Bank action")
-    p_bank_subs.add_parser("scan", help="Scan and index audio files into Sound Bank")
-    p_bank_subs.add_parser("stats", help="Display Sound Bank statistics")
-    p_bank_subs.add_parser("seed", help="Seed virtual sound catalog from cloud CC0 sources")
-    p_b_search = p_bank_subs.add_parser("search", help="Search sounds by keywords/tags")
-    p_b_search.add_argument("query", help="Keyword or search query")
-    p_b_search.add_argument("--limit", default=5, type=int, help="Maximum matches")
-    p_b_ingest = p_bank_subs.add_parser("ingest", help="Ingest audio directory into Sound Bank via UniversalSoundBankIngester")
-    p_b_ingest.add_argument("dir", help="Directory of sound assets to ingest")
-    p_b_ingest.add_argument("--no-recursive", action="store_true", help="Do not scan recursively")
-    p_b_ingest.add_argument("--workers", type=int, default=4, help="Concurrent worker threads")
+    _setup_bank_subparsers(p_bank_subs)
 
     # soundbank (alias for bank)
     p_sbank = subparsers.add_parser("soundbank", help="Manage Sound Bank (alias for bank)")
     p_sb_subs = p_sbank.add_subparsers(dest="action", help="Sound Bank action")
-    p_sb_subs.add_parser("scan", help="Scan and index audio files into Sound Bank")
-    p_sb_subs.add_parser("stats", help="Display Sound Bank statistics")
-    p_sb_subs.add_parser("seed", help="Seed virtual sound catalog from cloud CC0 sources")
-    p_sb_search = p_sb_subs.add_parser("search", help="Search sounds by keywords/tags")
-    p_sb_search.add_argument("query", help="Keyword or search query")
-    p_sb_search.add_argument("--limit", default=5, type=int, help="Maximum matches")
-    p_sb_ingest = p_sb_subs.add_parser("ingest", help="Ingest audio directory into Sound Bank via UniversalSoundBankIngester")
-    p_sb_ingest.add_argument("dir", help="Directory of sound assets to ingest")
-    p_sb_ingest.add_argument("--no-recursive", action="store_true", help="Do not scan recursively")
-    p_sb_ingest.add_argument("--workers", type=int, default=4, help="Concurrent worker threads")
+    _setup_bank_subparsers(p_sb_subs)
 
     # direct
     p_direct = subparsers.add_parser("direct", help="Direct chapter into CreativeManifest via AgentDirector")
