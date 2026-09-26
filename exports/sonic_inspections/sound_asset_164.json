@@ -947,7 +947,8 @@
         "container": "wav",
         "bit_depth": 16,
         "file_size_bytes": 235684,
-        "bit_rate": 1412255
+        "bit_rate": 1412255,
+        "tags": {}
       },
       "loudness": {
         "integrated_lufs": -21.6,

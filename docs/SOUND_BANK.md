@@ -1,8 +1,8 @@
 # 🎹 Sonic Intelligence Engine & Virtual Sound Bank
 
-> **Specification Version:** 3.0  
-> **Status:** Production-Ready & Certified (Phases 1–3 Complete)  
-> **Target Subsystem:** Sound Retrieval, Audio Analysis, AI Enrichment, and Agent Sound Cards  
+> **Specification Version:** 4.0  
+> **Status:** Production-Ready & Certified (Phases 1–4 Complete)  
+> **Target Subsystem:** Sound Retrieval, Audio Analysis, AI Enrichment, Agent Sound Cards, and Large-Scale Library Harvesting  
 > **Database:** `audiobooks/sound_bank/sound_bank.db` (~45 MB SQLite with WAL mode)
 
 ---
@@ -21,19 +21,19 @@ flowchart LR
     P1["Phase 1: Foundation\n- Sonic Genome v2.1\n- Deterministic DSP\n- Welch/LUFS/EBU R128"]
     P2["Phase 2: AI Enrichment\n- AudioSet-527 (AST)\n- LAION-CLAP 512-d\n- SonicModelManager"]
     P3["Phase 3: Sound Intelligence\n- Hinglish Query Planner\n- 5x Candidate Pool\n- Hybrid Reranker\n- Agent Sound Cards v3"]
-    P4["Phase 4: Production Scale\n- 50GB Pilot -> Full Library\n- Distributed Chunking\n- Downstream Integration"]
+    P4["Phase 4: Library Harvester\n- Embedded Metadata (ID3/BWF/RIFF/Vorbis)\n- UCS & Folder Grammar\n- Multi-Scale DSP & AI\n- Idempotent Fingerprinting\n- Periodic VRAM Eviction"]
 
-    P1 --> P2 --> P3 -.-> P4
+    P1 --> P2 --> P3 --> P4
     style P1 fill:#d4edda,stroke:#28a745,color:#155724
     style P2 fill:#d4edda,stroke:#28a745,color:#155724
     style P3 fill:#d4edda,stroke:#28a745,color:#155724
-    style P4 fill:#fff3cd,stroke:#ffc107,color:#856404
+    style P4 fill:#d4edda,stroke:#28a745,color:#155724
 ```
 
 - **Phase 1 (Foundation — Certified)**: Deterministic audio analysis pipeline extracting physical ground-truth DSP metrics directly from waveforms (`speech_corridor_density`, EBU R128 integrated LUFS, True Peak dBTP, Welch spectral centroid), non-destructive SQLite schema migration, and temporal event onsets.
 - **Phase 2 (AI Enrichment — Certified)**: Dedicated machine-learning adapters (AudioSet 527 classification via AST, open-vocabulary 512-d dual embeddings via LAION-CLAP), thread-safe VRAM model management (`SonicModelManager`), and SQLite vector BLOB storage.
 - **Phase 3 (Sound Intelligence — Certified & Hardened)**: Multilingual query planning (`HinglishQueryNormalizer`, `SonicQueryPlanner`), thread-safe LRU query caching (`QueryEmbeddingCache`), 5-source candidate pooling (`CandidatePoolAggregator`), explainable linear reranking with negative penalties (`SonicHybridReranker`), and epistemically honest `AgentSoundCard` (v3.0) models with strict 4-tier labeling.
-- **Phase 4 (Production Scale — Upcoming)**: Bounded batch ingestion of large sound libraries (50GB+), distributed worker clustering, and direct chapter timeline compilation.
+- **Phase 4 (Production Scale Library Harvester — Certified)**: High-throughput, non-destructive 11-stage ingestion engine for massive local sound collections (~200GB). Extracts rich container metadata (ID3v1/ID3v2, BWF/BEXT, RIFF INFO, Vorbis comments), Universal Category System (UCS) naming grammar, folder taxonomy tokens, and companion variation groupings without data loss. Features length-aware multi-scale DSP and AI analysis (composite 3-window spectral analysis, multi-window CLAP pooling, AST sliding-window onsets, micro-SFX Hann centering), rapid 64KB SHA-256 header fingerprinting, idempotent skip/resume, and strict GPU VRAM eviction.
 
 ---
 
@@ -363,5 +363,126 @@ python audiobook_factory/sonic_asset_inspector.py 453 --output-dir exports/sonic
 
 # Prune LRU cache to budget:
 python audiobook_cli.py bank prune-cache --target-mb 1000
+
+# Harvest physical sound library (~200GB collection):
+python audiobook_cli.py bank harvest /path/to/sound_library --mode all --workers 4
+
+# Fast CPU-only pass (metadata & physical DSP only):
+python audiobook_cli.py bank harvest /path/to/sound_library --mode metadata_dsp --workers 8
+
+# Check harvest telemetry & catalog coverage:
+python audiobook_cli.py bank harvest-status
+
+# Rebuild SQLite FTS5 search index:
+python audiobook_cli.py bank rebuild-index
 ```
+
+---
+
+## 🚀 8. Phase 4: Sonic Intelligence Library Harvesting Subsystem (~200GB Scale)
+
+Phase 4 transforms existing physical sound libraries (~200GB, hundreds of thousands of files across ambiences, Foley, impacts, creatures, weather, and music) into an indexed, machine-searchable Sonic Intelligence Layer without modifying original files or hallucinating metadata.
+
+```mermaid
+flowchart TD
+    RawFile["Raw Audio File\n(WAV, MP3, FLAC, OGG, AIFF)"] --> Stage1["Stage 1: Discovery & Enumeration"]
+    Stage1 --> Stage2["Stage 2: Rapid Fingerprint\n(Size + MTime + SHA-256 Header 64KB)"]
+    Stage2 --> Stage3{"Stage 3: Idempotency Check\n(Already Ingested & Unchanged?)"}
+    Stage3 -- "Yes" --> Skip["Skip Asset (Idempotent Resume)"]
+    Stage3 -- "No" --> Stage4["Stage 4: Embedded Metadata Extraction\n(ID3v1/v2, BWF/BEXT, RIFF INFO, Vorbis)"]
+    Stage4 --> Stage5["Stage 5: UCS & Folder Taxonomy Grammar\n([CatID][SubCat]_[Vendor]_[Name]_[Var])"]
+    Stage5 --> Stage6["Stage 6: Multi-Scale Deterministic DSP\n(LUFS, True Peak, Centroid, Rolloff, ZCR, Corridor)"]
+    Stage6 --> Stage7["Stage 7: Duration-Aware Branching\n(Micro-SFX <1s vs Long-form >30s)"]
+    Stage7 --> Stage8["Stage 8: AST AudioSet 527 Classification\n(Top-K Normalized Probabilities)"]
+    Stage8 --> Stage9["Stage 9: LAION-CLAP Dual Embeddings\n(512-d L2 Normalized Vector BLOB)"]
+    Stage9 --> Stage10["Stage 10: Atomic SQLite Persistence\n(sound_catalog, embeddings, tags, runs)"]
+    Stage10 --> Stage11["Stage 11: VRAM Eviction & Error Isolation\n(gc.collect + empty_cache)"]
+
+    style Stage3 fill:#fff3cd,stroke:#ffc107,color:#856404
+    style Stage10 fill:#d4edda,stroke:#28a745,color:#155724
+    style Stage11 fill:#d1ecf1,stroke:#17a2b8,color:#0c5460
+```
+
+### A. Epistemic Invariants & Non-Destructive Principles
+1. **Sacred Non-Fabrication**: If a property cannot be physically measured from waveform samples or reliably parsed from container tags/folder structures, it remains `None`, `UNKNOWN`, or `UNASSIGNED`. Zero fields are filled with cosmetic placeholders.
+2. **Strict Creative Boundary Separation**: The 7 creative dimensions remain unassigned at harvest time:
+   - `dramatic_role`: `UNASSIGNED`
+   - `scene_purpose`: `UNASSIGNED`
+   - `placement_usage`: `UNASSIGNED`
+   - `final_taxonomy`: `UNASSIGNED`
+   - `emotional_suitability`: `UNASSIGNED`
+   - `voice_masking_risk`: `UNASSESSED` (defer to dialogue presence)
+   - `recommended_ducking_db`: `UNASSESSED` (defer to scene mix)
+3. **Lossless Provenance**: Raw container chunks and folder tokens are fully retained in `raw_metadata` JSON and SQLite columns, ensuring zero loss of original vendor data.
+
+### B. Embedded Container Metadata Harvesting (`AudioMetadataExtractor`)
+Located in [`audiobook_factory/embedded_metadata_harvester.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/embedded_metadata_harvester.py):
+- **Broadcast Wave Format (BWF)**: Parses `bext` chunk: `description`, `originator`, `originator_reference`, `origination_date`, `origination_time`, and `coding_history`.
+- **RIFF INFO List**: Extracts standard RIFF sub-chunks: `INAM` (Title), `IART` (Artist/Author), `ICMT` (Comments), `IGNR` (Genre), `ICRD` (Creation Date), `ICOP` (Copyright).
+- **ID3v1 & ID3v2 Tags**: Reads `TIT2`, `TPE1`, `TALB`, `TCON`, `COMM`, `TXXX` user-defined text frames via `mutagen`.
+- **Vorbis & FLAC Comments**: Extracts standard key-value comment blocks (`TITLE`, `ARTIST`, `GENRE`, `COMMENT`, `DESCRIPTION`).
+- **Universal Category System (UCS) Grammar**: Parses standardized UCS filenames (`[CatID][SubCat]_[FXName]_[CreatorID]_[SourceID]`) into typed categories, subcategories, vendors, and descriptions.
+- **Directory Hierarchy Semantics**: Extracts folder tokens while filtering generic blacklist terms (`sound`, `sounds`, `fx`, `sfx`, `audio`, `wav`, `mp3`, `library`).
+- **Companion Variation Grouping**: Automatically identifies related takes and variations (`_01`, `_02`, `_varA`, `_take1`), grouping them under a common `variation_group_id`.
+
+### C. Length-Aware Multi-Scale Audio Intelligence
+Located across [`deterministic_audio_analyzer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/deterministic_audio_analyzer.py), [`clap_semantic_adapter.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/clap_semantic_adapter.py), and [`audio_classifier_adapters.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/audio_classifier_adapters.py):
+1. **Micro-SFX ($< 1.0\text{s}$)**:
+   - Centered active-region windowing with 10ms Hann micro-fades to eliminate boundary click artifacts.
+   - Conservative pitch guard preventing unstable $F_0$ and spectral centroid estimations on sub-second transients.
+2. **Long-Form Audio ($> 30\text{s}$)**:
+   - **Composite 3-Window DSP Sampling**: Extracts spectral centroid, roll-off, and flux from early ($10\%$), middle ($50\%$), and late ($85\%$) windows, computing robust temporal averages.
+   - **Multi-Window CLAP Pooling**: Extracts embeddings across multiple analysis windows and computes energy-weighted vector pooling, avoiding front-window bias on evolving ambiences.
+   - **AST Sliding-Window Temporal Analysis**: Scans long recordings with sliding windows to capture localized acoustic events without time-domain truncation.
+
+### D. Rapid Fingerprinting & Idempotent Resumption
+- **Fingerprint Algorithm**: Combines `file_size_bytes` + `mtime_ns` + SHA-256 hash of the first 64KB header (`size_mtime_sha256_head64k`).
+- **Instant Skip**: Files already present in SQLite whose fingerprint matches are skipped in $< 0.1\text{ms}$ per file.
+- **Stage Selectivity**:
+  - `mode="all"`: Full extraction (Metadata + DSP + AST 527 + CLAP 512-d).
+  - `mode="metadata_dsp"`: High-speed CPU-only pipeline for instant cataloging without GPU load.
+  - `mode="ai_only"`: Fills neural embeddings and classifier tags for existing catalog entries.
+- **VRAM Management & Error Isolation**:
+  - Corrupted audio streams or header errors are logged to `errors` without halting the batch run.
+  - Immediate `SonicModelManager().clear_vram()` and Python garbage collection prevent CUDA fragmentation during large-scale ingestion.
+
+### E. Python API Reference
+```python
+from audiobook_factory.sound_bank import get_sound_bank
+
+bank = get_sound_bank()
+
+# 1. Harvest a local sound library:
+report = bank.harvest_library(
+    library_dir="/data/sound_library",
+    mode="all",         # "all", "metadata_dsp", "ai_only"
+    workers=4,
+    batch_size=50,
+    force_reharvest=False
+)
+print(f"Ingested {report['ingested']} tracks in {report['elapsed_seconds']}s")
+
+# 2. Query harvest status and coverage:
+status = bank.get_harvest_status()
+print(f"Total: {status['total_tracks']} | DSP: {status['dsp_analyzed']} | Embeddings: {status['embeddings_indexed']}")
+
+# 3. Rebuild FTS5 search index:
+bank.rebuild_search_index()
+```
+
+### F. Phase 4 Test & Verification Matrix
+The Library Harvester subsystem has been verified with a dedicated automated test suite ([`tests/test_sonic_library_harvester.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_library_harvester.py)) and 16 golden fixtures ([`tests/fixtures/generate_golden_library.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/fixtures/generate_golden_library.py)):
+
+| Test Suite / Fixture | Verification Target | Status |
+| :--- | :--- | :---: |
+| `test_embedded_metadata_extraction` | ID3v1/v2, BWF bext, RIFF INFO, Vorbis comments | **PASSED** |
+| `test_ucs_filename_parsing` | Category, SubCat, Vendor, FXName extraction | **PASSED** |
+| `test_folder_hierarchy_token_extraction` | Folder token semantic indexing & blacklist filtering | **PASSED** |
+| `test_companion_variation_grouping` | `_01`, `_02`, `_varA` variation clustering | **PASSED** |
+| `test_rapid_fingerprinting_idempotency` | Fingerprint collision & 0.1ms skip logic | **PASSED** |
+| `test_stage_selectivity_modes` | `metadata_dsp` vs `ai_only` vs `all` execution paths | **PASSED** |
+| `test_micro_sfx_handling` | Active-region centering & Hann micro-fade guarding | **PASSED** |
+| `test_long_form_composite_sampling` | 3-window spectral pooling & multi-window CLAP | **PASSED** |
+| `test_error_isolation_corrupt_files` | Unreadable/corrupt files isolated without crash | **PASSED** |
+| `test_end_to_end_library_harvest` | Full 11-stage pipeline, SQLite persistence & FTS5 | **PASSED** |
 

@@ -112,6 +112,15 @@ class DeterministicAudioAnalyzer:
                 bit_depth_raw = audio_stream.get("bits_per_sample") or audio_stream.get("bits_per_raw_sample")
                 bit_depth = int(bit_depth_raw) if bit_depth_raw else None
 
+                # Extract container & stream tags
+                combined_tags: Dict[str, Any] = {}
+                stream_tags = audio_stream.get("tags", {})
+                if isinstance(stream_tags, dict):
+                    combined_tags.update(stream_tags)
+                fmt_tags = fmt.get("tags", {})
+                if isinstance(fmt_tags, dict):
+                    combined_tags.update(fmt_tags)
+
                 return FormatFacts(
                     duration_sec=round(duration, 4),
                     sample_rate=sr,
@@ -121,6 +130,7 @@ class DeterministicAudioAnalyzer:
                     bit_depth=bit_depth,
                     file_size_bytes=size_bytes,
                     bit_rate=bit_rate,
+                    tags=combined_tags,
                 )
         except Exception as e:
             logger.debug(f"ffprobe encountered error on {filepath.name}: {e}")
@@ -217,8 +227,21 @@ class DeterministicAudioAnalyzer:
             if sf is not None:
                 with sf.SoundFile(str(filepath)) as f:
                     sr = f.samplerate
+                    total_f = f.frames
                     max_frames = int(max_duration_sec * sr)
-                    y = f.read(frames=max_frames, dtype="float32")
+                    if total_f <= max_frames:
+                        y = f.read(dtype="float32")
+                    else:
+                        # Composite 3-window sampling across file (start, mid, end)
+                        chunk_frames = max_frames // 3
+                        y_start = f.read(frames=chunk_frames, dtype="float32")
+                        mid_pos = max(chunk_frames, (total_f - chunk_frames) // 2)
+                        f.seek(mid_pos)
+                        y_mid = f.read(frames=chunk_frames, dtype="float32")
+                        end_pos = max(mid_pos + chunk_frames, total_f - chunk_frames)
+                        f.seek(end_pos)
+                        y_end = f.read(frames=chunk_frames, dtype="float32")
+                        y = np.concatenate([y_start, y_mid, y_end], axis=0)
             else:
                 # Fallback via ffmpeg pipe
                 cmd = [

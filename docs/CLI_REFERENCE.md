@@ -34,7 +34,7 @@ audiobook-factory [COMMAND] [OPTIONS]
 | **[`audit`](#13-chapter-quality-audit-audit)** | QA (Chapter) | Runs Multi-Gate Independent Verification (Gates 0, 1, 2, 3, 4.5) on a specific chapter. |
 | **[`audit-book`](#14-full-book-macro-audit-audit-book)** | QA (Macro) | Runs Macro-Tier Gate 6 certification (Voice Continuity, Loudness, TOC Monotonicity). |
 | **[`package`](#15-m4b-container-packaging-package)** | Delivery | Packages all mastered chapters into a chapterized `.m4b` container with cover art. |
-| **[`bank`](#16-sound-bank-management-bank--soundbank)** | Assets | Manages, seeds, ingests, and searches the local SQLite FTS5 Sound Bank catalog. |
+| **[`bank`](#16-sound-bank-management-bank--soundbank)** | Assets | Manages, seeds, harvests, ingests, and searches the local SQLite FTS5 Sound Bank catalog. |
 
 ---
 
@@ -456,6 +456,37 @@ python audiobook_cli.py bank prefetch "tavern crowd murmur" --limit 3
 Ingests and normalizes third-party sound libraries (e.g. `sonniss`, `bbc`, `incompetech`, `kenney`) into the Sonic Intelligence Catalog:
 ```bash
 python audiobook_cli.py bank ingest-source /path/to/archive/ --source sonniss
+```
+
+#### `harvest <DIR> [OPTIONS]`
+Harvests local sound libraries (~200GB physical collections) into the Sonic Intelligence Catalog using the 11-stage pipeline with non-destructive container metadata extraction (BWF, RIFF, ID3, Vorbis, UCS), length-aware multi-scale DSP and AI embeddings, and rapid 64KB SHA-256 header fingerprinting:
+```bash
+# Full 11-stage harvest (Metadata + DSP + AST 527 + CLAP 512-d embeddings):
+python audiobook_cli.py bank harvest /path/to/sound_library --stages all --workers 4 --batch-size 25
+
+# Fast CPU-only pass (extracts embedded container metadata and physical DSP metrics):
+python audiobook_cli.py bank harvest /path/to/sound_library --stages metadata_dsp --workers 8
+
+# AI enrichment only on existing catalog assets:
+python audiobook_cli.py bank harvest /path/to/sound_library --stages ai_only --batch-size 25
+
+# Force re-harvest of previously ingested assets:
+python audiobook_cli.py bank harvest /path/to/sound_library --force
+
+# Retry only previously errored assets and output summary report:
+python audiobook_cli.py bank harvest /path/to/sound_library --retry-failed --report harvest_report.json
+```
+
+#### `harvest-status`
+Displays total assets, completed DSP analyses, classifier tags, vector embeddings, and error tallies across the library harvest:
+```bash
+python audiobook_cli.py bank harvest-status
+```
+
+#### `rebuild-index`
+Rebuilds the SQLite FTS5 search index across all catalog tracks, syncing newly harvested container metadata, UCS tags, and directory tokens:
+```bash
+python audiobook_cli.py bank rebuild-index
 ```
 
 #### Offline Composite Foley & Magic Asset Baking

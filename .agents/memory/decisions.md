@@ -798,3 +798,41 @@
      - 100% test pass rate: 11/11 audit tests green in 37.19s; full multi-phase regression (53/53 tests) green in 95.08s; 4/4 AST zero-hardcoding contracts certified.
 - **Rationale:** Ensures enterprise-grade thread safety, robustness against adversarial queries, epistemic consistency, and zero regressions across all production pipelines.
 
+## ADR-040: Sonic Intelligence Library Harvesting Subsystem: Embedded Metadata Preservation, 11-Stage Harvester & Length-Aware Multi-Scale DSP/AI
+- **Status:** Accepted
+- **Date:** 2026-09-27
+- **Context:**
+  1. The project possesses a massive local physical sound library (~200GB, hundreds of thousands of files across ambiences, Foley, impacts, creatures, weather, and music) requiring indexing into the Sonic Intelligence layer.
+  2. The library contains valuable pre-existing metadata across multiple audio container formats (ID3v1/ID3v2, BWF/BEXT, RIFF INFO, Vorbis comments), Universal Category System (UCS) naming grammar, and hierarchical folder taxonomies that must be preserved without loss.
+  3. Inventing metadata merely to fill fields violates epistemic honesty; properties that cannot be reliably measured or extracted must remain unknown/unassigned. Specifically, the 7 creative dimensions (`dramatic_role`, `scene_purpose`, `placement_usage`, `final_taxonomy`, `emotional_suitability`, `voice_masking_risk`, `recommended_ducking_db`) belong to downstream agents at scene runtime, not static ingestion.
+  4. Audio assets vary drastically in duration: micro-SFX (<1.0s) suffer from spectral leakage and pitch estimation errors, while long-form recordings (>30s) suffer from front-window bias when sampled at 0-10s.
+  5. Neural inference across massive libraries risks CUDA out-of-memory crashes and severe fragmentation on consumer GPUs unless VRAM is actively managed.
+- **Decision:**
+  1. **Non-Destructive Embedded Metadata Extraction (`embedded_metadata_harvester.py`):**
+     - Built `AudioMetadataExtractor` utilizing `mutagen` and chunk-level parsing to harvest BWF `bext` chunks, RIFF INFO lists, ID3v1/ID3v2 frames, and Vorbis comments.
+     - Implemented UCS parser extracting `[Category][SubCategory]_[Vendor]_[FXName]_[Variation]` into structured metadata.
+     - Extracted folder taxonomy tokens with blacklist filtering for generic terms (`sounds`, `fx`, `audio`, `wav`).
+     - Added companion variation detection clustering multi-take assets (`_01`, `_varA`, `_take1`) under unified `variation_group_id`.
+     - Preserved raw dictionary dumps losslessly in `raw_metadata`.
+  2. **11-Stage High-Throughput Harvester (`sonic_harvester.py`):**
+     - Architected 11-stage pipeline: Discovery -> Rapid Fingerprint -> Idempotency Check -> Embedded Metadata -> UCS/Folder Grammar -> Multi-Scale DSP -> Duration Branching -> AST 527 Classification -> CLAP 512-d Embedding -> Atomic SQLite Persistence -> VRAM Eviction.
+     - Implemented rapid fingerprinting (`file_size_bytes + mtime_ns + SHA-256(first 64KB)`), enabling $<0.1\text{ms}$ skip on unchanged files.
+     - Added stage selectivity: `mode="all"` (full pipeline), `mode="metadata_dsp"` (fast CPU-only pass), and `mode="ai_only"` (neural enrichment on existing catalog entries).
+     - Built robust error isolation: corrupt or unreadable audio files log errors to telemetry without crashing the batch run.
+  3. **Length-Aware Multi-Scale Audio Intelligence:**
+     - *Micro-SFX ($<1.0\text{s}$):* Centered active-region windowing with 10ms Hann micro-fades and pitch guard to eliminate boundary clicks and spectral leakage in `DeterministicAudioAnalyzer`.
+     - *Long-Form ($>30\text{s}$):* 3-window composite spectral sampling (early 10%, mid 50%, late 85%) for stable DSP metrics; multi-window energy-weighted vector pooling in `CLAPSemanticAdapter`; bounded sliding-window onset detection in `ASTClassifierAdapter`.
+  4. **Strict GPU VRAM Eviction & Memory Management:**
+     - Enforced immediate `SonicModelManager().clear_vram()` and `gc.collect()` following AI inferences in `SonicLibraryHarvester.harvest_single_asset()` and after each batch commit.
+     - Cleared VRAM before and after test suites, completely eliminating CUDA device assertions on 6GB RTX 4050 GPU.
+  5. **Epistemic Invariant Enforced:**
+     - Zero invented metadata. All 7 creative dimensions strictly default to `UNASSIGNED`/`UNASSESSED`.
+  6. **Unified Database Schema & CLI/API Integration:**
+     - Integrated harvested records into existing tables: `sound_catalog`, `sound_embeddings`, `sound_classifier_tags`, `sound_temporal_events`, and `sound_analysis_runs`.
+     - Exposed high-level methods on `SoundBank`: `harvest_library()`, `get_harvest_status()`, and `rebuild_search_index()`.
+     - Added CLI commands: `bank harvest`, `bank harvest-status`, and `bank rebuild-index`.
+  7. **Comprehensive Test Suite & Golden Fixtures:**
+     - Built `generate_golden_library.py` creating 16 realistic golden fixtures covering all audio containers (WAV, MP3, FLAC, OGG, AIFF), metadata schemes, durations (50ms micro-impact to 45s ambience), and corrupt files.
+     - Developed `tests/test_sonic_library_harvester.py` verifying all 10 unit and integration milestones: 10/10 tests passing green in 53s; 30/30 core regression tests green in 4.6s.
+- **Rationale:** Turns massive 200GB physical audio archives into a fast, rich, machine-searchable Sonic Intelligence layer with zero metadata invention, complete container tag preservation, and resilient workstation VRAM stability.
+

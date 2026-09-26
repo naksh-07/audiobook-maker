@@ -247,15 +247,20 @@ class SonicModelManager:
                 pass
             logger.info("SonicModelManager: Released all models and cleared VRAM")
 
+    def clear_vram(self) -> None:
+        """Clear PyTorch CUDA cache and invoke garbage collection."""
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:
+            pass
+
     @contextmanager
     def manage_gpu_memory(self):
         """Context manager to ensure VRAM cache is freed after processing batches."""
         try:
             yield
         finally:
-            try:
-                import torch
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            except Exception:
-                pass
+            self.clear_vram()

@@ -55,7 +55,7 @@ flowchart TD
 
     subgraph Room3["🚪 Room 3: Acoustic Compositor & DSP Mastering"]
         Manifest --> Renderer["Manifest Soundscape Renderer"]
-        SoundBank["Sonic Intelligence Engine & Virtual Sound Bank<br/>(Phases 1-3 Certified: DSP + AI + Hybrid Retrieval)"] --> Renderer
+        SoundBank["Sonic Intelligence Engine & Virtual Sound Bank<br/>(Phases 1-4 Certified: DSP + AI + Hybrid Retrieval + Library Harvester)"] --> Renderer
         Renderer --> Ducking["Whisper-Safe Sidechain Ducking (0.018 Threshold)"]
         Renderer --> Reverb["Dynamic Room Reverb Presets (Cathedral, Bedroom, Open Road)"]
         Renderer --> VocalDSP["5-Stage Vocal DSP Chain (SOXR 48kHz + EBU R128)"]
@@ -144,7 +144,7 @@ The architecture orchestrates an end-to-end multi-stage lifecycle from raw docum
 - **Studio Multi-Format Ingestion & TPDF Dithering:** Unpacks 16-bit PCM, 24-bit packed PCM (3-byte bitshift), 32-bit float, and stereo-to-mono downmixes. Applies true Hann raised-cosine micro-fades, gain leveling, deterministic TPDF dither, and zero-sample boundary pinning (`samples[0] = samples[-1] = 0`).
 - **Fail-Closed Editorial QC & Plan Cleansing:** Audits edited audio against speech truncation, negative durations, rail clipping, NaN/Inf instability, and chapter cadence anomalies. Automatically discards rejected edit plans (`edit_plans = None`) and reverts to raw takes upon hard failure.
 
-### 6. Sonic Intelligence Engine & Virtual Sound Bank (Phases 1–3 Complete & Certified)
+### 6. Sonic Intelligence Engine & Virtual Sound Bank (Phases 1–4 Complete & Certified)
 *(See full technical manual: [`docs/SOUND_BANK.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/SOUND_BANK.md))*
 - **Phase 1: Deterministic Audio Analysis & Sonic Genome v2.1:** 14 physical ground-truth metrics measured directly from waveforms (BS.1770-4 integrated LUFS, true peak dBTP, Welch spectral centroid, spectral roll-off/flux, zero-crossing rate, attack/decay times, voice masking risk, whisper compatibility) stored in SQLite `sound_catalog`, `sound_analysis_runs`, and `sound_temporal_events`.
 - **Phase 2: AI Enrichment (AudioSet 527 & LAION-CLAP 512-d):** Dedicated audio classification via AST (`MIT/ast-finetuned-audioset-10-10-0.4593`), 512-d open-vocabulary dual acoustic/text embeddings via LAION-CLAP (`laion/clap-htsat-unfused`), thread-safe VRAM model management ([`SonicModelManager`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_model_manager.py)) with CUDA/CPU fallback & explicit cache clearing, and 2,048-byte SQLite vector BLOB storage.
@@ -155,7 +155,12 @@ The architecture orchestrates an end-to-end multi-stage lifecycle from raw docum
   - Multi-source candidate pool aggregator ([`CandidatePoolAggregator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_candidate_generators.py)) synthesizing FTS5 BM25, structured filters, classifier tags, CLAP 512-d vector dot-products, and deterministic DSP bounds while preserving granular `CandidateEvidence`.
   - Deterministic linear reranker ([`SonicHybridReranker`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_hybrid_reranker.py)) with confirmed negative evidence penalties (speech/music exclusion) and collection diversity filtering (`diversity_threshold`).
   - Epistemically honest [`AgentSoundCard`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_sound_card.py) (v3.0) separating `[MEASURED DSP]`, `[CLASSIFIER INFERENCE]`, `[CLAP SEMANTIC]`, `[SOURCE METADATA]`, and `[KEYWORD INFERRED]` facts with itemized `why_matched` explanations.
-- **Adversarial Audit Certified:** 11/11 adversarial stress tests passing (10k chars, Unicode/emojis, FTS syntax, 20-thread concurrency) and 57/57 engine-wide regression tests green.
+- **Phase 4: Sonic Intelligence Library Harvesting Subsystem (~200GB Scale):**
+  - Non-destructive container metadata extraction ([`AudioMetadataExtractor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/embedded_metadata_harvester.py)): ID3v1/ID3v2, BWF `bext`, RIFF INFO, Vorbis comments, Universal Category System (UCS) grammar, folder taxonomy tokens, and companion variation clustering (`raw_metadata` 100% preserved).
+  - 11-stage pipeline ([`SonicLibraryHarvester`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_harvester.py)): Rapid 64KB header SHA-256 fingerprinting, idempotent skip/resume, stage selectivity (`all`, `metadata_dsp`, `ai_only`), error isolation for corrupt audio streams, and immediate GPU VRAM eviction.
+  - Length-aware multi-scale DSP and AI: Centered active-region windowing with 10ms Hann micro-fades for micro-SFX ($<1.0\text{s}$), composite 3-window spectral pooling and multi-window energy-weighted CLAP embeddings for long-form tracks ($>30\text{s}$).
+  - Epistemic Non-Fabrication Invariant: Zero invented metadata; all 7 creative dimensions remain strictly `UNASSIGNED`/`UNASSESSED`.
+- **Adversarial Audit Certified:** 11/11 adversarial stress tests passing (10k chars, Unicode/emojis, FTS syntax, 20-thread concurrency), 10/10 library harvester tests passing across 16 golden fixtures, and 67/67 engine-wide regression tests green.
 
 ### 7. Multi-Gate Independent Verification Suite (Gates 0.1 - 6E & Gates T0 - T15)
 Quality is mathematically audited at every stage of the pipeline:

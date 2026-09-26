@@ -2240,7 +2240,8 @@
         "container": "ogg",
         "bit_depth": null,
         "file_size_bytes": 1970215,
-        "bit_rate": 206707
+        "bit_rate": 206707,
+        "tags": {}
       },
       "loudness": {
         "integrated_lufs": -19.3,

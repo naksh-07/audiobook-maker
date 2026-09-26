@@ -674,6 +674,7 @@ class FormatFacts(BaseModel):
     bit_depth: Optional[int] = Field(default=16)
     file_size_bytes: int = Field(default=0, ge=0)
     bit_rate: int = Field(default=0, ge=0)
+    tags: Dict[str, Any] = Field(default_factory=dict, description="Embedded container tags")
 
 
 class LoudnessFacts(BaseModel):

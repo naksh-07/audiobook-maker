@@ -298,6 +298,11 @@ class ASTClassifierAdapter(BaseAudioClassifier):
         windows = AudioPreprocessor.slice_sliding_windows(
             waveform, sample_rate, window_sec=10.0, hop_sec=5.0
         )
+        if len(windows) > 8:
+            # Evenly sample up to 8 representative windows across the long track
+            indices = np.linspace(0, len(windows) - 1, 8, dtype=int)
+            windows = [windows[int(i)] for i in indices]
+
         extractor, model = self._model_manager.get_ast_classifier(self.model_id)
         device = self._model_manager.device
         id2label = model.config.id2label

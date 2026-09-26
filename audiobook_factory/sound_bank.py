@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Generator, Union, Tuple
+from typing import Dict, Any, List, Optional, Generator, Union, Tuple, Callable
 import numpy as np
 
 from audiobook_factory.logger import logger
@@ -2328,6 +2328,84 @@ class SoundBank:
         from audiobook_factory.sonic_intelligence_engine import SonicIntelligenceEngine
         engine = SonicIntelligenceEngine(sound_bank=self)
         return engine.get_sound_card(sound_id)
+
+    def harvest_library(
+        self,
+        directory: Union[Path, str],
+        recursive: bool = True,
+        stage: str = "all",
+        max_workers: int = 4,
+        batch_size: int = 25,
+        force: bool = False,
+        retry_failed: bool = False,
+        progress_callback: Optional[Callable[[int, int, str, Dict[str, Any]], None]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Executes the autonomous 11-stage Sonic Intelligence harvesting pipeline
+        on a local audio directory, populating sound_catalog with rich metadata,
+        measured DSP facts, AST classifications, and CLAP semantic embeddings.
+        """
+        from audiobook_factory.sonic_harvester import SonicLibraryHarvester
+        harvester = SonicLibraryHarvester(
+            db_path=self.db_path,
+            conn_factory=self._get_conn,
+        )
+        return harvester.harvest_directory(
+            directory=directory,
+            recursive=recursive,
+            stage=stage,
+            max_workers=max_workers,
+            batch_size=batch_size,
+            force=force,
+            retry_failed=retry_failed,
+            progress_callback=progress_callback,
+        )
+
+    def get_harvest_status(self) -> Dict[str, Any]:
+        """
+        Aggregates catalog-wide harvest intelligence and coverage telemetry.
+        """
+        with self._get_conn() as conn:
+            total_sounds = conn.execute("SELECT COUNT(*) FROM sound_catalog").fetchone()[0]
+            local_sounds = conn.execute("SELECT COUNT(*) FROM sound_catalog WHERE is_downloaded = 1 OR filepath IS NOT NULL").fetchone()[0]
+            dsp_analyzed = conn.execute("SELECT COUNT(*) FROM sound_catalog WHERE integrated_lufs IS NOT NULL").fetchone()[0]
+            clap_embedded = conn.execute("SELECT COUNT(DISTINCT track_id) FROM sound_embeddings").fetchone()[0]
+            classifier_tagged = conn.execute("SELECT COUNT(DISTINCT track_id) FROM sound_classifier_tags").fetchone()[0]
+            failed_runs = conn.execute("SELECT COUNT(*) FROM sound_analysis_runs WHERE execution_status = 'FAILED'").fetchone()[0]
+
+            formats = conn.execute("SELECT format, COUNT(*) FROM sound_catalog WHERE format != '' GROUP BY format").fetchall()
+            format_breakdown = {r[0]: r[1] for r in formats}
+
+            categories = conn.execute("SELECT category, COUNT(*) FROM sound_catalog GROUP BY category").fetchall()
+            category_breakdown = {r[0]: r[1] for r in categories}
+
+            return {
+                "total_sounds": total_sounds,
+                "local_sounds": local_sounds,
+                "dsp_analyzed": dsp_analyzed,
+                "dsp_coverage_pct": round((dsp_analyzed / max(1, local_sounds)) * 100, 1),
+                "clap_embedded": clap_embedded,
+                "clap_coverage_pct": round((clap_embedded / max(1, local_sounds)) * 100, 1),
+                "classifier_tagged": classifier_tagged,
+                "classifier_coverage_pct": round((classifier_tagged / max(1, local_sounds)) * 100, 1),
+                "failed_runs": failed_runs,
+                "format_breakdown": format_breakdown,
+                "category_breakdown": category_breakdown,
+                "database_path": str(self.db_path),
+            }
+
+    def rebuild_search_index(self) -> bool:
+        """
+        Rebuilds the SQLite FTS5 virtual table for sound_catalog.
+        """
+        with self._get_conn() as conn:
+            try:
+                conn.execute("INSERT INTO sound_catalog_fts(sound_catalog_fts) VALUES('rebuild');")
+                conn.commit()
+                return True
+            except Exception as e:
+                logger.error(f"Failed to rebuild FTS5 index: {e}")
+                return False
 
 
 _GLOBAL_SOUND_BANK: Optional[SoundBank] = None

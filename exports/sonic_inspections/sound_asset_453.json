@@ -2794,7 +2794,8 @@
         "container": "mp3",
         "bit_depth": null,
         "file_size_bytes": 5492062,
-        "bit_rate": 227822
+        "bit_rate": 227822,
+        "tags": {}
       },
       "loudness": {
         "integrated_lufs": -32.7,

@@ -63,25 +63,69 @@ class CLAPSemanticAdapter:
                 waveform, sample_rate, target_duration_sec=1.0
             )
 
-        wav_48k = self._resample_if_needed(waveform, sample_rate, target_sr=48000)
-
         processor, model = self._model_manager.get_clap(self.model_id)
         device = self._model_manager.device
 
-        inputs = processor(audio=wav_48k, sampling_rate=48000, return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        # Multi-window energy-weighted pooling for long ambience (> 15.0s)
+        if duration_sec > 15.0:
+            prep_strategy = "multi_window_energy_weighted"
+            window_len = int(7.0 * sample_rate)
+            total_samples = len(waveform)
+            # Sample up to 3 non-overlapping windows: early, mid, late
+            offsets = [
+                min(int(1.0 * sample_rate), max(0, total_samples - window_len)),
+                max(0, (total_samples - window_len) // 2),
+                max(0, total_samples - window_len),
+            ]
+            # Deduplicate offsets
+            unique_offsets = sorted(list(set(offsets)))
+            window_vectors = []
+            weights = []
 
-        with torch.no_grad():
-            with self._model_manager.manage_gpu_memory():
-                out = model.get_audio_features(**inputs)
-                if hasattr(out, "pooler_output"):
-                    embed = out.pooler_output
-                elif hasattr(out, "last_hidden_state"):
-                    embed = out.last_hidden_state[:, 0, :]
-                else:
-                    embed = out
-                embed = embed / embed.norm(dim=-1, keepdim=True)
-                vector = embed.squeeze(0).cpu().numpy().astype(np.float32)
+            for off in unique_offsets:
+                chunk = waveform[off : off + window_len]
+                if len(chunk) < window_len:
+                    chunk, _ = AudioPreprocessor.preprocess_short_audio(chunk, sample_rate, target_duration_sec=7.0)
+                chunk_48k = self._resample_if_needed(chunk, sample_rate, target_sr=48000)
+                rms = float(np.sqrt(np.mean(chunk ** 2) + 1e-12))
+                inputs = processor(audio=chunk_48k, sampling_rate=48000, return_tensors="pt")
+                inputs = {k: v.to(device) for k, v in inputs.items()}
+
+                with torch.no_grad():
+                    with self._model_manager.manage_gpu_memory():
+                        out = model.get_audio_features(**inputs)
+                        if hasattr(out, "pooler_output"):
+                            embed = out.pooler_output
+                        elif hasattr(out, "last_hidden_state"):
+                            embed = out.last_hidden_state[:, 0, :]
+                        else:
+                            embed = out
+                        embed = embed / embed.norm(dim=-1, keepdim=True)
+                        vec = embed.squeeze(0).cpu().numpy().astype(np.float32)
+                        window_vectors.append(vec)
+                        weights.append(max(rms, 1e-4))
+
+            # Energy-weighted average and L2 normalize
+            total_weight = sum(weights)
+            weighted_vec = sum(v * (w / total_weight) for v, w in zip(window_vectors, weights))
+            norm = np.linalg.norm(weighted_vec)
+            vector = (weighted_vec / norm).astype(np.float32) if norm > 1e-12 else window_vectors[0]
+        else:
+            wav_48k = self._resample_if_needed(waveform, sample_rate, target_sr=48000)
+            inputs = processor(audio=wav_48k, sampling_rate=48000, return_tensors="pt")
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            with torch.no_grad():
+                with self._model_manager.manage_gpu_memory():
+                    out = model.get_audio_features(**inputs)
+                    if hasattr(out, "pooler_output"):
+                        embed = out.pooler_output
+                    elif hasattr(out, "last_hidden_state"):
+                        embed = out.last_hidden_state[:, 0, :]
+                    else:
+                        embed = out
+                    embed = embed / embed.norm(dim=-1, keepdim=True)
+                    vector = embed.squeeze(0).cpu().numpy().astype(np.float32)
 
         provenance = ProvenanceRecord(
             source_method="semantic_model",

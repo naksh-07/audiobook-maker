@@ -474,6 +474,66 @@ def cmd_bank(args):
             f"[+] Ingestion complete: {stats['ingested']} indexed, {stats['failed']} failed, "
             f"{stats['total_duration_sec']/60:.1f} minutes of audio in bank."
         )
+    elif action == "harvest":
+        dir_path = Path(args.dir).resolve()
+        rec = not getattr(args, "no_recursive", False)
+        stg = getattr(args, "stages", "all")
+        wrk = getattr(args, "workers", 4)
+        bs = getattr(args, "batch_size", 25)
+        frc = getattr(args, "force", False)
+        rf = getattr(args, "retry_failed", False)
+        rep = getattr(args, "report", None)
+        print(f"[*] Starting Sonic Intelligence Harvest on: {dir_path}")
+        print(f"    Stages: {stg} | Recursive: {rec} | Workers: {wrk} | Force: {frc}")
+        stats = bank.harvest_library(
+            directory=dir_path,
+            recursive=rec,
+            stage=stg,
+            max_workers=wrk,
+            batch_size=bs,
+            force=frc,
+            retry_failed=rf,
+        )
+        print("\n=======================================================")
+        print("   SONIC INTELLIGENCE HARVEST SUMMARY                 ")
+        print("=======================================================")
+        print(f"  Total Discovered    : {stats['total_discovered']}")
+        print(f"  Processed / Enriched: {stats['processed']}")
+        print(f"  Skipped (Up-to-Date): {stats['skipped_valid']}")
+        print(f"  Failed / Isolated   : {stats['failed']}")
+        print(f"  Metadata Extracted  : {stats['metadata_extracted']}")
+        print(f"  DSP Analyzed        : {stats['dsp_analyzed']}")
+        print(f"  AI Enriched         : {stats['ai_enriched']}")
+        print(f"  Total Duration      : {stats['elapsed_sec']:.1f}s ({stats['items_per_sec']:.1f} it/s)")
+        print("=======================================================\n")
+        if rep:
+            p_rep = Path(rep).resolve()
+            p_rep.parent.mkdir(parents=True, exist_ok=True)
+            with open(p_rep, "w", encoding="utf-8") as f:
+                json.dump(stats, f, indent=2)
+            print(f"[+] Harvest report saved to: {p_rep}")
+    elif action == "harvest-status":
+        s = bank.get_harvest_status()
+        print("\n=======================================================")
+        print("   SONIC INTELLIGENCE HARVEST STATUS                  ")
+        print("=======================================================")
+        print(f"  Total Catalog Sounds : {s['total_sounds']}")
+        print(f"  Local Sounds on Disk : {s['local_sounds']}")
+        print(f"  DSP Analyzed Facts   : {s['dsp_analyzed']} ({s['dsp_coverage_pct']}%)")
+        print(f"  CLAP Embeddings      : {s['clap_embedded']} ({s['clap_coverage_pct']}%)")
+        print(f"  AudioSet Classifier  : {s['classifier_tagged']} ({s['classifier_coverage_pct']}%)")
+        print(f"  Failed Analysis Runs : {s['failed_runs']}")
+        print(f"  Formats Breakdown    : {s['format_breakdown']}")
+        print(f"  Categories Breakdown : {s['category_breakdown']}")
+        print(f"  Database             : {s['database_path']}")
+        print("=======================================================\n")
+    elif action == "rebuild-index":
+        print("[*] Rebuilding SQLite FTS5 search index...")
+        ok = bank.rebuild_search_index()
+        if ok:
+            print("[+] Successfully rebuilt sound_catalog_fts search index.")
+        else:
+            print("[-] Failed to rebuild FTS5 search index.")
 
 
 def cmd_produce(args):
@@ -831,6 +891,20 @@ def main():
         p_ingest.add_argument("dir", help="Directory of sound assets to ingest")
         p_ingest.add_argument("--no-recursive", action="store_true", help="Do not scan recursively")
         p_ingest.add_argument("--workers", type=int, default=4, help="Concurrent worker threads")
+
+        p_harvest = subs.add_parser("harvest", help="Harvest sound library into Sonic Intelligence Catalog")
+        p_harvest.add_argument("dir", help="Directory of sound assets to harvest")
+        p_harvest.add_argument("--stages", choices=["all", "metadata_dsp", "ai_only"], default="all", help="Harvesting pipeline stages")
+        p_harvest.add_argument("--no-recursive", action="store_true", help="Do not scan recursively")
+        p_harvest.add_argument("--workers", type=int, default=4, help="Worker concurrency")
+        p_harvest.add_argument("--batch-size", type=int, default=25, help="Batch commit & VRAM flush size")
+        p_harvest.add_argument("--force", action="store_true", help="Force re-harvest of existing assets")
+        p_harvest.add_argument("--retry-failed", action="store_true", help="Retry assets with previous errors")
+        p_harvest.add_argument("--report", default=None, help="Save harvest results summary JSON to path")
+
+        subs.add_parser("harvest-status", help="Display Sonic Intelligence library harvest status & coverage")
+
+        subs.add_parser("rebuild-index", help="Rebuild SQLite FTS5 search index")
 
     # bank
     p_bank = subparsers.add_parser("bank", help="Manage and search local Sound Bank (SQLite FTS5)")
