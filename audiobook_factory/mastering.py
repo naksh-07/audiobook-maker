@@ -30,12 +30,13 @@ def concatenate_and_master_chapter(
     target_sample_rate: int = 48000,
     script_segments: Optional[List[Dict[str, Any]]] = None,
     spatial_staging: bool = False,
+    edit_plans: Optional[List[Any]] = None,
 ) -> Path:
     """
     Concatenates a list of audio segment WAVs, applies vocal mastering,
     and outputs a studio-mastered M4A/MP3 chapter file with dynamic mastering parameters.
     Supports script-aware dynamic pauses (pause_after_ms), organic breath timing (pre_roll_breath_ms),
-    and dialogue spatial soundstage positioning (spatial_staging).
+    dialogue spatial soundstage positioning (spatial_staging), and editorial timeline realization (edit_plans).
     """
     if not audio_segments:
         raise ValueError("No audio segments provided to master.")
@@ -109,6 +110,22 @@ def concatenate_and_master_chapter(
             idx = s.get("index", 1) if isinstance(s, dict) else getattr(s, "index", 1)
             seg_meta_by_idx[idx] = s if isinstance(s, dict) else s.model_dump()
 
+    # Index editorial plans if provided
+    edit_plan_by_idx: Dict[int, Any] = {}
+    if edit_plans:
+        for p in edit_plans:
+            matched_idx = None
+            if hasattr(p, "metadata") and isinstance(p.metadata, dict) and "segment_index" in p.metadata:
+                matched_idx = int(p.metadata["segment_index"])
+            if matched_idx is None:
+                st = getattr(p, "source_take", "")
+                for part in st.split("_"):
+                    if part.startswith("s") and part[1:].isdigit():
+                        matched_idx = int(part[1:])
+                        break
+            if matched_idx is not None:
+                edit_plan_by_idx[matched_idx] = p
+
     # 1. Create a concat list file for FFmpeg
     concat_list = output_chapter_file.parent / f"concat_{output_chapter_file.stem}.txt"
     try:
@@ -123,9 +140,17 @@ def concatenate_and_master_chapter(
                         break
 
                 seg_info = seg_meta_by_idx.get(s_idx, {})
+                plan_for_seg = edit_plan_by_idx.get(s_idx)
+                if plan_for_seg is None and edit_plans and i < len(edit_plans):
+                    plan_for_seg = edit_plans[i]
 
-                # Pre-roll breath pause if specified
-                pre_breath_ms = int(seg_info.get("pre_roll_breath_ms", 0) or 0)
+                # Pre-roll breath / pause if specified
+                pre_breath_ms = 0
+                if plan_for_seg is not None and getattr(plan_for_seg, "pause_before_ms", 0) > 0:
+                    pre_breath_ms = int(plan_for_seg.pause_before_ms)
+                elif int(seg_info.get("pre_roll_breath_ms", 0) or 0) > 0:
+                    pre_breath_ms = int(seg_info.get("pre_roll_breath_ms", 0))
+
                 if pre_breath_ms > 0:
                     breath_silence = _get_silence_file(pre_breath_ms)
                     if breath_silence:
@@ -155,7 +180,10 @@ def concatenate_and_master_chapter(
 
                 # Post-segment dramatic pause
                 if i < len(audio_segments) - 1:
-                    cur_pause_ms = int(seg_info.get("pause_after_ms", pause_ms) or pause_ms)
+                    if plan_for_seg is not None and getattr(plan_for_seg, "pause_after_ms", None) is not None:
+                        cur_pause_ms = int(plan_for_seg.pause_after_ms)
+                    else:
+                        cur_pause_ms = int(seg_info.get("pause_after_ms", pause_ms) or pause_ms)
                     if cur_pause_ms > 0:
                         s_file = _get_silence_file(cur_pause_ms)
                         if s_file:

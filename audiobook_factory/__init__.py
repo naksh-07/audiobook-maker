@@ -121,7 +121,14 @@ from .gate_auditor import (
     audit_gate6d_packaging_specs,
     audit_book_master,
 )
+from .dialogue_editing import (
+    DialogueEditor,
+    DialogueEditPlan,
+    DialogueEditorialConfig,
+    DialogueQCReport,
+)
 
 __version__ = "4.0.0b1"
+
 
 

@@ -29,13 +29,15 @@ flowchart TB
         PerfRealization --> PronunciationQA["Pronunciation & Spoken QA Subsystem (ADR-022)<br/>(audiobook_factory/pronunciation/)<br/>• Dual-Layer SpokenTextEngine & Tag Shield<br/>• Deterministic 7-Tier Resolver (T1–T7)<br/>• Meta MMS_FA CTC Alignment QA & Repair"]
         PronunciationQA --> Gate28{"Gate 2.8:<br/>Performance Fidelity Gate<br/>(Fail-Closed Pre-Mix QC)"}
         Gate28 -->|PASS| Chunks["Selected Speech Takes (24kHz Mono PCM) &<br/>PerformanceDirection Stems"]
+        Chunks --> Editorial["Dialogue Editorial Layer (DE-01–DE-04)<br/>(audiobook_factory/dialogue_editing/)<br/>• Non-Destructive Endpoint Snapping & C2PA Scrub<br/>• Conservative Breath & Sob Safeguards<br/>• Contextual Turn Latency & Aposiopesis<br/>• Fail-Closed DialogueEditingQC & TPDF Dither"]
+        Editorial --> EditedChunks["Edited Takes (edited_chunks/) &<br/>DialogueEditPlan Manifests"]
     end
 
     subgraph Room2["🚪 Room 2: Agentic Directing Layer (Strict Agent Mandate)"]
         direction TB
         Bible["Global Lore & Sonic Bible<br/>(sound_bible.json)"] --> Director["AgentDirector 3-Pass Workflow<br/>(audiobook_factory/agent_director.py)<br/>• No Script Overrides"]
         Scripts --> Director
-        Chunks --> Director
+        EditedChunks --> Director
         Director --> Pass1["Pass 1: Dramaturgy & Silence Carving<br/>(>= 60.0% Silence Mandate)"]
         Pass1 --> Pass2["Pass 2: Music Director<br/>(FTS5 Search & Character Leitmotifs)"]
         Pass2 --> Pass3["Pass 3: Acoustic Foley Miner<br/>(Word Alignment & -6dB Whisper Attenuation)"]
@@ -176,6 +178,29 @@ flowchart TB
   - **Fail-Closed Voice Registry Validation (ADR-021):** Pre-flights all segments before API dispatch, raising `UnregisteredSpeakerError` on unmapped dialogue speakers. Strictly prohibits silent fallback to Narrator (`Aoede`), auto-resolving canonical character aliases and checking gender alignment.
   - **Token-Bucket Concurrency & Quota Isolation**: Thread-safe `TokenBucketRateLimiter` with organic anti-bot jitter (350ms–850ms) and automatic global pause on HTTP 429 `RetryInfo`. Dedicated `service="text"` vs `service="tts"` key pool routing prevents auxiliary LLM prompts from depleting scarce 10 RPD Gemini TTS quotas.
   - **Mathematical Audio SNR Gatekeeper**: Probes PCM waveform for flat-top clipping ($\ge 6$ rail samples), DC offset bias, faint amplitude, and dead air silence runs ($\ge 4\text{s}$).
+- **Stage 3.9: Dialogue Editorial Layer (DE-01 through DE-04) ([`audiobook_factory/dialogue_editing/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dialogue_editing/))** *(See authoritative manual: [`docs/DIALOGUE_EDITORIAL_LAYER.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DIALOGUE_EDITORIAL_LAYER.md))*:
+  - **Non-Destructive Assembly Architecture:** Ingests selected speech takes from `audio_chunks/` and outputs refined audio to `edited_chunks/` alongside cryptographic `DialogueEditPlan[]` manifests, leaving raw source takes 100% immutable.
+  - **Intelligent Endpoint Editor ([`EndpointEditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dialogue_editing/endpoint_editor.py)):**
+    - Dynamic floating speech floor down to `-52 dBFS`, preserving whispers, dying breaths, and natural vocal fry decay tails.
+    - Sub-millisecond zero-crossing snapping (`_snap_trim_to_zero_crossing`), eliminating sample-offset truncation clicks.
+    - Plosive stop consonant protection against C2PA burst scrub heuristics, ensuring unvoiced stop releases (/p/, /t/, /k/) are never clipped.
+    - Extended 180–200ms buffers with gentle 50ms raised-cosine decays for weeping, panting, and emotional releases.
+  - **Conservative Breath Editor ([`BreathEditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dialogue_editing/breath_editor.py)):**
+    - Tri-action intent engine (`KEEP` 0dB, `REDUCE` -6dB, `REMOVE` -36dB) evaluating multi-signal direction, physical strain, and relative acoustic deltas.
+    - Iron-restraint sob/tremor safeguard (`restraint >= 0.85`), protecting involuntary shuddering intakes during suppressed grief.
+    - High-confidence surgical excision reserved strictly for synthetic vocoder clicks on neutral lines.
+  - **Contextual Turn-Taking & Pause Editor ([`PauseEditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dialogue_editing/pause_editor.py)):**
+    - Dynamic latency derivation replacing rigid static defaults (25ms interruption floors to 1800ms emotional freezes).
+    - Trailing em-dash (`—`) tragic aposiopesis preservation (1200–1800ms) over rapid cutoffs for grief and dramatic freezes.
+    - Conversational status and leverage pacing: prompt subordinate responses (`0.90x`) vs. deliberate authority pauses (`1.20x`).
+    - Deterministic SHA-256 pseudo-jitter ($\pm 25$ms) preventing machine-like cadence monotony.
+  - **Fail-Closed Editorial QC ([`DialogueEditingQC`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dialogue_editing/qc.py)):**
+    - Rigid checks for speech truncation, negative durations, severe rail clipping, NaN/Inf instability, and empty sample buffers.
+    - Chapter-wide cadence standard deviation audit across scenes $\ge 5$ segments.
+    - Automatic fallback rollback: cleanses rejected plans (`edit_plans = None`) and reverts to unedited takes upon hard failure.
+  - **Multi-Format 16-Bit PCM Renderer ([`DialogueEditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dialogue_editing/editor.py)):**
+    - Multi-format waveform loading: 16-bit PCM, 24-bit packed PCM, 32-bit float, and stereo-to-mono downmix.
+    - True Hann raised-cosine micro-fades, gain balancing, deterministic TPDF dither, and boundary zero sample pinning.
 
 ---
 
@@ -222,6 +247,7 @@ flowchart TB
   - **Music-Only 2.2kHz Spectral Notch Carving**: Carves a -5.5 dB notch (`equalizer=f=2200:t=q:w=1.5:g=-5.5`) strictly into the music stem `[0:a]`, preserving the high-frequency snap of Foley cues and the spatial depth of Ambience beds without vocal masking.
   - **Dynamic Impulse Response Reverb**: Adapts wet send volume and delay reflections to scene presets (`cathedral`, `bedroom`, `open_road`, `stone_hall`, `binaural_whisper`).
 - **DSP Vocal Mastering ([`audiobook_factory/mastering.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering.py))**:
+  - Ingests `edited_segments` and `DialogueEditPlan[]` from Stage 3.9, dynamically applying pre-roll breath pauses (`pause_before_ms`) and contextual turn gaps (`pause_after_ms`).
   - 5-stage DSP chain:
     1. SOXR 48kHz sinc resampling
     2. Highpass subsonic filter (60Hz cut)

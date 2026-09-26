@@ -8,7 +8,7 @@
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.8%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-Universal%20Director%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-616%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-654%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![Acting Engine](https://img.shields.io/badge/Acting%20Engine-Performance%20QC%202.0%20(A%2B%20Audited)-blue.svg)](docs/TTS_GENERATION_ARCHITECTURE.md)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
@@ -39,11 +39,13 @@ flowchart TD
         ScriptBuilder --> PerfRealization["Dramatic Performance Realization Layer (ADR-032)<br/>(PerformanceDirector + Multi-Take + 8D QC + Gate 2.8)"]
         PerfRealization --> PronunciationQA["Pronunciation & Spoken QA Subsystem (ADR-022)<br/>(SpokenTextEngine + 7-Tier Resolver + MMS_FA QA + Repair)"]
         PronunciationQA --> AudioChunks["Selected Speech Takes (24kHz Mono 16-bit PCM)"]
+        AudioChunks --> Editorial["Dialogue Editorial Layer (DE-01–DE-04)<br/>(Endpoint Snapping + Breath & Sob + Turn Latency + QC)"]
+        Editorial --> EditedChunks["Edited Takes (edited_chunks/) & Edit Plans"]
     end
 
     subgraph Room2["🚪 Room 2: Agentic Directing Layer (Strict Agent Mandate)"]
         Bible["Sonic Bible & Leitmotifs (sound_bible.json)"] --> Director["Autonomous AgentDirector (No Script Overrides)"]
-        AudioChunks --> Director
+        EditedChunks --> Director
         Director --> SilenceCarve["Pass 1: Silence Carving (>= 60.0% Silence Mandate)"]
         SilenceCarve --> MusicDir["Pass 2: Dynamic FTS5 Music Director"]
         MusicDir --> FoleyMiner["Pass 3: Acoustic Foley Miner + Whisper Attenuation"]
@@ -71,17 +73,19 @@ flowchart TD
 
 ---
 
-### 🔄 The 6-Stage Autonomous Production Pipeline
+### 🔄 The Autonomous Production Pipeline Lifecycle
 
-The architecture orchestrates an end-to-end 6-stage lifecycle from raw document ingestion to mastered M4B packaging:
+The architecture orchestrates an end-to-end multi-stage lifecycle from raw document ingestion to mastered M4B packaging:
 
 1. **Stage 1: Forensic Document Ingestion & Canonical AST** ([`docs/FORENSIC_DOCUMENT_INGESTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/FORENSIC_DOCUMENT_INGESTION.md)): Single-pass DOM traversal, layout-aware PDF reading order reconstruction, sacred raw archival, and fail-closed Gate 0.1 extraction audits.
 2. **Stage 2: Literary Translation Intelligence & Memory 2.0** ([`docs/LITERARY_TRANSLATION_INTELLIGENCE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md)): Persistent BookBible v2.0, dual semantic maps, contextual Hindustani register, 7D calibrated intensity, World & Character Memory 2.0 epistemic continuity, and Gates T0–T15 certification.
+3. **Stage 3: Dramaturgy & Screenplay Engine** ([`docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)): Organic SceneAnalyzer, Actioning BeatPlanner, beat-aligned chunk slicing, and fail-closed Gate 2.5 Dramatic Fidelity Audit.
 4. **Stage 3.5: Dramatic Performance Realization Layer & Studio Performance QC 2.0 (ADR-032 / ADR-024)** ([`docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md) & [`docs/TTS_GENERATION_ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TTS_GENERATION_ARCHITECTURE.md)): Bridges Stage 3 dramatic beats into moment-level actor performance directions (`PerformanceDirection`), humanized timing and respiration (`TimingRealizer`), provider-neutral synthesis with sacred text immutability (`GeminiTTSPerformanceAdapter`), priority-based multi-take banking (`TakeBank`), **Forced Alignment 2.0** with frame-accurate MMS_FA CTC word token spans and 7 pause classes (`WorkstationForcedAligner`), **Performance Evaluator 2.0** with autocorrelation F0 tracking, crest dynamic range, monotonic pitch-lock detection, and restraint enforcement (`PerformanceEvaluator`), **Hierarchical Evidence Fusion 2.0** with an 8-layer stack and fail-closed technical/alignment/drift layers (`EvidenceFusionEngine`), **Auxiliary Perceptual Judging** (`PerceptualPerformanceJudge`), **Take Selection 2.0** with authoritative `NO_ACCEPTABLE_TAKE` decision policies, 6-mode contextual scoring, pairwise judicial deliberation (`PairwiseTakeJudge`), and explainable reason codes (`TakeSelectionResult`), **Whole-Scene Arc Selection** (`select_scene_takes`), conversational chemistry turn coupling (`ConversationalChemistry`), character pace continuity tracking (`PerformanceContinuityTracker`), 18-category golden benchmarks, genuine human calibration ($r, \rho$, FAR, FRR), and fail-closed pre-mix certification via **Gate 2.8: Dramatic Performance Fidelity Gate**.
 5. **Stage 3.8: Pronunciation & Spoken Language QA Subsystem (ADR-022)** ([`docs/PRONUNCIATION_AND_SPOKEN_LANGUAGE_QA.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PRONUNCIATION_AND_SPOKEN_LANGUAGE_QA.md)): Decouples sacred literary prose (`ScreenplaySegment.text` strictly immutable) from phonetically resolved TTS payloads (`ScreenplaySegment.spoken_text`). Deploys the Deterministic 7-Tier Resolver, shields neural acting tags (`[whispers]`), executes post-synthesis acoustic QA with Meta MMS_FA CTC alignment, performs targeted single-take repairs with rhythmic micro-pause anchors and atomic WAV promotion, and enforces project-wide cross-chapter consistency (Gate 6E).
-6. **Stage 4: Autonomous Directing & Gemini 3.8 Flash Speech Synthesis** ([`docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md) & [`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md)): Autonomous 3-pass workflow executing $\ge 60\%$ acoustic silence carving, SQLite FTS5 leitmotif music scoring, and bilingual anchor Foley staging. Emits `CreativeManifest v3.0` and dispatches multi-cast speech synthesis via `TTSDispatcher` to `gemini-3.8-flash-tts` with turn-level theatrical style directing, physical inline vocal tags (`<gasp>`, `<sigh>`, `<sob>`), and zero voice drift.
-7. **Stage 5: Acoustic Compositor & 5-Track DME Stem Mastering** ([`docs/AUDIO_ENGINEERING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)): Manifest rendering with whisper-safe sidechain ducking (-34.9 dBFS / 0.018 threshold), isolated 2.2kHz spectral notch, dynamic IR reverb, and discrete 5-track DME stem export audited by Gates 5, 5.2, and 5.3.
-8. **Stage 6: Master Packaging & M4B Delivery Container** ([`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)): Multi-chapter FFMETADATA1 generation, AAC safety auto-transcode, FastStart artwork embedding, and Gate 6A–6E master certification.
+6. **Stage 3.9: Dialogue Editorial Layer (DE-01 through DE-04)** ([`docs/DIALOGUE_EDITORIAL_LAYER.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DIALOGUE_EDITORIAL_LAYER.md)): Bridges individual speech takes into a seamless, organic dramatic performance. Ingests raw takes from `audio_chunks/` non-destructively to `edited_chunks/` using intelligent endpoint trimming (sub-millisecond zero-crossing snapping, speech floor to -52 dBFS, stop plosive burst protection), conservative breath evaluation (KEEP/REDUCE/REMOVE) with suppressed sob safeguards (`restraint >= 0.85`), dynamic contextual turn latencies (25ms interruption floor to 1800ms emotional freeze), em-dash tragic aposiopesis preservation, power-dynamic turn pacing, multi-format loading (16/24/32-bit), true Hann micro-fades, deterministic TPDF dither, and fail-closed QC (`DialogueEditingQC`) with unedited raw fallback.
+7. **Stage 4: Autonomous Directing & Gemini 3.8 Flash Speech Synthesis** ([`docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md) & [`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md)): Autonomous 3-pass workflow executing $\ge 60\%$ acoustic silence carving, SQLite FTS5 leitmotif music scoring, and bilingual anchor Foley staging. Emits `CreativeManifest v3.0` and dispatches multi-cast speech synthesis via `TTSDispatcher` to `gemini-3.8-flash-tts` with turn-level theatrical style directing, physical inline vocal tags (`<gasp>`, `<sigh>`, `<sob>`), and zero voice drift.
+8. **Stage 5: Acoustic Compositor & 5-Track DME Stem Mastering** ([`docs/AUDIO_ENGINEERING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)): Manifest rendering with whisper-safe sidechain ducking (-34.9 dBFS / 0.018 threshold), isolated 2.2kHz spectral notch, dynamic IR reverb, and discrete 5-track DME stem export audited by Gates 5, 5.2, and 5.3.
+9. **Stage 6: Master Packaging & M4B Delivery Container** ([`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)): Multi-chapter FFMETADATA1 generation, AAC safety auto-transcode, FastStart artwork embedding, and Gate 6A–6E master certification.
 
 ---
 
@@ -129,7 +133,16 @@ The architecture orchestrates an end-to-end 6-stage lifecycle from raw document 
 - **Cross-Chapter Pronunciation Drift Auditor:** Tracks recurring entities across all chapter screenplay scripts, flagging unauthorized phonetic variances (audited at scene level by Gate T15 and fail-closed at master level by Gate 6E).
 - **The Golden Pronunciation Regression Bank (20 Cases):** Permanent regression suite (`tests/pronunciation/test_golden_pronunciation_cases.py`) verifying 20 high-difficulty edge cases across 8 linguistic dimensions with 100% precision.
 
-### 5. Multi-Gate Independent Verification Suite (Gates 0.1 - 6E & Gates T0 - T15)
+### 5. Dialogue Editorial Layer & Organic Human Assembly (DE-01 through DE-04)
+*(See full technical guide: [`docs/DIALOGUE_EDITORIAL_LAYER.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DIALOGUE_EDITORIAL_LAYER.md))*
+- **Non-Destructive Dialogue Refinement:** Bridges individual generated speech clips into a cohesive, uninterrupted dramatic performance. Unedited speech takes in `audio_chunks/` remain completely immutable; refined takes and cryptographic edit plans output non-destructively to `edited_chunks/`.
+- **Intelligent Endpoint Snapping & C2PA Burst Protection:** Dynamically tracks RMS energy down to `-52 dBFS` to safeguard quiet whispers and vocal fry decay. Snaps trim boundaries to sub-millisecond waveform zero crossings (`_snap_trim_to_zero_crossing`), and discriminates genuine stop plosive consonants (/p/, /t/, /k/) from vocoder artifacts using forced-alignment word boundaries and minimum 100ms valley closures.
+- **Conservative Multi-Signal Breath Intent:** Replaces blind RMS silencing with tri-state decisions (`KEEP` 0dB, `REDUCE` -6dB, `REMOVE` -36dB). Preserves directed inhalations, combat panting, and emotional sobbing while providing an iron-restraint safeguard (`restraint >= 0.85`) that protects involuntary shuddering intakes during suppressed grief.
+- **Dynamic Contextual Turn Latency & Tragic Aposiopesis:** Derives speech gaps from dramatic context rather than rigid static timers (25ms interruption floors to 1800ms emotional freezes). Trailing em-dashes (`—`) on grief/freeze lines preserve full aposiopesis silences (1200–1800ms) rather than rapid cutoffs. Dynamically adjusts latency based on conversational authority (subordinates respond promptly with `0.90x` compression; authorities deliberate with `1.20x` expansion), textured with deterministic SHA-256 pseudo-jitter ($\pm 25$ms).
+- **Studio Multi-Format Ingestion & TPDF Dithering:** Unpacks 16-bit PCM, 24-bit packed PCM (3-byte bitshift), 32-bit float, and stereo-to-mono downmixes. Applies true Hann raised-cosine micro-fades, gain leveling, deterministic TPDF dither, and zero-sample boundary pinning (`samples[0] = samples[-1] = 0`).
+- **Fail-Closed Editorial QC & Plan Cleansing:** Audits edited audio against speech truncation, negative durations, rail clipping, NaN/Inf instability, and chapter cadence anomalies. Automatically discards rejected edit plans (`edit_plans = None`) and reverts to raw takes upon hard failure.
+
+### 6. Multi-Gate Independent Verification Suite (Gates 0.1 - 6E & Gates T0 - T15)
 Quality is mathematically audited at every stage of the pipeline:
 - **Gate 0.1:** Forensic Document Extraction Quality Gate (Document completeness, word count floor, empty chapter guard, OCR noise ratio $< 25\%$; fails closed on `REVIEW` with `--force-gate` override)
 - **Gates T0 – T15:** Literary Translation Intelligence & Spoken Language Certification Suite (Source sanity, BookBible terminology & Latin leak checks, dual semantic map beat alignment & expanded negation parity, quote parity & omission detection, addition detection, character sociolect & pronoun honorifics, 7D calibrated intensity preservation, literary naturalness, Gate T10 Hindustani register balance $0.2\% - 8.0\%$, Gate T12 Spoken Language QA, Gate T13 Pronunciation Plan QA, Gate T14 Pronunciation Audio QA, Gate T15 Cross-Chapter Pronunciation Consistency, 4-tier state machine with fail-closed blocking, and 11-dimension SHA-256 provenance seal)
@@ -138,12 +151,13 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Gate 2:** Screenplay Scripting Schema & Prosody (Pydantic v2)
 - **Gate 2.5:** Dramatic Fidelity & Character Arc Validator (8-pillar fail-closed audit across structural integrity, character epistemics/unknown secrets, anti-emotional teleportation, dialogue quote parity, creative overreach, beat causality chains, dramatic state deltas, and adaptation fidelity policy)
 - **Gate 2.8:** Dramatic Performance Fidelity Pre-Mix Gate (Pre-mix QC across $\ge 0.70$ composite quality floor, $\ge 0.65$ naturalness, zero emotional teleportation, and sacred text immutability)
+- **Gate: DialogueEditingQC:** Dialogue Editorial Quality Gate (Fail-closed speech truncation, negative duration, NaN/Inf instability, rail clipping, and chapter cadence standard deviation audit with automatic unedited fallback and plan cleansing)
 - **Gate 3 / 3.5:** Dynamic Manifest Feasibility Guard ($\ge 60\%$ acoustic silence mandate; accepts `CreativeManifest` & director-managed workflows)
 - **Gate 4.5:** Master Timeline & Audio Transcript Ledger (Monotonicity and physical chunk validation)
 - **Gate 5 / 5.2 / 5.3:** EBU R128 Master (standardized $\pm 1.0\text{ LU}$ tolerance), Dialogue-to-Music Ratio ($\text{DMR} \ge +12\text{ dB}$), and Stereo Phase ($r \ge 0.85$)
 - **Gate 6A / 6B / 6C / 6D / 6E:** Cross-Chapter Voice Continuity, Inter-Chapter Loudness Consistency ($\le 1.0\text{ LU}$), TOC Monotonicity, M4B Container Certification, and Gate 6E Cross-Chapter Pronunciation Consistency (Book Master)
 
-### 6. Hollywood-Grade Acoustic DSP Mastering
+### 7. Hollywood-Grade Acoustic DSP Mastering
 - **Strict Agent Creative Mandate:** All creative acoustic choices (scoring, leitmotifs, Foley placement, pacing) belong strictly to autonomous agents (`AgentDirector`). Lower engine layers (`CinemaAudioEngine`, `ManifestRenderer`, DSP) are 100% deterministic execution runtimes with zero script overrides.
 - **Music-Only 2.2kHz Spectral Notch EQ:** Parametric notch filter ($-5.5\text{ dB}$ at $2,200\text{ Hz}$, $Q=1.5$) is isolated strictly to the Music Bus `[0:a]`, preserving crisp Foley transients and expansive Ambience beds.
 - **Whisper Collision Attenuation:** Foley cues triggered during quiet or whispered dialogue segments receive automatic $-6\text{ dBFS}$ attenuation via `attenuate_foley_whisper_collisions`.
@@ -152,13 +166,13 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Dynamic Headroom Calibration:** Explosive scenes tighten the limiter to `0.82` with True Peak ceiling `-2.0 dBTP`. Soft whisper scenes calibrate dynamic Loudness Range (`LRA = 6.0 LU`).
 - **Auto-Janitor Safety Shield:** Raw WAV chunks are strictly preserved if master rendering or quality verification fails, protecting your API quota.
 
-### 7. Container Reliability & Robust Orchestration
+### 8. Container Reliability & Robust Orchestration
 - **M4B AAC Packaging Safety:** Replaced brittle container copy with strict AAC validation (`is_all_aac`). Uncompressed WAV stems (`pcm_s16le`) or non-AAC assets are automatically transcoded to AAC (`-c:a aac -b:a 192k`) with `+faststart` MP4 metadata atom positioning.
 - **Dynamic Vocal Track Inference:** Removed hardcoded paths; dynamically discovers vocal stems (`.wav` and `.m4a`) across project directory hierarchies.
 - **Regex Chapter Parsing:** Script and audio chunk extraction utilizes robust regex `chapter_(\d+)` patterns, preventing chapter renumbering during partial runs.
 - **Fast Zero-Quota PDF Extraction:** Integrated `pypdf>=5.0` for instantaneous local digital PDF parsing, bypassing the 8,192 token window before falling back to multimodal vision.
 
-### 8. Adult Literary Fidelity & HBO/Manto Intimacy Framework (ADR-016 & ADR-019)
+### 9. Adult Literary Fidelity & HBO/Manto Intimacy Framework (ADR-016 & ADR-019)
 - **Unapologetic Raw Hindustani Street Grit & Period Profanity:** Eliminates prudish television euphemisms and sanitized bowdlerization (no more replacing 'bastard' with 'दुष्ट' or 'whore' with 'बुरी स्त्री'). Incorporates authentic, earthy Hindustani curses and dark tavern vitriol (`'गांड'`, `'भोसड़ीके'`, `'लंड'`, `'रांड'`, `'मादरचोद'`, `'बकचोदी'`, `'सूअर का पेशाब'`). Governed by the **19-to-21 Amplification Rule**, elevating mild source prose to visceral Desi impact for gut-punch delivery.
 - **The 70/30 Anti-Parody Invariant:** Preserves a sacred **70% Canon Lore / 30% Sensory Desi Amplification** balance. European dark-fantasy mythos, monster classifications (specters, strigas, cursed beasts), and geographic realms remain untampered and un-corrupted; the 30% sensory layer is localized through organic tavern grit, Chambal/UP street idioms, and dynamic honorific power shifts (`तू` $\leftrightarrow$ `माई-बाप / सरकार`) without devolving into comic tapori spoofs.
 - **Rule 8 Somatic Intimacy, Dirty Banter & Raw Erotica:** Mandates visceral erotic vocabulary, somatic friction, and bedroom dirty talk (`'लंड'`, `'चूत'`, `'गांड'`, `'चोदना'`, `'मसलना'`, `'तपती कमर'`, `'भीगी प्यास'`, `'बेकाबू सांसें'`) during passionate encounters.
@@ -168,7 +182,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Cynical Protagonist Grunt Engine & Duraangi Zubaan:** Encodes weary, cynical protagonist idiolects using signature neural grunts (`[growl] हूँ...`, `[sighs] हम्म...`) paired with `1000-1400ms` pregnant pauses. Models internal vs. external dissonance (*Duraangi Zubaan* inner monologues) via `[whispers] (मन में: ...)` rendered in `binaural_whisper` acoustic environments.
 - **Configuration & Backward Compatibility:** Controlled via the `adult_literary_mode: bool = Field(default=True)` configuration flag in [`ProjectConfig`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py) and [`PipelineOrchestrator.run_autonomous_pipeline`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestrator.py), preserving 100% backward compatibility for standard literature projects.
 
-### 9. Hollywood & AAA-Game Combat Sound Design & Action Acoustics (ADR-017)
+### 10. Hollywood & AAA-Game Combat Sound Design & Action Acoustics (ADR-017)
 - **The 3-Layer Combat Sandwich:** Crafts heart-stopping kinetic strikes across 3 distinct frequency bands:
   - *Layer 1 (Transient Bite):* 2.0 kHz – 7.5 kHz razor-sharp blade clangs, arrow releases, and armor parries.
   - *Layer 2 (Anatomical Body):* 180 Hz – 1.4 kHz visceral flesh lacerations, bone crunches, and heavy body thuds.
@@ -179,7 +193,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Dynamic Ducking & Tinnitus Shockwave:** `PROFILE_COMBAT_SHOCK` ($-24\text{ dB}$ attenuation, $4000\text{ ms}$ release) and `PROFILE_COMBAT` ($-22\text{ dB}$, $250\text{ ms}$ release) in `acoustic_bus_matrix.py`. "The Smother Cut" applies 150–250ms of hard digital silence right before fatal impacts.
 - **Staccato Combat Prose & Neural Tags:** Narrative sentences fracture into rapid 2–4 word staccato beats ('कदम पीछे। तलवार का पैंतरा। वार। चूक गया!'), paired with validated neural tags: `[bellowing battlecry]`, `[combat strain]`, `[diaphragm strain]`, `[guttural grunt on blade deflect]`, `[spits blood]`, `[choked gasp]`, `[ragged heaving pant]`, `[slow motion]`.
 
-### 10. Harry Potter / Pottermore Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
+### 11. Harry Potter / Pottermore Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
 - **4-Stem Decoupled Scene Acoustics:** Replaces flat single-loop ambience with 4 distinct stems per scene managed via [`SceneSoundscapeManifest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/scene_acoustics.py):
   - *Stem 1 (Base Room Tone):* Architectural cavity resonance ($-34$ to $-36\text{ LUFS}$, stereo width 1.35).
   - *Stem 2 (Weather & Macro World):* Exterior storm, gale, blizzard, or rain ($-30$ to $-32\text{ LUFS}$, stereo width 1.40).
@@ -191,7 +205,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Dialogue-to-Masking Ratio (DMR $\ge +10.0$ dB) Validation:** Automated proxy verification in `CinemaAudioEngine` and `StemLedger` guarantees dialogue clarity over the composite background bed.
 - **Offline Foley & Magic Composite Asset Baker:** [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py) pre-renders multi-phase magic spells (`magic_lumos_light.wav`, `magic_expelliarmus_kinetic.wav`) and tactile props (`tactile_parchment_quill_scratch.wav`), indexing them permanently in SQLite FTS5 for zero-latency retrieval with zero runtime FFmpeg graph bloat.
 
-### 11. Forensic Audit Remediation & Comprehensive Engine Hardening (ADR-020)
+### 12. Forensic Audit Remediation & Comprehensive Engine Hardening (ADR-020)
 Post-integration forensic testing revealed 13 critical edge cases across production pipelines, all mathematically remediated and verified:
 - **Contract Deserialization Rehydration:** Added `@model_validator(mode="after")` to [`CreativeManifest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py) ensuring nested `scene_acoustics` automatically reinstantiates as a [`SceneSoundscapeManifest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/scene_acoustics.py) instance upon JSON deserialization.
 - **Screenplay Dict Unpacking:** CLI commands and orchestrators unpack dictionary-wrapped scripts (`{"script_version": "2.0", "segments": [...]}`) safely without attribute errors.
@@ -205,7 +219,7 @@ Post-integration forensic testing revealed 13 critical edge cases across product
 - **FFMETADATA1 Special Character Escaping:** Special characters (`=`, `;`, `#`, `\`) in book titles and chapter markers are escaped cleanly via `_escape_ffmetadata()` in [`packager.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/packager.py).
 - **CLI Segment Take Deduplication:** Prevents multiple takes per segment index from being concatenated into final chapter masters in `audiobook_cli.py`.
 
-### 12. Zero-Voice-Drift Hardening & Deterministic Speaker Attribution (ADR-021)
+### 13. Zero-Voice-Drift Hardening & Deterministic Speaker Attribution (ADR-021)
 Production testing of complex multi-character dialogical exchanges revealed subtle risks of characters drifting into Narrator voice assignments. ADR-021 establishes strict deterministic attribution:
 - **Fail-Closed Unregistered Speaker Protection:** In [`tts_dispatcher.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py), dialogue segments requesting an unregistered speaker raise a typed `UnregisteredSpeakerError` with fuzzy match suggestions (`Did you mean: ...?`). Silent fallback to `Aoede` (Narrator) is strictly prohibited.
 - **Dynamic Character Roster & Voice Registry Auto-Discovery:** `TTSDispatcher` automatically loads and parses `character_roster.json` and `voice_registry.json`, dynamically mapping aliases (English, Devanagari, underscore, and space variations) directly to canonical voice models (`Charon`, `Kore`, `Puck`, `Fenrir`).
@@ -214,7 +228,7 @@ Production testing of complex multi-character dialogical exchanges revealed subt
 - **Gate 1 Acoustic Gender Alignment:** [`audit_gate1_roster()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py) verifies persona gender alignment, generating warnings if male characters are assigned female voice personas or vice versa.
 - **Two-Pass Screenplay Pronoun & Alias Normalization:** [`clean_screenplay_pass2()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py) disambiguates conversational pronouns in both English (`he`, `she`, `the man`, `the woman`) and Hindi (`उसने`, `वह`, `आदमी`, `लड़की`, `महिला`), and strips parenthetical actor annotations (e.g. `Geralt (Witcher)` $\rightarrow$ `Geralt`).
 
-### 13. Audio Drama Timeline Sync, Bilingual Foley Staging & Soundscape Partitioning (ADR-022)
+### 14. Audio Drama Timeline Sync, Bilingual Foley Staging & Soundscape Partitioning (ADR-022)
 Elimates timeline drift, Foley placement anomalies, and acoustic masking across full-novel productions:
 - **Cumulative Timeline Drift Elimination:** Standardized `pre_roll_breath_ms` across contracts ([`TimelineSegment`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py)), ledger ([`timeline_ledger.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/timeline_ledger.py)), and director ([`agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)). Breath intakes are fully synchronized (`start_ms = curr_t_ms + pre_breath`), eradicating cumulative timeline skew across hundreds of dialogue lines.
 - **Zero Dead-Center Foley Trap & Bilingual Anchor Mapping:** Replaced rigid 50% midpoint offsets in [`_compute_word_level_offset()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py) with comprehensive bilingual synonym expansion (`BILINGUAL_ANCHOR_MAP`). Unmatched preparatory actions land early ($\sim 15\%$), while physical impacts land on climax windows ($\sim 75\%$), eliminating dead-center sound effect placement.
@@ -222,7 +236,7 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 - **Scene-Bound BGM Underscore:** Upgraded Pass 2 Music Director in [`agent_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py) to support `until_segment` duration calculation, allowing musical cues to span full narrative scenes (25s to 240s) rather than arbitrary 30s chops, bounded by a strict 40% chapter music budget.
 - **Dynamic Multi-Scene Ambience Bed Partitioning:** In [`_partition_script_ambience_scenes()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py), shifts in screenplay `acoustic_env` (e.g. Castle Bath $\rightarrow$ Royal Banquet Hall $\rightarrow$ Dense Forest Night) automatically partition chapters into distinct acoustic environments, replacing flat 106-minute monolithic ambience loops.
 
-### 14. Commercial Studio Voice Casting, Identity & Acting Intelligence (ADR-023 / Waves 1–6)
+### 15. Commercial Studio Voice Casting, Identity & Acting Intelligence (ADR-023 / Waves 1–6)
 *(See authoritative architecture manuals: [`docs/TTS_CASTING_ARCHITECTURE.md`](docs/TTS_CASTING_ARCHITECTURE.md) and [`docs/TTS_GENERATION_ARCHITECTURE.md`](docs/TTS_GENERATION_ARCHITECTURE.md))*
 - **Multi-Pillar Voice Casting Engine (`audiobook_factory/casting/`)**:
   - `CharacterCastingProfile`: 10-dimensional casting profiling (age bracket, gender, role hierarchy, vocal weight, texture, baseline pace, energy, restraint, dialect, emotional flexibility).
@@ -239,7 +253,7 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - `Continuous Generation Risk Engine`: Evaluates scene difficulty $R \in [0.0, 1.0]$ based on emotional volatility, physical strain, dialogue speed, and multi-speaker density, triggering single vs. multi-take generation strategies.
   - `TakeBank`: Generates targeted variants (`more_restrained`, `more_vulnerable`, `slower_heavier`, `colder`, `more_urgent`).
 
-### 15. Commercial Studio Quality Upgrade (ADR-024 / Waves A–E)
+### 16. Commercial Studio Quality Upgrade (ADR-024 / Waves A–E)
 *(See comprehensive architecture manual: [`docs/TTS_GENERATION_ARCHITECTURE.md`](docs/TTS_GENERATION_ARCHITECTURE.md))*
 - **Wave A — Forced Alignment 2.0 (`audiobook_factory/forced_aligner.py`, `alignment_contracts.py`)**:
   - First-class contracts: [`AlignmentResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L147-L189), [`WordAlignment`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L130-L146), [`PauseInterval`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L109-L129), [`SpeechRegion`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment_contracts.py#L96-L108).

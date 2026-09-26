@@ -344,28 +344,50 @@ class PipelineOrchestrator:
             except Exception as e:
                 logger.warning(f"[!] Gate 2.8 Performance Fidelity notice for Chapter {chapter_num:02d}: {e}")
 
-        # 2. Master dialogue vocals with 5-stage DSP and script-aware micro-pauses
+        # 2. Dialogue Editorial Layer (DE-01 - DE-04) & Dialogue Vocal Mastering
         segments = sorted(audio_dir.glob(f"c{chapter_num:03d}_*.wav"))
         if not segments:
             raise RuntimeError(f"No audio segments found for Chapter {chapter_num}")
 
+        edit_plans = None
+        edited_segments = segments
+        try:
+            from audiobook_factory.dialogue_editing import DialogueEditor
+            dialogue_editor = DialogueEditor(project_dir=project_dir)
+            edited_segments, edit_plans, qc_rep = dialogue_editor.process_chapter(
+                chapter_num=chapter_num,
+                audio_segments=segments,
+                script_segments=script_data,
+            )
+            if not qc_rep.passed or qc_rep.has_hard_failures:
+                logger.warning(f"[!] Dialogue Editorial QC notice for Chapter {chapter_num:02d}: using unedited fallback.")
+                edited_segments = segments
+                edit_plans = None
+        except Exception as e:
+            logger.warning(f"[!] Dialogue Editorial notice for Chapter {chapter_num:02d}: {e}")
+            edited_segments = segments
+            edit_plans = None
+
         vocal_wav = mastered_dir / f"{chap_stem}_dialogue.wav"
         concatenate_and_master_chapter(
-            segments, vocal_wav,
+            edited_segments, vocal_wav,
             script_segments=script_data,
             spatial_staging=spatial_staging,
+            edit_plans=edit_plans,
         )
         vocal_dur = get_audio_duration(vocal_wav)
 
-        # 3. Map exact segment durations
+        # 3. Map exact segment durations strictly from segments passed to vocal mastering
         seg_durations = {}
         for seg in script_data:
             s_idx = seg.get("index", 1)
-            seg_matches = sorted(audio_dir.glob(f"c{chapter_num:03d}_s{s_idx:04d}_*.wav"))
-            if seg_matches:
-                seg_durations[s_idx] = get_audio_duration(seg_matches[0])
+            # Match directly against the files passed to mastering to guarantee perfect DME stem sync
+            matched = [s for s in edited_segments if f"_s{s_idx:04d}_" in s.name]
+            if matched:
+                seg_durations[s_idx] = get_audio_duration(matched[0])
             else:
-                seg_durations[s_idx] = 4.0
+                seg_matches = sorted(audio_dir.glob(f"c{chapter_num:03d}_s{s_idx:04d}_*.wav"))
+                seg_durations[s_idx] = get_audio_duration(seg_matches[0]) if seg_matches else 4.0
 
         # 4. Agentic Directing Layer: Produce validated CreativeManifest via AgentDirector
         manifest_file = manifests_dir / f"{chap_stem}_manifest.json"
