@@ -703,3 +703,17 @@
   10. Added `tests/test_sound_design_adversarial_audit.py` (9 dedicated tests). Total test suite 100% green: 712/712 passed + 17 subtests.
 - **Rationale:** Eliminates all failure modes, boundary spills, and silent bugs, delivering production-grade commercial stability.
 
+## ADR-036: Commercial Cinematic Sound Design Next-Gen Production Upgrade (5 Priorities, Shared State Machine & Forensic QC)
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** While structurally complete under ADR-034/035, the sound design subsystem retained heuristic planning shortcuts: arbitrary percentage offsets (35% creature / 40% magic placement), fake audio paths (`foley_*.wav`, `creature_*.wav`), uncoupled stems operating without dynamic cross-system awareness, and QC relying on naive presence checks rather than forensic timeline and asset verification.
+- **Decision:**
+  1. **Priority 1 (Narrative Event $\rightarrow$ Precise Sound Timing):** Eradicated mechanical percentage offsets. All events (Creature, Magic, Hard SFX, Foley) are anchored to authentic screenplay segments and dramatic beats with explicit `source_segment_index`, `timing_rationale`, `dramatic_purpose`, and `confidence`. Integrated `SceneAcousticDramaticStateManager.compute_segment_timing_map` for chronological segment mapping.
+  2. **Priority 2 (Real Asset Resolution for Every Event):** Eradicated synthetic placeholder paths (`foley_*.wav`, `creature_*.wav`). Routed 100% of events through local SQLite FTS5 Sound Bank semantic search returning verified SHA-256 audio files or explicitly marking `is_resolved=False` with `unresolved_reason`. Added dedicated resolvers for Music (`resolve_music_asset`) and Walla (`resolve_walla_asset`).
+  3. **Priority 3 (Cross-System Cinematic Interaction):** Introduced `SceneAcousticDramaticStateManager` (`scene_state.py`) tracking dynamic shared state and coordinating multi-stem reactions: creature approach suppresses walla crowd noise (-12dB); magical incantations duck music and thin room ambience; stealth suppresses foley rustle (-8dB); dramatic climaxes coordinate concussive impacts with musical accents.
+  4. **Priority 4 (Deeper Scene-Aware Evolution):** Modeled 7 canonical dramatic phases (`DramaticNarrativePhase`: `CALM -> UNEASE -> TENSION -> THREAT -> EVENT -> AFTERMATH -> RECOVERY`). State transitions dynamically drive leitmotif variation modes, acoustic density budgets, and negative sound design cues.
+  5. **Priority 5 (Evidence-Based Sound Design QC):** Upgraded `SoundDesignQCAuditor` (`qc.py`) with forensic timeline auditing: detects orphan events outside scene boundaries, flags fake/synthetic audio paths as hard failures, verifies non-negative timestamp/duration/coordinate bounds, and enforces low-value verb filtering.
+  6. **Verification Battery:** Created dedicated test suite `tests/test_sound_design_cinematic_upgrade.py` (6 tests). Total sound design tests: 56/56 passing. Full repository test suite: 718/718 passed + 17 subtests (100% green, 0 regressions).
+- **Rationale:** Elevates the sound design subsystem to commercial Pottermore-grade realism, authentic segment synchronization, and bulletproof asset provenance without altering upstream orchestration or downstream DSP mixing boundaries.
+
+

@@ -59,6 +59,9 @@ MAGIC_KEYWORD_PATTERNS = [
 ]
 
 
+from audiobook_factory.sound_design.asset_retriever import get_asset_retriever
+
+
 class MagicalSoundEngine:
     """
     Supernatural and Magical Sound Language Engine.
@@ -81,14 +84,18 @@ class MagicalSoundEngine:
     ) -> List[MagicalSoundSpec]:
         """
         Scans screenplay segments for supernatural occurrences, spell names, or magical keywords.
+        Anchors magic events to actual narrative moments.
         """
         events: List[MagicalSoundSpec] = []
+        retriever = get_asset_retriever()
 
         for idx, seg in enumerate(segments):
             text = seg.get("text", "")
             sfx_cues = seg.get("sfx_cues") or []
             combined_text = (text + " " + " ".join(str(c) for c in sfx_cues)).lower()
             text_lower = combined_text
+            seg_idx = int(seg.get("segment_index") or seg.get("index") or (idx + 1))
+            seg_start = int(seg.get("start_ms", 0))
 
             # 1. Check known canonical spell names first
             detected_spell = None
@@ -109,17 +116,27 @@ class MagicalSoundEngine:
                 elif tension_level < 0.35:
                     power = "subtle_minor"
 
+                desc = retriever.resolve_magical_asset(detected_spell, stage)
+                asset_p = desc.filepath if desc else ""
+
                 events.append(
                     MagicalSoundSpec(
-                        event_id=f"magic_{idx+1}_{detected_spell.replace(' ', '_')}",
+                        event_id=f"magic_{seg_idx}_{detected_spell.replace(' ', '_')}",
                         spell_or_artifact_name=detected_spell.title(),
                         stage=stage,  # type: ignore
                         power_level=power,
                         relative_intensity="explosive_impact" if power in ("high_potency", "cataclysmic") else "prominent",
                         priority="CRITICAL" if power == "cataclysmic" else "HIGH",
                         sonic_identity_family=family,
-                        asset_path=f"magic_{family}_{stage}_{power}.wav",
+                        asset_path=asset_p,
                         decision_reason=f"Recognized canonical spell '{detected_spell}' in segment text",
+                        segment_index=seg_idx,
+                        start_ms=seg_start,
+                        timing_rationale=f"Anchored to incantation/casting of '{detected_spell}' in segment {seg_idx}",
+                        dramatic_purpose=f"Magical supernatural action ({family}: {stage})",
+                        confidence=0.95,
+                        provenance_segment_uid=seg.get("uid"),
+                        provenance_beat_id=seg.get("beat_id"),
                     )
                 )
                 continue
@@ -137,21 +154,30 @@ class MagicalSoundEngine:
                     if tension_level > 0.8:
                         power = "high_potency"
 
+                    desc = retriever.resolve_magical_asset("magic", stage)
+                    asset_p = desc.filepath if desc else ""
+
                     events.append(
                         MagicalSoundSpec(
-                            event_id=f"magic_{idx+1}_{stage}",
+                            event_id=f"magic_{seg_idx}_{stage}",
                             spell_or_artifact_name=f"Spell_{stage.title()}",
                             stage=stage,  # type: ignore
                             power_level=power,
                             relative_intensity="explosive_impact" if power == "high_potency" else "prominent",
                             priority="HIGH",
                             sonic_identity_family="generic_arcane",
-                            asset_path=f"magic_arcane_{stage}.wav",
+                            asset_path=asset_p,
                             decision_reason=f"Detected supernatural keyword '{m.group(0)}'",
+                            segment_index=seg_idx,
+                            start_ms=seg_start,
+                            timing_rationale=f"Anchored to supernatural keyword '{m.group(0)}' in segment {seg_idx}",
+                            dramatic_purpose=f"Arcane phenomenon ({stage})",
+                            confidence=0.85,
+                            provenance_segment_uid=seg.get("uid"),
+                            provenance_beat_id=seg.get("beat_id"),
                         )
                     )
                     break
-
 
         return events
 
@@ -168,6 +194,7 @@ class MagicalSoundEngine:
         s_clean = spell_name.lower().strip()
         info = self._custom_spells.get(s_clean, {"family": "generic_arcane", "default_stage": "release_burst"})
         family = info["family"]
+        retriever = get_asset_retriever()
 
         stages = ["charge_hum", "release_burst", "impact_strike"]
         if target_stage:
@@ -177,6 +204,8 @@ class MagicalSoundEngine:
 
         specs: List[MagicalSoundSpec] = []
         for idx, st in enumerate(stages):
+            desc = retriever.resolve_magical_asset(spell_name, st)
+            asset_p = desc.filepath if desc else ""
             specs.append(
                 MagicalSoundSpec(
                     event_id=f"magic_seq_{s_clean.replace(' ', '_')}_{st}",
@@ -186,8 +215,11 @@ class MagicalSoundEngine:
                     relative_intensity="explosive_impact" if st in ("release_burst", "impact_strike") and power_level != "subtle_minor" else "prominent",
                     priority="HIGH",
                     sonic_identity_family=family,
-                    asset_path=f"magic_{family}_{st}_{power_level}.wav",
+                    asset_path=asset_p,
                     decision_reason=f"Synthesized sequence stage {idx+1}/{len(stages)} for {spell_name}",
+                    timing_rationale=f"Sequential spell stage {idx+1} ({st}) for {spell_name}",
+                    dramatic_purpose=f"Canonical magic progression ({family}: {st})",
+                    confidence=0.90,
                 )
             )
 

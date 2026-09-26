@@ -1,10 +1,10 @@
 # 🎬 Commercial Cinematic Sound Design Subsystem Manual
 
-> **Authoritative Technical Guide to the 20 Commercial Audio Drama Sound Design Capabilities (Phases A–G, ADR-034) and Forensic Adversarial Audit Remediation (ADR-035).**
+> **Authoritative Technical Guide to the 20 Commercial Audio Drama Sound Design Capabilities (Phases A–G, ADR-034), Forensic Adversarial Audit Remediation (ADR-035), and Next-Gen Production Upgrades (ADR-036).**
 
 [![Acoustic Standard](https://img.shields.io/badge/Acoustic%20Standard-Pottermore%20%2F%20BBC%20Radio%204-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-50%20Sound%20Design%20%7C%20712%20Total%20Passing-brightgreen.svg)](tests/)
-[![Architecture](https://img.shields.io/badge/Architecture-ADR--034%20%7C%20ADR--035-blue.svg)](docs/ARCHITECTURE.md)
+[![Verification](https://img.shields.io/badge/Tests-56%20Sound%20Design%20%7C%20718%20Total%20Passing-brightgreen.svg)](tests/)
+[![Architecture](https://img.shields.io/badge/Architecture-ADR--034%20%7C%20ADR--035%20%7C%20ADR--036-blue.svg)](docs/ARCHITECTURE.md)
 [![Contracts](https://img.shields.io/badge/Contracts-Pydantic%20v2%20Strict-blue.svg)](audiobook_factory/sound_design/contracts.py)
 
 ---
@@ -155,9 +155,51 @@ Following initial implementation, an adversarial expert panel (Re-Recording Mixe
 
 ---
 
+## 🚀 Next-Gen Production Upgrade: 5 Priorities, Shared State Machine & Forensic QC (ADR-036)
+
+Building on the foundation of ADR-034 and ADR-035, the subsystem underwent a comprehensive commercial production upgrade targeting 5 core priorities to eliminate heuristic planning shortcuts in favor of deeply integrated, evidence-grounded cinematic sound design:
+
+### Priority 1: Narrative Event → Precise Sound Timing
+- **Shortcut Eradicated:** Elimination of static percentage offsets (such as arbitrary creature sounds at $35\%$ or magical incantations at $40\%$ into the scene).
+- **Segment-Level Acoustic Anchoring:** Every sound event is bound to an authentic screenplay segment (`source_segment_index`) with full contextual attribution:
+  - `timing_rationale`: Explicit justification for why the sound occurs at this timestamp (e.g. `"incantation_release_climax"` or `"stalking_locomotion_stride"`).
+  - `dramatic_purpose`: The emotional or narrative intent of the cue.
+  - `confidence`: Confidence rating in the alignment.
+- **Segment Timing Mapping:** [`SceneAcousticDramaticStateManager.compute_segment_timing_map()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/scene_state.py) calculates precise chronological boundaries for each segment, aligning foley, creature movements, and spell sequences to exact dialogue pauses and action beats.
+
+### Priority 2: Real Asset Resolution for Every Event
+- **Fake Paths Eradicated:** Elimination of synthetic placeholders (e.g. `foley_{action}_{material}.wav` or `creature_{spec.creature_type}.wav`).
+- **Semantic FTS5 Retrieval:** All events (Foley, Hard SFX, Creatures, Magic, Walla, and Music) are resolved against the local SQLite FTS5 Sound Bank using semantic queries, returning actual audio files verified with SHA-256 checksums.
+- **Strict Resolution Accounting:** When a matching asset is absent from the sound library:
+  - `is_resolved` is explicitly set to `False`.
+  - `unresolved_reason` provides an auditable diagnostic trail (e.g. `"no_matching_asset_in_sound_bank"`).
+  - Fake or stub paths are **strictly prohibited** from entering the production timeline.
+
+### Priority 3: Cross-System Cinematic Interaction
+- **Shared State Machine:** Introduces [`SceneAcousticDramaticStateManager`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/scene_state.py) to dynamically coordinate interactions across all audio stems in real time:
+  - **Creature Proximity $\rightarrow$ Walla Suppression:** When a predator or monster approaches (`CREATURE_APPROACH`), human background murmur is automatically attenuated by $-12\text{ dB}$ or silenced entirely as the crowd freezes.
+  - **Magic Incantations $\rightarrow$ Score Subordination & Ambient Thinning:** High-intensity spells trigger an acoustic vortex, ducking background music and stripping high frequencies from room ambience to give the supernatural transient full focus.
+  - **Stealth $\rightarrow$ Foley & Ambience Restraint:** In stealth contexts, footsteps and clothing rustle are suppressed by $-8\text{ dB}$, while ambient room details are lowered to heighten dramatic tension.
+  - **Climax Coordination:** Major narrative events coordinate Hard SFX concussive impacts with musical stingers and dramatic silence drops.
+
+### Priority 4: Deeper Scene-Aware Evolution (7-Phase Narrative Model)
+Scenes evolve through 7 canonical dramatic phases ([`DramaticNarrativePhase`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/contracts.py)):
+$$\text{CALM} \longrightarrow \text{UNEASE} \longrightarrow \text{TENSION} \longrightarrow \text{THREAT} \longrightarrow \text{EVENT} \longrightarrow \text{AFTERMATH} \longrightarrow \text{RECOVERY}$$
+- The state manager automatically transitions phases based on narrative text, emotional tags, and character blocking.
+- Transitions dynamically modulate leitmotif variation modes (`INTIMATE` $\rightarrow$ `TENSE` $\rightarrow$ `CLIMAX` $\rightarrow$ `AFTERMATH`), acoustic density budgets, and negative sound design cues.
+
+### Priority 5: Evidence-Based Sound Design QC
+[`SoundDesignQCAuditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/qc.py) was enhanced with rigorous forensic timeline inspection:
+- **Orphan Event Detection:** Rejects events whose timestamps fall outside valid scene boundaries ($t < \text{scene\_start}$ or $t > \text{scene\_end}$).
+- **Fake Asset Detection:** Audits event paths and flags synthetic stubs (`foley_*.wav`, `creature_*.wav`) as hard errors.
+- **Non-Negative Bounds Checking:** Audits that all timestamps, durations, and spatial coordinates strictly obey non-negative and valid numerical bounds.
+- **Low-Value Verb Restraint:** Flags and prevents generic, low-relevance actions from cluttering the cue schedule.
+
+---
+
 ## 🧪 Quality Control & Verification Battery
 
-The sound design subsystem is verified across 50 dedicated automated tests:
+The sound design subsystem is verified across 56 dedicated automated tests:
 
 | Test Suite | Tests | Description |
 | :--- | :---: | :--- |
@@ -170,8 +212,9 @@ The sound design subsystem is verified across 50 dedicated automated tests:
 | **`tests/test_sound_design_phase_g.py`** | 2 | Validates master sound director timeline assembly, 9-signal QC auditor, and adapter boundary. |
 | **`tests/test_golden_sound_design_regression.py`** | 15 | **15 Commercial Audio Drama Scenarios** (Tavern Brawl, Royal Banquet Dining, Crypt Stealth, Striga Combat, Great Hall Revelation, etc.). |
 | **`tests/test_sound_design_adversarial_audit.py`** | 9 | Dedicated adversarial audit regression tests covering all P0, P1, and P2 remediations. |
+| **`tests/test_sound_design_cinematic_upgrade.py`** | 6 | **Next-Gen Production Upgrade Verification** (narrative timing, real asset resolution, cross-system interaction, 7-phase evolution, forensic QC). |
 | **`tests/test_zero_hardcoding_contracts.py`** | 4 | AST validation verifying 0 forbidden character names or chapter hacks across the repo. |
-| **Full Repository Test Suite** | **712** | **712 passed, 17 subtests passed, 0 failures (100% green).** |
+| **Full Repository Test Suite** | **718** | **718 passed, 17 subtests passed, 0 failures (100% green).** |
 
 ---
 
@@ -222,5 +265,5 @@ manifest_data = adapter.direct_and_adapt_scene(
 ## ⚡ Quick Links
 - Subsystem Code: [`audiobook_factory/sound_design/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/)
 - Data Contracts: [`audiobook_factory/sound_design/contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/contracts.py)
-- Architecture Decisions: [ADR-034](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md) & [ADR-035](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md)
+- Architecture Decisions: [ADR-034](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-035](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md) & [ADR-036](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md)
 - Test Suites: [`tests/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/)

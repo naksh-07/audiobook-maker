@@ -49,6 +49,9 @@ from audiobook_factory.sound_design.spatial_acoustics import (
 from audiobook_factory.sound_design.asset_retriever import get_asset_retriever
 
 
+from audiobook_factory.sound_design.scene_state import get_scene_state_manager
+
+
 class SoundDesignDirector:
     """
     Master Sound Design Orchestrator.
@@ -70,6 +73,7 @@ class SoundDesignDirector:
         self.spatial_acoustics = get_spatial_acoustics_engine()
         self.spatial_geography = get_spatial_geography_engine()
         self.retriever = get_asset_retriever()
+        self.state_manager = get_scene_state_manager()
 
     def direct_scene(
         self,
@@ -86,7 +90,8 @@ class SoundDesignDirector:
         emotion_override: Optional[str] = None,
     ) -> Tuple[SceneAudioBlueprint, SoundTimeline]:
         """
-        Directs complete sound design for a single scene.
+        Directs complete sound design for a single scene with narrative beat anchoring
+        and real asset resolution.
         """
         duration_ms = max(0, end_ms - start_ms)
 
@@ -110,15 +115,17 @@ class SoundDesignDirector:
         if emotion_override:
             understanding.dominant_emotion = emotion_override
 
-
-
         # 2. Stage characters on virtual soundstage
         staged_positions = self.spatial_geography.stage_scene_characters(
             scene_id=scene_id,
             characters=understanding.characters_present,
         )
 
-        # 3. Build Director Instruction Blueprint
+        # 3. Compute Segment Timing Map & Shared Acoustic State
+        seg_bounds = self.state_manager.compute_segment_timing_map(segments, start_ms, end_ms)
+        acoustic_state = self.state_manager.initialize_state(scene_id, understanding, staged_positions)
+
+        # 4. Build Director Instruction Blueprint
         corpus = " ".join(s.get("text", "") for s in segments)
         corpus_hash = hashlib.sha256(corpus.encode("utf-8")).hexdigest()
         blueprint = self.blueprint_builder.build_blueprint(
@@ -126,7 +133,7 @@ class SoundDesignDirector:
             source_text_hash=corpus_hash,
         )
 
-        # 4. Synthesize Layered Ambience
+        # 5. Synthesize Layered Ambience
         ambience_layers = self.ambience_engine.build_scene_ambience(
             scene_id=scene_id,
             chapter_id=chapter_id,
@@ -138,7 +145,7 @@ class SoundDesignDirector:
             previous_scene_id=previous_scene_id,
         )
 
-        # 5. Evaluate Walla (Crowd Human Presence)
+        # 6. Evaluate Walla (Crowd Human Presence)
         all_sfx_cues = [c for s in segments for c in s.get("sfx_cues", [])]
         walla_layer = self.walla_engine.build_scene_walla(
             scene_id=scene_id,
@@ -152,34 +159,45 @@ class SoundDesignDirector:
             sfx_cues=all_sfx_cues,
         )
 
-
-        # 6. Evaluate Foley candidates (narrative relevance scoring & low-value verb rejection)
+        # 7. Evaluate Foley candidates (narrative relevance scoring & low-value verb rejection)
         scored_foley = self.foley_engine.process_scene_actions(
             candidates=understanding.action_candidates,
             tension_level=understanding.tension_level,
             restraint_target=blueprint.restraint_target,
         )
 
-        # 7. Detect Action / Hard SFX impacts
+        # 8. Detect Action / Hard SFX impacts
         hard_sfx_events = self.hard_sfx_engine.detect_events_from_segments(
             segments=segments,
             tension_level=understanding.tension_level,
         )
 
-        # 8. Detect Creature audio
+        # 9. Detect Creature audio
         creature_events = self.creature_engine.detect_creature_events(
             segments=segments,
             creature_presence=understanding.creature_presence,
             tension_level=understanding.tension_level,
         )
 
-        # 9. Detect Magic / Supernatural occurrences
+        # 10. Detect Magic / Supernatural occurrences
         magic_events = self.magic_engine.detect_magic_events(
             segments=segments,
             tension_level=understanding.tension_level,
         )
 
-        # 10. Direct Music Cues
+        # 11. Cross-System Interaction Evaluation
+        is_stealth = "stealth" in understanding.dominant_emotion.lower() or any("stealth" in s.get("text", "").lower() for s in segments)
+        cross_reactions = self.state_manager.evaluate_cross_system_reactions(
+            state=acoustic_state,
+            has_magic=len(magic_events) > 0,
+            has_creature=len(creature_events) > 0,
+            has_hard_sfx=len(hard_sfx_events) > 0,
+            is_stealth=is_stealth,
+        )
+        blueprint.metadata["cross_system_interactions"] = [r.model_dump() for r in cross_reactions]
+        blueprint.metadata["narrative_phase"] = acoustic_state.active_phase
+
+        # 12. Direct Music Cues
         beats = dramatic_plan.get("dramatic_beats", []) if dramatic_plan else []
         music_cues = self.music_director.direct_scene_cues(
             scene_id=scene_id,
@@ -192,7 +210,7 @@ class SoundDesignDirector:
             restraint_target=blueprint.restraint_target,
         )
 
-        # 11. Plan Intentional Silence Events
+        # 13. Plan Intentional Silence Events
         silence_events = self.silence_engine.plan_silence_events(
             scene_id=scene_id,
             scene_understanding=understanding,
@@ -202,12 +220,17 @@ class SoundDesignDirector:
         )
 
         # ---------------------------------------------------------------------
-        # Assemble Unified Chronological SoundTimeline
+        # Assemble Unified Chronological SoundTimeline (Beat-Anchored + Real Assets)
         # ---------------------------------------------------------------------
         timeline_events: List[SoundTimelineEvent] = []
 
         # A. Ambience layers across scene span
         for a_idx, amb in enumerate(ambience_layers):
+            amb_desc = self.retriever.resolve_ambience_asset(understanding.environment_type, tier=amb.layer_tier)
+            asset_p = amb_desc.filepath if amb_desc else (amb.asset_path if (amb.asset_path and Path(amb.asset_path).exists()) else "")
+            is_res = bool(asset_p)
+            unres_r = None if is_res else f"No approved ambience asset for {understanding.environment_type} {amb.layer_tier}"
+
             timeline_events.append(
                 SoundTimelineEvent(
                     event_id=f"evt_amb_{scene_id}_{a_idx+1}_{amb.layer_tier.lower()}",
@@ -216,16 +239,28 @@ class SoundDesignDirector:
                     duration_ms=duration_ms,
                     relative_intensity=amb.relative_intensity,
                     priority="LOW",
-                    asset_path=amb.asset_path,
-                    asset_name=amb.asset_name,
+                    asset_path=asset_p,
+                    asset_name=amb_desc.filename if amb_desc else amb.asset_name,
                     spatial=amb.spatial,
                     mix_intent=amb.mix_intent,
                     decision_reason=f"Layered ambience tier {amb.layer_tier}",
+                    source_segment_index=1,
+                    timing_rationale=f"Continuous environmental bed across scene [{start_ms}ms, {end_ms}ms]",
+                    dramatic_purpose=f"Acoustic room tone ({understanding.environment_type})",
+                    confidence=1.0,
+                    is_resolved=is_res,
+                    unresolved_reason=unres_r,
+                    resolved_asset=amb_desc,
                 )
             )
 
         # B. Walla layer
-        if walla_layer:
+        if walla_layer and acoustic_state.walla_permitted:
+            w_desc = self.retriever.resolve_walla_asset(walla_layer.activity_type, density=walla_layer.density, environment=understanding.environment_type)
+            asset_p = w_desc.filepath if w_desc else (walla_layer.asset_path if (walla_layer.asset_path and Path(walla_layer.asset_path).exists()) else "")
+            is_res = bool(asset_p)
+            unres_r = None if is_res else f"No approved walla asset for {walla_layer.activity_type}"
+
             timeline_events.append(
                 SoundTimelineEvent(
                     event_id=f"evt_walla_{scene_id}_1",
@@ -234,47 +269,81 @@ class SoundDesignDirector:
                     duration_ms=duration_ms,
                     relative_intensity=walla_layer.relative_intensity,
                     priority="LOW",
-                    asset_path=walla_layer.asset_path,
-                    asset_name=f"Walla {walla_layer.activity_type}",
+                    asset_path=asset_p,
+                    asset_name=w_desc.filename if w_desc else f"Walla {walla_layer.activity_type}",
                     spatial=SpatialMetadata(azimuth_pan=0.0, proximity=walla_layer.distance),
                     mix_intent=walla_layer.mix_intent,
                     decision_reason=f"Contextual walla activity: {walla_layer.activity_type}",
+                    source_segment_index=1,
+                    timing_rationale=f"Contextual crowd murmur across scene [{start_ms}ms, {end_ms}ms]",
+                    dramatic_purpose=f"Background crowd presence ({walla_layer.activity_type})",
+                    confidence=0.95,
+                    is_resolved=is_res,
+                    unresolved_reason=unres_r,
+                    resolved_asset=w_desc,
                 )
             )
 
-        # C. Accepted Foley events
+        # C. Accepted Foley events (Segment-Anchored)
         for f_idx, fol in enumerate(scored_foley):
             if fol.status != "ACCEPTED":
                 continue
-            seg_start = start_ms + int(duration_ms * (fol.segment_index / max(1, len(segments))))
+
+            seg_info = seg_bounds.get(fol.segment_index, {})
+            s_start = seg_info.get("start_ms", start_ms)
+            s_end = seg_info.get("end_ms", s_start + 1000)
+            foley_start = min(s_start + 80, max(start_ms, end_ms - 450))
+
             char_pos = self.spatial_geography.get_entity_position(scene_id, fol.subject)
+            f_desc = self.retriever.resolve_foley_asset(
+                action_verb=fol.action_verb,
+                exciter_material=fol.object_material,
+                surface_material=fol.surface_material,
+            )
+            asset_p = f_desc.filepath if f_desc else ""
+            is_res = bool(asset_p)
+            unres_r = None if is_res else f"No approved Foley asset in SoundBank for {fol.action_verb}_{fol.object_material}"
+
             timeline_events.append(
                 SoundTimelineEvent(
                     event_id=f"evt_foley_{scene_id}_{f_idx+1}",
                     category="FOLEY",
-                    start_ms=seg_start,
+                    start_ms=foley_start,
                     duration_ms=450,
                     relative_intensity="subtle_bed",
                     priority="MEDIUM",
-                    asset_path=f"foley_{fol.action_verb}_{fol.object_material}.wav",
-                    asset_name=f"{fol.subject} {fol.action_verb}",
+                    asset_path=asset_p,
+                    asset_name=f_desc.filename if f_desc else f"{fol.subject} {fol.action_verb}",
                     spatial=char_pos,
                     mix_intent=MixIntent(duck_under_dialogue=True),
                     decision_reason=f"Accepted foley action: {fol.action_verb} (score: {fol.foley_score:.2f})",
                     provenance_beat_id=fol.provenance_beat_id,
+                    source_segment_index=fol.segment_index,
+                    timing_rationale=fol.timing_rationale or f"Anchored to physical action '{fol.action_verb}' in segment {fol.segment_index}",
+                    dramatic_purpose=fol.dramatic_purpose or f"Physical Foley ({fol.action_verb})",
+                    confidence=fol.confidence,
+                    is_resolved=is_res,
+                    unresolved_reason=unres_r,
+                    resolved_asset=f_desc,
                 )
             )
 
-        # D. Hard SFX events
+        # D. Hard SFX events (Segment-Anchored)
         for h_idx, hsfx in enumerate(hard_sfx_events):
-            if hsfx.start_ms > 0:
+            seg_info = seg_bounds.get(hsfx.segment_index, {})
+            s_start = seg_info.get("start_ms", start_ms)
+            if hsfx.start_ms > 0 and hsfx.start_ms >= start_ms:
+                sfx_start = hsfx.start_ms
+            elif hsfx.start_ms > 0:
                 sfx_start = start_ms + hsfx.start_ms
             else:
-                seg_ratio = hsfx.segment_index / max(1, len(segments))
-                sfx_start = start_ms + int(duration_ms * seg_ratio) + (h_idx * 300)
+                sfx_start = s_start + 100 + (h_idx * 150)
+            sfx_start = min(sfx_start, max(start_ms, end_ms - 1200))
 
-            # Ensure sfx_start stays within scene bounds
-            sfx_start = min(sfx_start, max(start_ms, start_ms + duration_ms - 1200))
+            h_desc = self.retriever.resolve_hard_sfx_asset(hsfx.sfx_type) if not (hsfx.asset_path and Path(hsfx.asset_path).exists()) else None
+            asset_p = hsfx.asset_path if (hsfx.asset_path and Path(hsfx.asset_path).exists()) else (h_desc.filepath if h_desc else "")
+            is_res = bool(asset_p)
+            unres_r = None if is_res else f"No approved Hard SFX asset in SoundBank for {hsfx.sfx_type}"
 
             timeline_events.append(
                 SoundTimelineEvent(
@@ -284,52 +353,105 @@ class SoundDesignDirector:
                     duration_ms=1200,
                     relative_intensity=hsfx.relative_intensity,
                     priority=hsfx.priority,
-                    asset_path=hsfx.asset_path,
-                    asset_name=hsfx.sfx_type,
+                    asset_path=asset_p,
+                    asset_name=h_desc.filename if h_desc else hsfx.sfx_type,
                     spatial=hsfx.spatial,
                     mix_intent=hsfx.mix_intent,
                     decision_reason=hsfx.decision_reason,
+                    provenance_segment_uid=hsfx.provenance_segment_uid,
+                    provenance_beat_id=hsfx.provenance_beat_id,
+                    source_segment_index=hsfx.segment_index,
+                    timing_rationale=hsfx.timing_rationale or f"Anchored to impact in segment {hsfx.segment_index}",
+                    dramatic_purpose=hsfx.dramatic_purpose or f"Physical impact ({hsfx.sfx_type})",
+                    confidence=hsfx.confidence,
+                    is_resolved=is_res,
+                    unresolved_reason=unres_r,
+                    resolved_asset=h_desc,
                 )
             )
 
-        # E. Creature events
+        # E. Creature events (Anchored to Narrative Beat, NO 35% SHORTCUT)
         for c_idx, crt in enumerate(creature_events):
+            seg_idx = crt.segment_index or 1
+            seg_info = seg_bounds.get(seg_idx, {})
+            s_start = seg_info.get("start_ms", start_ms)
+            c_start = min(s_start + 150 + (c_idx * 300), max(start_ms, end_ms - 1500))
+
+            c_desc = self.retriever.resolve_creature_asset(crt.creature_type, crt.element, emotion=crt.emotional_state) if not (crt.asset_path and Path(crt.asset_path).exists()) else None
+            asset_p = crt.asset_path if (crt.asset_path and Path(crt.asset_path).exists()) else (c_desc.filepath if c_desc else "")
+            is_res = bool(asset_p)
+            unres_r = None if is_res else f"No approved creature asset for {crt.creature_type} {crt.element}"
+
             timeline_events.append(
                 SoundTimelineEvent(
                     event_id=f"evt_creature_{scene_id}_{c_idx+1}",
                     category="CREATURE",
-                    start_ms=start_ms + int(duration_ms * 0.35 + c_idx * 2000),
+                    start_ms=c_start,
                     duration_ms=1500,
                     relative_intensity=crt.relative_intensity,
                     priority=crt.priority,
-                    asset_path=crt.asset_path,
-                    asset_name=f"{crt.creature_type} {crt.element}",
+                    asset_path=asset_p,
+                    asset_name=c_desc.filename if c_desc else f"{crt.creature_type} {crt.element}",
                     spatial=crt.spatial,
                     mix_intent=MixIntent(duck_under_dialogue=True, sidechain_trigger=True),
                     decision_reason=crt.decision_reason,
+                    provenance_segment_uid=crt.provenance_segment_uid,
+                    provenance_beat_id=crt.provenance_beat_id,
+                    source_segment_index=seg_idx,
+                    timing_rationale=crt.timing_rationale or f"Anchored to creature vocalization in segment {seg_idx}",
+                    dramatic_purpose=crt.dramatic_purpose or f"Acoustic creature manifestation ({crt.creature_type})",
+                    confidence=crt.confidence,
+                    is_resolved=is_res,
+                    unresolved_reason=unres_r,
+                    resolved_asset=c_desc,
                 )
             )
 
-        # F. Magic events
+        # F. Magic events (Anchored to Casting Beat, NO 40% SHORTCUT)
         for m_idx, mag in enumerate(magic_events):
+            seg_idx = mag.segment_index or 1
+            seg_info = seg_bounds.get(seg_idx, {})
+            s_start = seg_info.get("start_ms", start_ms)
+            stage_offset = 50 if mag.stage == "charge_hum" else (250 if mag.stage == "release_burst" else 450)
+            m_start = min(s_start + stage_offset + (m_idx * 200), max(start_ms, end_ms - 1800))
+
+            m_desc = self.retriever.resolve_magical_asset(mag.spell_or_artifact_name, mag.stage) if not (mag.asset_path and Path(mag.asset_path).exists()) else None
+            asset_p = mag.asset_path if (mag.asset_path and Path(mag.asset_path).exists()) else (m_desc.filepath if m_desc else "")
+            is_res = bool(asset_p)
+            unres_r = None if is_res else f"No approved magical asset for {mag.spell_or_artifact_name} {mag.stage}"
+
             timeline_events.append(
                 SoundTimelineEvent(
                     event_id=f"evt_magic_{scene_id}_{m_idx+1}",
                     category="MAGIC",
-                    start_ms=start_ms + int(duration_ms * 0.40 + m_idx * 1500),
+                    start_ms=m_start,
                     duration_ms=1800,
                     relative_intensity=mag.relative_intensity,
                     priority=mag.priority,
-                    asset_path=mag.asset_path,
-                    asset_name=f"{mag.spell_or_artifact_name} {mag.stage}",
+                    asset_path=asset_p,
+                    asset_name=m_desc.filename if m_desc else f"{mag.spell_or_artifact_name} {mag.stage}",
                     spatial=mag.spatial,
                     mix_intent=MixIntent(duck_under_dialogue=True, sidechain_trigger=True),
                     decision_reason=mag.decision_reason,
+                    provenance_segment_uid=mag.provenance_segment_uid,
+                    provenance_beat_id=mag.provenance_beat_id,
+                    source_segment_index=seg_idx,
+                    timing_rationale=mag.timing_rationale or f"Anchored to magical casting in segment {seg_idx}",
+                    dramatic_purpose=mag.dramatic_purpose or f"Magical supernatural action ({mag.spell_or_artifact_name})",
+                    confidence=mag.confidence,
+                    is_resolved=is_res,
+                    unresolved_reason=unres_r,
+                    resolved_asset=m_desc,
                 )
             )
 
         # G. Music Cues
         for mc_idx, mc in enumerate(music_cues):
+            m_desc = self.retriever.resolve_music_asset(track_name_or_mood=mc.track_name or mc.variation_mode, cue_type=mc.cue_type)
+            asset_p = m_desc.filepath if m_desc else ""
+            is_res = bool(asset_p)
+            unres_r = None if is_res else f"No approved music score asset for {mc.track_name or mc.cue_id}"
+
             timeline_events.append(
                 SoundTimelineEvent(
                     event_id=f"evt_music_{scene_id}_{mc_idx+1}",
@@ -338,11 +460,18 @@ class SoundDesignDirector:
                     duration_ms=mc.duration_ms,
                     relative_intensity=mc.relative_intensity,
                     priority=mc.priority,
-                    asset_path=f"music_cue_{mc.cue_id}.wav",
-                    asset_name=mc.track_name,
+                    asset_path=asset_p,
+                    asset_name=m_desc.filename if m_desc else mc.track_name,
                     spatial=SpatialMetadata(azimuth_pan=0.0, proximity="normal_room"),
                     mix_intent=mc.mix_intent,
                     decision_reason=mc.dramatic_justification,
+                    source_segment_index=1,
+                    timing_rationale=f"Anchored to dramatic scene cue window [{mc.start_ms}ms, {mc.start_ms + mc.duration_ms}ms]",
+                    dramatic_purpose=mc.dramatic_justification or f"Score underscore ({mc.cue_type})",
+                    confidence=0.95,
+                    is_resolved=is_res,
+                    unresolved_reason=unres_r,
+                    resolved_asset=m_desc,
                 )
             )
 
@@ -361,6 +490,11 @@ class SoundDesignDirector:
                     spatial=SpatialMetadata(azimuth_pan=0.0, proximity="normal_room"),
                     mix_intent=MixIntent(duck_under_dialogue=False),
                     decision_reason=f"Intentional negative sound: {sil.purpose} ({sil.dramatic_rationale})",
+                    source_segment_index=1,
+                    timing_rationale=f"Intentional dramatic silence window [{sil.start_ms}ms, {sil.start_ms + sil.duration_ms}ms]",
+                    dramatic_purpose=f"Negative sound design ({sil.purpose})",
+                    confidence=1.0,
+                    is_resolved=True,
                 )
             )
 

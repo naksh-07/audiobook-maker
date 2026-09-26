@@ -1,24 +1,16 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: Sound Design Subsystem (Hardened & Certified)
+# Active Context: Commercial Cinematic Sound Design Upgrade (Hardened & Certified)
 
-## Live Sprint State: Expert Panel Audit Remediation Complete (712/712 Tests Passing)
-- **Status**: Remediated 3 P0s, 5 P1s, and 3 P2s identified by adversarial expert panel.
-- **Verification**: 712/712 tests passing + 17 subtests (100% green in 340.57s).
-- **Core Remediations Completed**:
-  - **P0-1 (Coordinate Frame)**: Normalized `evaluate_scene_density` for absolute chapter offsets.
-  - **P0-2 (Boundary Spill)**: Clamped `MusicCueDirector` cue durations to remaining scene length.
-  - **P0-3 (Trajectory Literals)**: Aligned `SpatialGeographyEngine` with Pydantic contracts.
-  - **P1-1 (Adapter State)**: Eliminated duplicate ambience generation in `SoundDesignAdapter`.
-  - **P1-2 (Hard SFX Timing)**: Implemented proportional segment timing to prevent 0.0s collision.
-  - **P1-3 (Narrator Center-Lock)**: Made QC check case-insensitive for `"Narrator"` / `"NARRATOR"`.
-  - **P1-4 (Trivial Verbs)**: Enforced blanket rejection on low-value verbs under elevated tension.
-  - **P1-5 (Token False-Positives)**: Exact token matching & segment action deduplication.
-  - **P2 (Reset Hooks & Taxonomy)**: Engine reset hooks added; standardized walla slugs.
-- **Dedicated Test Suites**:
-  - `tests/test_sound_design_adversarial_audit.py` (9 tests)
-  - `tests/test_golden_sound_design_regression.py` (15 tests)
-  - `tests/test_sound_design_phase_a` through `g.py` (22 tests)
-  - `tests/test_zero_hardcoding_contracts.py` (4 tests)
-- **Total Sound Design Test Battery**: 50 tests passing 100% green.
+## Live Sprint State: 5 Priorities Implemented (718/718 Tests Passing, 100% Green)
+- **Status**: Completed production-quality upgrade across all 5 priorities.
+- **Verification**: 718/718 tests passing + 17 subtests (100% green in 308.88s).
+- **Core Capabilities Upgraded**:
+  - **Priority 1 (Precise Narrative Timing)**: Eradicated 35% creature / 40% magic mechanical shortcuts; all events anchored to actual screenplay segments & beats (`source_segment_index`, `timing_rationale`, `dramatic_purpose`, `confidence`).
+  - **Priority 2 (Real Asset Resolution)**: Eradicated fake paths (`foley_*.wav`, `creature_*.wav`); enforced semantic SoundBank resolution with SHA-256 provenance or explicit `is_resolved=False`. Added music & walla resolvers.
+  - **Priority 3 (Cross-System Interaction)**: Implemented `SceneAcousticDramaticStateManager` (`scene_state.py`) mediating walla suppression, ambient thinning, and music subordination.
+  - **Priority 4 (Narrative Evolution)**: 7-phase dramatic transitions (`CALM -> UNEASE -> TENSION -> THREAT -> EVENT -> AFTERMATH -> RECOVERY`) modulating motif variation, density, and silence.
+  - **Priority 5 (Evidence-Based QC)**: Upgraded `qc.py` to forensically audit real timeline data for orphan events, fake paths, bounds overflow, and trivial verbs.
+- **Sound Design Test Battery**: 56/56 tests passing (100% green in 5.55s).
+- **Artifacts**: Plan at `sound_design_production_upgrade_plan.md`, walkthrough at `walkthrough.md`.

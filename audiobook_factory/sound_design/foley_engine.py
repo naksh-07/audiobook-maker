@@ -128,6 +128,9 @@ class FoleyEngine:
             character_relevance=char_relevance,
             timing_necessity=timing_nec,
             provenance_beat_id=beat_id,
+            timing_rationale=f"Anchored to physical action '{action.action_verb}' in segment {action.segment_index}",
+            dramatic_purpose=f"Physical Foley reaction ({action.action_verb} on {action.object_material})",
+            confidence=0.90 if action.is_explicit_blocking else 0.75,
         )
 
         score = candidate.calculate_score()

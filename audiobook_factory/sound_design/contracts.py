@@ -199,6 +199,7 @@ class SceneAudioBlueprint(BaseModel):
     spatial_sources: List[Dict[str, Any]] = Field(default_factory=list)
     restraint_target: str = Field(default="moderate", description="Restraint policy: 'high', 'moderate', 'dense'")
     provenance_hash: str = Field(default="", description="SHA-256 hash of underlying scene screenplay")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 # -----------------------------------------------------------------------------
@@ -334,6 +335,9 @@ class FoleyScoredCandidate(BaseModel):
     status: Literal["ACCEPTED", "REJECTED_RESTRAINT", "REJECTED_TRIVIAL"] = Field(default="ACCEPTED")
     rejection_reason: Optional[str] = Field(default=None)
     provenance_beat_id: Optional[str] = Field(default=None)
+    timing_rationale: str = Field(default="")
+    dramatic_purpose: str = Field(default="")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
 
     def calculate_score(self) -> float:
         """Computes composite Foley score."""
@@ -348,6 +352,55 @@ class FoleyScoredCandidate(BaseModel):
             3
         )
         return self.foley_score
+
+
+# -----------------------------------------------------------------------------
+# 10, 11, 12 — Narrative Hard SFX, Magic & Creature Systems
+DramaticNarrativePhase = Literal[
+    "CALM",
+    "UNEASE",
+    "TENSION",
+    "THREAT",
+    "EVENT",
+    "AFTERMATH",
+    "RECOVERY",
+]
+
+
+class CrossSystemInteraction(BaseModel):
+    """Directorial cross-system acoustic reaction between sound design subsystems."""
+    model_config = ConfigDict(extra="ignore")
+
+    source_category: str = Field(..., description="Triggering system (e.g. 'MAGIC', 'CREATURE', 'ACTION')")
+    target_system: str = Field(..., description="Affected system (e.g. 'AMBIENCE', 'WALLA', 'MUSIC', 'FOLEY')")
+    reaction_type: str = Field(..., description="Reaction mode (e.g. 'attenuation', 'subordination', 'thinning', 'pre_reveal_silence')")
+    description: str = Field(default="")
+    mix_intent_override: Optional[MixIntent] = Field(default=None)
+
+
+class SceneAcousticDramaticState(BaseModel):
+    """
+    Shared Scene-Level Acoustic and Dramatic State.
+    Mediates cross-system reactions between Foley, Ambience, Music, SFX, Silence, Walla, Creature, Magic, and Spatial.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    scene_id: str = Field(...)
+    active_phase: DramaticNarrativePhase = Field(default="CALM")
+    environment_id: str = Field(default="indoor_room")
+    acoustic_profile_id: str = Field(default="indoor_standard")
+    tension_level: float = Field(default=0.5, ge=0.0, le=1.0)
+    dominant_emotion: str = Field(default="neutral")
+    character_spatial_map: Dict[str, SpatialMetadata] = Field(default_factory=dict)
+    active_creature: Optional[str] = Field(default=None)
+    creature_proximity: ProximityZone = Field(default="mid_distance")
+    active_magic_family: Optional[str] = Field(default=None)
+    walla_permitted: bool = Field(default=True)
+    walla_attenuation_factor: float = Field(default=1.0, ge=0.0, le=1.0)
+    silence_window_active: bool = Field(default=False)
+    music_variation: MotifVariationMode = Field(default="MYSTERIOUS")
+    foley_prominence: RelativeIntensity = Field(default="normal")
+    cross_interactions: List[CrossSystemInteraction] = Field(default_factory=list)
 
 
 # -----------------------------------------------------------------------------
@@ -379,6 +432,11 @@ class HardSFXEventSpec(BaseModel):
     mix_intent: MixIntent = Field(default_factory=lambda: MixIntent(sidechain_trigger=True))
     asset_path: str = Field(default="")
     decision_reason: str = Field(default="")
+    timing_rationale: str = Field(default="")
+    dramatic_purpose: str = Field(default="")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    provenance_segment_uid: Optional[str] = Field(default=None)
+    provenance_beat_id: Optional[str] = Field(default=None)
 
 
 class MagicalSoundSpec(BaseModel):
@@ -407,6 +465,13 @@ class MagicalSoundSpec(BaseModel):
     asset_path: str = Field(default="")
     sonic_identity_family: str = Field(default="generic_arcane")
     decision_reason: str = Field(default="")
+    segment_index: Optional[int] = Field(default=None)
+    start_ms: int = Field(default=0, ge=0)
+    timing_rationale: str = Field(default="")
+    dramatic_purpose: str = Field(default="")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    provenance_segment_uid: Optional[str] = Field(default=None)
+    provenance_beat_id: Optional[str] = Field(default=None)
 
 
 class CreatureSoundSpec(BaseModel):
@@ -423,6 +488,13 @@ class CreatureSoundSpec(BaseModel):
     spatial: SpatialMetadata = Field(default_factory=SpatialMetadata)
     asset_path: str = Field(default="")
     decision_reason: str = Field(default="")
+    segment_index: Optional[int] = Field(default=None)
+    start_ms: int = Field(default=0, ge=0)
+    timing_rationale: str = Field(default="")
+    dramatic_purpose: str = Field(default="")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    provenance_segment_uid: Optional[str] = Field(default=None)
+    provenance_beat_id: Optional[str] = Field(default=None)
 
 
 # -----------------------------------------------------------------------------
@@ -574,6 +646,13 @@ class SoundTimelineEvent(BaseModel):
     decision_reason: str = Field(default="", description="Why this sound was chosen at this exact moment")
     provenance_segment_uid: Optional[str] = Field(default=None)
     provenance_beat_id: Optional[str] = Field(default=None)
+    source_segment_index: Optional[int] = Field(default=None)
+    timing_rationale: str = Field(default="")
+    dramatic_purpose: str = Field(default="")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    is_resolved: bool = Field(default=True)
+    unresolved_reason: Optional[str] = Field(default=None)
+    resolved_asset: Optional[SoundAssetDescriptor] = Field(default=None)
 
 
 class SoundTimeline(BaseModel):

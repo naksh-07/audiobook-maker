@@ -255,6 +255,79 @@ class SoundAssetRetriever:
 
         return None
 
+    def resolve_music_asset(
+        self,
+        track_name_or_mood: str,
+        cue_type: str = "EMOTIONAL_UNDERSCORE",
+        energy_level: int = 5,
+    ) -> Optional[SoundAssetDescriptor]:
+        """Retrieves approved musical score or leitmotif asset from SoundBank."""
+        q_clean = (track_name_or_mood or "").lower().strip()
+        # 1. Try track section resolution
+        try:
+            section_info = self.bank.resolve_track_section(
+                query=q_clean,
+                section_type="INTRO_BED" if energy_level <= 4 else ("CLIMAX_DROP" if energy_level >= 8 else "RISING_TENSION"),
+                min_energy=max(1, energy_level - 2),
+                max_energy=min(10, energy_level + 2),
+            )
+            if section_info and section_info.get("track_path"):
+                tp = Path(section_info["track_path"])
+                if tp.exists():
+                    return self._wrap_asset_descriptor(tp, category="MUS", action=cue_type)
+        except Exception:
+            pass
+
+        # 2. Try direct resolve_sound
+        resolved_p = (
+            self.bank.resolve_leitmotif(q_clean) or
+            self.bank.resolve_chapter_bed(q_clean) or
+            self.bank.resolve_sound(q_clean, category="MUS")
+        )
+        if resolved_p and resolved_p.exists():
+            return self._wrap_asset_descriptor(resolved_p, category="MUS", action=cue_type)
+
+        # 3. FTS5 search in music category
+        results = self.bank.search(q_clean, category="music", limit=3)
+        for res in results:
+            fp = Path(res.get("filepath", ""))
+            if fp.exists():
+                return self._wrap_asset_descriptor(fp, category="MUS", action=cue_type)
+
+        return None
+
+    def resolve_walla_asset(
+        self,
+        activity_type: str,
+        density: str = "moderate",
+        environment: Optional[str] = None,
+    ) -> Optional[SoundAssetDescriptor]:
+        """Retrieves background crowd / walla activity asset from approved sound bank."""
+        act_clean = (activity_type or "").lower().strip()
+        env_clean = (environment or "").lower().strip()
+
+        # 1. Direct SoundBank resolution
+        resolved_p = (
+            self.bank.resolve_sound(act_clean, category="AMB") or
+            self.bank.resolve_sound(f"walla_{act_clean}", category="AMB") or
+            self.bank.resolve_sound(f"crowd_{act_clean}", category="AMB")
+        )
+        if resolved_p and resolved_p.exists():
+            return self._wrap_asset_descriptor(resolved_p, category="WALLA", action=density)
+
+        # 2. FTS5 search
+        query = f"walla {act_clean.replace('_', ' ')} {env_clean}".strip()
+        results = self.bank.search(query, category="ambience", limit=3)
+        if not results:
+            results = self.bank.search(act_clean.replace("_", " "), category="ambience", limit=3)
+
+        for res in results:
+            fp = Path(res.get("filepath", ""))
+            if fp.exists():
+                return self._wrap_asset_descriptor(fp, category="WALLA", action=density)
+
+        return None
+
     def _wrap_asset_descriptor(
         self,
         filepath: Path,

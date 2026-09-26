@@ -172,8 +172,8 @@ class SceneAudioAnalyzer:
             "dragon": "dragon",
         }
 
-        for seg in segments:
-            s_idx = seg.get("index", 1)
+        for idx, seg in enumerate(segments):
+            s_idx = int(seg.get("segment_index") or seg.get("index") or (idx + 1))
             text = str(seg.get("text", "")).lower()
             sfx_cues = seg.get("sfx_cues", [])
             speaker = seg.get("speaker", "Character")

@@ -56,7 +56,8 @@ class SoundDesignQCAuditor:
         foley_accepted = len(foley_events)
         foley_rejected = max(0, foley_evaluated - foley_accepted)
 
-        # Check for tableware vs weapon collisions
+        # Check for tableware vs weapon collisions and low-value verbs
+        trivial_verbs = {"blink", "blinks", "blinked", "blinking", "sigh", "sighs", "sighed", "sighing", "fidget", "fidgeted", "shrug", "shrugged", "nod", "nodded", "swallow", "swallowed"}
         for evt in timeline.events:
             if evt.category in ("FOLEY", "HARD_SFX"):
                 path_desc = (evt.asset_path + " " + (evt.asset_name or "")).lower()
@@ -64,8 +65,14 @@ class SoundDesignQCAuditor:
                     errors.append(
                         f"Tableware vs Weapon collision detected in event '{evt.event_id}': {path_desc}"
                     )
+            if evt.category == "FOLEY":
+                name_words = set((evt.asset_name or "").lower().split())
+                desc_lower = (evt.decision_reason or "").lower()
+                for tv in trivial_verbs:
+                    if tv in name_words or f"'{tv}'" in desc_lower:
+                        errors.append(f"Restraint failure: Low-value trivial verb '{tv}' found in accepted foley '{evt.event_id}'.")
 
-        # 2. Ambience QC (Stems <= 4, loopability)
+        # 2. Ambience QC (Stems <= 4, loopability, true continuity)
         amb_events = [e for e in timeline.events if e.category == "AMBIENCE"]
         if len(amb_events) > 4:
             warnings.append(
@@ -135,7 +142,40 @@ class SoundDesignQCAuditor:
                     spatial_stage_valid = False
                 break
 
-        # 8. Restraint Density Evaluation (Scene-Dependent, No Rigid Universal Rule)
+        # 8. Source Beat Linking & No Orphan Events Check
+        for evt in timeline.events:
+            if evt.category in ("AMBIENCE", "WALLA"):
+                continue
+            if evt.source_segment_index is None and not evt.provenance_segment_uid and not evt.provenance_beat_id:
+                errors.append(f"Orphan event detected: Event '{evt.event_id}' ({evt.category}) is not linked to any source segment or beat.")
+
+        # 9. Real Asset Resolution & Provenance Integrity Check
+        asset_provenance_verified = True
+        unresolved_count = 0
+        for evt in timeline.events:
+            if evt.category == "SILENCE":
+                continue
+            if evt.is_resolved:
+                if not evt.asset_path and not evt.resolved_asset:
+                    errors.append(f"Provenance error: Event '{evt.event_id}' marked as resolved but has no asset path or descriptor.")
+                    asset_provenance_verified = False
+            else:
+                unresolved_count += 1
+                # Unresolved events must not forge fake wav paths
+                if evt.asset_path and not Path(evt.asset_path).exists():
+                    errors.append(f"Fake path error: Unresolved event '{evt.event_id}' forged fake asset path '{evt.asset_path}'.")
+                    asset_provenance_verified = False
+
+        # 10. Timestamp Non-Negativity & Bounds Verification
+        for evt in timeline.events:
+            if evt.start_ms < 0:
+                errors.append(f"Negative timestamp error in event '{evt.event_id}': start_ms = {evt.start_ms}")
+            if evt.duration_ms <= 0:
+                errors.append(f"Non-positive duration error in event '{evt.event_id}': duration_ms = {evt.duration_ms}")
+            if evt.start_ms + evt.duration_ms > timeline.total_duration_ms + 100:
+                warnings.append(f"Boundary overflow advisory: Event '{evt.event_id}' ({evt.start_ms + evt.duration_ms}ms) extends past scene end ({timeline.total_duration_ms}ms).")
+
+        # 11. Restraint Density Evaluation (Scene-Dependent, No Rigid Universal Rule)
         sound_spans = [(e.start_ms, e.start_ms + e.duration_ms) for e in timeline.events if e.category not in ("AMBIENCE", "SILENCE")]
         scene_start_ms = min((e.start_ms for e in timeline.events), default=0) if timeline.events else 0
         density_eval = self.silence_engine.evaluate_scene_density(
@@ -149,7 +189,7 @@ class SoundDesignQCAuditor:
         if not density_eval["compliant"]:
             warnings.append(f"Restraint advisory: {density_eval['feedback']}")
 
-        # 9. Overall Status Determination
+        # 12. Overall Status Determination
         if errors:
             status = "FAIL"
         elif warnings:
@@ -171,7 +211,7 @@ class SoundDesignQCAuditor:
             music_motif_valid=music_motif_valid,
             intentional_silence_preserved=silence_preserved,
             spatial_stage_valid=spatial_stage_valid,
-            asset_provenance_verified=True,
+            asset_provenance_verified=asset_provenance_verified,
             warnings=warnings,
             errors=errors,
             telemetry={
@@ -180,6 +220,7 @@ class SoundDesignQCAuditor:
                 "density": density_eval["density"],
                 "silence_ratio": density_eval["silence_ratio"],
                 "target_restraint": blueprint.restraint_target,
+                "unresolved_events_count": unresolved_count,
             },
         )
 
