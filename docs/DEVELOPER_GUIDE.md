@@ -50,6 +50,9 @@ The codebase maintains **521 passed unit tests (17 subtests passed)** across all
 
 ### Running Dedicated Phase Test Suites
 ```powershell
+# Sonic Intelligence Engine (Phases 1-3 & Adversarial Audit, 53 tests)
+pytest tests/test_deterministic_audio_analyzer.py tests/test_sonic_enrichment_phase2.py tests/test_sonic_intelligence_phase3.py tests/test_sonic_intelligence_phase3_audit.py -v
+
 # Commercial Studio Voice Casting, Identity & Generation Suites (Waves 1-6, 77 tests)
 pytest tests/test_wave1_casting.py tests/test_wave2_voice_identity.py tests/test_wave3_acting_intelligence.py tests/test_wave4_generation_quality.py tests/test_wave5_ensemble_performance.py -v
 
@@ -143,6 +146,28 @@ tests/translation/memory/
 └── test_world_and_validator.py         # WorldState, timeline, 7 contradiction classes
 ```
 
+### Sonic Intelligence Engine & Sound Bank Layout
+```text
+audiobook_factory/
+├── deterministic_audio_analyzer.py # Phase 1: Sonic Genome v2.1 & 14 measured DSP metrics
+├── audio_classifier_adapters.py   # Phase 2: AST AudioSet 527 taxonomy classifier
+├── clap_semantic_adapter.py       # Phase 2: LAION-CLAP 512-d semantic embedding adapter
+├── sonic_model_manager.py         # Phase 2: Dual model lifecycle & CUDA VRAM manager
+├── sonic_query_planner.py         # Phase 3: Hinglish normalization & 15 intent types
+├── query_embedding_cache.py       # Phase 3: Thread-safe RLock LRU + SQLite cache
+├── sonic_candidate_generators.py  # Phase 3: 5 candidate generators & pool aggregator
+├── sonic_hybrid_reranker.py       # Phase 3: Deterministic linear scoring & diversity filter
+├── agent_sound_card.py            # Phase 3: Epistemically honest Agent Sound Cards v3.0
+├── sonic_intelligence_engine.py   # Phase 3: Unified facade & execution telemetry
+└── sound_bank.py                  # Room 3: SQLite FTS5 catalog & JIT streaming
+
+tests/
+├── test_deterministic_audio_analyzer.py # Phase 1 DSP test suite
+├── test_sonic_enrichment_phase2.py     # Phase 2 AST & CLAP test suite
+├── test_sonic_intelligence_phase3.py   # Phase 3 hybrid retrieval test suite
+└── test_sonic_intelligence_phase3_audit.py # Phase 3 adversarial audit suite (11 tests)
+```
+
 ---
 
 ## 📐 Core Engineering Standards & Invariants
@@ -161,6 +186,8 @@ tests/translation/memory/
    Creative decisions (character casting, emotion tags, dramaturgy, silence carving, leitmotif assignment, and Foley placement) belong exclusively to autonomous AI agents ([`AgentDirector`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)). Downstream execution layers ([`CinemaAudioEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py), [`ManifestRenderer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/manifest_renderer.py), and DSP mastering) are 100% deterministic compilation and execution runtimes and must NEVER override agent creative intent.
 7. **Multi-Script Novel-Agnostic Zero-Hardcoding Contract (ADR-030)**:
    Core engine modules inside `audiobook_factory/` must remain 100% novel-agnostic. Hardcoding book-specific character names, locations, project slugs, or Devanagari spelling variants (`FORBIDDEN_CHARACTERS_DEVANAGARI`) into Python source files is strictly forbidden and enforced by [`tests/test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py). All book-specific lore belongs exclusively in `<project_dir>/book_bible.json`.
+8. **Epistemic Honesty & Provenance Transparency (ADR-038 & ADR-039)**:
+   All sound metadata presented to AI agents or human directors must declare its exact evidentiary origin. Never present inferred or predicted attributes as physical ground truth. Use explicit epistemic prefixes: `[MEASURED DSP]` for deterministic physical measurements, `[CLASSIFIER INFERENCE]` for AudioSet predictions, `[CLAP SEMANTIC]` for vector cosine distances, and `[CANONICAL METADATA]` for catalog-curated taxonomy.
 
 ---
 
@@ -179,6 +206,15 @@ The `UniversalSoundBankIngester` will:
 3. Generate FTS5 full-text search indexes on tags and filenames.
 4. Commit assets to `audiobooks/sound_bank/catalog.db`.
 
+### Sonic Intelligence 4-Phase Ingestion & Enrichment Pipeline
+For high-density audio understanding, raw audio passes through the Sonic Intelligence Engine (see [`docs/SOUND_BANK.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/SOUND_BANK.md)):
+1. **Phase 1 (Deterministic DSP)**: Computes 14 physical ground-truth metrics (EBU R128 LUFS, True Peak, spectral centroid, brightness, dynamic range) via `DeterministicAudioAnalyzer`.
+2. **Phase 2 (AI Enrichment)**: Classifies sound with AudioSet 527 taxonomy via `ASTClassifierAdapter` and encodes 512-dimensional semantic vectors via `CLAPSemanticAdapter`.
+3. **Phase 3 (Hybrid Intelligence Retrieval)**: Natural language query planning with Hinglish normalization, 5-generator candidate pooling, linear scoring, and epistemic `AgentSoundCard` v3.0 generation:
+   ```bash
+   python audiobook_cli.py bank search-intelligence "heavy wooden door creak" --limit 5 --card
+   ```
+
 ### Offline Foley & Magic Composite Asset Baking
 To avoid runtime FFmpeg filter graph bloat for complex, multi-phase magic spells and tactile foley:
 ```bash
@@ -192,6 +228,8 @@ This renders composite assets (`magic_lumos_light.wav`, `magic_expelliarmus_kine
 
 | Issue | Root Cause | Solution |
 |---|---|---|
+| `QueryEmbeddingCache deadlocks during get_or_compute` | Non-reentrant lock acquired during nested cache store calls. | Remediated in ADR-039 by adopting re-entrant `threading.RLock()` across all cache operations. |
+| `CUDA Out of Memory during AST/CLAP batch analysis` | Transformers models retaining PyTorch computation graph across batches. | Use `SonicModelManager.unload_models()` to explicitly flush CUDA VRAM or run inference under `torch.inference_mode()`. |
 | `RuntimeError: FFmpeg mastering failed: ... filter 'soxr' not found` | FFmpeg was compiled without libsoxr. | Reinstall FFmpeg with `libsoxr` enabled (e.g. `choco install ffmpeg-full` on Windows or `apt install ffmpeg` on Ubuntu). |
 | `AllKeysExhaustedTodayError: ... 429 quota reached` | Daily API request or token limits exceeded on Gemini API keys. | The system automatically checkpoints progress to disk. Production can be resumed after daily midnight PT quota reset or by adding additional keys to `.env`. |
 | `GateAuditError: Gate 1 Failed: Voice collision detected` | Two characters are assigned the exact same voice and pitch. | Edit `voice_registry.json` or character roster so each active character has a distinct voice persona or pitch offset. |

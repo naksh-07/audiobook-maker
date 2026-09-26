@@ -1195,3 +1195,239 @@ class MemoryRetriever:
     @classmethod
     def retrieve_for_scene(cls, store: MemoryStore, book_bible: Optional[BookBible] = None, chapter: int = 1, scene_id: str = "scene_01", active_characters: Optional[List[str]] = None, location: Optional[str] = None, active_location: Optional[str] = None, scene_text: str = "", max_recent_events: int = 5, max_salient_events: int = 4, max_token_budget: int = 800) -> MemoryContext: ...
 ```
+
+---
+
+## 🎹 15. Sonic Intelligence Engine (Phases 1–3)
+
+### A. Phase 3 Retrieval Contracts ([`audiobook_factory.contracts`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts.py))
+
+```python
+# audiobook_factory/sonic_query_planner.py
+class IntentType(str, Enum):
+    FOLEY_IMPACT = "foley_impact"
+    FOLEY_MOVEMENT = "foley_movement"
+    ENVIRONMENT_BED = "environment_bed"
+    WEATHER_MACRO = "weather_macro"
+    CREATURE_VOCAL = "creature_vocal"
+    WEAPON_BLADE = "weapon_blade"
+    WEAPON_BLUNT = "weapon_blunt"
+    MAGIC_SPELL = "magic_spell"
+    DOMESTIC_OBJECT = "domestic_object"
+    MUSICAL_UNDERSCORE = "musical_underscore"
+    VOCAL_ACTING = "vocal_acting"
+    MECHANICAL_CONTRIVANCE = "mechanical_contrivance"
+    WATER_LIQUID = "water_liquid"
+    EXPLOSION_CONCUSSION = "explosion_concussion"
+    GENERAL_SFX = "general_sfx"
+
+class AtomicSoundConcept(BaseModel):
+    concept_id: str
+    description: str
+    primary_intent: IntentType
+    keywords: List[str] = []
+    category_hint: Optional[str] = None
+    exciter_hint: Optional[str] = None
+    resonator_hint: Optional[str] = None
+    action_hint: Optional[str] = None
+    timing_offset_ms: int = 0
+    is_transient: bool = True
+
+class SoundQueryPlan(BaseModel):
+    raw_query: str
+    normalized_query: str
+    detected_language: str = "en"
+    primary_intent: IntentType
+    is_compound: bool = False
+    atomic_concepts: List[AtomicSoundConcept] = []
+    keyword_terms: List[str] = []
+    semantic_search_phrases: List[str] = []
+    structured_filters: Dict[str, Any] = {}
+    target_classifier_labels: List[str] = []
+    acoustic_constraints: AcousticConstraints = Field(default_factory=AcousticConstraints)
+    negative_constraints: Dict[str, bool] = {}
+
+# audiobook_factory/sonic_candidate_generators.py
+class CandidateEvidence(BaseModel):
+    asset_id: int
+    sources: List[str] = []
+    fts_score: Optional[float] = None
+    fts_matched_terms: List[str] = []
+    structured_matches: Dict[str, Any] = {}
+    classifier_matches: List[Dict[str, Any]] = []
+    temporal_event_matches: List[Dict[str, Any]] = []
+    clap_similarity: Optional[float] = None
+    clap_relative_score: Optional[float] = None
+    clap_query_matched: Optional[str] = None
+    acoustic_matches: Dict[str, Any] = {}
+    metadata_completeness: float = 0.0
+
+class CandidateRecord(BaseModel):
+    asset_id: int
+    filename: str
+    filepath: Optional[str] = None
+    title: str = ""
+    description: str = ""
+    category: str = "SFX"
+    subcategory: str = "General"
+    mood: str = "default"
+    duration_sec: float = 0.0
+    is_downloaded: bool = False
+    source_collection: str = "SoundBank"
+    license: str = "Royalty-Free"
+    tags: str = ""
+    evidence: CandidateEvidence
+    raw_metadata: Dict[str, Any] = {}
+
+# audiobook_factory/sonic_hybrid_reranker.py
+class RerankingWeights(BaseModel):
+    w_semantic: float = 0.35
+    w_classifier: float = 0.20
+    w_lexical: float = 0.15
+    w_structured: float = 0.15
+    w_acoustic: float = 0.10
+    w_quality: float = 0.05
+    p_speech_penalty: float = 0.45
+    p_music_penalty: float = 0.40
+    local_cached_bonus: float = 0.02
+
+class ScoredCandidate(BaseModel):
+    candidate: CandidateRecord
+    final_score: float
+    component_scores: Dict[str, float]
+    negative_penalties: Dict[str, float]
+    why_matched: List[str]
+
+# audiobook_factory/agent_sound_card.py
+class AgentSoundCard(BaseModel):
+    asset_id: int
+    title: str
+    filename: str
+    source_collection: str = "SoundBank"
+    license: str = "Royalty-Free"
+    category: str = "SFX"
+    subcategory: str = "General"
+    physical_action: str = "unspecified"
+    exciter: str = "unspecified"
+    resonator: str = "unspecified"
+    surface: str = "unspecified"
+    duration_sec: float = 0.0
+    integrated_lufs: Optional[float] = None
+    true_peak_dbtp: Optional[float] = None
+    spectral_centroid_hz: Optional[float] = None
+    spectral_brightness: str = "neutral"
+    transient_character: str = "transient"
+    energy_profile: str = "medium"
+    tags: List[str] = []
+    top_classifier_labels: List[Dict[str, Any]] = []
+    clap_similarity: Optional[float] = None
+    dramatic_role: str = "general"
+    mood: str = "default"
+    voice_masking_risk: str = "LOW"
+    whisper_compatibility: float = 0.5
+    recommended_ducking_db: float = -6.0
+    temporal_events: List[Dict[str, Any]] = []
+    metadata_completeness_pct: int = 100
+    analysis_status: str = "complete"
+    provenance_summary: Dict[str, str] = {}
+    is_local_cached: bool = False
+    is_virtual_jit_ready: bool = True
+    file_path: Optional[str] = None
+    retrieval_score: Optional[float] = None
+    why_matched: List[str] = []
+
+    def to_agent_markdown(self) -> str: ...
+    def to_dict(self) -> Dict[str, Any]: ...
+
+class SoundRetrievalResult(BaseModel):
+    query_plan: SoundQueryPlan
+    ranked_cards: List[AgentSoundCard]
+    total_candidates_evaluated: int
+    execution_latency_ms: float
+    metadata: Dict[str, Any] = {}
+```
+
+### B. Phase 1 & 2 Data Contracts
+
+```python
+# audiobook_factory/deterministic_audio_analyzer.py
+class MeasuredAcousticProperties(BaseModel):
+    duration_sec: float
+    integrated_lufs: float
+    true_peak_db: float
+    rms_db: float
+    spectral_centroid_hz: float
+    spectral_rolloff_hz: float
+    spectral_flux: float
+    zero_crossing_rate: float
+    attack_time_ms: float
+    decay_time_ms: float
+    temporal_character: str
+    energy_profile: float
+    voice_masking_risk: str
+    whisper_compatibility: float
+    recommended_ducking_db: float
+    analysis_version: str = "v2.1"
+
+# audiobook_factory/classifier_adapter.py
+class ClassifierPrediction(BaseModel):
+    raw_label: str
+    normalized_label: str
+    probability: float
+    logit: float
+    rank: int
+```
+
+### C. Engine Services & Facades
+
+```python
+# audiobook_factory/sonic_intelligence_engine.py
+class SonicIntelligenceEngine:
+    def __init__(
+        self,
+        sound_bank: Optional[SoundBank] = None,
+        query_cache: Optional[QueryEmbeddingCache] = None,
+        reranker: Optional[SonicHybridReranker] = None,
+    ): ...
+
+    def search_sounds(
+        self,
+        intent: str,
+        limit: int = 10,
+        weights: Optional[RerankingWeights] = None,
+        apply_diversity: bool = True,
+        diversity_threshold: Optional[float] = None,
+    ) -> SoundRetrievalResult: ...
+
+    def find_similar(
+        self,
+        asset_id: int,
+        mode: Literal["semantic", "acoustic", "category", "source"] = "semantic",
+        top_k: int = 5,
+    ) -> List[AgentSoundCard]: ...
+
+    def explain_match(self, asset_id: int, intent: str) -> Dict[str, Any]: ...
+    def get_sound_card(self, asset_id: int) -> AgentSoundCard: ...
+
+# audiobook_factory/query_embedding_cache.py
+class QueryEmbeddingCache:
+    def __init__(self, max_memory_entries: Union[int, Path, str, Any] = 1000, db_path: Optional[Any] = None): ...
+    def get(self, normalized_query: str, model_id: str, model_version: str, preprocessing_version: str = "v1") -> Optional[np.ndarray]: ...
+    def put(self, normalized_query: str, model_id: str, model_version: str, vector: np.ndarray, preprocessing_version: str = "v1") -> None: ...
+    def get_or_compute(self, normalized_query: str, compute_fn: Any, model_id: str = "laion/clap-htsat-unfused", model_version: str = "2023", preprocessing_version: str = "v1") -> np.ndarray: ...
+
+# audiobook_factory/sonic_model_manager.py
+class SonicModelManager:
+    @classmethod
+    def get_ast_model(cls) -> Tuple[Any, Any]: ...
+    @classmethod
+    def get_clap_model(cls) -> Tuple[Any, Any]: ...
+    @classmethod
+    def clear_vram(cls) -> None: ...
+
+# audiobook_factory/deterministic_audio_analyzer.py
+class DeterministicAudioAnalyzer:
+    def analyze_file(self, audio_path: Union[str, Path]) -> MeasuredAcousticProperties: ...
+    def extract_temporal_events(self, audio_path: Union[str, Path]) -> List[Dict[str, Any]]: ...
+```
+

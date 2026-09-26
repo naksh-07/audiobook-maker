@@ -732,3 +732,69 @@
   9. **Phase 9 (Golden Regression Extension — P2):** Expanded golden scenarios to 20 canonical benchmarks in `golden_benchmarks.py` (adding musicless grief, recurring character motif variations, recurring location transitions, reveal sequences, and complex ensemble spatial choreography). Added dedicated test suite `tests/test_sound_design_quality_upgrade.py`.
   10. **Phase 10 (Verification):** All 70 sound design tests, 20 golden benchmarks, and 4 AST zero-hardcoding contract tests pass 100% green. Tracks 11-13 remain 100% untouched.
 - **Rationale:** Delivers world-class audio drama realism, dramatic coherence, and acoustic intelligence while rigorously preserving architectural boundaries and zero-hardcoding contracts.
+
+## ADR-038: Sonic Intelligence Engine Phase 3 — Hybrid Retrieval, Query Planning & Agent Sound Cards (v3.0)
+- **Status:** Accepted
+- **Date:** 2026-09-27
+- **Context:**
+  1. Audio drama creative directors and autonomous agents require an intelligent retrieval layer capable of answering *"What sound should I retrieve for this natural-language intent?"* rather than simplistic substring keyword searches.
+  2. The system must combine 6 distinct evidence streams (FTS5 BM25, Sonic Genome relational fields, AudioSet 527 classifier tags, measured DSP boundaries, temporal event intervals, and 512-d CLAP dual vector embeddings).
+  3. Natural-language requests frequently include Hindi/Hinglish idioms (*"talwar ka bhaari vaar"*, *"door se halki footsteps"*, *"baarish aur hawa ka dark ambience"*), compound multi-action sentences, acoustic constraints (*"short sharp metal hit"*), and negative constraints (*"footsteps without voices"*).
+  4. Black-box ML rankers risk unexplainable hallucinations, catastrophic boundary drift, and lack of debuggability.
+  5. AI agents need an epistemically honest representation of sound assets (Agent Sound Cards) without loading or decoding large audio files.
+- **Decision:**
+  1. **Multilingual Normalization & Query Planning (`sonic_query_planner.py`):**
+     - Built `HinglishQueryNormalizer` translating Hindi/Hinglish idioms into canonical English sound concepts while strictly preserving the original user query and guarding against English homophone collisions (e.g. English "door" is an architectural object, while Hindi "dur" is distant).
+     - Built `SonicQueryPlanner` extracting 15 canonical intent types, decomposing compound queries into atomic concepts, and emitting typed `SoundQueryPlan` records.
+  2. **Thread-Safe Query Embedding Cache (`query_embedding_cache.py`):**
+     - Deployed bounded LRU and SQLite-backed cache keyed by SHA-256 of `f"{normalized_query}:{model_id}:{model_version}:{preprocessing_version}"` to eradicate redundant neural text inference.
+  3. **Multi-Source Candidate Generation (`sonic_candidate_generators.py`):**
+     - Implemented 5 dedicated generators: `FTSCandidateGenerator`, `StructuredFilterCandidateGenerator`, `ClassifierCandidateGenerator`, `CLAPSemanticCandidateGenerator` (Top-K relative normalized vector dot-products), and `AcousticCandidateGenerator` (deterministic DSP bounds).
+     - Merged via `CandidatePoolAggregator` into a bounded candidate pool, preserving granular multi-signal `CandidateEvidence`.
+  4. **Transparent Deterministic Hybrid Reranker (`sonic_hybrid_reranker.py`):**
+     - Designed configurable linear model (`RerankingWeights`: semantic 0.35, classifier 0.20, lexical 0.15, structured 0.15, acoustic 0.10, quality 0.05).
+     - Enforced confirmed negative evidence penalties for unwanted features (`without voices` -> speech detected penalty, `non-musical` -> music penalty) while distinguishing confirmed negatives from untested unknowns.
+     - Implemented lightweight result diversity filtering preventing collection duplicate flooding without suppressing superior matches.
+  5. **Honest Agent Sound Card Engine (`agent_sound_card.py`):**
+     - Established typed `AgentSoundCard` (v3.0) with explicit epistemic source labeling separating `[MEASURED DSP]`, `[CLASSIFIER INFERENCE]`, `[CLAP SEMANTIC]`, `[SOURCE METADATA]`, and `[KEYWORD INFERRED]` facts.
+     - Generated itemized, transparent `why_matched` retrieval evidence.
+  6. **Agent-Facing Domain API & Find Similar Engine (`sonic_intelligence_engine.py`):**
+     - Built `SonicIntelligenceEngine` facade exposing `search_sounds()`, `find_similar()` (with strict physical separation of semantic CLAP, acoustic DSP, category, and source modes), and `explain_match()`.
+     - Integrated non-destructively into `SoundBank` via `search_intelligence()` and `get_agent_sound_card_v3()`.
+  7. **Controlled Validation Suite (`tests/test_sonic_intelligence_phase3.py`):**
+     - Created controlled 18-sound representative retrieval corpus and validated all 15 retrieval quality pillars: 16/16 tests passing (100% green).
+     - Full regression suite confirmed 63/63 passing tests across Phase 1, Phase 2, Phase 3, catalog, and virtual bank, plus 4/4 AST zero-hardcoding contract compliance.
+- **Rationale:** Delivers Hollywood-caliber sound intelligence, multilingual intent parsing, and honest epistemic audio representation with zero ML black-box risk and zero regression across the existing audiobook production pipeline.
+
+## ADR-039: Sonic Intelligence Phase 3 Expert Panel Audit & Hardening Remediation
+- **Status:** Accepted
+- **Date:** 2026-09-27
+- **Context:**
+  1. An independent multi-expert audit panel (Lead Systems Architect, Principal QA Test Engineer, DSP/Audio Specialist, and Retrieval Engineer) was convened to conduct a forensic review of the Phase 3 implementation.
+  2. The audit panel identified 5 key areas requiring surgical hardening:
+     - Re-entrant deadlock in `QueryEmbeddingCache` when concurrent workers call compound `get_or_compute` while internal methods acquire `self._lock`.
+     - Hardcoded `metadata_completeness_pct=75` in `SoundCardBuilder.from_database_row` violating epistemic honesty.
+     - Brittle vector byte dimension check (`len(b) == 512 * 4`) in `CLAPSemanticCandidateGenerator` limiting future model upgrades.
+     - Single-candidate or uniform score bug in CLAP relative min-max scaling assigning `0.0` instead of `1.0` when `sim_range < 1e-5`.
+     - SQLite FTS5 syntax corruption risk when user keyword tokens contain unclosed quotes or special punctuation.
+     - `SonicIntelligenceEngine.search_sounds` signature missing explicit `diversity_threshold` parameter forwarding.
+- **Decision:**
+  1. **Deadlock Elimination with Re-entrant Locks (`query_embedding_cache.py`):**
+     - Upgraded `self._lock` from non-reentrant `threading.Lock()` to `threading.RLock()`.
+     - Allowed compound methods like `get_or_compute` to acquire the lock and safely delegate to `get` and `put` without self-deadlock.
+     - Supported both `db_path: Path` and `_conn_factory` signatures via unified `_get_db_conn()` helper.
+  2. **Dynamic Epistemic Completeness (`agent_sound_card.py`):**
+     - Replaced hardcoded `75` with dynamic `int(_compute_metadata_completeness(row_dict) * 100)` across all builder entrypoints.
+  3. **Dynamic Vector Dimension Verification (`sonic_candidate_generators.py`):**
+     - Replaced hardcoded `512 * 4` byte check with dynamic `len(b) == len(query_vec) * 4`, future-proofing vector search for 768-d, 1024-d, or higher dimensional embeddings.
+  4. **Robust Single/Uniform Relative Scaling (`sonic_candidate_generators.py`):**
+     - Handled `sim_range < 1e-5` boundary: candidate is assigned `max(0.0, min(1.0, raw_sim)) if raw_sim > 0 else 1.0` instead of `0.0`.
+  5. **FTS5 Token Sanitization (`sonic_candidate_generators.py`):**
+     - Added regex sanitization `re.sub(r'["\'\*\^\:\(\)\{\}\[\]\~\+\-\?]', '', w).strip()` before creating FTS5 phrase queries, eliminating SQLite syntax errors on adversarial query punctuation.
+  6. **Diversity Threshold Parameter Forwarding (`sonic_intelligence_engine.py`, `sonic_hybrid_reranker.py`, `sound_bank.py`):**
+     - Added `diversity_threshold: Optional[float] = None` across `search_sounds()`, `search_intelligence()`, and `rerank()`.
+  7. **Comprehensive Audit Verification (`tests/test_sonic_intelligence_phase3_audit.py`):**
+     - Created and executed 11-scenario adversarial stress suite covering empty queries, single characters, 10,000+ char inputs, FTS syntax injections, Hindi/Devanagari Unicode & emojis, 1-candidate pools, zero matches, negative-only queries, 20-thread cache concurrency, corrupt/missing assets, and diversity filtering limits.
+     - 100% test pass rate: 11/11 audit tests green in 37.19s; full multi-phase regression (53/53 tests) green in 95.08s; 4/4 AST zero-hardcoding contracts certified.
+- **Rationale:** Ensures enterprise-grade thread safety, robustness against adversarial queries, epistemic consistency, and zero regressions across all production pipelines.
+

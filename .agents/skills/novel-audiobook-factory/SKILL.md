@@ -65,13 +65,17 @@ flowchart TD
 - **Multi-Cast Speaker Attribution**: Attributes character dialogue vs narrator, removes redundant speech tags, and tags acting emotions (`whispering`, `growl`, `calm_raspy`, `angry`).
 - **Memory 2.0 Vocal Constraint Propagation**: Automatically propagates physical states from Memory 2.0 (`memory_vocal_constraint`: `strained_breath`, `fatigued_low_energy`) to dialogue segments while preserving explicit director delivery styles, rendered natively into speechMetadata by the TTS dispatcher.
 
-### Stage 4: Autonomous Directing Layer ([`agent_director.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py))
+### Stage 4: Autonomous Directing Layer ([`agent_director.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)) & Sonic Intelligence Engine ([`docs/SOUND_BANK.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/SOUND_BANK.md))
 - **3-Pass Dramaturgy & Multi-Scene Partitioning (ADR-018 & ADR-022)**:
   - *Pass 1*: Carves acoustic silence ($\ge 60\%$).
   - *Pass 1.5*: Partitions chapters dynamically into distinct scene blocks based on `acoustic_env` shifts (`_partition_script_ambience_scenes`).
-  - *Pass 2*: Queries FTS5 sound bank for scene-bound BGM underscore with `until_segment` duration calculation.
+  - *Pass 2*: Queries FTS5 / Sonic Intelligence Sound Bank for scene-bound BGM underscore with `until_segment` duration calculation.
   - *Pass 3*: Mines physical Foley interactions using `BILINGUAL_ANCHOR_MAP` without the 50% dead-center trap, strictly enforcing `DOMETabl` tableware isolation.
   - Emits the authoritative Pydantic v2 `CreativeManifest`.
+- **Sonic Intelligence Engine Integration (Phases 1–3 Complete)**:
+  - **Phase 1 (DSP Foundation)**: Sonic Genome v2.1 with 14 measured physical properties (`DeterministicAudioAnalyzer`).
+  - **Phase 2 (AI Enrichment)**: AudioSet 527 taxonomy via AST and 512-d zero-shot semantic vectors via LAION-CLAP.
+  - **Phase 3 (Hybrid Retrieval)**: Multi-source candidate pooling (FTS5 + CLAP + AST + DSP), Hinglish query planning (15 intent types), linear reranking with diversity enforcement, and epistemic Agent Sound Cards v3.0 (`python audiobook_cli.py bank search-intelligence`).
 
 ### Stage 5: Concurrent Multi-Cast TTS ([`tts_dispatcher.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))
 - **Engine**: Google Gemini 3.1 Flash TTS (`gemini-3.1-flash-tts-preview`) generating 24kHz raw PCM.

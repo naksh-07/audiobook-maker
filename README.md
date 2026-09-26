@@ -55,7 +55,7 @@ flowchart TD
 
     subgraph Room3["🚪 Room 3: Acoustic Compositor & DSP Mastering"]
         Manifest --> Renderer["Manifest Soundscape Renderer"]
-        SoundBank["SQLite FTS5 CC0 Sound Bank"] --> Renderer
+        SoundBank["Sonic Intelligence Engine & Virtual Sound Bank<br/>(Phases 1-3 Certified: DSP + AI + Hybrid Retrieval)"] --> Renderer
         Renderer --> Ducking["Whisper-Safe Sidechain Ducking (0.018 Threshold)"]
         Renderer --> Reverb["Dynamic Room Reverb Presets (Cathedral, Bedroom, Open Road)"]
         Renderer --> VocalDSP["5-Stage Vocal DSP Chain (SOXR 48kHz + EBU R128)"]
@@ -144,7 +144,20 @@ The architecture orchestrates an end-to-end multi-stage lifecycle from raw docum
 - **Studio Multi-Format Ingestion & TPDF Dithering:** Unpacks 16-bit PCM, 24-bit packed PCM (3-byte bitshift), 32-bit float, and stereo-to-mono downmixes. Applies true Hann raised-cosine micro-fades, gain leveling, deterministic TPDF dither, and zero-sample boundary pinning (`samples[0] = samples[-1] = 0`).
 - **Fail-Closed Editorial QC & Plan Cleansing:** Audits edited audio against speech truncation, negative durations, rail clipping, NaN/Inf instability, and chapter cadence anomalies. Automatically discards rejected edit plans (`edit_plans = None`) and reverts to raw takes upon hard failure.
 
-### 6. Multi-Gate Independent Verification Suite (Gates 0.1 - 6E & Gates T0 - T15)
+### 6. Sonic Intelligence Engine & Virtual Sound Bank (Phases 1–3 Complete & Certified)
+*(See full technical manual: [`docs/SOUND_BANK.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/SOUND_BANK.md))*
+- **Phase 1: Deterministic Audio Analysis & Sonic Genome v2.1:** 14 physical ground-truth metrics measured directly from waveforms (BS.1770-4 integrated LUFS, true peak dBTP, Welch spectral centroid, spectral roll-off/flux, zero-crossing rate, attack/decay times, voice masking risk, whisper compatibility) stored in SQLite `sound_catalog`, `sound_analysis_runs`, and `sound_temporal_events`.
+- **Phase 2: AI Enrichment (AudioSet 527 & LAION-CLAP 512-d):** Dedicated audio classification via AST (`MIT/ast-finetuned-audioset-10-10-0.4593`), 512-d open-vocabulary dual acoustic/text embeddings via LAION-CLAP (`laion/clap-htsat-unfused`), thread-safe VRAM model management ([`SonicModelManager`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_model_manager.py)) with CUDA/CPU fallback & explicit cache clearing, and 2,048-byte SQLite vector BLOB storage.
+- **Phase 3: Sound Intelligence (Retrieval + Planning + Agent Sound Cards v3.0):**
+  - Vernacular Hindustani & multilingual query normalizer ([`HinglishQueryNormalizer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_query_planner.py)) with English homophone collision protection (*"door"* vs *"dur"*).
+  - 15-intent query planner and compound multi-action decomposer ([`SonicQueryPlanner`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_query_planner.py)).
+  - Re-entrant thread-safe LRU query cache ([`QueryEmbeddingCache`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/query_embedding_cache.py)) guarded by `threading.RLock()`.
+  - Multi-source candidate pool aggregator ([`CandidatePoolAggregator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_candidate_generators.py)) synthesizing FTS5 BM25, structured filters, classifier tags, CLAP 512-d vector dot-products, and deterministic DSP bounds while preserving granular `CandidateEvidence`.
+  - Deterministic linear reranker ([`SonicHybridReranker`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_hybrid_reranker.py)) with confirmed negative evidence penalties (speech/music exclusion) and collection diversity filtering (`diversity_threshold`).
+  - Epistemically honest [`AgentSoundCard`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_sound_card.py) (v3.0) separating `[MEASURED DSP]`, `[CLASSIFIER INFERENCE]`, `[CLAP SEMANTIC]`, `[SOURCE METADATA]`, and `[KEYWORD INFERRED]` facts with itemized `why_matched` explanations.
+- **Adversarial Audit Certified:** 11/11 adversarial stress tests passing (10k chars, Unicode/emojis, FTS syntax, 20-thread concurrency) and 57/57 engine-wide regression tests green.
+
+### 7. Multi-Gate Independent Verification Suite (Gates 0.1 - 6E & Gates T0 - T15)
 Quality is mathematically audited at every stage of the pipeline:
 - **Gate 0.1:** Forensic Document Extraction Quality Gate (Document completeness, word count floor, empty chapter guard, OCR noise ratio $< 25\%$; fails closed on `REVIEW` with `--force-gate` override)
 - **Gates T0 – T15:** Literary Translation Intelligence & Spoken Language Certification Suite (Source sanity, BookBible terminology & Latin leak checks, dual semantic map beat alignment & expanded negation parity, quote parity & omission detection, addition detection, character sociolect & pronoun honorifics, 7D calibrated intensity preservation, literary naturalness, Gate T10 Hindustani register balance $0.2\% - 8.0\%$, Gate T12 Spoken Language QA, Gate T13 Pronunciation Plan QA, Gate T14 Pronunciation Audio QA, Gate T15 Cross-Chapter Pronunciation Consistency, 4-tier state machine with fail-closed blocking, and 11-dimension SHA-256 provenance seal)
@@ -159,7 +172,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Gate 5 / 5.2 / 5.3:** EBU R128 Master (standardized $\pm 1.0\text{ LU}$ tolerance), Dialogue-to-Music Ratio ($\text{DMR} \ge +12\text{ dB}$), and Stereo Phase ($r \ge 0.85$)
 - **Gate 6A / 6B / 6C / 6D / 6E:** Cross-Chapter Voice Continuity, Inter-Chapter Loudness Consistency ($\le 1.0\text{ LU}$), TOC Monotonicity, M4B Container Certification, and Gate 6E Cross-Chapter Pronunciation Consistency (Book Master)
 
-### 7. Hollywood-Grade Acoustic DSP Mastering
+### 8. Hollywood-Grade Acoustic DSP Mastering
 - **Strict Agent Creative Mandate:** All creative acoustic choices (scoring, leitmotifs, Foley placement, pacing) belong strictly to autonomous agents (`AgentDirector`). Lower engine layers (`CinemaAudioEngine`, `ManifestRenderer`, DSP) are 100% deterministic execution runtimes with zero script overrides.
 - **Music-Only 2.2kHz Spectral Notch EQ:** Parametric notch filter ($-5.5\text{ dB}$ at $2,200\text{ Hz}$, $Q=1.5$) is isolated strictly to the Music Bus `[0:a]`, preserving crisp Foley transients and expansive Ambience beds.
 - **Whisper Collision Attenuation:** Foley cues triggered during quiet or whispered dialogue segments receive automatic $-6\text{ dBFS}$ attenuation via `attenuate_foley_whisper_collisions`.
@@ -168,7 +181,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Dynamic Headroom Calibration:** Explosive scenes tighten the limiter to `0.82` with True Peak ceiling `-2.0 dBTP`. Soft whisper scenes calibrate dynamic Loudness Range (`LRA = 6.0 LU`).
 - **Auto-Janitor Safety Shield:** Raw WAV chunks are strictly preserved if master rendering or quality verification fails, protecting your API quota.
 
-### 8. Container Reliability & Robust Orchestration
+### 9. Container Reliability & Robust Orchestration
 - **M4B AAC Packaging Safety:** Replaced brittle container copy with strict AAC validation (`is_all_aac`). Uncompressed WAV stems (`pcm_s16le`) or non-AAC assets are automatically transcoded to AAC (`-c:a aac -b:a 192k`) with `+faststart` MP4 metadata atom positioning.
 - **Dynamic Vocal Track Inference:** Removed hardcoded paths; dynamically discovers vocal stems (`.wav` and `.m4a`) across project directory hierarchies.
 - **Regex Chapter Parsing:** Script and audio chunk extraction utilizes robust regex `chapter_(\d+)` patterns, preventing chapter renumbering during partial runs.

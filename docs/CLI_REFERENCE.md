@@ -409,6 +409,19 @@ Executes Full-Text Search against the sound database:
 python audiobook_cli.py bank search "dark fantasy tension cello" --limit 10
 ```
 
+#### `search-intelligence <QUERY>`
+Executes Phase 3 Hybrid Sonic Intelligence retrieval across 5 multi-source candidate generators (FTS5 + CLAP 512-d embeddings + AST 527 classification + DSP acoustic scoring + negative constraints):
+```bash
+# Standard hybrid query (supports English, Hindi, and Hinglish intent):
+python audiobook_cli.py bank search-intelligence "heavy wooden door creak" --limit 5
+
+# Inspect top match AgentSoundCard v3.0 inline:
+python audiobook_cli.py bank search-intelligence "sharaabkhane ki bheed ka shor" --limit 3 --card
+
+# Disable acoustic diversity reranking:
+python audiobook_cli.py bank search-intelligence "distant thunder rolling" --limit 5 --no-diversity
+```
+
 #### `ingest <DIR>`
 Performs high-performance multi-threaded batch ingestion of an audio folder via `UniversalSoundBankIngester`:
 ```bash
@@ -422,7 +435,7 @@ python audiobook_cli.py bank virtual-status
 ```
 
 #### `inspect <ID>`
-Displays the full 9-dimensional Sonic Genome, measured DSP facts, and source/mirror URLs for a specific sound ID:
+Displays the typed Phase 3 `AgentSoundCard` v3.0 with epistemic source provenance (`[MEASURED DSP]`, `[CLASSIFIER INFERENCE]`, `[SEMANTIC EMBEDDING]`, `[CANONICAL METADATA]`), the 9-dimensional Sonic Genome, and physical suitability metrics for a specific sound ID:
 ```bash
 python audiobook_cli.py bank inspect 8563
 ```

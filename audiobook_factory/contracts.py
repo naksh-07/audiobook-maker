@@ -9,8 +9,9 @@ and zero hardcoded character/voice bindings.
 from __future__ import annotations
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Literal, Tuple
+from typing import List, Dict, Any, Optional, Literal, Tuple, Union
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict, AliasChoices
 
 
@@ -599,20 +600,260 @@ class RemoteAssetMetadata(BaseModel):
     sha256_checksum: Optional[str] = None
 
 
-class SonicGenome(BaseModel):
-    """The Complete Multi-Dimensional Sonic Genome (v2.0)."""
+ProvenanceMethod = Literal[
+    "source_metadata",
+    "measured_dsp",
+    "classifier",
+    "semantic_model",
+    "llm_inferred",
+    "keyword_inferred",
+    "curated",
+]
+
+
+class ProvenanceRecord(BaseModel):
+    """Traceable provenance record for any measurement, inference, or metadata extraction."""
     model_config = ConfigDict(extra="ignore")
 
-    version: str = Field(default="2.0", description="Schema version")
+    source_method: ProvenanceMethod = Field(..., description="Method used to obtain data")
+    analyzer_id: str = Field(..., description="Identifier of analyzer, script, or model")
+    analyzer_version: str = Field(default="1.0.0", description="Semantic version of analyzer")
+    ontology_version: str = Field(default="sonic_genome_v2.1", description="Taxonomy/ontology version")
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    source_asset_version: Optional[str] = Field(default=None, description="Hash or timestamp of source file")
+    confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Confidence (None for deterministic physical measurements)")
+    processing_version: str = Field(default="phase1_v1.0", description="Pipeline processing stage version")
+    notes: Optional[str] = Field(default=None, description="Optional diagnostic notes or execution telemetry")
+
+
+class NormalizedSourceFields(BaseModel):
+    """Normalized representation of third-party source collection metadata."""
+    model_config = ConfigDict(extra="ignore")
+
+    title: str = Field(default="")
+    description: str = Field(default="")
+    tags: List[str] = Field(default_factory=list)
+    category: str = Field(default="SFX")
+    subcategory: str = Field(default="General")
+    creator: str = Field(default="")
+    collection: str = Field(default="")
+    genre: str = Field(default="")
+    mood: str = Field(default="default")
+    tempo_bpm: Optional[float] = None
+    duration_sec: float = Field(default=0.0, ge=0.0)
+    source_url: Optional[str] = None
+    license: str = Field(default="Royalty-Free")
+    provider_id: str = Field(default="")
+
+
+class SourceMetadata(BaseModel):
+    """Preserved raw source metadata alongside normalized attributes and provenance."""
+    model_config = ConfigDict(extra="ignore")
+
+    provider_name: str = Field(default="generic_source")
+    raw_metadata: Dict[str, Any] = Field(default_factory=dict, description="Original unparsed provider payload")
+    normalized: NormalizedSourceFields = Field(default_factory=NormalizedSourceFields)
+    provenance: ProvenanceRecord = Field(
+        default_factory=lambda: ProvenanceRecord(
+            source_method="source_metadata",
+            analyzer_id="source_adapter",
+            analyzer_version="1.0.0",
+        )
+    )
+
+
+class FormatFacts(BaseModel):
+    """Deterministic audio container and codec facts."""
+    model_config = ConfigDict(extra="ignore")
+
+    duration_sec: float = Field(default=0.0, ge=0.0)
+    sample_rate: int = Field(default=48000, ge=8000)
+    channels: int = Field(default=2, ge=1)
+    codec: str = Field(default="pcm_s16le")
+    container: str = Field(default="wav")
+    bit_depth: Optional[int] = Field(default=16)
+    file_size_bytes: int = Field(default=0, ge=0)
+    bit_rate: int = Field(default=0, ge=0)
+
+
+class LoudnessFacts(BaseModel):
+    """Deterministic EBU R128 loudness and peak dynamics."""
+    model_config = ConfigDict(extra="ignore")
+
+    integrated_lufs: Optional[float] = Field(default=None, description="Integrated loudness in LUFS")
+    true_peak_dbtp: Optional[float] = Field(default=None, description="True peak in dBTP")
+    loudness_range_lu: Optional[float] = Field(default=None, description="EBU R128 Loudness Range in LU")
+    rms_level_db: Optional[float] = Field(default=None, description="RMS level in dBFS")
+    peak_level_db: Optional[float] = Field(default=None, description="Max sample peak in dBFS")
+    dynamic_range_db: Optional[float] = Field(default=None, description="Crest factor / dynamic range in dB")
+
+
+class SpectralFacts(BaseModel):
+    """Deterministic frequency domain spectral descriptors."""
+    model_config = ConfigDict(extra="ignore")
+
+    spectral_centroid_hz: Optional[float] = Field(default=None, description="Spectral center of mass (brightness) in Hz")
+    spectral_bandwidth_hz: Optional[float] = Field(default=None, description="Spectral spread in Hz")
+    spectral_rolloff_hz: Optional[float] = Field(default=None, description="85% energy rolloff frequency in Hz")
+    spectral_flatness: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Spectral flatness / noisiness (0.0 to 1.0)")
+    zero_crossing_rate: Optional[float] = Field(default=None, ge=0.0, description="Rate of sign-changes along signal")
+
+
+class TemporalFacts(BaseModel):
+    """Deterministic time-domain descriptors and boundaries."""
+    model_config = ConfigDict(extra="ignore")
+
+    silence_ratio: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Fraction of frames below -60 dBFS")
+    active_duration_sec: Optional[float] = Field(default=None, ge=0.0)
+    active_start_sec: Optional[float] = Field(default=None, ge=0.0)
+    active_end_sec: Optional[float] = Field(default=None, ge=0.0)
+    transient_count: Optional[int] = Field(default=None, ge=0)
+    major_transients_sec: List[float] = Field(default_factory=list)
+    energy_envelope: Optional[str] = Field(default=None)
+
+
+class TonalFacts(BaseModel):
+    """Tonal and musical facts (strictly None if not technically meaningful for the sound)."""
+    model_config = ConfigDict(extra="ignore")
+
+    is_tonal: Optional[bool] = Field(default=None, description="Whether sound exhibits clear pitch/harmonicity")
+    detected_pitch_hz: Optional[float] = Field(default=None, description="Fundamental frequency if tonal")
+    detected_bpm: Optional[float] = Field(default=None, description="Tempo BPM if rhythmic/musical")
+    tuning_hz: Optional[float] = Field(default=None, description="Tuning reference in Hz (e.g. 440.0)")
+
+
+class MeasuredAudioFacts(BaseModel):
+    """Measured physical facts extracted via deterministic local DSP (zero AI hallucinations)."""
+    model_config = ConfigDict(extra="ignore")
+
+    format: FormatFacts = Field(default_factory=FormatFacts)
+    loudness: LoudnessFacts = Field(default_factory=LoudnessFacts)
+    spectral: SpectralFacts = Field(default_factory=SpectralFacts)
+    temporal: TemporalFacts = Field(default_factory=TemporalFacts)
+    tonal: TonalFacts = Field(default_factory=TonalFacts)
+    provenance: ProvenanceRecord = Field(
+        default_factory=lambda: ProvenanceRecord(
+            source_method="measured_dsp",
+            analyzer_id="deterministic_dsp_engine",
+            analyzer_version="1.0.0",
+            confidence=None,  # Explicitly None for physical measurements
+        )
+    )
+
+
+class AudioEventRecord(BaseModel):
+    """A timed audio event detected deterministically or inferred."""
+    model_config = ConfigDict(extra="ignore")
+
+    event_type: str = Field(..., description="e.g. 'transient_onset', 'silence_region', 'active_region'")
+    start_sec: float = Field(..., ge=0.0)
+    end_sec: float = Field(..., ge=0.0)
+    confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    source_method: ProvenanceMethod = Field(default="measured_dsp")
+    detector_id: str = Field(default="onset_detector_v1")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ClassifierPrediction(BaseModel):
+    """Individual categorical prediction from an audio classifier with raw model outputs."""
+    model_config = ConfigDict(extra="ignore")
+
+    raw_label: str = Field(..., description="Exact raw label from model output vocabulary")
+    normalized_label: Optional[str] = Field(default=None, description="Normalized taxonomy label if cleanly mapped")
+    raw_score: float = Field(..., description="Raw model confidence (e.g. unthresholded sigmoid/logit)")
+    calibrated_score: Optional[float] = Field(default=None, description="Empirically calibrated probability score if calibration exists")
+    rank: int = Field(default=1, ge=1, description="Relative confidence rank in inference pass")
+    ontology_id: str = Field(default="audioset_527", description="Taxonomy identifier")
+    start_sec: Optional[float] = Field(default=None, description="Start time if temporally localized")
+    end_sec: Optional[float] = Field(default=None, description="End time if temporally localized")
+
+
+class ClassifierInferences(BaseModel):
+    """Epistemic collection of classifier predictions preserving raw model evidence."""
+    model_config = ConfigDict(extra="ignore")
+
+    model_id: str = Field(default="MIT/ast-finetuned-audioset-10-10-0.4593")
+    model_version: str = Field(default="1.0.0")
+    ontology_id: str = Field(default="audioset_527")
+    predictions: List[ClassifierPrediction] = Field(default_factory=list)
+    top_labels: List[str] = Field(default_factory=list)
+    negative_evidence: List[str] = Field(default_factory=list, description="Classes evaluated with near-zero confidence")
+    provenance: ProvenanceRecord = Field(
+        default_factory=lambda: ProvenanceRecord(
+            source_method="classifier",
+            analyzer_id="ast_audioset_classifier",
+            analyzer_version="1.0.0",
+        )
+    )
+
+
+class SemanticEmbeddingFacts(BaseModel):
+    """Open-vocabulary CLAP semantic vector representation."""
+    model_config = ConfigDict(extra="ignore")
+
+    model_id: str = Field(default="laion/clap-htsat-unfused")
+    model_version: str = Field(default="2023_v1")
+    embedding_dim: int = Field(default=512)
+    preprocessing_version: str = Field(default="v1_centered_energy_conserving_pad")
+    vector: Optional[List[float]] = Field(default=None, description="Normalized float32 vector in memory")
+    provenance: ProvenanceRecord = Field(
+        default_factory=lambda: ProvenanceRecord(
+            source_method="semantic_model",
+            analyzer_id="laion_clap_hts_at",
+            analyzer_version="1.0.0",
+            confidence=None,  # Embeddings are geometric representations, not scalar confidences
+        )
+    )
+
+
+class InferredMetadata(BaseModel):
+    """Heuristic, rule-based, and keyword-derived taxonomic classifications."""
+    model_config = ConfigDict(extra="ignore")
+
+    category: str = Field(default="SFX")
+    action_type: str = Field(default="")
+    exciter: str = Field(default="")
+    resonator: str = Field(default="")
+    tags: List[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.75, ge=0.0, le=1.0)
+    provenance: ProvenanceRecord = Field(
+        default_factory=lambda: ProvenanceRecord(
+            source_method="keyword_inferred",
+            analyzer_id="rule_taxonomy_v1",
+            analyzer_version="1.0.0",
+            confidence=0.75,
+        )
+    )
+
+
+class SonicGenome(BaseModel):
+    """The Complete Multi-Dimensional Sonic Genome (v2.1)."""
+    model_config = ConfigDict(extra="ignore")
+
+    version: str = Field(default="2.1", description="Schema version")
     track_id: int = Field(default=0, description="Catalog track ID")
     filename: str = Field(default="", description="Track filename")
-    
-    # Backward compatible fields
+
+    # 6 Epistemic Layers
+    source_metadata: SourceMetadata = Field(default_factory=SourceMetadata)
+    measured_facts: MeasuredAudioFacts = Field(default_factory=MeasuredAudioFacts)
+    inferred: InferredMetadata = Field(default_factory=InferredMetadata)
+    classifier_inferences: Optional[ClassifierInferences] = Field(default=None, description="Phase 2 audio event/classifier inferences")
+    semantic_model_facts: Optional[SemanticEmbeddingFacts] = Field(default=None, description="Phase 2 CLAP semantic vector facts")
+    classifier_output: Optional[Dict[str, Any]] = Field(default=None, description="Serialized dictionary representation for legacy callers")
+    semantic_model_output: Optional[Dict[str, Any]] = Field(default=None, description="Serialized dictionary representation for legacy callers")
+    curated_data: Optional[Dict[str, Any]] = Field(default=None, description="Sound designer overrides")
+
+    # Temporal Events & Full Ledger
+    events: List[AudioEventRecord] = Field(default_factory=list)
+    provenance_ledger: List[ProvenanceRecord] = Field(default_factory=list)
+
+    # Backward compatible fields (preserved 100% for existing callers)
     acoustic: AcousticMetrics = Field(default_factory=AcousticMetrics)
     semantic: SemanticAnnotations = Field(default_factory=SemanticAnnotations)
     id3_metadata: Dict[str, Any] = Field(default_factory=dict, description="Embedded ID3 tag dictionary")
 
-    # Sonic Genome v2 Extended Dimensions
+    # Sonic Genome Extended Dimensions
     physical: PhysicalGenome = Field(default_factory=PhysicalGenome)
     temporal: TemporalWaveGenome = Field(default_factory=TemporalWaveGenome)
     spatial: SpatialGenome = Field(default_factory=SpatialGenome)
@@ -623,6 +864,45 @@ class SonicGenome(BaseModel):
     foley: FoleyIntelligence = Field(default_factory=FoleyIntelligence)
     remote: RemoteAssetMetadata = Field(default_factory=RemoteAssetMetadata)
     provenance_log: List[Dict[str, Any]] = Field(default_factory=list)
+
+    def sync_measured_to_acoustic(self) -> None:
+        """Keep backward-compatible acoustic metrics synchronized with measured_facts."""
+        m = self.measured_facts
+        if m.loudness.integrated_lufs is not None:
+            self.acoustic.integrated_lufs = m.loudness.integrated_lufs
+        if m.loudness.true_peak_dbtp is not None:
+            self.acoustic.true_peak_dbtp = m.loudness.true_peak_dbtp
+        if m.tonal.detected_bpm is not None:
+            self.acoustic.bpm = m.tonal.detected_bpm
+        if m.temporal.major_transients_sec:
+            self.acoustic.transient_drops_sec = m.temporal.major_transients_sec
+        if m.spectral.spectral_centroid_hz is not None:
+            hz = m.spectral.spectral_centroid_hz
+            if 1000.0 <= hz <= 4000.0 and (m.loudness.integrated_lufs or -70) > -25.0:
+                self.acoustic.vocal_clash_risk = "MODERATE"
+            else:
+                self.acoustic.vocal_clash_risk = "LOW"
+
+    def record_ai_inference(
+        self,
+        classifier: Optional[ClassifierInferences] = None,
+        semantic: Optional[SemanticEmbeddingFacts] = None,
+        events: Optional[List[AudioEventRecord]] = None,
+    ) -> None:
+        """Register AI inferences (classifiers, CLAP embeddings, events) into the Sonic Genome with provenance."""
+        if classifier is not None:
+            self.classifier_inferences = classifier
+            self.classifier_output = classifier.model_dump(mode="json")
+            if classifier.provenance:
+                self.provenance_ledger.append(classifier.provenance)
+        if semantic is not None:
+            self.semantic_model_facts = semantic
+            self.semantic_model_output = semantic.model_dump(mode="json")
+            if semantic.provenance:
+                self.provenance_ledger.append(semantic.provenance)
+        if events:
+            for ev in events:
+                self.events.append(ev)
 
 
 class MusicCue(BaseModel):
@@ -1064,6 +1344,31 @@ from audiobook_factory.performance.contracts import (
     PerformanceEvaluationResult,
     TakeVariant,
     PerformanceFidelityReport,
+)
+
+# ==============================================================================
+# Phase 3: Sonic Intelligence Contracts Re-exports
+# ==============================================================================
+from audiobook_factory.sonic_query_planner import (
+    SoundIntentType,
+    AtomicSoundConcept,
+    AcousticConstraints,
+    NegativeConstraints,
+    SoundQueryPlan,
+)
+from audiobook_factory.sonic_candidate_generators import (
+    CandidateEvidence,
+    CandidateRecord,
+)
+from audiobook_factory.sonic_hybrid_reranker import (
+    RerankingWeights,
+    ScoredCandidate,
+)
+from audiobook_factory.agent_sound_card import (
+    AgentSoundCard,
+)
+from audiobook_factory.sonic_intelligence_engine import (
+    SoundRetrievalResult,
 )
 
 

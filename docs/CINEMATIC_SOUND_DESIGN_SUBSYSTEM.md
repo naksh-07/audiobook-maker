@@ -85,8 +85,7 @@ The subsystem modularly implements all 20 commercial sound design capabilities a
 | **15. Adaptive Music Cue Placement** | [`music_motif_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/music_motif_director.py) | Context-aware cue scheduling with boundary clamping to prevent cross-scene spill. |
 | **16. Silence / Negative Sound Design** | [`silence_engine.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/silence_engine.py) | First-class negative sound events (ambient drops, foley suppression, walla drops, reveal breaths) & adaptive density budgets. |
 | **17. Abstract Room Acoustics** | [`spatial_acoustics.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/spatial_acoustics.py) | Abstract propagation physics (RT60, absorption, reflections, barrier occlusion) without hardcoded DSP filters. |
-| **18. Spatial Soundstage Geography** | [`spatial_acoustics.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/spatial_acoustics.py) | Coordinate management across stereo azimuth $[-0.8, +0.8]$, narrator locked to $0.0$, and spatial continuity across turns. |
-| **19. Semantic Sound Retrieval** | [`asset_retriever.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/asset_retriever.py) | SQLite FTS5 semantic indexing, SHA-256 checksum provenance, zero unvetted JIT downloads, and DSP sanity checks. |
+| **19. Semantic Sound Retrieval** | [`asset_retriever.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/asset_retriever.py), [`sonic_intelligence_engine.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_intelligence_engine.py) | Hybrid retrieval via Sonic Intelligence Engine (Phases 1–3: SQLite FTS5, CLAP 512-d embeddings, AST 527 tags, Agent Sound Cards v3.0, SHA-256 checksums, and DSP sanity checks). |
 | **20. Master Sound Director & QC** | [`sound_director.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/sound_director.py), [`qc.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/qc.py) | Assembles chronological `SoundTimeline` and audits 9 forensic signals with fail-closed QC. |
 
 ---
@@ -169,7 +168,7 @@ Building on the foundation of ADR-034 and ADR-035, the subsystem underwent a com
 
 ### Priority 2: Real Asset Resolution for Every Event
 - **Fake Paths Eradicated:** Elimination of synthetic placeholders (e.g. `foley_{action}_{material}.wav` or `creature_{spec.creature_type}.wav`).
-- **Semantic FTS5 Retrieval:** All events (Foley, Hard SFX, Creatures, Magic, Walla, and Music) are resolved against the local SQLite FTS5 Sound Bank using semantic queries, returning actual audio files verified with SHA-256 checksums.
+- **Semantic FTS5 & Hybrid Intelligence Retrieval:** All events (Foley, Hard SFX, Creatures, Magic, Walla, and Music) are resolved against the local SQLite Sound Bank using either direct FTS5 keyword indexing or the Phase 3 Sonic Intelligence Engine (`search_intelligence()`), combining CLAP semantic vectors, AST 527 taxonomy tags, and measured DSP suitability into structured `AgentSoundCard` records with SHA-256 verified provenance.
 - **Strict Resolution Accounting:** When a matching asset is absent from the sound library:
   - `is_resolved` is explicitly set to `False`.
   - `unresolved_reason` provides an auditable diagnostic trail (e.g. `"no_matching_asset_in_sound_bank"`).

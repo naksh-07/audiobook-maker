@@ -354,12 +354,41 @@ def cmd_bank(args):
                 dl_tag = "[Downloaded]" if r.get("is_downloaded") else "[Cloud/Virtual]"
                 print(f"  [{r['category']}] {dl_tag} {r['filename']} (Mood: {r['mood']}, Dur: {r['duration_sec']:.1f}s)")
                 print(f"      Path: {r['filepath']}")
+    elif action == "search-intelligence":
+        apply_div = not getattr(args, "no_diversity", False)
+        print(f"[*] Running Phase 3 Sonic Intelligence retrieval for: '{args.query}'...")
+        res = bank.search_intelligence(args.query, limit=args.limit, apply_diversity=apply_div)
+        latency = res.execution_telemetry.get("total_latency_ms", 0.0)
+        intents_str = ", ".join(res.query_plan.intent_types) if res.query_plan.intent_types else "GENERAL"
+        print(f"\n=======================================================")
+        print(f"   SONIC INTELLIGENCE RETRIEVAL RESULTS ({len(res.ranked_cards)} matches)")
+        print(f"   Plan Intents: {intents_str} (Lang: {res.query_plan.detected_language}) | Candidates: {res.total_candidates_considered} | Time: {latency:.1f}ms")
+        print(f"=======================================================")
+        for idx, card in enumerate(res.ranked_cards, 1):
+            score_str = f"{card.retrieval_score:.3f}" if card.retrieval_score is not None else "N/A"
+            print(f"  {idx}. [Score: {score_str}] Track #{card.asset_id}: {card.title or card.filename}")
+            print(f"     Category: {card.category} | Dur: {card.duration_sec:.1f}s | Brightness: {card.spectral_brightness} | LUFS: {card.integrated_lufs}")
+            if card.why_matched:
+                print(f"     Evidence: {'; '.join(card.why_matched)}")
+            print()
+        if getattr(args, "card", False) and res.ranked_cards:
+            print(f"\n--- Top Match AgentSoundCard v3.0 (Track #{res.ranked_cards[0].asset_id}) ---")
+            print(res.ranked_cards[0].to_agent_markdown())
     elif action == "inspect":
-        card = bank.get_agent_sound_card(args.asset_id)
-        if card:
-            print(card)
-        else:
-            print(f"[-] Asset not found in catalog: {args.asset_id}")
+        card = None
+        try:
+            aid_int = int(args.asset_id)
+            card = bank.get_agent_sound_card_v3(aid_int)
+            if card:
+                print(card.model_dump_json(indent=2))
+        except (ValueError, TypeError):
+            pass
+        if not card:
+            card_legacy = bank.get_agent_sound_card(args.asset_id)
+            if card_legacy:
+                print(card_legacy)
+            else:
+                print(f"[-] Asset not found in catalog: {args.asset_id}")
     elif action == "prune-cache":
         target = getattr(args, "target_mb", None)
         pruned_bytes, pruned_count = bank.cache_manager.prune_to_budget(target_mb=target)
@@ -776,6 +805,12 @@ def main():
         p_search.add_argument("--category", default=None, help="Filter category (foley, ambience, music, sfx)")
         p_search.add_argument("--virtual", action="store_true", help="Include remote virtual assets in search")
         p_search.add_argument("--explain", action="store_true", help="Display match scores and explainable breakdown")
+
+        p_search_intel = subs.add_parser("search-intelligence", help="Phase 3 Hybrid Sonic Intelligence search (FTS5 + CLAP + AST + DSP)")
+        p_search_intel.add_argument("query", help="Natural language search intent (English / Hindi / Hinglish)")
+        p_search_intel.add_argument("--limit", default=5, type=int, help="Maximum matches")
+        p_search_intel.add_argument("--no-diversity", action="store_true", help="Disable acoustic diversity filtering")
+        p_search_intel.add_argument("--card", action="store_true", help="Print full AgentSoundCard v3.0 for top match")
 
         p_inspect = subs.add_parser("inspect", help="Display LLM Agent Sound Card for an asset")
         p_inspect.add_argument("asset_id", help="Asset ID or filename")

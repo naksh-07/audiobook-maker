@@ -1,0 +1,34 @@
+{
+  "status": "COMPLETED",
+  "total_assets": 100,
+  "successful": 100,
+  "failed": 0,
+  "success_rate_pct": 100.0,
+  "total_runtime_sec": 235.69,
+  "avg_latency_ms": 2348.0,
+  "median_latency_ms": 2276.2,
+  "embeddings_verified": 100,
+  "categories_breakdown": {
+    "AMB": 21,
+    "CHAPTER_BED": 42,
+    "DYNAMIC_STEM": 26,
+    "FOL": 11
+  },
+  "top_labels_sample": {
+    "Music": 68,
+    "Fire": 3,
+    "Siren": 2,
+    "White noise": 2,
+    "Sizzle": 2,
+    "Rain on surface": 2,
+    "Sound effect": 2,
+    "Thunderstorm": 1,
+    "Speech": 1,
+    "Pink noise": 1
+  },
+  "vram_metrics": {
+    "start_mb": 0.0,
+    "peak_mb": 929.27,
+    "end_mb": 8.75
+  }
+}

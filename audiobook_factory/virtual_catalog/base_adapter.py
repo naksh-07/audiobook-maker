@@ -99,7 +99,40 @@ class BaseSourceAdapter(abc.ABC):
 
             for it in items:
                 fname = it["filename"]
-                genome_json = json.dumps(it.get("sonic_genome", {})) if isinstance(it.get("sonic_genome"), dict) else str(it.get("sonic_genome", "{}"))
+                genome = it.get("sonic_genome", {})
+                if isinstance(genome, dict):
+                    genome["version"] = "2.1"
+                    if "source_metadata" not in genome:
+                        genome["source_metadata"] = {
+                            "provider_name": self.source_name,
+                            "raw_metadata": it.get("raw_metadata") or {},
+                            "normalized": {
+                                "title": it.get("title", ""),
+                                "description": it.get("description", ""),
+                                "tags": it.get("tags", "").split() if isinstance(it.get("tags"), str) else list(it.get("tags") or []),
+                                "category": it.get("category", "SFX"),
+                                "subcategory": it.get("subcategory", "General"),
+                                "creator": it.get("creator_attribution", ""),
+                                "collection": self.source_name,
+                                "mood": it.get("mood", "default"),
+                                "tempo_bpm": it.get("tempo_bpm"),
+                                "duration_sec": float(it.get("duration_sec") or 0.0),
+                                "source_url": it.get("source_url"),
+                                "license": it.get("license", self.default_license),
+                                "provider_id": fname,
+                            },
+                            "provenance": {
+                                "source_method": "source_metadata",
+                                "analyzer_id": f"{self.source_name.lower()}_adapter",
+                                "analyzer_version": "1.0.0",
+                                "ontology_version": "sonic_genome_v2.1",
+                                "confidence": None,
+                                "processing_version": "phase1_v1.0",
+                            },
+                        }
+                    genome_json = json.dumps(genome)
+                else:
+                    genome_json = str(genome)
 
                 if fname in existing_map:
                     rec_id, is_dl = existing_map[fname]

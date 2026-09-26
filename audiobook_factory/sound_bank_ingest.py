@@ -262,67 +262,50 @@ class UniversalSoundBankIngester:
             "bit_rate": 0,
         }
 
+    def _extract_format_info(self, filepath: Union[Path, str]) -> Dict[str, Any]:
+        """Backward-compatible alias for probe_format."""
+        return self.probe_format(filepath)
+
+    def _extract_loudness_and_spectral_metrics(self, filepath: Union[Path, str], sample_rate: int = 48000) -> Dict[str, float]:
+        """Backward-compatible alias for probe_audio_metrics."""
+        return self.probe_audio_metrics(filepath, sample_rate=sample_rate)
+
     def probe_audio_metrics(self, filepath: Union[Path, str], sample_rate: int = 48000) -> Dict[str, float]:
         """
-        Probe acoustic loudness and spectral features using ffmpeg ebur128 and astats filters.
+        Probe acoustic loudness and spectral features using DeterministicAudioAnalyzer.
         Extracts Integrated LUFS, Loudness Range (LU), True Peak (dBFS), RMS level (dB),
-        and dominant Spectral Centroid estimate (Hz).
+        and dominant Spectral Centroid (Hz).
         """
         p = Path(filepath).resolve()
-        metrics = {
-            "integrated_lufs": -70.0,
-            "true_peak_db": -70.0,
-            "loudness_range_lu": 0.0,
-            "rms_level_db": -70.0,
-            "spectral_centroid_hz": 0.0,
-        }
         if not p.exists() or p.stat().st_size == 0:
-            return metrics
+            return {
+                "integrated_lufs": -70.0,
+                "true_peak_db": -70.0,
+                "loudness_range_lu": 0.0,
+                "rms_level_db": -70.0,
+                "spectral_centroid_hz": 0.0,
+            }
 
-        cmd = [
-            self.ffmpeg,
-            "-y",
-            "-i", str(p),
-            "-af", "ebur128=peak=true,astats",
-            "-f", "null",
-            "-",
-        ]
         try:
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=20)
-            err = res.stderr
-
-            # 1. EBU R128 Integrated Loudness
-            i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", err)
-            if i_match:
-                metrics["integrated_lufs"] = float(i_match.group(1))
-
-            # 2. EBU R128 Loudness Range
-            lra_match = re.search(r"Loudness range:\s+LRA:\s+([-\d.]+)\s+LU", err)
-            if lra_match:
-                metrics["loudness_range_lu"] = float(lra_match.group(1))
-
-            # 3. EBU R128 True Peak
-            tp_match = re.search(r"True peak:\s+Peak:\s+([-\d.]+)\s+dBFS", err)
-            if tp_match:
-                metrics["true_peak_db"] = float(tp_match.group(1))
-
-            # 4. RMS Level from astats
-            rms_match = re.search(r"RMS level dB:\s+([-\d.]+)", err)
-            if rms_match:
-                metrics["rms_level_db"] = float(rms_match.group(1))
-
-            # 5. Spectral Centroid / Brightness from Zero Crossings Rate
-            zcr_match = re.search(r"Zero crossings rate:\s+([-\d.]+)", err)
-            if zcr_match:
-                zcr = float(zcr_match.group(1))
-                # Spectral centroid approximate via zero-crossing rate: ZCR * Nyquist Frequency
-                nyquist = sample_rate / 2.0
-                metrics["spectral_centroid_hz"] = round(zcr * nyquist, 1)
-
+            from audiobook_factory.deterministic_audio_analyzer import DeterministicAudioAnalyzer
+            analyzer = DeterministicAudioAnalyzer(ffprobe_bin=self.ffprobe, ffmpeg_bin=self.ffmpeg)
+            facts, _ = analyzer.analyze_file(p)
+            return {
+                "integrated_lufs": facts.loudness.integrated_lufs if facts.loudness.integrated_lufs is not None else -70.0,
+                "true_peak_db": facts.loudness.true_peak_dbtp if facts.loudness.true_peak_dbtp is not None else -70.0,
+                "loudness_range_lu": facts.loudness.loudness_range_lu if facts.loudness.loudness_range_lu is not None else 0.0,
+                "rms_level_db": facts.loudness.rms_level_db if facts.loudness.rms_level_db is not None else -70.0,
+                "spectral_centroid_hz": facts.spectral.spectral_centroid_hz if facts.spectral.spectral_centroid_hz is not None else 0.0,
+            }
         except Exception as e:
             logger.warning(f"  [!] Exception measuring audio metrics on {p.name}: {e}")
-
-        return metrics
+            return {
+                "integrated_lufs": -70.0,
+                "true_peak_db": -70.0,
+                "loudness_range_lu": 0.0,
+                "rms_level_db": -70.0,
+                "spectral_centroid_hz": 0.0,
+            }
 
     def classify_semantics(self, filepath: Union[Path, str]) -> Dict[str, str]:
         """
