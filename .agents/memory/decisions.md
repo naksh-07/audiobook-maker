@@ -716,4 +716,19 @@
   6. **Verification Battery:** Created dedicated test suite `tests/test_sound_design_cinematic_upgrade.py` (6 tests). Total sound design tests: 56/56 passing. Full repository test suite: 718/718 passed + 17 subtests (100% green, 0 regressions).
 - **Rationale:** Elevates the sound design subsystem to commercial Pottermore-grade realism, authentic segment synchronization, and bulletproof asset provenance without altering upstream orchestration or downstream DSP mixing boundaries.
 
-
+## ADR-037: Final Sound Design Quality Upgrade (Beat-Aware Music, 5-Tier Ambience, Cross-System Choreography & 20 Golden Benchmarks)
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The final Sound Design quality upgrade was required to elevate the existing subsystem to commercial audio drama standards (Pottermore-caliber) without rebuilding the architecture or touching Track 11 (Cinematic Mix), Track 12 (Mastering), or Track 13 (Gate QC).
+- **Decision:**
+  1. **Phase 1 (Contracts & Data Models):** Enriched `ActionCandidate` and `FoleyScoredCandidate` with `manner_of_action` and `intensity_modifier`. Created `CreatureSonicIdentity` and `MagicalSonicIdentity` data contracts. Upgraded `MusicCueSpec` with beat-aware lifecycle fields (`trigger_beat`, `trigger_segment_index`, `pre_roll_ms`, `entry_type`, `development_arc`, `peak_ms`, `release_type`, `narrative_rationale`). Created `QCViolationRecord` and added `violations: List[QCViolationRecord]` on `SoundDesignQCReport`.
+  2. **Phase 2 (Music Cue Intelligence — P0):** Eradicated mechanical `0.25 * duration` percentage timing and fake motif invention. Built dramatic-beat-aware placement with authentic entry/peak/release lifecycle and deliberate **NO MUSIC** decisions in restrained/intimate scenes.
+  3. **Phase 3 (Ambience Realism — P0):** Upgraded `AmbienceEngine` to 5-tier architecture (`BASE`, `MIDGROUND`, `FOREGROUND`, `DISTANT`, `MICRO_TEXTURE`), modulated by `DramaticNarrativePhase` (`CALM -> UNEASE -> TENSION -> THREAT -> EVENT -> AFTERMATH -> RECOVERY`) and maintaining persistent room tone across consecutive scenes.
+  4. **Phase 4 (Cross-System Choreography — P0):** Introduced 12 canonical `CrossSystemPolicy` interaction patterns (`creature_approach`, `magical_attack`, `major_reveal`, `authority_enters_crowd`, `major_impact`, `stealth_infiltration`, `combat_escalation`, `intimate_confession`, `sudden_interruption`, `aftermath_stillness`, `supernatural_presence`, `chase_pursuit`).
+  5. **Phase 5 (Scene Context Understanding — P1):** Extracted WHAT, WHO, WHERE, HOW (manner of action), WHY, emotion, and intensity. Modulated Foley scoring with manner-of-action acoustics (stealth = whisper-quiet + intimate proximity; forceful = prominent).
+  6. **Phase 6 (Creature & Magic Sonic Identities — P1):** Built `CreatureSonicIdentityRegistry` and `MagicalSonicIdentityRegistry` to maintain persistent timbres, vocal/respiratory/locomotive signatures, and spell family characteristics across scenes and chapters.
+  7. **Phase 7 (Asset Pipeline Integrity):** Ensured unresolved events cleanly set `asset_path=""` without placeholder contamination in blueprints, timelines, or legacy `CreativeManifest` adapters.
+  8. **Phase 8 (QC Hardening — P1):** Upgraded `SoundDesignQCAuditor` with structured `QCViolationRecord` tracking, deep dining vs weapon mismatch detection, banned placeholder guards, and inter-scene chapter continuity validation.
+  9. **Phase 9 (Golden Regression Extension — P2):** Expanded golden scenarios to 20 canonical benchmarks in `golden_benchmarks.py` (adding musicless grief, recurring character motif variations, recurring location transitions, reveal sequences, and complex ensemble spatial choreography). Added dedicated test suite `tests/test_sound_design_quality_upgrade.py`.
+  10. **Phase 10 (Verification):** All 70 sound design tests, 20 golden benchmarks, and 4 AST zero-hardcoding contract tests pass 100% green. Tracks 11-13 remain 100% untouched.
+- **Rationale:** Delivers world-class audio drama realism, dramatic coherence, and acoustic intelligence while rigorously preserving architectural boundaries and zero-hardcoding contracts.

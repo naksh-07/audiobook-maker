@@ -295,6 +295,12 @@ class SoundDesignDirector:
             foley_start = min(s_start + 80, max(start_ms, end_ms - 450))
 
             char_pos = self.spatial_geography.get_entity_position(scene_id, fol.subject)
+            fol_intensity = fol.intensity_modifier if getattr(fol, "intensity_modifier", "normal") != "normal" else "subtle_bed"
+            if getattr(fol, "manner_of_action", "") == "stealth":
+                fol_spatial = SpatialMetadata(azimuth_pan=char_pos.azimuth_pan, proximity="intimate")
+            else:
+                fol_spatial = char_pos
+
             f_desc = self.retriever.resolve_foley_asset(
                 action_verb=fol.action_verb,
                 exciter_material=fol.object_material,
@@ -310,13 +316,13 @@ class SoundDesignDirector:
                     category="FOLEY",
                     start_ms=foley_start,
                     duration_ms=450,
-                    relative_intensity="subtle_bed",
-                    priority="MEDIUM",
+                    relative_intensity=fol_intensity,
+                    priority="HIGH" if fol.manner_of_action in ("stealth", "forceful") else "MEDIUM",
                     asset_path=asset_p,
                     asset_name=f_desc.filename if f_desc else f"{fol.subject} {fol.action_verb}",
-                    spatial=char_pos,
+                    spatial=fol_spatial,
                     mix_intent=MixIntent(duck_under_dialogue=True),
-                    decision_reason=f"Accepted foley action: {fol.action_verb} (score: {fol.foley_score:.2f})",
+                    decision_reason=f"Accepted foley action: {fol.action_verb} [{getattr(fol, 'manner_of_action', 'normal')}] (score: {fol.foley_score:.2f})",
                     provenance_beat_id=fol.provenance_beat_id,
                     source_segment_index=fol.segment_index,
                     timing_rationale=fol.timing_rationale or f"Anchored to physical action '{fol.action_verb}' in segment {fol.segment_index}",

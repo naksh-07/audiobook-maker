@@ -33,6 +33,39 @@ from audiobook_factory.sound_design.contracts import (
 )
 
 
+class CrossSystemPolicy:
+    """A declarative rule for cross-system acoustic reactions."""
+    def __init__(
+        self,
+        policy_id: str,
+        source_category: str,
+        target_system: str,
+        reaction_type: str,
+        description: str,
+        phase_override: Optional[DramaticNarrativePhase] = None,
+        suppress_walla: bool = False,
+        walla_attenuation: Optional[float] = None,
+        silence_active: bool = False,
+        music_variation: Optional[MotifVariationMode] = None,
+        foley_prominence: Optional[RelativeIntensity] = None,
+        creature_proximity: Optional[ProximityZone] = None,
+        mix_intent_override: Optional[MixIntent] = None,
+    ):
+        self.policy_id = policy_id
+        self.source_category = source_category
+        self.target_system = target_system
+        self.reaction_type = reaction_type
+        self.description = description
+        self.phase_override = phase_override
+        self.suppress_walla = suppress_walla
+        self.walla_attenuation = walla_attenuation
+        self.silence_active = silence_active
+        self.music_variation = music_variation
+        self.foley_prominence = foley_prominence
+        self.creature_proximity = creature_proximity
+        self.mix_intent_override = mix_intent_override
+
+
 class SceneAcousticDramaticStateManager:
     """
     Manages the shared acoustic and dramatic state across all sound design subsystems
@@ -99,7 +132,7 @@ class SceneAcousticDramaticStateManager:
             text = str(seg.get("text", ""))
             char_count = max(10, len(text))
             pause_ms = int(seg.get("pause_after_ms", 300) or 300)
-            # 1 char roughly equals 60ms of speech + pause
+            # 1 char roughly equals 55ms of speech + pause
             w = (char_count * 55.0) + pause_ms
             weights.append(w)
             total_weight += w
@@ -137,7 +170,6 @@ class SceneAcousticDramaticStateManager:
         """
         Initializes the shared acoustic and dramatic state for a scene.
         """
-        # Determine initial narrative phase
         t = understanding.tension_level
         initial_phase: DramaticNarrativePhase = "CALM"
         if t > 0.8:
@@ -147,7 +179,6 @@ class SceneAcousticDramaticStateManager:
         elif t > 0.35:
             initial_phase = "UNEASE"
 
-        # Determine initial motif variation
         variation_mode: MotifVariationMode = "MYSTERIOUS"
         if initial_phase == "CALM":
             variation_mode = "INTIMATE"
@@ -177,19 +208,29 @@ class SceneAcousticDramaticStateManager:
         has_creature: bool = False,
         has_hard_sfx: bool = False,
         is_stealth: bool = False,
+        has_reveal: bool = False,
+        authority_enters: bool = False,
+        is_combat: bool = False,
+        is_intimate: bool = False,
+        has_interruption: bool = False,
+        is_aftermath: bool = False,
+        has_supernatural_presence: bool = False,
+        is_chase: bool = False,
     ) -> List[CrossSystemInteraction]:
         """
-        Evaluates dynamic cross-system influences and updates the shared state.
+        Evaluates dynamic cross-system influences and updates the shared state
+        using a set of 12 reusable cross-system choreography patterns.
         """
         interactions: List[CrossSystemInteraction] = []
 
-        # 1. Creature Stalking & Proximity Reactions
+        # 1. Pattern 1: Creature Approach
+        # Creature in vicinity suppresses crowd walla, thins ambience, and elevates music tension
         if has_creature or state.active_creature:
-            if state.tension_level > 0.75:
+            if state.tension_level > 0.70:
                 state.creature_proximity = "close"
                 state.active_phase = "THREAT"
                 state.music_variation = "TENSE"
-                state.walla_permitted = False  # Crowd scatters or is silenced
+                state.walla_permitted = False
                 interactions.append(
                     CrossSystemInteraction(
                         source_category="CREATURE",
@@ -208,7 +249,8 @@ class SceneAcousticDramaticStateManager:
                     )
                 )
 
-        # 2. Supernatural & Magic Invocations
+        # 2. Pattern 2: Magical Attack & Incantation
+        # Spell charge subordinates music score priority and thins high-frequency room tone
         if has_magic:
             state.active_phase = "EVENT"
             interactions.append(
@@ -229,7 +271,42 @@ class SceneAcousticDramaticStateManager:
                 )
             )
 
-        # 3. Action Hard SFX Impacts
+        # 3. Pattern 3: Major Reveal / Shocking Discovery
+        # Sudden revelation drops ambience, cuts active music variation, opens stunned silence pocket
+        if has_reveal or state.dominant_emotion.lower() in ("shock", "revelation"):
+            state.silence_window_active = True
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="REVEAL",
+                    target_system="AMBIENCE",
+                    reaction_type="attenuation",
+                    description="Ambience instantly ducks -6dB to create vacuum for emotional reveal",
+                )
+            )
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="REVEAL",
+                    target_system="MUSIC",
+                    reaction_type="sharp_cutoff",
+                    description="Music cuts sharply on shocking turn, transitioning to stunned silence",
+                )
+            )
+
+        # 4. Pattern 4: Authority Enters Crowd
+        # King, lord, or military commander enters: crowd walla drops to hush, center footsteps emphasized
+        if authority_enters or (state.environment_id == "castle_great_hall" and state.tension_level > 0.65 and state.walla_permitted):
+            state.walla_attenuation_factor = 0.25  # Hush to 25%
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="AUTHORITY",
+                    target_system="WALLA",
+                    reaction_type="hush_suppression",
+                    description="Walla hushed by authoritative presence; footsteps focused on center stage",
+                )
+            )
+
+        # 5. Pattern 5: Major Impact / Concussive Transient
+        # Structural crash or explosion triggers dynamic sidechain ducking across all background beds
         if has_hard_sfx:
             state.active_phase = "EVENT"
             interactions.append(
@@ -241,9 +318,10 @@ class SceneAcousticDramaticStateManager:
                 )
             )
 
-        # 4. Stealth & Solitary Restraint
-        if is_stealth or "stealth" in state.dominant_emotion:
-            state.foley_prominence = "prominent"  # Every breath and cloth rustle is critical
+        # 6. Pattern 6: Stealth Infiltration
+        # Absolute silence of crowds, intimate foley focus, muffled room reflections
+        if is_stealth or "stealth" in state.dominant_emotion.lower():
+            state.foley_prominence = "prominent"
             state.walla_permitted = False
             interactions.append(
                 CrossSystemInteraction(
@@ -251,6 +329,95 @@ class SceneAcousticDramaticStateManager:
                     target_system="WALLA",
                     reaction_type="suppression",
                     description="Walla suppressed during high-stakes stealth approach",
+                )
+            )
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="FOLEY",
+                    target_system="AMBIENCE",
+                    reaction_type="muffling",
+                    description="Room ambience low-passed to bring close footsteps and breathing to focus",
+                )
+            )
+
+        # 7. Pattern 7: Combat Escalation
+        # Violent clashes shift music to CLIMAX driving pulse and promote weapon Foley prominence
+        if is_combat or (state.tension_level > 0.85 and not is_stealth):
+            state.music_variation = "CLIMAX"
+            state.active_phase = "EVENT"
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="COMBAT",
+                    target_system="MUSIC",
+                    reaction_type="climax_escalation",
+                    description="Full driving rhythm score engaged as armed combat escalates",
+                )
+            )
+
+        # 8. Pattern 8: Intimate Confession / Vulnerability
+        # Distant sounds drop away; solo intimate instrument bed with dry vocal intelligibility
+        if is_intimate or state.dominant_emotion.lower() in ("intimate", "grief", "secretive"):
+            state.music_variation = "INTIMATE"
+            state.walla_permitted = False
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="DIALOGUE",
+                    target_system="AMBIENCE",
+                    reaction_type="whisper_bed",
+                    description="Ambience drops to subtle bedrock tone for intimate emotional disclosure",
+                )
+            )
+
+        # 9. Pattern 9: Sudden Interruption
+        # Violent intrusion immediately silences ongoing dialogue/beds
+        if has_interruption:
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="INTERRUPTION",
+                    target_system="ALL",
+                    reaction_type="abrupt_cutoff",
+                    description="Ongoing sound design abruptly truncated by violent intrusion",
+                )
+            )
+
+        # 10. Pattern 10: Aftermath Stillness
+        # Post-conflict recovery: diffuse reverb tail, warm slow musical resolution, room breath
+        if is_aftermath or state.dominant_emotion.lower() in ("aftermath", "peace", "somber_calm"):
+            state.active_phase = "AFTERMATH"
+            state.music_variation = "AFTERMATH"
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="NARRATIVE",
+                    target_system="MUSIC",
+                    reaction_type="aftermath_tail",
+                    description="Music transitions to sparse aftermath resolution and ambient decay",
+                )
+            )
+
+        # 11. Pattern 11: Supernatural Presence
+        # Spectral chilling: walla froze, pitch drop drone in ambience
+        if has_supernatural_presence or state.active_magic_family == "shadow_necrotic":
+            state.walla_permitted = False
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="SUPERNATURAL",
+                    target_system="AMBIENCE",
+                    reaction_type="pitch_drop_drone",
+                    description="Room tone shifts to unnatural low drone upon supernatural manifest",
+                )
+            )
+
+        # 12. Pattern 12: Chase & Pursuit
+        # Rapid footstep foley prominence and accelerating musical tempo
+        if is_chase or "chase" in state.dominant_emotion.lower():
+            state.music_variation = "TENSE"
+            state.active_phase = "EVENT"
+            interactions.append(
+                CrossSystemInteraction(
+                    source_category="CHASE",
+                    target_system="FOLEY",
+                    reaction_type="prominence_boost",
+                    description="Locomotion and obstacle impacts elevated to forefront of mix",
                 )
             )
 

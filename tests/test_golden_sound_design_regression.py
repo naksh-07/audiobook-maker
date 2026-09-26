@@ -81,3 +81,32 @@ def test_golden_benchmark_scenario(scenario):
     if checks.get("silence_present"):
         silence_events = [e for e in timeline.events if e.category == "SILENCE"]
         assert len(silence_events) >= 1, f"Expected intentional silence in {scene_id}"
+
+    if checks.get("no_music"):
+        music_events = [e for e in timeline.events if e.category == "MUSIC"]
+        assert len(music_events) == 0, f"Expected no music in {scene_id}, but found {len(music_events)}"
+
+    if checks.get("music_present"):
+        music_events = [e for e in timeline.events if e.category == "MUSIC"]
+        assert len(music_events) >= 1, f"Expected music cue in {scene_id}"
+
+    if checks.get("beat_aware_timing"):
+        music_events = [e for e in timeline.events if e.category == "MUSIC"]
+        assert any(e.timing_rationale for e in music_events), f"Expected beat-aware timing rationale in {scene_id}"
+
+    if checks.get("ambience_layers_min"):
+        amb_events = [e for e in timeline.events if e.category == "AMBIENCE"]
+        assert len(amb_events) >= checks["ambience_layers_min"], f"Expected >= {checks['ambience_layers_min']} ambience layers in {scene_id}, got {len(amb_events)}"
+
+    if checks.get("foley_present"):
+        foley_events = [e for e in timeline.events if e.category == "FOLEY"]
+        assert len(foley_events) >= 1, f"Expected foley events in {scene_id}"
+
+    if checks.get("spatial_diversity"):
+        pans = {e.spatial.azimuth_pan for e in timeline.events if e.spatial}
+        assert len(pans) >= 2, f"Expected spatial panning diversity, got {pans}"
+
+    if checks.get("walla_attenuated_or_suppressed"):
+        walla_events = [e for e in timeline.events if e.category == "WALLA"]
+        for w in walla_events:
+            assert w.mix_intent.duck_under_dialogue or w.relative_intensity in ("whisper_quiet", "subtle_bed"), f"Walla not properly subordinated or attenuated in {scene_id}"

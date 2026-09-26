@@ -221,14 +221,53 @@ class SceneAudioAnalyzer:
                         elif any(w in text for w in ("parchment", "paper", "कागज")):
                             mat = "paper"
 
+                        # Determine surface context
+                        surf = None
+                        for s_candidate in ("flagstone", "cobblestone", "stone", "wood", "gravel", "mud", "grass", "snow", "carpet", "rug", "tile", "marble"):
+                            if s_candidate in text:
+                                surf = s_candidate
+                                break
+                        if not surf and resolved_env.default_surfaces:
+                            surf = resolved_env.default_surfaces[0]
+
+                        # Infer HOW (manner of action)
+                        manner: Literal["stealth", "forceful", "hesitant", "casual", "urgent", "normal"] = "normal"
+                        if any(w in text for w in ("crept", "creep", "creeping", "tiptoe", "tiptoed", "stalked", "stalking", "stealth", "stealthy", "quietly", "silently", "softly", "cautiously")):
+                            manner = "stealth"
+                        elif any(w in text for w in ("thundered", "thundering", "stomped", "stomping", "slammed", "marched", "marching", "crashed", "violently", "heavily", "forcefully", "pounded")):
+                            manner = "forceful"
+                        elif any(w in text for w in ("hesitated", "hesitant", "trembled", "trembling", "fumbled", "fumbling", "faltered", "slowly", "wary")):
+                            manner = "hesitant"
+                        elif any(w in text for w in ("raced", "ran", "sprinted", "hurried", "bolted", "rushed", "quickly", "hastily")):
+                            manner = "urgent"
+
+                        # Map manner to acoustic intensity modifier
+                        intensity_mod: RelativeIntensity = "normal"
+                        if manner == "stealth":
+                            intensity_mod = "whisper_quiet"
+                        elif manner in ("forceful", "urgent"):
+                            intensity_mod = "prominent"
+                        elif manner == "hesitant":
+                            intensity_mod = "subtle_bed"
+
+                        # Extract WHY / dramatic purpose
+                        blocking = seg.get("blocking_directive", "")
+                        dramatic_purpose = blocking or f"{manner.title()} execution of {canon_verb} on {mat}"
+
                         candidate = ActionCandidate(
                             segment_index=s_idx,
                             subject=speaker,
                             action_verb=canon_verb,
                             object_material=mat,
+                            surface_material=surf,
                             anchor_word=tok,
-                            narrative_weight=0.7 if seg.get("type") == "action" else 0.5,
+                            narrative_weight=0.8 if manner in ("stealth", "forceful") else (0.7 if seg.get("type") == "action" else 0.5),
                             is_explicit_blocking=bool(seg.get("blocking_directive")),
+                            manner_of_action=manner,
+                            intensity_modifier=intensity_mod,
+                            dramatic_purpose=dramatic_purpose,
+                            emotional_state=str(seg.get("emotion") or dom_emotion),
+                            location_context=resolved_env.env_id,
                         )
                         action_candidates.append(candidate)
                         break

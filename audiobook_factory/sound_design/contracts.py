@@ -140,6 +140,15 @@ class ActionCandidate(BaseModel):
     anchor_word: str = Field(default="")
     narrative_weight: float = Field(default=0.5, ge=0.0, le=1.0)
     is_explicit_blocking: bool = Field(default=False)
+    manner_of_action: Literal["stealth", "forceful", "hesitant", "casual", "urgent", "normal"] = Field(
+        default="normal", description="Manner or style of physical execution"
+    )
+    intensity_modifier: RelativeIntensity = Field(
+        default="normal", description="Acoustic intensity: restrained whisper vs prominent heavy"
+    )
+    dramatic_purpose: str = Field(default="", description="Narrative intention or dramatic blocking purpose")
+    emotional_state: str = Field(default="neutral", description="Actor emotional state during physical movement")
+    location_context: Optional[str] = Field(default=None, description="Environmental or ground context")
 
 
 class SceneAudioUnderstandingResult(BaseModel):
@@ -338,6 +347,8 @@ class FoleyScoredCandidate(BaseModel):
     timing_rationale: str = Field(default="")
     dramatic_purpose: str = Field(default="")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    manner_of_action: Optional[str] = Field(default="normal", description="Execution style: stealth, forceful, hesitant, etc.")
+    intensity_modifier: RelativeIntensity = Field(default="normal", description="Acoustic intensity modulation")
 
     def calculate_score(self) -> float:
         """Computes composite Foley score."""
@@ -497,6 +508,41 @@ class CreatureSoundSpec(BaseModel):
     provenance_beat_id: Optional[str] = Field(default=None)
 
 
+class CreatureSonicIdentity(BaseModel):
+    """
+    Persistent acoustic signature for a recurring creature entity.
+    Maintains recognizable acoustic character across scenes and chapters.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    creature_type: str = Field(...)
+    display_name: str = Field(...)
+    vocal_timbre: str = Field(default="guttural_resonant", description="Acoustic description of vocal timbre")
+    breathing_cadence: str = Field(default="labored_wheeze", description="Respiration texture and pace")
+    locomotion_weight: str = Field(default="heavy_quadruped", description="Footstep or locomotion physics")
+    body_texture: str = Field(default="chitin_clicking", description="Surface texture: fur, scales, chitin, wet_flesh")
+    preferred_reverb: str = Field(default="hall", description="Acoustic space signature")
+    default_proximity: ProximityZone = Field(default="mid_distance")
+    signature_motifs: List[str] = Field(default_factory=list)
+
+
+class MagicalSonicIdentity(BaseModel):
+    """
+    Persistent sonic signature for a recurring spell, rune, or magical artifact.
+    Preserves supernatural identity across multiple invocations.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    spell_or_artifact_name: str = Field(...)
+    family: str = Field(default="generic_arcane", description="Spell school or aesthetic lineage")
+    charge_timbre: str = Field(default="crystalline_frequency_rise", description="Acoustic character of the charge hum")
+    release_timbre: str = Field(default="concussive_burst", description="Acoustic character of spell release")
+    impact_timbre: str = Field(default="resonant_energy_dispersion", description="Acoustic character of impact/barrier")
+    harmonic_root: Optional[str] = Field(default=None, description="Tonal/musical anchor note or pitch")
+    default_power_level: Literal["subtle_minor", "standard", "high_potency", "cataclysmic"] = Field(default="standard")
+    associated_color_tone: Optional[str] = Field(default=None)
+
+
 # -----------------------------------------------------------------------------
 # 13, 14, 15 — Music Motif System, Variation & Cue Director
 # -----------------------------------------------------------------------------
@@ -528,6 +574,14 @@ class MusicCueSpec(BaseModel):
     track_id: Union[int, str] = Field(default=0)
     dramatic_justification: str = Field(default="")
     mix_intent: MixIntent = Field(default_factory=lambda: MixIntent(duck_under_dialogue=True, carve_vocal_presence=True))
+    trigger_beat: Optional[str] = Field(default=None, description="Narrative beat trigger (revelation, discovery, turn, climax)")
+    trigger_segment_index: Optional[int] = Field(default=None, description="Screenplay segment anchoring the cue")
+    pre_roll_ms: int = Field(default=500, ge=0, description="Lead time before narrative peak or dialogue delivery")
+    entry_type: Literal["fade_in", "sudden_hit", "pre_roll_swell", "subtle_drift"] = Field(default="fade_in")
+    development_arc: Literal["steady_bed", "tension_riser", "emotional_swell", "driving_rhythm", "subdued_tail"] = Field(default="steady_bed")
+    peak_ms: Optional[int] = Field(default=None, description="Timestamp of cue musical or dramatic peak")
+    release_type: Literal["fade_out", "sharp_cutoff", "reverb_spill", "ringout"] = Field(default="fade_out")
+    narrative_rationale: str = Field(default="", description="Narrative justification for music presence")
 
 
 # -----------------------------------------------------------------------------
@@ -673,6 +727,24 @@ class SoundTimeline(BaseModel):
         ]
 
 
+class QCViolationRecord(BaseModel):
+    """
+    Forensic record of a sound design quality rule violation.
+    Provides complete inspectability: scene, event, rule, severity, and exact contrast
+    between expected and actual behavior.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    scene_id: str = Field(...)
+    event_id: Optional[str] = Field(default=None)
+    category: str = Field(..., description="Affected category: FOLEY, AMBIENCE, WALLA, MUSIC, SFX, SPATIAL, etc.")
+    rule_id: str = Field(..., description="QC rule identifier (e.g. TABLEWARE_COLLISION, NO_FAKE_PATHS, BOUNDS_OVERFLOW)")
+    severity: Literal["ERROR", "WARNING"] = Field(default="ERROR")
+    reason: str = Field(..., description="Human-readable root cause explanation")
+    expected_behavior: str = Field(..., description="What the cinematic audio standard expected")
+    actual_behavior: str = Field(..., description="What was actually found on the timeline or blueprint")
+
+
 class SoundDesignQCReport(BaseModel):
     """
     Independent Multi-Signal Sound Design Quality Control Report.
@@ -696,4 +768,5 @@ class SoundDesignQCReport(BaseModel):
     asset_provenance_verified: bool = Field(default=True)
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
+    violations: List[QCViolationRecord] = Field(default_factory=list)
     telemetry: Dict[str, Any] = Field(default_factory=dict)

@@ -62,13 +62,111 @@ MAGIC_KEYWORD_PATTERNS = [
 from audiobook_factory.sound_design.asset_retriever import get_asset_retriever
 
 
+class MagicalSonicIdentityRegistry:
+    """
+    Roster registry maintaining persistent acoustic identities for recurring spells and artifacts.
+    Preserves supernatural sonic continuity across multiple scenes.
+    """
+    def __init__(self):
+        self._identities: Dict[str, MagicalSonicIdentity] = {}
+        self._init_standard_identities()
+
+    def _init_standard_identities(self):
+        from audiobook_factory.sound_design.contracts import MagicalSonicIdentity
+        standard = [
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Aard",
+                family="kinetic_telekinetic",
+                charge_timbre="low_frequency_sub_vacuum",
+                release_timbre="concussive_kinetic_blast",
+                impact_timbre="shockwave_air_displacement",
+                harmonic_root="D1",
+                default_power_level="standard",
+            ),
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Igni",
+                family="elemental_fire",
+                charge_timbre="spark_ignite_hiss",
+                release_timbre="flame_funnel_roar",
+                impact_timbre="sizzling_combustion",
+                harmonic_root="G2",
+                default_power_level="standard",
+            ),
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Quen",
+                family="shield_barrier",
+                charge_timbre="harmonic_chime_envelope",
+                release_timbre="crystalline_barrier_hum",
+                impact_timbre="deflection_resonance_clack",
+                harmonic_root="A3",
+                default_power_level="standard",
+            ),
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Axii",
+                family="enchantment_mind",
+                charge_timbre="hypnotic_phase_wobble",
+                release_timbre="gentle_harmonic_chime",
+                impact_timbre="calming_reverb_bloom",
+                harmonic_root="E4",
+                default_power_level="subtle_minor",
+            ),
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Yrden",
+                family="runic_barrier",
+                charge_timbre="runic_etching_sizzle",
+                release_timbre="ground_circle_electrical_hum",
+                impact_timbre="kinetic_snare_snap",
+                harmonic_root="C2",
+                default_power_level="standard",
+            ),
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Lumos",
+                family="celestial_illumination",
+                charge_timbre="soft_celestial_tingle",
+                release_timbre="warm_lantern_glow_ignite",
+                impact_timbre="ambient_light_radiance",
+                harmonic_root="F4",
+                default_power_level="subtle_minor",
+            ),
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Expelliarmus",
+                family="kinetic_disarm",
+                charge_timbre="rapid_whistle_intake",
+                release_timbre="scarlet_jet_crack",
+                impact_timbre="weapon_clatter_disarm",
+                harmonic_root="B3",
+                default_power_level="standard",
+            ),
+            MagicalSonicIdentity(
+                spell_or_artifact_name="Avada Kedavra",
+                family="shadow_necrotic_lethal",
+                charge_timbre="rushing_green_death_roar",
+                release_timbre="blinding_green_thunderclap",
+                impact_timbre="lifeless_thud_stillness",
+                harmonic_root="F#1",
+                default_power_level="cataclysmic",
+            ),
+        ]
+        for s in standard:
+            self._identities[s.spell_or_artifact_name.lower().strip()] = s
+
+    def register_identity(self, identity: MagicalSonicIdentity) -> None:
+        self._identities[identity.spell_or_artifact_name.lower().strip()] = identity
+
+    def get_identity(self, spell_name: str) -> Optional[MagicalSonicIdentity]:
+        if not spell_name:
+            return None
+        return self._identities.get(spell_name.lower().strip())
+
+
 class MagicalSoundEngine:
     """
     Supernatural and Magical Sound Language Engine.
     """
 
-    def __init__(self):
+    def __init__(self, identity_registry: Optional[MagicalSonicIdentityRegistry] = None):
         self._custom_spells: Dict[str, Dict[str, Any]] = dict(CANONICAL_SPELL_FAMILIES)
+        self.identity_registry = identity_registry or get_magical_identity_registry()
 
     def register_canonical_spell(self, name: str, family: str, default_stage: str = "release_burst") -> None:
         """Register or extend canonical spell definitions."""
@@ -84,7 +182,7 @@ class MagicalSoundEngine:
     ) -> List[MagicalSoundSpec]:
         """
         Scans screenplay segments for supernatural occurrences, spell names, or magical keywords.
-        Anchors magic events to actual narrative moments.
+        Anchors magic events to actual narrative moments with persistent identity.
         """
         events: List[MagicalSoundSpec] = []
         retriever = get_asset_retriever()
@@ -109,8 +207,11 @@ class MagicalSoundEngine:
             if detected_spell and spell_info:
                 stage = spell_info["default_stage"]
                 family = spell_info["family"]
+                identity = self.identity_registry.get_identity(detected_spell)
 
-                power: Literal["subtle_minor", "standard", "high_potency", "cataclysmic"] = "standard"
+                power: Literal["subtle_minor", "standard", "high_potency", "cataclysmic"] = (
+                    identity.default_power_level if identity else "standard"
+                )
                 if tension_level > 0.85 or "unforgivable" in text_lower or "cataclysm" in text_lower:
                     power = "high_potency"
                 elif tension_level < 0.35:
@@ -227,6 +328,14 @@ class MagicalSoundEngine:
 
 
 _GLOBAL_MAGIC_ENGINE: Optional[MagicalSoundEngine] = None
+_GLOBAL_MAGICAL_REGISTRY: Optional[MagicalSonicIdentityRegistry] = None
+
+def get_magical_identity_registry() -> MagicalSonicIdentityRegistry:
+    """Returns singleton instance of MagicalSonicIdentityRegistry."""
+    global _GLOBAL_MAGICAL_REGISTRY
+    if _GLOBAL_MAGICAL_REGISTRY is None:
+        _GLOBAL_MAGICAL_REGISTRY = MagicalSonicIdentityRegistry()
+    return _GLOBAL_MAGICAL_REGISTRY
 
 def get_magical_sound_engine() -> MagicalSoundEngine:
     """Returns singleton instance of MagicalSoundEngine."""

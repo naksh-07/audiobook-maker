@@ -114,6 +114,16 @@ class FoleyEngine:
         # Dramatic tension amplifies physical visibility
         adj_tension = max(0.0, min(1.0, tension_level))
 
+        # Modulate scoring by action manner
+        if action.manner_of_action == "stealth":
+            narrative_imp = max(narrative_imp, 0.80)
+            physical_vis = 0.35
+            timing_nec = max(timing_nec, 0.85)
+        elif action.manner_of_action in ("forceful", "urgent"):
+            narrative_imp = max(narrative_imp, 0.85)
+            physical_vis = 0.95
+            timing_nec = max(timing_nec, 0.80)
+
         candidate = FoleyScoredCandidate(
             candidate_id=f"foley_{action.segment_index}_{verb_norm}",
             segment_index=action.segment_index,
@@ -129,8 +139,10 @@ class FoleyEngine:
             timing_necessity=timing_nec,
             provenance_beat_id=beat_id,
             timing_rationale=f"Anchored to physical action '{action.action_verb}' in segment {action.segment_index}",
-            dramatic_purpose=f"Physical Foley reaction ({action.action_verb} on {action.object_material})",
+            dramatic_purpose=action.dramatic_purpose or f"Physical Foley reaction ({action.action_verb} on {action.object_material})",
             confidence=0.90 if action.is_explicit_blocking else 0.75,
+            manner_of_action=action.manner_of_action,
+            intensity_modifier=action.intensity_modifier,
         )
 
         score = candidate.calculate_score()

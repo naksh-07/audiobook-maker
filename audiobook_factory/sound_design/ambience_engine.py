@@ -71,90 +71,147 @@ class AmbienceEngine:
             and previous_scene_id == prev_state.last_scene_id
         )
 
+        # Determine narrative phase from tension and mood
+        phase: str = "CALM"
+        if tension_level > 0.85 or mood.lower() in ("terror", "cataclysm", "battle"):
+            phase = "EVENT" if tension_level > 0.9 else "THREAT"
+        elif tension_level > 0.65 or mood.lower() in ("tense", "dread", "suspense"):
+            phase = "TENSION"
+        elif tension_level > 0.40 or mood.lower() in ("unease", "anxious", "mysterious"):
+            phase = "UNEASE"
+        elif mood.lower() in ("aftermath", "somber_calm", "grief"):
+            phase = "AFTERMATH"
+        elif mood.lower() in ("recovery", "relief"):
+            phase = "RECOVERY"
+
         layers: List[AmbienceLayerSpec] = []
 
         # 1. BASE Tier: Continuous Bedrock Room Tone
         base_asset = None
+        base_desc = None
         if is_continuous and prev_state and prev_state.active_layers:
-            # Preserve existing base layer asset for seamless cross-scene continuity
             base_layers = [l for l in prev_state.active_layers if l.layer_tier == "BASE"]
             if base_layers:
                 base_asset = base_layers[0].asset_path
 
         if not base_asset:
-            desc = self.retriever.resolve_ambience_asset(env_profile.env_id, tier="BASE")
-            base_asset = desc.filepath if desc else (env_profile.typical_ambience_layers[0] if env_profile.typical_ambience_layers else "room_tone")
+            base_desc = self.retriever.resolve_ambience_asset(env_profile.env_id, tier="BASE")
+            if not base_desc and env_profile.typical_ambience_layers:
+                base_desc = self.retriever.resolve_ambience_asset(env_profile.typical_ambience_layers[0], tier="BASE")
+            base_asset = base_desc.filepath if base_desc else ""
 
+        # Modulate BASE by phase
+        base_intensity: RelativeIntensity = "whisper_quiet" if phase in ("THREAT", "EVENT") else "subtle_bed"
         layers.append(
             AmbienceLayerSpec(
                 layer_tier="BASE",
-                asset_name=Path(base_asset).name,
+                asset_id=base_desc.asset_id if base_desc else env_profile.env_id,
+                asset_name=Path(base_asset).name if base_asset else env_profile.display_name,
                 asset_path=base_asset,
-                relative_intensity="whisper_quiet" if tension_level > 0.8 else "subtle_bed",
+                relative_intensity=base_intensity,
                 loop=True,
-                stereo_width=1.35,
-                transition_behavior="crossfade" if not is_continuous else "crossfade",
+                stereo_width=1.35 if phase != "THREAT" else 1.0,
+                transition_behavior="crossfade",
                 mix_intent=MixIntent(duck_under_dialogue=False, swell_in_dialogue_pauses=True),
             )
         )
 
-        # 2. MIDGROUND Tier: Weather / Active Environmental Elements
-        # Modulated by tension level
-        mid_asset = None
+        # 2. MIDGROUND Tier: Weather / Active Environmental Elements (Wind, Hearth, Rain)
+        mid_desc = None
+        mid_target = None
         if len(env_profile.typical_ambience_layers) > 1:
-            mid_asset = env_profile.typical_ambience_layers[1]
+            mid_target = env_profile.typical_ambience_layers[1]
         elif env_profile.typical_weather:
-            desc = self.retriever.resolve_ambience_asset(env_profile.typical_weather, tier="MIDGROUND")
-            mid_asset = desc.filepath if desc else None
+            mid_target = env_profile.typical_weather
 
-        if mid_asset:
-            layers.append(
-                AmbienceLayerSpec(
-                    layer_tier="MIDGROUND",
-                    asset_name=Path(mid_asset).name,
-                    asset_path=mid_asset,
-                    relative_intensity="prominent" if tension_level > 0.7 else "subtle_bed",
-                    loop=True,
-                    stereo_width=1.40,
-                    mix_intent=MixIntent(duck_under_dialogue=True, swell_in_dialogue_pauses=True),
+        if mid_target:
+            mid_desc = self.retriever.resolve_ambience_asset(mid_target, tier="MIDGROUND")
+            mid_path = mid_desc.filepath if mid_desc else ""
+            if mid_path:
+                mid_intensity: RelativeIntensity = (
+                    "prominent" if phase in ("TENSION", "EVENT") else ("whisper_quiet" if phase == "THREAT" else "subtle_bed")
                 )
-            )
+                layers.append(
+                    AmbienceLayerSpec(
+                        layer_tier="MIDGROUND",
+                        asset_id=mid_desc.asset_id if mid_desc else mid_target,
+                        asset_name=Path(mid_path).name,
+                        asset_path=mid_path,
+                        relative_intensity=mid_intensity,
+                        loop=True,
+                        stereo_width=1.40,
+                        mix_intent=MixIntent(duck_under_dialogue=True, swell_in_dialogue_pauses=True),
+                    )
+                )
 
-        # 3. FOREGROUND Tier: Stochastic Spot Transients
-        # Frequency and interval adjust dynamically with tension
-        stoch_interval = 20.0 if tension_level > 0.6 else 45.0
-        stoch_asset = "tiny_floor-creak-01.wav"
-        if env_profile.category == "outdoor_nature":
-            stoch_asset = "twig_snap.wav"
-        elif "crypt" in env_profile.env_id:
-            stoch_asset = "tiny_water-drop-01.wav"
+        # 3. FOREGROUND Tier: Stochastic Spot Transients (Creaks, Drops, Rustles)
+        # Suppressed during THREAT (unnatural silence) and EVENT (action takeover)
+        if phase not in ("THREAT", "EVENT"):
+            stoch_interval = 20.0 if phase == "TENSION" else (30.0 if phase == "UNEASE" else 45.0)
+            fore_query = "wood_creak"
+            if env_profile.category == "outdoor_nature":
+                fore_query = "twig_snap"
+            elif "crypt" in env_profile.env_id or "cave" in env_profile.env_id:
+                fore_query = "water_drip"
+            elif env_profile.category == "settlement":
+                fore_query = "candle_pop"
 
-        layers.append(
-            AmbienceLayerSpec(
-                layer_tier="FOREGROUND",
-                asset_name=Path(stoch_asset).name,
-                asset_path=stoch_asset,
-                relative_intensity="subtle_bed",
-                loop=False,
-                stochastic_interval_sec=stoch_interval,
-                mix_intent=MixIntent(duck_under_dialogue=True),
-            )
-        )
+            fore_desc = self.retriever.resolve_ambience_asset(fore_query, tier="FOREGROUND")
+            fore_path = fore_desc.filepath if fore_desc else ""
+            if fore_path:
+                layers.append(
+                    AmbienceLayerSpec(
+                        layer_tier="FOREGROUND",
+                        asset_id=fore_desc.asset_id if fore_desc else fore_query,
+                        asset_name=Path(fore_path).name,
+                        asset_path=fore_path,
+                        relative_intensity="subtle_bed",
+                        loop=False,
+                        stochastic_interval_sec=stoch_interval,
+                        mix_intent=MixIntent(duck_under_dialogue=True),
+                    )
+                )
 
-        # 4. DISTANT Tier (Optional: only if distant sounds are defined for this profile)
-        if env_profile.distant_sounds and tension_level >= 0.4:
+        # 4. DISTANT Tier: Horizon Acoustic Elements (Far thunder, bells, carriage, wolf howl)
+        if env_profile.distant_sounds and phase in ("UNEASE", "TENSION", "CALM"):
             dist_slug = env_profile.distant_sounds[0]
-            layers.append(
-                AmbienceLayerSpec(
-                    layer_tier="DISTANT",
-                    asset_name=dist_slug,
-                    asset_path=dist_slug,
-                    relative_intensity="whisper_quiet",
-                    loop=False,
-                    spatial=SpatialMetadata(azimuth_pan=-0.6, proximity="distant"),
-                    mix_intent=MixIntent(duck_under_dialogue=True),
+            dist_desc = self.retriever.resolve_ambience_asset(dist_slug, tier="DISTANT")
+            dist_path = dist_desc.filepath if dist_desc else ""
+            if dist_path:
+                layers.append(
+                    AmbienceLayerSpec(
+                        layer_tier="DISTANT",
+                        asset_id=dist_desc.asset_id if dist_desc else dist_slug,
+                        asset_name=Path(dist_path).name,
+                        asset_path=dist_path,
+                        relative_intensity="whisper_quiet",
+                        loop=False,
+                        spatial=SpatialMetadata(azimuth_pan=-0.6, proximity="distant"),
+                        mix_intent=MixIntent(duck_under_dialogue=True),
+                    )
                 )
-            )
+
+        # 5. MICRO_TEXTURE Tier: Intimate Room Air, Warmth, or Settling Dust
+        # Active in CALM, AFTERMATH, and RECOVERY; suppressed during intense conflict
+        if phase in ("CALM", "AFTERMATH", "RECOVERY", "UNEASE"):
+            micro_desc = self.retriever.resolve_ambience_asset(f"{env_profile.env_id}_micro", tier="MICRO_TEXTURE")
+            if not micro_desc:
+                micro_desc = self.retriever.resolve_ambience_asset("room_tone", tier="MICRO_TEXTURE")
+            micro_path = micro_desc.filepath if micro_desc else ""
+            if micro_path and micro_path != base_asset:
+                layers.append(
+                    AmbienceLayerSpec(
+                        layer_tier="MICRO_TEXTURE",
+                        asset_id=micro_desc.asset_id if micro_desc else "micro_tone",
+                        asset_name=Path(micro_path).name,
+                        asset_path=micro_path,
+                        relative_intensity="whisper_quiet",
+                        loop=True,
+                        stereo_width=1.10,
+                        spatial=SpatialMetadata(azimuth_pan=0.0, proximity="intimate"),
+                        mix_intent=MixIntent(duck_under_dialogue=False, swell_in_dialogue_pauses=False),
+                    )
+                )
 
         # Update persistent chapter evolution state
         self._state_tracker[chapter_id] = AmbienceEvolutionState(

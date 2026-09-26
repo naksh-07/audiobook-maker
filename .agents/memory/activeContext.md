@@ -1,16 +1,18 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: Commercial Cinematic Sound Design Upgrade (Hardened & Certified)
+# Active Context: Studio Sound Design Quality Upgrade (Certified)
 
-## Live Sprint State: 5 Priorities Implemented (718/718 Tests Passing, 100% Green)
-- **Status**: Completed production-quality upgrade across all 5 priorities.
-- **Verification**: 718/718 tests passing + 17 subtests (100% green in 308.88s).
-- **Core Capabilities Upgraded**:
-  - **Priority 1 (Precise Narrative Timing)**: Eradicated 35% creature / 40% magic mechanical shortcuts; all events anchored to actual screenplay segments & beats (`source_segment_index`, `timing_rationale`, `dramatic_purpose`, `confidence`).
-  - **Priority 2 (Real Asset Resolution)**: Eradicated fake paths (`foley_*.wav`, `creature_*.wav`); enforced semantic SoundBank resolution with SHA-256 provenance or explicit `is_resolved=False`. Added music & walla resolvers.
-  - **Priority 3 (Cross-System Interaction)**: Implemented `SceneAcousticDramaticStateManager` (`scene_state.py`) mediating walla suppression, ambient thinning, and music subordination.
-  - **Priority 4 (Narrative Evolution)**: 7-phase dramatic transitions (`CALM -> UNEASE -> TENSION -> THREAT -> EVENT -> AFTERMATH -> RECOVERY`) modulating motif variation, density, and silence.
-  - **Priority 5 (Evidence-Based QC)**: Upgraded `qc.py` to forensically audit real timeline data for orphan events, fake paths, bounds overflow, and trivial verbs.
-- **Sound Design Test Battery**: 56/56 tests passing (100% green in 5.55s).
-- **Artifacts**: Plan at `sound_design_production_upgrade_plan.md`, walkthrough at `walkthrough.md`.
+## Live Sprint State: Final Sound Design Quality Upgrade (100% Green)
+- **Status**: Completed studio-grade quality upgrade across all 10 phases.
+- **Verification**: 70/70 sound design tests passing (including 20/20 golden benchmarks & 4/4 AST zero-hardcoding contracts).
+- **Core Quality Pillars Delivered**:
+  - **P0 Beat-Aware Music**: Dynamic cue timing (`pre_roll_ms`, `entry_type`, `development_arc`, `release_type`), dramatic turning point anchoring, and authentic NO-MUSIC negative space preservation in quiet/restrained scenes.
+  - **P0 Ambience Realism**: 5-tier layered architecture (`BASE`, `MIDGROUND`, `FOREGROUND`, `DISTANT`, `MICRO_TEXTURE`) modulated by `DramaticNarrativePhase` with persistent room tone across consecutive scenes.
+  - **P0 Cross-System Choreography**: 12 canonical interaction policies in `scene_state.py` mediating reactions across Magic, Creature, Hard SFX, Foley, Ambience, Walla, and Silence.
+  - **P1 Scene Context & Manner of Action**: Action manner extraction (stealth, forceful, hesitant, urgent) modulating Foley intensity, proximity, and priority.
+  - **P1 Creature & Magic Identities**: Persistent sonic registries (`CreatureSonicIdentityRegistry`, `MagicalSonicIdentityRegistry`) for acoustic continuity.
+  - **P1 Asset Integrity**: Zero placeholder paths (`foley.wav`, `temp.wav`); clean unresolved handling in blueprint, timeline, and adapter.
+  - **P1 Forensics QC**: `SoundDesignQCAuditor` upgraded with structured explainable `QCViolationRecord` outputs, deep dining vs weapon mismatch detection, and inter-scene chapter continuity validation.
+  - **P2 Golden Benchmarks**: Expanded to 20 canonical benchmarks in `golden_benchmarks.py` covering musicless grief, motif variations, changing locations, reveal sequences, and complex ensemble choreography.
+- **Boundaries Preserved**: Track 11 (Cinematic Mix), Track 12 (Mastering), and Track 13 (Gate QC) remain 100% untouched.

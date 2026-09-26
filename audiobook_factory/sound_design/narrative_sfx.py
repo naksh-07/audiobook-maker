@@ -138,10 +138,83 @@ class HardSFXEngine:
         return events
 
 
+class CreatureSonicIdentityRegistry:
+    """
+    Roster registry maintaining persistent acoustic identities for recurring creatures.
+    Ensures that vocalization, breathing, movement, body texture, and proximity maintain
+    acoustic continuity across multiple scenes.
+    """
+    def __init__(self):
+        self._identities: Dict[str, CreatureSonicIdentity] = {}
+        self._init_standard_identities()
+
+    def _init_standard_identities(self):
+        from audiobook_factory.sound_design.contracts import CreatureSonicIdentity
+        standard = [
+            CreatureSonicIdentity(
+                creature_type="striga",
+                display_name="Cursed Striga",
+                vocal_timbre="piercing_guttural_shriek",
+                breathing_cadence="heavy_phlegmatic_wheeze",
+                locomotion_weight="fast_heavy_bipedal",
+                body_texture="chitin_and_sinew",
+                preferred_reverb="crypt_catacomb",
+                default_proximity="mid_distance",
+                signature_motifs=["bone_chilling_shriek", "iron_sarcophagus_claw_scrape"],
+            ),
+            CreatureSonicIdentity(
+                creature_type="wolf_pack",
+                display_name="Timber Wolf Pack",
+                vocal_timbre="resonant_canine_howl_and_snarl",
+                breathing_cadence="rapid_panting",
+                locomotion_weight="light_quadruped_pads",
+                body_texture="thick_fur_brush",
+                preferred_reverb="deep_forest",
+                default_proximity="distant",
+                signature_motifs=["pack_chorus_howl", "low_warning_growl"],
+            ),
+            CreatureSonicIdentity(
+                creature_type="ghoul",
+                display_name="Scavenger Ghoul",
+                vocal_timbre="rasping_cackle",
+                breathing_cadence="hissing_gasp",
+                locomotion_weight="scuttling_quadruped",
+                body_texture="dry_rot_flesh",
+                preferred_reverb="crypt_catacomb",
+                default_proximity="close",
+                signature_motifs=["cemetery_dirt_digging", "teeth_chatter"],
+            ),
+            CreatureSonicIdentity(
+                creature_type="dragon",
+                display_name="Great Dragon",
+                vocal_timbre="sub_bass_concussive_roar",
+                breathing_cadence="furnace_air_draw",
+                locomotion_weight="cataclysmic_heavy",
+                body_texture="heavy_scute_scales",
+                preferred_reverb="mountain_cavern",
+                default_proximity="distant",
+                signature_motifs=["sonic_wing_buffet", "smoldering_throat_rumble"],
+            ),
+        ]
+        for c in standard:
+            self._identities[c.creature_type] = c
+
+    def register_identity(self, identity: CreatureSonicIdentity) -> None:
+        self._identities[identity.creature_type.lower().strip()] = identity
+
+    def get_identity(self, creature_type: str) -> Optional[CreatureSonicIdentity]:
+        if not creature_type:
+            return None
+        return self._identities.get(creature_type.lower().strip())
+
+
 class CreatureSoundEngine:
     """
     Acoustic Creature Entity and Behavioral State Sound Engine.
     """
+
+    def __init__(self, identity_registry: Optional[CreatureSonicIdentityRegistry] = None):
+        self.registry = identity_registry or get_creature_identity_registry()
 
     def detect_creature_events(
         self,
@@ -151,11 +224,12 @@ class CreatureSoundEngine:
     ) -> List[CreatureSoundSpec]:
         """
         Detects and structures creature audio events across scene segments.
-        Anchors events to actual narrative moments.
+        Anchors events to actual narrative moments with persistent acoustic identity.
         """
         events: List[CreatureSoundSpec] = []
         c_slug = (creature_presence or "beast").lower().strip()
         retriever = get_asset_retriever()
+        creature_id = self.registry.get_identity(c_slug)
 
         for idx, seg in enumerate(segments):
             text = seg.get("text", "")
@@ -165,8 +239,8 @@ class CreatureSoundEngine:
             for pat, elem, state in CREATURE_VOCAL_PATTERNS:
                 m = pat.search(text)
                 if m:
-                    # Deduce proximity from tension
-                    prox: ProximityZone = "mid_distance"
+                    # Deduce proximity from tension and persistent identity
+                    prox: ProximityZone = creature_id.default_proximity if creature_id else "mid_distance"
                     if tension_level > 0.8 or state == "attacking":
                         prox = "close"
                     elif tension_level < 0.4:
@@ -174,6 +248,8 @@ class CreatureSoundEngine:
 
                     desc = retriever.resolve_creature_asset(c_slug, elem, emotion=state)
                     asset_p = desc.filepath if desc else ""
+
+                    timbre_note = f" [{creature_id.vocal_timbre}]" if creature_id and elem == "vocalization" else ""
 
                     events.append(
                         CreatureSoundSpec(
@@ -185,7 +261,7 @@ class CreatureSoundEngine:
                             relative_intensity="explosive_impact" if state == "attacking" else "prominent",
                             priority="CRITICAL" if state == "attacking" else "HIGH",
                             asset_path=asset_p,
-                            decision_reason=f"Detected creature behavior '{m.group(0)}' for {c_slug}",
+                            decision_reason=f"Detected creature behavior '{m.group(0)}' for {c_slug}{timbre_note}",
                             segment_index=seg_idx,
                             start_ms=seg_start,
                             timing_rationale=f"Anchored to creature behavioral beat '{m.group(0)}' in segment {seg_idx}",
@@ -202,6 +278,14 @@ class CreatureSoundEngine:
 
 _GLOBAL_HARD_SFX: Optional[HardSFXEngine] = None
 _GLOBAL_CREATURE_ENGINE: Optional[CreatureSoundEngine] = None
+_GLOBAL_CREATURE_REGISTRY: Optional[CreatureSonicIdentityRegistry] = None
+
+def get_creature_identity_registry() -> CreatureSonicIdentityRegistry:
+    """Returns singleton instance of CreatureSonicIdentityRegistry."""
+    global _GLOBAL_CREATURE_REGISTRY
+    if _GLOBAL_CREATURE_REGISTRY is None:
+        _GLOBAL_CREATURE_REGISTRY = CreatureSonicIdentityRegistry()
+    return _GLOBAL_CREATURE_REGISTRY
 
 def get_hard_sfx_engine() -> HardSFXEngine:
     """Returns singleton instance of HardSFXEngine."""

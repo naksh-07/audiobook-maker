@@ -1,10 +1,10 @@
 # 🎬 Commercial Cinematic Sound Design Subsystem Manual
 
-> **Authoritative Technical Guide to the 20 Commercial Audio Drama Sound Design Capabilities (Phases A–G, ADR-034), Forensic Adversarial Audit Remediation (ADR-035), and Next-Gen Production Upgrades (ADR-036).**
+> **Authoritative Technical Guide to the 20 Commercial Audio Drama Sound Design Capabilities (Phases A–G, ADR-034), Forensic Adversarial Audit Remediation (ADR-035), Next-Gen Production Upgrades (ADR-036), and Studio Quality Upgrades (ADR-037).**
 
 [![Acoustic Standard](https://img.shields.io/badge/Acoustic%20Standard-Pottermore%20%2F%20BBC%20Radio%204-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-56%20Sound%20Design%20%7C%20718%20Total%20Passing-brightgreen.svg)](tests/)
-[![Architecture](https://img.shields.io/badge/Architecture-ADR--034%20%7C%20ADR--035%20%7C%20ADR--036-blue.svg)](docs/ARCHITECTURE.md)
+[![Verification](https://img.shields.io/badge/Tests-70%20Sound%20Design%20%7C%2020%20Golden%20Benchmarks%20Passing-brightgreen.svg)](tests/)
+[![Architecture](https://img.shields.io/badge/Architecture-ADR--034%20%7C%20ADR--035%20%7C%20ADR--036%20%7C%20ADR--037-blue.svg)](docs/ARCHITECTURE.md)
 [![Contracts](https://img.shields.io/badge/Contracts-Pydantic%20v2%20Strict-blue.svg)](audiobook_factory/sound_design/contracts.py)
 
 ---
@@ -262,8 +262,52 @@ manifest_data = adapter.direct_and_adapt_scene(
 
 ---
 
+## 💎 Sound Design Quality Upgrade (ADR-037)
+
+The final studio quality upgrade delivers commercial Pottermore-grade realism across 10 distinct phases:
+
+1. **Dramatic-Beat-Aware Music Cue Intelligence (P0)**:
+   - Eradicated fixed percentage offsets (`0.25 * duration`).
+   - Music cues anchor to dramatic turning points (`revelation`, `turn`, `climax`, `crisis`) with pre-roll lead time (`pre_roll_ms=800-1500ms`) and calibrated release envelopes (`fade_out`, `sharp_cutoff`, `reverb_spill`).
+   - Authentic **NO MUSIC** decisions in quiet, restrained, or grief-stricken scenes to preserve acoustic negative space.
+
+2. **5-Tier Layered Ambience Architecture (P0)**:
+   - Structured into `BASE` (room tone), `MIDGROUND` (active weather/hearth), `FOREGROUND` (close details), `DISTANT` (world depth), and `MICRO_TEXTURE` (subtle surfaces).
+   - Dynamically modulated across 7 narrative phases (`CALM -> UNEASE -> TENSION -> THREAT -> EVENT -> AFTERMATH -> RECOVERY`). In `THREAT` phase, base tone drops to `whisper_quiet` while high frequencies thin to heighten dread.
+   - Room tone continuity preserved across consecutive scenes within the same environment.
+
+3. **Cross-System Choreography Engine (P0)**:
+   - 12 canonical interaction policies in [`scene_state.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/scene_state.py) mediating multi-system acoustic reactions:
+     - `creature_approach`: Attenuates background ambience and thins distant walla.
+     - `magical_attack`: Subordinates music score priority and spectrally carves ambience for spell charge clarity.
+     - `authority_enters_crowd`: Drops crowd walla to whisper-quiet hush (25% volume).
+     - `major_reveal`: Ducks ambience by -6dB and transitions music into stunned silence.
+     - `stealth_infiltration`: Completely suppresses walla and elevates intimate foley.
+
+4. **Scene Context & Manner-of-Action Foley (P1)**:
+   - Extracts execution style (`stealth`, `forceful`, `hesitant`, `urgent`) from prose context and inflections.
+   - Stealth actions receive `whisper_quiet` intensity and `intimate` proximity; forceful movements receive `prominent` intensity and `HIGH` priority.
+
+5. **Persistent Creature & Magic Sonic Identities (P1)**:
+   - [`CreatureSonicIdentityRegistry`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/narrative_sfx.py): Preserves consistent vocal timbres, breathing cadences, and locomotion weights across recurring beasts (`striga`, `wolf_pack`, `ghoul`, `dragon`).
+   - [`MagicalSonicIdentityRegistry`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/magical_sound.py): Preserves spell lineages (`kinetic_telekinetic`, `fire_pyromancy`, `force_barrier`, `mind_charm`) with multi-stage progressions (`charge_hum -> release_burst -> impact_strike`).
+
+6. **Asset Pipeline Integrity (P1)**:
+   - Zero placeholder paths (`foley.wav`, `temp.wav`). Unresolved events cleanly set `asset_path=""` and record explicit `unresolved_reason`.
+
+7. **Forensic QC Auditor & Explainable Violations (P1)**:
+   - Structured [`QCViolationRecord`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/contracts.py) outputs with detailed expected vs. actual comparisons.
+   - Deep tableware vs. weapon context checking (catches domestic dining actions assigned weapon clashes).
+   - Multi-scene chapter continuity checking via `audit_chapter_sound_design`.
+
+8. **Expanded 20 Golden Benchmark Regression Suite (P2)**:
+   - Covers 20 canonical audio drama scenarios in [`golden_benchmarks.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/golden_benchmarks.py) and [`tests/test_golden_sound_design_regression.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_golden_sound_design_regression.py).
+   - Dedicated validation suite: [`tests/test_sound_design_quality_upgrade.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sound_design_quality_upgrade.py).
+
+---
+
 ## ⚡ Quick Links
 - Subsystem Code: [`audiobook_factory/sound_design/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/)
 - Data Contracts: [`audiobook_factory/sound_design/contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/contracts.py)
-- Architecture Decisions: [ADR-034](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-035](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md) & [ADR-036](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md)
+- Architecture Decisions: [ADR-034](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-035](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-036](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md) & [ADR-037](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md)
 - Test Suites: [`tests/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/)

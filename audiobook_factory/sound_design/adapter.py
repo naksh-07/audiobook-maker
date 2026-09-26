@@ -106,7 +106,7 @@ class SoundDesignAdapter:
                     anchor_word=f_evt.asset_name.split()[-1] if f_evt.asset_name else "step",
                     pre_roll_ms=80,
                     asset_id=200 + idx,
-                    asset_path=f_evt.asset_path or "foley.wav",
+                    asset_path=f_evt.asset_path or "",
                     asset_name=f_evt.asset_name,
                     gain_dbfs=-16.0,
                     azimuth_pan=f_evt.spatial.azimuth_pan,
@@ -165,7 +165,7 @@ class SoundDesignAdapter:
                             cue_id=f"fc_sd_{evt.event_id}",
                             segment_index=1,
                             anchor_word="action",
-                            asset_path=evt.asset_path or "foley.wav",
+                            asset_path=evt.asset_path or "",
                             azimuth_pan=evt.spatial.azimuth_pan,
                             gain_dbfs=-16.0,
                         )

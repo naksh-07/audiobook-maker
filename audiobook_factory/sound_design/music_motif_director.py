@@ -170,97 +170,231 @@ class MusicCueDirector:
             if resolved_motif:
                 break
 
-        # Fallback default dramatic motif if none found
-        if not resolved_motif:
-            resolved_motif = LeitmotifDefinition(
-                motif_id="lm_destiny_theme",
-                entity_type="philosophical_theme",
-                associated_entity="Narrative",
-                track_id=1,
-                track_name="Ancient Destiny",
-                primary_instrument="Solo Cello & Strings",
-                canonical_tempo_bpm=80,
-                dramatic_intent="General thematic underscore",
-                priority_level=5,
-            )
-
         var_mode = self.variation_engine.derive_variation_mode(
             tension_level=tension_level,
             dominant_emotion=dominant_emotion,
         )
-        variation = self.variation_engine.apply_variation(resolved_motif, var_mode)
 
-        # 2. Adaptive Cue Allocation based on Restraint Target
-        if restraint_target == "high":
-            # High restraint: sparse single cue, plenty of negative space
-            cue_start = start_ms + int(duration_ms * 0.25)
-            max_avail_ms = max(0, (start_ms + duration_ms) - cue_start)
-            cue_dur = min(max_avail_ms, 8000)
-            if cue_dur >= 500:
-                cues.append(
-                    MusicCueSpec(
-                        cue_id=f"mc_{scene_id}_1",
-                        motif_id=resolved_motif.motif_id,
-                        variation_mode=var_mode,
-                        cue_type=variation["cue_type"],
-                        start_ms=cue_start,
-                        duration_ms=cue_dur,
-                        fade_in_ms=min(2500, max(100, cue_dur // 2)),
-                        fade_out_ms=min(3000, max(100, cue_dur // 2)),
-                        relative_intensity=variation["relative_intensity"],
-                        priority=variation["priority"],
-                        track_name=variation["track_name"],
-                        track_id=variation["track_id"],
-                        dramatic_justification=f"Subtle {var_mode.lower()} motif in high-restraint scene",
-                        mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
-                    )
-                )
+        # 2. Decision: Does the scene warrant music? (Correct decision can be NO MUSIC)
+        beats = dramatic_beats or []
+        has_dramatic_turning_beats = any(
+            any(k in str(b.get("type", "") if isinstance(b, dict) else getattr(b, "type", "")).lower()
+                for k in ("revelation", "discovery", "turn", "climax", "escalation", "shock", "entrance"))
+            for b in beats
+        )
 
-        elif restraint_target == "moderate":
-            # Moderate: 1-2 cues (e.g. entry underscore and emotional shift)
-            cue_start = start_ms + min(1000, int(duration_ms * 0.1))
-            max_avail_ms = max(0, (start_ms + duration_ms) - cue_start)
-            cue_dur = min(max_avail_ms, 12000)
-            if cue_dur >= 500:
-                cues.append(
-                    MusicCueSpec(
-                        cue_id=f"mc_{scene_id}_1",
-                        motif_id=resolved_motif.motif_id,
-                        variation_mode=var_mode,
-                        cue_type=variation["cue_type"],
-                        start_ms=cue_start,
-                        duration_ms=cue_dur,
-                        fade_in_ms=min(2000, max(100, cue_dur // 2)),
-                        fade_out_ms=min(2500, max(100, cue_dur // 2)),
-                        relative_intensity=variation["relative_intensity"],
-                        priority=variation["priority"],
-                        track_name=variation["track_name"],
-                        track_id=variation["track_id"],
-                        dramatic_justification=f"Emotional underscore reflecting {dominant_emotion}",
-                        mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
-                    )
-                )
-
-        else:  # dense
-            # Action / Climax: continuous driving cue
-            cues.append(
-                MusicCueSpec(
-                    cue_id=f"mc_{scene_id}_climax",
-                    motif_id=resolved_motif.motif_id,
-                    variation_mode="CLIMAX",
-                    cue_type="CLIMACTIC_ACTION_CUE",
-                    start_ms=start_ms,
-                    duration_ms=duration_ms,
-                    fade_in_ms=1000,
-                    fade_out_ms=2000,
-                    relative_intensity="prominent",
-                    priority="CRITICAL",
-                    track_name=variation["track_name"],
-                    track_id=variation["track_id"],
-                    dramatic_justification="Full climactic score across high-energy conflict",
-                    mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
-                )
+        # High-restraint scenes without character motifs or turning points authentically choose NO MUSIC
+        if not resolved_motif:
+            is_intimate_or_subtle = (
+                dominant_emotion.lower() in ("intimate", "grief", "stealth", "sorrow", "quiet", "whispering", "secretive", "subdued")
+                or tension_level < 0.35
             )
+            if (restraint_target == "high" and not has_dramatic_turning_beats) or (is_intimate_or_subtle and not has_dramatic_turning_beats):
+                logger.info(
+                    f"[MusicDirector] Directorial choice: NO MUSIC for scene '{scene_id}' (restraint: {restraint_target}, emotion: {dominant_emotion}). Negative space preserved."
+                )
+                return []
+
+        # Formulate variation metadata (using resolved motif or authentic atmospheric score)
+        if resolved_motif:
+            variation = self.variation_engine.apply_variation(resolved_motif, var_mode)
+            motif_id = resolved_motif.motif_id
+            track_name = variation["track_name"]
+            track_id = variation["track_id"]
+        else:
+            # Authentic atmospheric score without inventing generic fake character motifs
+            variation_rules = VARIATION_MODE_RULES[var_mode]
+            motif_id = None
+            track_name = f"Atmospheric Score ({var_mode.title()} Underscore)"
+            track_id = 1
+            variation = {
+                "motif_id": None,
+                "associated_entity": "Atmosphere",
+                "variation_mode": var_mode,
+                "track_name": track_name,
+                "track_id": 1,
+                "primary_instrument": "Ambient Drone & Strings",
+                "arrangement": variation_rules["arrangement"],
+                "effective_tempo_bpm": 80,
+                "relative_intensity": variation_rules["relative_intensity"],
+                "priority": variation_rules["priority"],
+                "cue_type": variation_rules["cue_type"],
+                "reverb_send": variation_rules["reverb_send"],
+            }
+
+        # 3. Dramatic Beat-Aware Cue Placement
+        if beats and has_dramatic_turning_beats:
+            # Place cues anchored to actual dramatic beats
+            for b_idx, beat in enumerate(beats):
+                b_dict = beat if isinstance(beat, dict) else beat.__dict__
+                b_type = str(b_dict.get("type", "")).lower()
+                b_name = str(b_dict.get("name", b_dict.get("title", f"Beat_{b_idx+1}")))
+                b_ts = int(b_dict.get("start_ms", b_dict.get("timestamp_ms", start_ms)))
+                b_seg = b_dict.get("segment_index")
+
+                # Check if beat warrants a music cue
+                is_turn = any(k in b_type for k in ("revelation", "discovery", "turn", "climax", "escalation", "shock", "entrance", "aftermath"))
+                if not is_turn:
+                    continue
+
+                pre_roll = 800 if "climax" in b_type or "shock" in b_type else 1200
+                cue_start = max(start_ms, b_ts - pre_roll)
+                max_avail = max(0, end_ms - cue_start)
+                cue_dur = min(max_avail, 14000 if "climax" in b_type else 9000)
+                if cue_dur < 1000:
+                    continue
+
+                # Determine dynamic entry, development, peak, and release
+                if "climax" in b_type or tension_level > 0.85:
+                    entry = "sudden_hit" if "shock" in b_type else "pre_roll_swell"
+                    dev = "driving_rhythm"
+                    rel = "reverb_spill" if "shock" in b_type else "fade_out"
+                    c_type = "CLIMACTIC_ACTION_CUE"
+                elif "revelation" in b_type or "discovery" in b_type:
+                    entry = "pre_roll_swell"
+                    dev = "emotional_swell"
+                    rel = "sharp_cutoff"
+                    c_type = "EMOTIONAL_UNDERSCORE"
+                elif "escalation" in b_type:
+                    entry = "subtle_drift"
+                    dev = "tension_riser"
+                    rel = "fade_out"
+                    c_type = "TENSION_RISER"
+                elif "aftermath" in b_type:
+                    entry = "fade_in"
+                    dev = "subdued_tail"
+                    rel = "fade_out"
+                    c_type = "AFTERMATH_FADE"
+                else:
+                    entry = "fade_in"
+                    dev = "steady_bed"
+                    rel = "fade_out"
+                    c_type = variation["cue_type"]
+
+                peak_ms = cue_start + min(4000, cue_dur // 2)
+
+                cues.append(
+                    MusicCueSpec(
+                        cue_id=f"mc_{scene_id}_beat_{b_idx+1}",
+                        motif_id=motif_id,
+                        variation_mode=var_mode,
+                        cue_type=c_type,
+                        start_ms=cue_start,
+                        duration_ms=cue_dur,
+                        fade_in_ms=min(2000, max(100, cue_dur // 3)),
+                        fade_out_ms=min(2500, max(100, cue_dur // 3)),
+                        relative_intensity=variation["relative_intensity"],
+                        priority=variation["priority"],
+                        track_name=track_name,
+                        track_id=track_id,
+                        dramatic_justification=f"Anchored to dramatic beat '{b_name}' ({b_type})",
+                        mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+                        trigger_beat=b_name,
+                        trigger_segment_index=b_seg,
+                        pre_roll_ms=pre_roll,
+                        entry_type=entry,
+                        development_arc=dev,
+                        peak_ms=peak_ms,
+                        release_type=rel,
+                        narrative_rationale=f"Music responds to {b_type} with {dev} reaching peak at {peak_ms}ms",
+                    )
+                )
+                if len(cues) >= 2:
+                    break
+
+        # Fallback to narrative-informed cue placement if no explicit beats triggered
+        if not cues:
+            if restraint_target == "high":
+                # High restraint: single sparse, delicate entry
+                cue_start = start_ms + min(2000, max(0, int(duration_ms * 0.15)))
+                max_avail = max(0, end_ms - cue_start)
+                cue_dur = min(max_avail, 8000)
+                if cue_dur >= 1000:
+                    cues.append(
+                        MusicCueSpec(
+                            cue_id=f"mc_{scene_id}_1",
+                            motif_id=motif_id,
+                            variation_mode=var_mode,
+                            cue_type=variation["cue_type"],
+                            start_ms=cue_start,
+                            duration_ms=cue_dur,
+                            fade_in_ms=min(2500, max(100, cue_dur // 2)),
+                            fade_out_ms=min(3000, max(100, cue_dur // 2)),
+                            relative_intensity=variation["relative_intensity"],
+                            priority=variation["priority"],
+                            track_name=track_name,
+                            track_id=track_id,
+                            dramatic_justification=f"Subtle {var_mode.lower()} motif in high-restraint scene",
+                            mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+                            trigger_beat="scene_atmosphere",
+                            pre_roll_ms=800,
+                            entry_type="subtle_drift",
+                            development_arc="subdued_tail",
+                            peak_ms=cue_start + cue_dur // 2,
+                            release_type="fade_out",
+                            narrative_rationale="Restrained underscore providing negative space and dialogue breathing room",
+                        )
+                    )
+
+            elif restraint_target == "moderate":
+                # Moderate: balanced score underscore
+                cue_start = start_ms + min(1000, max(0, int(duration_ms * 0.08)))
+                max_avail = max(0, end_ms - cue_start)
+                cue_dur = min(max_avail, 12000)
+                if cue_dur >= 1000:
+                    cues.append(
+                        MusicCueSpec(
+                            cue_id=f"mc_{scene_id}_1",
+                            motif_id=motif_id,
+                            variation_mode=var_mode,
+                            cue_type=variation["cue_type"],
+                            start_ms=cue_start,
+                            duration_ms=cue_dur,
+                            fade_in_ms=min(2000, max(100, cue_dur // 3)),
+                            fade_out_ms=min(2500, max(100, cue_dur // 3)),
+                            relative_intensity=variation["relative_intensity"],
+                            priority=variation["priority"],
+                            track_name=track_name,
+                            track_id=track_id,
+                            dramatic_justification=f"Emotional underscore reflecting {dominant_emotion}",
+                            mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+                            trigger_beat="emotional_arc",
+                            pre_roll_ms=600,
+                            entry_type="pre_roll_swell",
+                            development_arc="steady_bed",
+                            peak_ms=cue_start + cue_dur // 2,
+                            release_type="fade_out",
+                            narrative_rationale=f"Underscore reflecting scene dominant emotion '{dominant_emotion}'",
+                        )
+                    )
+
+            else:  # dense
+                # Action / Climax: continuous driving cue
+                cues.append(
+                    MusicCueSpec(
+                        cue_id=f"mc_{scene_id}_climax",
+                        motif_id=motif_id,
+                        variation_mode="CLIMAX",
+                        cue_type="CLIMACTIC_ACTION_CUE",
+                        start_ms=start_ms,
+                        duration_ms=duration_ms,
+                        fade_in_ms=1000,
+                        fade_out_ms=2000,
+                        relative_intensity="prominent",
+                        priority="CRITICAL",
+                        track_name=track_name,
+                        track_id=track_id,
+                        dramatic_justification="Full climactic score across high-energy conflict",
+                        mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+                        trigger_beat="action_climax",
+                        pre_roll_ms=0,
+                        entry_type="sudden_hit",
+                        development_arc="driving_rhythm",
+                        peak_ms=start_ms + duration_ms // 2,
+                        release_type="fade_out",
+                        narrative_rationale="Continuous climactic score across full action sequence",
+                    )
+                )
 
         return cues
 

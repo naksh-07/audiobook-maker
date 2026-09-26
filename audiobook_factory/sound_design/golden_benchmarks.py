@@ -370,4 +370,165 @@ GOLDEN_BENCHMARK_SCENARIOS: List[Dict[str, Any]] = [
             "silence_present": True,
         },
     },
+
+    # 16. Musicless Emotional Scene (Restraint & Subtext)
+    {
+        "benchmark_id": "16_musicless_emotional_grief",
+        "title": "Musicless Emotional Grief",
+        "environment_id": "crypt_subterranean",
+        "tension_level": 0.15,
+        "dominant_emotion": "grief",
+        "characters": ["Mourner", "Priest"],
+        "segments": [
+            {
+                "segment_index": 1,
+                "speaker": "Mourner",
+                "text": "He is gone... and there are no words left in this world.",
+                "sfx_cues": [],
+                "start_ms": 0,
+            },
+            {
+                "segment_index": 2,
+                "speaker": "Priest",
+                "text": "May the earth hold his bones in peace.",
+                "sfx_cues": [],
+                "start_ms": 6000,
+            },
+        ],
+        "expected_checks": {
+            "no_music": True,
+            "silence_present": True,
+            "walla_suppressed": True,
+        },
+    },
+
+    # 17. Recurring Character Motif with Emotional Variations
+    {
+        "benchmark_id": "17_recurring_character_motif_variations",
+        "title": "Recurring Character Motif Variations",
+        "environment_id": "castle_great_hall",
+        "tension_level": 0.85,
+        "dominant_emotion": "revelation",
+        "characters": ["Sorceress", "Warrior"],
+        "segments": [
+            {
+                "segment_index": 1,
+                "speaker": "Sorceress",
+                "text": "Look upon the mirror! The truth you fled from has found you at last.",
+                "dramatic_function": "revelation",
+                "sfx_cues": [],
+                "start_ms": 0,
+            },
+            {
+                "segment_index": 2,
+                "speaker": "Warrior",
+                "text": "By the gods... it cannot be.",
+                "dramatic_function": "turn",
+                "sfx_cues": ["sword hilt clatter"],
+                "start_ms": 7000,
+            },
+        ],
+        "expected_checks": {
+            "music_present": True,
+            "beat_aware_timing": True,
+        },
+    },
+
+    # 18. Recurring Location with Changing Dramatic State
+    {
+        "benchmark_id": "18_recurring_location_dramatic_transition",
+        "title": "Recurring Location Dramatic Transition",
+        "environment_id": "dark_forest",
+        "tension_level": 0.65,
+        "dominant_emotion": "dread",
+        "characters": ["Scout"],
+        "segments": [
+            {
+                "segment_index": 1,
+                "speaker": "Narrator",
+                "text": "The wind shifted through the high pine needles as distant thunder rumbled.",
+                "sfx_cues": ["thunder distant"],
+                "start_ms": 0,
+            },
+            {
+                "segment_index": 2,
+                "speaker": "Scout",
+                "text": "Something is moving between the birch trunks.",
+                "sfx_cues": ["branch snap"],
+                "start_ms": 6000,
+            },
+        ],
+        "expected_checks": {
+            "ambience_layers_min": 2,
+            "walla_suppressed": True,
+        },
+    },
+
+    # 19. Cross-System Reveal Sequence
+    {
+        "benchmark_id": "19_cross_system_reveal_sequence",
+        "title": "Cross-System Reveal Sequence",
+        "environment_id": "castle_great_hall",
+        "tension_level": 0.90,
+        "dominant_emotion": "shock",
+        "characters": ["Herald", "King", "Courtiers"],
+        "segments": [
+            {
+                "segment_index": 1,
+                "speaker": "Herald",
+                "text": "Silence for the Regent! He brings news of the southern front!",
+                "sfx_cues": ["staff strike stone"],
+                "start_ms": 0,
+            },
+            {
+                "segment_index": 2,
+                "speaker": "Narrator",
+                "text": "The grand hall fell into stunned stillness as every eye turned to the heavy oak doors.",
+                "sfx_cues": [],
+                "start_ms": 5000,
+            },
+        ],
+        "expected_checks": {
+            "silence_present": True,
+            "walla_attenuated_or_suppressed": True,
+        },
+    },
+
+    # 20. Complex Ensemble with Foley, Walla, Movement and Spatial Choreography
+    {
+        "benchmark_id": "20_complex_ensemble_spatial_choreography",
+        "title": "Complex Ensemble Spatial Choreography",
+        "environment_id": "tavern_interior",
+        "tension_level": 0.40,
+        "dominant_emotion": "festive",
+        "characters": ["Barkeeper", "Traveler", "Minstrel", "Brawler", "Patrons"],
+        "segments": [
+            {
+                "segment_index": 1,
+                "speaker": "Barkeeper",
+                "text": "The barkeep slammed a heavy wooden tankard upon the timber bar. The patrons laughed and cheered as he stepped across the room.",
+                "sfx_cues": ["tankard clatter on wood", "footsteps heavy boots"],
+                "start_ms": 0,
+            },
+            {
+                "segment_index": 2,
+                "speaker": "Traveler",
+                "text": "He poured the dark ale and tossed coins upon the wooden table. Keep the change, innkeeper.",
+                "sfx_cues": ["coins on table"],
+                "start_ms": 6000,
+            },
+            {
+                "segment_index": 3,
+                "speaker": "Minstrel",
+                "text": "A song of forgotten kings for the brave patrons!",
+                "sfx_cues": [],
+                "start_ms": 12000,
+            },
+        ],
+        "expected_checks": {
+            "walla_present": True,
+            "foley_present": True,
+            "spatial_diversity": True,
+        },
+    },
 ]
