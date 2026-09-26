@@ -1,18 +1,31 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: Dialogue Editorial Layer (DE-01 - DE-07) Complete
+# Active Context: Sound Design Subsystem Upgrade (Cinematic 20 Capabilities)
 
-## Live Sprint State: Dialogue Editorial Layer Increments DE-05 - DE-07 Complete
-- **Status**: 666/666 tests passing in 346.39s (0 regressions, 100% green).
-- **Core Delivery**: Implemented DE-01 through DE-07 under `audiobook_factory/dialogue_editing/` and `audiobook_factory/mastering.py`.
-- **Key Enhancements (DE-05 - DE-07)**:
-  - **DE-05 (Interruption & Overlap)**: Real conversational cross-talk (`overlap_start`, `fade_under` cosine ducking, `abrupt_cut` 2ms micro-fade), aposiopesis em-dash eager counter detection, mastering equal-power transition stitching in `concat_list.txt`.
-  - **DE-06 (Take Boundary Continuity)**: Inter-take gain leveling ($\pm 2.5$dB across scene takes) and elevated noise-floor micro-fade expansion to 15ms Hann tapers (`room_match_required`).
-  - **DE-07 (Mid-Line Breath Editing)**: Multi-signal gap discovery (alignment pauses/words and energy dips), emotional/strain breath whitelist protection (`KEEP`), targeted calm gasp reduction (-6.0dB with trapezoidal Hann envelopes), and word encroachment QC guard.
-  - **TPDF Dither Determinism**: Fixed `hash()` to `hashlib.sha256(f"{source_take}:{segment_uid}")` for 100% bit-exact PCM reproducibility across processes.
-- **Test Suite**: 46 dedicated dialogue editorial tests across 4 test suites:
-  - `tests/test_dialogue_editorial_de05_de07.py` (12 tests)
-  - `tests/test_dialogue_editorial_audit_remediation.py` (13 tests)
-  - `tests/test_dialogue_editorial_layer.py` (18 tests)
-  - `tests/test_dialogue_editing_integration.py` (3 tests)
+## Live Sprint State: Complete & Verified (703/703 Tests Passing, 100% Green)
+- **Status**: Completed all 20 Sound Design Capabilities across Phases A - G.
+- **Verification**: 703/703 tests passing (0 failures, 100% green in 257.05s).
+- **Subsystem Architecture (`audiobook_factory/sound_design/`)**:
+  - `contracts.py`: Authoritative Pydantic v2 sound design schemas.
+  - `scene_understanding.py`: Scene audio understanding reusing screenplay tags & dramaturgy.
+  - `blueprint.py`: SceneAudioBlueprint director instruction sheet.
+  - `environment_profiles.py`: 12 canonical environments extending WorldAcousticProfile.
+  - `asset_retriever.py`: Semantic FTS5 retriever, SHA-256 provenance, DSP sanity check.
+  - `ambience_engine.py`: 5-tier decoupled ambience with cross-scene stateful evolution.
+  - `walla_engine.py`: Contextual crowd activity, dialogue subordination & solitary restraint.
+  - `silence_engine.py`: First-class negative sound design & adaptive density budgets.
+  - `foley_engine.py`: Relevance scoring formula & conscious low-value verb rejection.
+  - `foley_character_material.py`: Character physics, surface matrix, tableware isolation.
+  - `narrative_sfx.py`: Action hard SFX impacts & multi-tier creature sound design.
+  - `magical_sound.py`: Canonical spell stages (charge, release, impact) & families.
+  - `music_motif_director.py`: Persistent leitmotifs, 6 variation modes & cue direction.
+  - `spatial_acoustics.py`: Abstract room propagation & soundstage spatial continuity.
+  - `sound_director.py`: Master orchestrator assembling chronological SoundTimeline.
+  - `qc.py`: Multi-signal QC auditor evaluating 9 forensic sound design signals.
+  - `adapter.py`: Clean adapter boundary for AgentDirector & CreativeManifest.
+  - `golden_benchmarks.py`: 15 commercial cinematic audio drama scenarios.
+- **Architectural Invariants Strictly Enforced**:
+  - Adaptive scene density (no rigid universal 60% rule).
+  - Sound design outputs intent/priority/spatial metadata only (Track 11 owns mixing).
+  - Zero hardcoding contract compliant (`test_zero_hardcoding_contracts.py` passed).

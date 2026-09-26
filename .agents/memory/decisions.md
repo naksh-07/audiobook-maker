@@ -677,3 +677,11 @@
 
 
 
+
+
+## ADR-034: Cinematic Sound Design Subsystem Upgrade (Commercial Pottermore-Caliber 20 Capabilities, Adaptive Density & Multi-Signal QC)
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Commercial cinematic audio dramas (such as Harry Potter / Pottermore full-cast productions) require continuous world atmosphere, character-accurate movement acoustics, supernatural sound design vocabularies, thematic leitmotif evolution, and intentional negative sound design (silence).
+- **Decision:** Implemented all 20 Sound Design capabilities across Phases A-G under audiobook_factory/sound_design/ (contracts, scene understanding, blueprint, 12 environment profiles, asset retriever with SHA-256 & DSP sanity, 5-tier ambience with cross-scene evolution, walla with dialogue subordination & solitary restraint, silence engine with adaptive density budgets, foley engine with relevance scoring & low-value verb rejection, character physics & material matrix with tableware isolation, narrative hard SFX & creature sound engines, magical sound language, leitmotif variations & music cue director, abstract spatial acoustics & soundstage geometry, master sound design director, 9-signal QC auditor, clean adapter boundary, and 15 canonical golden benchmarks).
+- **Rationale:** 100% compliant with AST zero-hardcoding contract. 703/703 tests passing (100% green).
