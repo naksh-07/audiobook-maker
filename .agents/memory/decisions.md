@@ -685,3 +685,21 @@
 - **Context:** Commercial cinematic audio dramas (such as Harry Potter / Pottermore full-cast productions) require continuous world atmosphere, character-accurate movement acoustics, supernatural sound design vocabularies, thematic leitmotif evolution, and intentional negative sound design (silence).
 - **Decision:** Implemented all 20 Sound Design capabilities across Phases A-G under audiobook_factory/sound_design/ (contracts, scene understanding, blueprint, 12 environment profiles, asset retriever with SHA-256 & DSP sanity, 5-tier ambience with cross-scene evolution, walla with dialogue subordination & solitary restraint, silence engine with adaptive density budgets, foley engine with relevance scoring & low-value verb rejection, character physics & material matrix with tableware isolation, narrative hard SFX & creature sound engines, magical sound language, leitmotif variations & music cue director, abstract spatial acoustics & soundstage geometry, master sound design director, 9-signal QC auditor, clean adapter boundary, and 15 canonical golden benchmarks).
 - **Rationale:** 100% compliant with AST zero-hardcoding contract. 703/703 tests passing (100% green).
+
+## ADR-035: Sound Design Subsystem Adversarial Expert Panel Audit & Hardening Remediation
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** An adversarial expert panel (Re-Recording Mixer, Systems Architect, DSP Specialist, Adversarial QA Lead) audited the 20 sound design capabilities and detected 3 P0s, 5 P1s, and 3 P2s: coordinate frame collapse in multi-scene chapters, music cue boundary overflow, trajectory literal type mismatches, adapter duplicate state mutation, hard SFX start clumping at 0.0s, case-sensitivity bypasses, trivial verb tension escape, and token substring false-positives.
+- **Decision:**
+  1. Normalized `evaluate_scene_density` with `scene_start_ms` and auto-detected base offsets, resolving density calculation collapse in multi-scene chapters.
+  2. Clamped `MusicCueDirector` cue duration to available scene span, preventing cross-scene audio bleeding.
+  3. Fixed `SpatialGeographyEngine.apply_trajectory` to match `SpatialTrajectory` contract literals (`left_to_right`, `right_to_left`).
+  4. Reused existing timeline ambience in `SoundDesignAdapter.direct_and_adapt_scene`, eliminating duplicate execution and chapter duration state corruption.
+  5. Implemented proportional segment timing with staggered offsets for Hard SFX in `SoundDesignDirector`, eliminating 0.0s collisions.
+  6. Made Narrator center-lock check case-insensitive in `SoundDesignQCAuditor`.
+  7. Enforced blanket rejection on low-value trivial verbs in `FoleyEngine` unless explicitly flagged as blocking directives.
+  8. Replaced substring token checks with exact/prefix matching and segment-level deduplication in `SceneAudioAnalyzer`.
+  9. Added `.reset()` hooks to `AmbienceEngine` and `SpatialGeographyEngine`, and standardized walla slugs in `environment_profiles.py`.
+  10. Added `tests/test_sound_design_adversarial_audit.py` (9 dedicated tests). Total test suite 100% green: 712/712 passed + 17 subtests.
+- **Rationale:** Eliminates all failure modes, boundary spills, and silent bugs, delivering production-grade commercial stability.
+

@@ -150,7 +150,7 @@ class SceneAudioBlueprintBuilder:
             weather_state=understanding.time_and_weather,
             time_context="scene_narrative",
             acoustic_profile_id=env_profile.env_id,
-            characters_staged={k: v.model_dump() for k, v in characters_staged.items()},  # type: ignore
+            characters_staged=characters_staged,
             ambience_layers_planned=ambience_layers,
             walla_planned=walla_planned,
             foley_planned=foley_planned,

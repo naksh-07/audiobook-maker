@@ -132,11 +132,11 @@ class FoleyEngine:
 
         score = candidate.calculate_score()
 
-        # Decision rule
-        if is_trivial and score < 0.40:
+        # Decision rule: Trivial physical motions are strictly rejected unless marked as explicit blocking
+        if is_trivial and not action.is_explicit_blocking:
             candidate.status = "REJECTED_TRIVIAL"
             candidate.rejection_reason = (
-                f"Trivial physical motion '{verb_norm}' rejected (restraint score: {score:.2f} < 0.40)"
+                f"Trivial physical motion '{verb_norm}' rejected (restraint policy: trivial motions suppressed)"
             )
         elif score < threshold:
             candidate.status = "REJECTED_RESTRAINT"

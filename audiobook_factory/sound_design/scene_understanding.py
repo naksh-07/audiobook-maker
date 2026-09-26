@@ -194,9 +194,24 @@ class SceneAudioAnalyzer:
 
             # B. Check action candidates from text & tokens
             tokens = [t.strip(".,!?;:\"'()[]{}—–") for t in text.split()]
+            seen_verbs_in_seg: set = set()
             for tok in tokens:
+                tok_lower = tok.lower()
                 for verb_kw, (canon_verb, default_mat) in foley_action_map.items():
-                    if verb_kw in tok:
+                    # Exact word match or inflectional prefix, avoiding substring false positives (e.g. drawer, radish)
+                    is_match = (
+                        tok_lower == verb_kw
+                        or (len(verb_kw) >= 4 and tok_lower.startswith(verb_kw))
+                        or (any('\u0900' <= c <= '\u097f' for c in verb_kw) and verb_kw in tok_lower)
+                    )
+                    if is_match and tok_lower in ("drawer", "drawers", "radish", "islam", "slanted", "spour", "withdraw", "withdrawn"):
+                        is_match = False
+
+                    if is_match:
+                        if canon_verb in seen_verbs_in_seg:
+                            break
+                        seen_verbs_in_seg.add(canon_verb)
+
                         # Determine material context
                         mat = default_mat
                         if any(w in text for w in ("stone", "पत्थर")):

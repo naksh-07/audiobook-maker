@@ -193,48 +193,53 @@ class MusicCueDirector:
         # 2. Adaptive Cue Allocation based on Restraint Target
         if restraint_target == "high":
             # High restraint: sparse single cue, plenty of negative space
-            cue_dur = min(duration_ms, 8000)
             cue_start = start_ms + int(duration_ms * 0.25)
-            cues.append(
-                MusicCueSpec(
-                    cue_id=f"mc_{scene_id}_1",
-                    motif_id=resolved_motif.motif_id,
-                    variation_mode=var_mode,
-                    cue_type=variation["cue_type"],
-                    start_ms=cue_start,
-                    duration_ms=cue_dur,
-                    fade_in_ms=2500,
-                    fade_out_ms=3000,
-                    relative_intensity=variation["relative_intensity"],
-                    priority=variation["priority"],
-                    track_name=variation["track_name"],
-                    track_id=variation["track_id"],
-                    dramatic_justification=f"Subtle {var_mode.lower()} motif in high-restraint scene",
-                    mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+            max_avail_ms = max(0, (start_ms + duration_ms) - cue_start)
+            cue_dur = min(max_avail_ms, 8000)
+            if cue_dur >= 500:
+                cues.append(
+                    MusicCueSpec(
+                        cue_id=f"mc_{scene_id}_1",
+                        motif_id=resolved_motif.motif_id,
+                        variation_mode=var_mode,
+                        cue_type=variation["cue_type"],
+                        start_ms=cue_start,
+                        duration_ms=cue_dur,
+                        fade_in_ms=min(2500, max(100, cue_dur // 2)),
+                        fade_out_ms=min(3000, max(100, cue_dur // 2)),
+                        relative_intensity=variation["relative_intensity"],
+                        priority=variation["priority"],
+                        track_name=variation["track_name"],
+                        track_id=variation["track_id"],
+                        dramatic_justification=f"Subtle {var_mode.lower()} motif in high-restraint scene",
+                        mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+                    )
                 )
-            )
 
         elif restraint_target == "moderate":
             # Moderate: 1-2 cues (e.g. entry underscore and emotional shift)
-            cue_dur = min(duration_ms, 12000)
-            cues.append(
-                MusicCueSpec(
-                    cue_id=f"mc_{scene_id}_1",
-                    motif_id=resolved_motif.motif_id,
-                    variation_mode=var_mode,
-                    cue_type=variation["cue_type"],
-                    start_ms=start_ms + 1000,
-                    duration_ms=cue_dur,
-                    fade_in_ms=2000,
-                    fade_out_ms=2500,
-                    relative_intensity=variation["relative_intensity"],
-                    priority=variation["priority"],
-                    track_name=variation["track_name"],
-                    track_id=variation["track_id"],
-                    dramatic_justification=f"Emotional underscore reflecting {dominant_emotion}",
-                    mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+            cue_start = start_ms + min(1000, int(duration_ms * 0.1))
+            max_avail_ms = max(0, (start_ms + duration_ms) - cue_start)
+            cue_dur = min(max_avail_ms, 12000)
+            if cue_dur >= 500:
+                cues.append(
+                    MusicCueSpec(
+                        cue_id=f"mc_{scene_id}_1",
+                        motif_id=resolved_motif.motif_id,
+                        variation_mode=var_mode,
+                        cue_type=variation["cue_type"],
+                        start_ms=cue_start,
+                        duration_ms=cue_dur,
+                        fade_in_ms=min(2000, max(100, cue_dur // 2)),
+                        fade_out_ms=min(2500, max(100, cue_dur // 2)),
+                        relative_intensity=variation["relative_intensity"],
+                        priority=variation["priority"],
+                        track_name=variation["track_name"],
+                        track_id=variation["track_id"],
+                        dramatic_justification=f"Emotional underscore reflecting {dominant_emotion}",
+                        mix_intent=MixIntent(duck_under_dialogue=True, carve_vocal_presence=True),
+                    )
                 )
-            )
 
         else:  # dense
             # Action / Climax: continuous driving cue

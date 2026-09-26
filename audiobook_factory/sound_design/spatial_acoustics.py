@@ -178,6 +178,10 @@ class SpatialGeographyEngine:
             self._scene_staging[scene_id][entity_name] = meta
         return meta
 
+    def reset(self) -> None:
+        """Clears all staged scene spatial state."""
+        self._scene_staging.clear()
+
     def apply_trajectory(
         self,
         scene_id: str,
@@ -191,9 +195,9 @@ class SpatialGeographyEngine:
         current = self.get_entity_position(scene_id, entity_name)
 
         new_pan = current.azimuth_pan
-        if trajectory == "passing_left_to_right":
+        if trajectory in ("left_to_right", "passing_left_to_right"):
             new_pan = 0.50
-        elif trajectory == "passing_right_to_left":
+        elif trajectory in ("right_to_left", "passing_right_to_left"):
             new_pan = -0.50
 
         prox = target_proximity or current.proximity

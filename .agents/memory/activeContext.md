@@ -1,31 +1,24 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: Sound Design Subsystem Upgrade (Cinematic 20 Capabilities)
+# Active Context: Sound Design Subsystem (Hardened & Certified)
 
-## Live Sprint State: Complete & Verified (703/703 Tests Passing, 100% Green)
-- **Status**: Completed all 20 Sound Design Capabilities across Phases A - G.
-- **Verification**: 703/703 tests passing (0 failures, 100% green in 257.05s).
-- **Subsystem Architecture (`audiobook_factory/sound_design/`)**:
-  - `contracts.py`: Authoritative Pydantic v2 sound design schemas.
-  - `scene_understanding.py`: Scene audio understanding reusing screenplay tags & dramaturgy.
-  - `blueprint.py`: SceneAudioBlueprint director instruction sheet.
-  - `environment_profiles.py`: 12 canonical environments extending WorldAcousticProfile.
-  - `asset_retriever.py`: Semantic FTS5 retriever, SHA-256 provenance, DSP sanity check.
-  - `ambience_engine.py`: 5-tier decoupled ambience with cross-scene stateful evolution.
-  - `walla_engine.py`: Contextual crowd activity, dialogue subordination & solitary restraint.
-  - `silence_engine.py`: First-class negative sound design & adaptive density budgets.
-  - `foley_engine.py`: Relevance scoring formula & conscious low-value verb rejection.
-  - `foley_character_material.py`: Character physics, surface matrix, tableware isolation.
-  - `narrative_sfx.py`: Action hard SFX impacts & multi-tier creature sound design.
-  - `magical_sound.py`: Canonical spell stages (charge, release, impact) & families.
-  - `music_motif_director.py`: Persistent leitmotifs, 6 variation modes & cue direction.
-  - `spatial_acoustics.py`: Abstract room propagation & soundstage spatial continuity.
-  - `sound_director.py`: Master orchestrator assembling chronological SoundTimeline.
-  - `qc.py`: Multi-signal QC auditor evaluating 9 forensic sound design signals.
-  - `adapter.py`: Clean adapter boundary for AgentDirector & CreativeManifest.
-  - `golden_benchmarks.py`: 15 commercial cinematic audio drama scenarios.
-- **Architectural Invariants Strictly Enforced**:
-  - Adaptive scene density (no rigid universal 60% rule).
-  - Sound design outputs intent/priority/spatial metadata only (Track 11 owns mixing).
-  - Zero hardcoding contract compliant (`test_zero_hardcoding_contracts.py` passed).
+## Live Sprint State: Expert Panel Audit Remediation Complete (712/712 Tests Passing)
+- **Status**: Remediated 3 P0s, 5 P1s, and 3 P2s identified by adversarial expert panel.
+- **Verification**: 712/712 tests passing + 17 subtests (100% green in 340.57s).
+- **Core Remediations Completed**:
+  - **P0-1 (Coordinate Frame)**: Normalized `evaluate_scene_density` for absolute chapter offsets.
+  - **P0-2 (Boundary Spill)**: Clamped `MusicCueDirector` cue durations to remaining scene length.
+  - **P0-3 (Trajectory Literals)**: Aligned `SpatialGeographyEngine` with Pydantic contracts.
+  - **P1-1 (Adapter State)**: Eliminated duplicate ambience generation in `SoundDesignAdapter`.
+  - **P1-2 (Hard SFX Timing)**: Implemented proportional segment timing to prevent 0.0s collision.
+  - **P1-3 (Narrator Center-Lock)**: Made QC check case-insensitive for `"Narrator"` / `"NARRATOR"`.
+  - **P1-4 (Trivial Verbs)**: Enforced blanket rejection on low-value verbs under elevated tension.
+  - **P1-5 (Token False-Positives)**: Exact token matching & segment action deduplication.
+  - **P2 (Reset Hooks & Taxonomy)**: Engine reset hooks added; standardized walla slugs.
+- **Dedicated Test Suites**:
+  - `tests/test_sound_design_adversarial_audit.py` (9 tests)
+  - `tests/test_golden_sound_design_regression.py` (15 tests)
+  - `tests/test_sound_design_phase_a` through `g.py` (22 tests)
+  - `tests/test_zero_hardcoding_contracts.py` (4 tests)
+- **Total Sound Design Test Battery**: 50 tests passing 100% green.

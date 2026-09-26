@@ -227,6 +227,7 @@ class SilenceEngine:
         total_duration_ms: int,
         active_sound_spans: List[Tuple[int, int]],
         restraint_target: str = "moderate",
+        scene_start_ms: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Evaluates whether total active sound event coverage aligns with restraint policy.
@@ -237,10 +238,21 @@ class SilenceEngine:
 
         # Compute merged union of active sound intervals
         spans = sorted(active_sound_spans, key=lambda x: x[0])
+        
+        # Determine base offset to correctly handle absolute timestamps across multi-scene chapters
+        if scene_start_ms is not None:
+            base_offset = scene_start_ms
+        elif spans and any(s >= total_duration_ms for s, _ in spans):
+            base_offset = min(s for s, _ in spans)
+        else:
+            base_offset = 0
+
         merged: List[Tuple[int, int]] = []
         for s, e in spans:
-            s_clamped = max(0, min(total_duration_ms, s))
-            e_clamped = max(0, min(total_duration_ms, e))
+            s_rel = s - base_offset
+            e_rel = e - base_offset
+            s_clamped = max(0, min(total_duration_ms, s_rel))
+            e_clamped = max(0, min(total_duration_ms, e_rel))
             if s_clamped >= e_clamped:
                 continue
             if not merged or s_clamped > merged[-1][1]:

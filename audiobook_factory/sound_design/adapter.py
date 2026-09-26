@@ -62,17 +62,31 @@ class SoundDesignAdapter:
         )
 
         # 1. Convert Ambience to SceneAcousticProfile (audiobook_factory.scene_acoustics)
-        # Filter timeline ambience specs or reconstruct
+        # Reconstruct AmbienceLayerSpec from existing timeline AMBIENCE events (prevents duplicate execution & state corruption)
         amb_events = [e for e in timeline.events if e.category == "AMBIENCE"]
-        # Use ambience engine conversion
-        amb_layers = self.ambience_engine.build_scene_ambience(
-            scene_id=scene_id,
-            chapter_id=chapter_id,
-            environment_id=blueprint.location_id,
-            start_ms=start_ms,
-            end_ms=end_ms,
-            previous_scene_id=previous_scene_id,
-        )
+        amb_layers: List[Any] = []
+        for idx, evt in enumerate(amb_events):
+            tier = "BASE" if idx == 0 else "MIDGROUND"
+            if "MIDGROUND" in evt.decision_reason:
+                tier = "MIDGROUND"
+            elif "FOREGROUND" in evt.decision_reason:
+                tier = "FOREGROUND"
+            elif "DISTANT" in evt.decision_reason:
+                tier = "DISTANT"
+
+            from audiobook_factory.sound_design.contracts import AmbienceLayerSpec
+            amb_layers.append(
+                AmbienceLayerSpec(
+                    layer_tier=tier,  # type: ignore
+                    asset_name=evt.asset_name or Path(evt.asset_path).name,
+                    asset_path=evt.asset_path,
+                    relative_intensity=evt.relative_intensity,
+                    loop=True,
+                    spatial=evt.spatial,
+                    mix_intent=evt.mix_intent,
+                )
+            )
+
         acoustic_profile = self.ambience_engine.to_scene_acoustic_profile(
             scene_id=scene_id,
             start_ms=start_ms,

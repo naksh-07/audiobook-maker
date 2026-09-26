@@ -44,6 +44,10 @@ class AmbienceEngine:
         self.retriever = asset_retriever or get_asset_retriever()
         self._state_tracker: Dict[str, AmbienceEvolutionState] = {}
 
+    def reset(self) -> None:
+        """Clears persistent chapter evolution state tracker."""
+        self._state_tracker.clear()
+
     def build_scene_ambience(
         self,
         scene_id: str,

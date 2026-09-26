@@ -267,11 +267,20 @@ class SoundDesignDirector:
 
         # D. Hard SFX events
         for h_idx, hsfx in enumerate(hard_sfx_events):
+            if hsfx.start_ms > 0:
+                sfx_start = start_ms + hsfx.start_ms
+            else:
+                seg_ratio = hsfx.segment_index / max(1, len(segments))
+                sfx_start = start_ms + int(duration_ms * seg_ratio) + (h_idx * 300)
+
+            # Ensure sfx_start stays within scene bounds
+            sfx_start = min(sfx_start, max(start_ms, start_ms + duration_ms - 1200))
+
             timeline_events.append(
                 SoundTimelineEvent(
                     event_id=f"evt_hardsfx_{scene_id}_{h_idx+1}",
                     category="HARD_SFX",
-                    start_ms=start_ms + hsfx.start_ms,
+                    start_ms=sfx_start,
                     duration_ms=1200,
                     relative_intensity=hsfx.relative_intensity,
                     priority=hsfx.priority,

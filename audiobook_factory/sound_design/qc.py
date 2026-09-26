@@ -123,20 +123,26 @@ class SoundDesignQCAuditor:
                 errors.append(f"Event '{evt.event_id}' azimuth pan {pan} exceeds safe stage boundary [-0.8, +0.8].")
                 spatial_stage_valid = False
 
-        # Check staged narrator position
+        # Check staged narrator position (case-insensitive)
         staged_chars = blueprint.characters_staged or {}
-        if "narrator" in staged_chars:
-            n_pan = staged_chars["narrator"].azimuth_pan if hasattr(staged_chars["narrator"], "azimuth_pan") else staged_chars["narrator"].get("azimuth_pan", 0.0)
-            if abs(n_pan) > 0.001:
-                errors.append(f"Narrator azimuth pan {n_pan} is not locked to center 0.0.")
-                spatial_stage_valid = False
+        for c_name, c_spatial in staged_chars.items():
+            if c_name.lower().strip() == "narrator":
+                n_pan = c_spatial.azimuth_pan if hasattr(c_spatial, "azimuth_pan") else (
+                    c_spatial.get("azimuth_pan", 0.0) if isinstance(c_spatial, dict) else 0.0
+                )
+                if abs(n_pan) > 0.001:
+                    errors.append(f"Narrator azimuth pan {n_pan} is not locked to center 0.0.")
+                    spatial_stage_valid = False
+                break
 
         # 8. Restraint Density Evaluation (Scene-Dependent, No Rigid Universal Rule)
         sound_spans = [(e.start_ms, e.start_ms + e.duration_ms) for e in timeline.events if e.category not in ("AMBIENCE", "SILENCE")]
+        scene_start_ms = min((e.start_ms for e in timeline.events), default=0) if timeline.events else 0
         density_eval = self.silence_engine.evaluate_scene_density(
             total_duration_ms=timeline.total_duration_ms,
             active_sound_spans=sound_spans,
             restraint_target=blueprint.restraint_target,
+            scene_start_ms=scene_start_ms,
         )
 
         restraint_score = 1.0 if density_eval["compliant"] else 0.75
