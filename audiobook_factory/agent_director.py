@@ -541,9 +541,23 @@ Output STRICT JSON schema:
                 results = self.sound_bank.search_music_catalog(chosen_track, limit=1)
             else:
                 # Dynamic query formulated from narrative archetype, mood, tempo, timbre, and search query
+                search_q = str(cue_data.get("search_query", "") or "").strip()
+                if search_q:
+                    # If an explicit search_query was requested, verify that the catalog has matching assets
+                    # for the primary query before diluting with secondary mood/timbre keywords.
+                    pre_check = self.sound_bank.search_music_catalog(search_q, limit=1)
+                    if not pre_check:
+                        pre_check = self.sound_bank.search(search_q, category="music", limit=1)
+                    if not pre_check:
+                        logger.info(
+                            f"  [-] Music Director: No matching asset in catalog for primary query '{search_q}'. "
+                            f"Falling back gracefully to pure acoustic silence (0 hardcoded tracks)."
+                        )
+                        continue
+
                 q_terms = [
                     cue_data.get("narrative_archetype", ""),
-                    cue_data.get("search_query", ""),
+                    search_q,
                     cue_data.get("mood", ""),
                     cue_data.get("timbre", ""),
                     cue_data.get("tempo", ""),

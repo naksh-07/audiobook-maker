@@ -1318,14 +1318,25 @@ class AgentSoundCard(BaseModel):
     spectral_brightness: str = "neutral"
     transient_character: str = "transient"
     energy_profile: str = "medium"
+    speech_corridor_density: Optional[float] = None
     tags: List[str] = []
     top_classifier_labels: List[Dict[str, Any]] = []
+    vocal_speech_probability: Optional[float] = None
     clap_similarity: Optional[float] = None
-    dramatic_role: str = "general"
-    mood: str = "default"
-    voice_masking_risk: str = "LOW"
-    whisper_compatibility: float = 0.5
-    recommended_ducking_db: float = -6.0
+    source_mood: Optional[str] = None
+    classifier_mood: Optional[str] = None
+    mood: str = "UNINTERPRETED"
+    emotional_suitability: str = "UNINTERPRETED"
+    dramatic_role: str = "UNASSIGNED"
+    scene_purpose: str = "UNASSIGNED"
+    voice_masking_judgment: str = "UNASSESSED"
+    voice_masking_risk: Optional[str] = "UNASSESSED"
+    whisper_compatibility: Optional[float] = None
+    dialogue_ducking_amount_db: Optional[float] = None
+    recommended_ducking_db: Optional[float] = None
+    placement_usage: str = "UNASSIGNED"
+    final_taxonomy: str = "UNASSIGNED"
+    agent_interpretation: Optional[AgentInterpretation] = None
     temporal_events: List[Dict[str, Any]] = []
     metadata_completeness_pct: int = 100
     analysis_status: str = "complete"
@@ -1336,8 +1347,27 @@ class AgentSoundCard(BaseModel):
     retrieval_score: Optional[float] = None
     why_matched: List[str] = []
 
+    def attach_interpretation(self, interp: AgentInterpretation) -> "AgentSoundCard": ...
     def to_agent_markdown(self) -> str: ...
     def to_dict(self) -> Dict[str, Any]: ...
+
+class AgentInterpretation(BaseModel):
+    evaluator_agent: str
+    evaluated_at: str
+    scene_context: Optional[str] = None
+    assigned_dramatic_role: Optional[str] = None
+    scene_purpose: Optional[str] = None
+    emotional_suitability: Optional[str] = None
+    assigned_mood: Optional[str] = None
+    voice_masking_judgment: Optional[str] = None
+    voice_masking_assessment: Optional[str] = None
+    dialogue_ducking_amount_db: Optional[float] = None
+    contextual_ducking_db: Optional[float] = None
+    placement_usage: Optional[str] = None
+    final_taxonomy: Optional[str] = None
+    mix_notes: Optional[str] = None
+    conflict_notes: Optional[str] = None
+    creative_confidence: Optional[float] = None
 
 class SoundRetrievalResult(BaseModel):
     query_plan: SoundQueryPlan

@@ -67,6 +67,24 @@ AUDIOSET_TO_STUDIO_ONTOLOGY: Dict[str, str] = {
     "Bird vocalization, bird call, bird song": "nature.bird.song",
     "Insect": "nature.insect",
     "Cricket": "nature.cricket",
+    # Music & Instruments
+    "Music": "music.instrumental",
+    "Musical instrument": "music.instrument",
+    "Scary music": "music.mood.scary",
+    "Timpani": "music.instrument.timpani",
+    "Zither": "music.instrument.zither",
+    # Human Voice & Crowd
+    "Speech": "vocal.speech",
+    "Singing": "vocal.singing",
+    "Crowd": "human.crowd",
+    "Hubbub, speech noise, speech": "human.crowd.walla",
+    "Babble": "human.crowd.babble",
+    # Metal Impacts & Tableware
+    "Clang": "metal.impact.clang",
+    "Ding": "metal.impact.ding",
+    "Ping": "metal.impact.ping",
+    "Dishes, pots, and pans": "foley.tableware.dishes",
+    "Chink, clink": "foley.tableware.clink",
 }
 
 
@@ -259,7 +277,7 @@ class ASTClassifierAdapter(BaseAudioClassifier):
                 if p.raw_score >= score_threshold:
                     events.append(
                         AudioEventRecord(
-                            event_type="classifier_event",
+                            event_type="classifier_observation_window",
                             start_sec=0.0,
                             end_sec=round(duration_sec, 3),
                             confidence=p.raw_score,
@@ -270,12 +288,13 @@ class ASTClassifierAdapter(BaseAudioClassifier):
                                 "normalized_label": p.normalized_label,
                                 "ontology_id": self.ontology_id,
                                 "rank": p.rank,
+                                "window_type": "full_file_observation_window",
                             },
                         )
                     )
             return events
 
-        # Slicing for long audio/ambience
+        # Slicing for long audio/ambience (observation windows, not discrete acoustic events)
         windows = AudioPreprocessor.slice_sliding_windows(
             waveform, sample_rate, window_sec=10.0, hop_sec=5.0
         )
@@ -305,7 +324,7 @@ class ASTClassifierAdapter(BaseAudioClassifier):
                     norm_lbl = AUDIOSET_TO_STUDIO_ONTOLOGY.get(raw_lbl, None)
                     events.append(
                         AudioEventRecord(
-                            event_type="classifier_event",
+                            event_type="classifier_observation_window",
                             start_sec=start_sec,
                             end_sec=end_sec,
                             confidence=round(score, 4),
@@ -315,6 +334,7 @@ class ASTClassifierAdapter(BaseAudioClassifier):
                                 "raw_label": raw_lbl,
                                 "normalized_label": norm_lbl,
                                 "ontology_id": self.ontology_id,
+                                "window_type": "sliding_10s_hop_5s",
                             },
                         )
                     )

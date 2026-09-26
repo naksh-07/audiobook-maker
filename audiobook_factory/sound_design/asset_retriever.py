@@ -466,7 +466,7 @@ class SoundAssetRetriever:
         sha = self._compute_sha256(filepath)
         row = metadata_row or {}
 
-        source_type = "approved_provider" if (row.get("source_collection") or row.get("source_url")) else "local_sound_bank"
+        source_type = "approved_provider" if (row.get("source_url") and not row.get("is_downloaded")) else "local_sound_bank"
         license_str = row.get("license") or "CC0_PUBLIC_DOMAIN"
         attribution_str = row.get("creator_attribution") or "AudioBookmaker Curated Sound Bank"
 
@@ -492,6 +492,184 @@ class SoundAssetRetriever:
             true_peak_db=metrics.get("true_peak_db", -1.5),
             is_valid_audio=is_sane,
             provenance=provenance,
+        )
+
+    def attach_agent_interpretation(
+        self,
+        card: Any,
+        evaluator_agent: str,
+        scene_context: Optional[str] = None,
+        assigned_dramatic_role: Optional[str] = None,
+        scene_purpose: Optional[str] = None,
+        emotional_suitability: Optional[str] = None,
+        assigned_mood: Optional[str] = None,
+        voice_masking_judgment: Optional[str] = None,
+        voice_masking_assessment: Optional[str] = None,
+        dialogue_ducking_amount_db: Optional[float] = None,
+        contextual_ducking_db: Optional[float] = None,
+        placement_usage: Optional[str] = None,
+        final_taxonomy: Optional[str] = None,
+        mix_notes: Optional[str] = None,
+        creative_confidence: Optional[float] = None,
+        conflict_notes: Optional[str] = None,
+    ) -> Any:
+        """
+        Attaches autonomous agent creative decisions to an AgentSoundCard.
+        Preserves provenance and underlying raw facts while recording the agent's interpretation.
+        """
+        from datetime import datetime, timezone
+        from audiobook_factory.agent_sound_card import AgentInterpretation
+
+        interp = AgentInterpretation(
+            evaluator_agent=evaluator_agent,
+            evaluated_at=datetime.now(timezone.utc).isoformat(),
+            scene_context=scene_context,
+            assigned_dramatic_role=assigned_dramatic_role,
+            scene_purpose=scene_purpose,
+            emotional_suitability=emotional_suitability or assigned_mood,
+            assigned_mood=assigned_mood or emotional_suitability,
+            voice_masking_judgment=voice_masking_judgment or voice_masking_assessment,
+            voice_masking_assessment=voice_masking_assessment or voice_masking_judgment,
+            dialogue_ducking_amount_db=dialogue_ducking_amount_db if dialogue_ducking_amount_db is not None else contextual_ducking_db,
+            contextual_ducking_db=contextual_ducking_db if contextual_ducking_db is not None else dialogue_ducking_amount_db,
+            placement_usage=placement_usage,
+            final_taxonomy=final_taxonomy,
+            mix_notes=mix_notes,
+            creative_confidence=creative_confidence,
+            conflict_notes=conflict_notes,
+        )
+        if hasattr(card, "attach_interpretation"):
+            return card.attach_interpretation(interp)
+        return card
+
+    def evaluate_sound_director_decision(
+        self,
+        card: Any,
+        scene_id: str,
+        dramatic_role: str,
+        scene_purpose: str,
+        emotional_suitability: Optional[str] = None,
+        placement_usage: Optional[str] = None,
+        final_taxonomy: Optional[str] = None,
+        creative_confidence: Optional[float] = None,
+        director_notes: Optional[str] = None,
+    ) -> Any:
+        """
+        Specialist Agent: SoundDirector evaluates asset for scene context.
+        Consumes MEASURED acoustic facts and CLASSIFIER predictions to make
+        contextual dramatic, purpose, placement, and taxonomy decisions at scene time.
+        """
+        return self.attach_agent_interpretation(
+            card=card,
+            evaluator_agent="SoundDirector",
+            scene_context=scene_id,
+            assigned_dramatic_role=dramatic_role,
+            scene_purpose=scene_purpose,
+            emotional_suitability=emotional_suitability,
+            placement_usage=placement_usage,
+            final_taxonomy=final_taxonomy,
+            creative_confidence=creative_confidence,
+            mix_notes=director_notes,
+        )
+
+    def evaluate_mix_director_decision(
+        self,
+        card: Any,
+        scene_id: str,
+        dialogue_present: bool = True,
+        dialogue_style: str = "normal",
+        custom_ducking_db: Optional[float] = None,
+        mix_notes: Optional[str] = None,
+    ) -> Any:
+        """
+        Specialist Agent: MixDirector evaluates asset for mix safety and ducking.
+        Consumes MEASURED speech corridor density and CLASSIFIER vocal probability
+        to determine voice masking judgment and dialogue ducking amount at scene time.
+        """
+        dens = getattr(card, "speech_corridor_density", None)
+        vocal_prob = getattr(card, "vocal_speech_probability", None)
+
+        if not dialogue_present:
+            mask_risk = "LOW"
+            duck_db = 0.0
+        elif dialogue_style == "whisper":
+            mask_risk = "SEVERE"
+            duck_db = -18.0
+        elif custom_ducking_db is not None:
+            duck_db = custom_ducking_db
+            mask_risk = "SEVERE" if duck_db <= -15.0 else ("MODERATE" if duck_db <= -10.0 else "LOW")
+        else:
+            # Consume objective MEASURED and CLASSIFIER evidence
+            if (dens is not None and dens >= 0.70) or (vocal_prob is not None and vocal_prob >= 0.25):
+                mask_risk = "SEVERE"
+                duck_db = -16.0
+            elif (dens is not None and dens >= 0.40) or (vocal_prob is not None and vocal_prob >= 0.10):
+                mask_risk = "MODERATE"
+                duck_db = -12.0
+            else:
+                mask_risk = "LOW"
+                duck_db = -6.0
+
+        return self.attach_agent_interpretation(
+            card=card,
+            evaluator_agent="MixDirector",
+            scene_context=scene_id,
+            voice_masking_judgment=mask_risk,
+            dialogue_ducking_amount_db=duck_db,
+            mix_notes=mix_notes or f"MixDirector: {mask_risk} masking based on MEASURED corridor density ({dens}) and CLASSIFIER vocal prob ({vocal_prob})",
+        )
+
+    def evaluate_contextual_scene_decision(
+        self,
+        card: Any,
+        scene_id: str,
+        dramatic_role: str,
+        scene_purpose: str,
+        emotional_suitability: Optional[str] = None,
+        dialogue_present: bool = True,
+        dialogue_style: str = "normal",
+        placement_usage: Optional[str] = None,
+        final_taxonomy: Optional[str] = None,
+        creative_confidence: Optional[float] = None,
+        mix_notes: Optional[str] = None,
+    ) -> Any:
+        """
+        Unified specialist agent workflow: combines SoundDirector and MixDirector decisions
+        for complete scene placement and mix safety.
+        """
+        dens = getattr(card, "speech_corridor_density", None)
+        vocal_prob = getattr(card, "vocal_speech_probability", None)
+
+        if not dialogue_present:
+            mask_risk = "LOW"
+            duck_db = 0.0
+        elif dialogue_style == "whisper":
+            mask_risk = "SEVERE"
+            duck_db = -18.0
+        else:
+            if (dens is not None and dens >= 0.70) or (vocal_prob is not None and vocal_prob >= 0.25):
+                mask_risk = "SEVERE"
+                duck_db = -16.0
+            elif (dens is not None and dens >= 0.40) or (vocal_prob is not None and vocal_prob >= 0.10):
+                mask_risk = "MODERATE"
+                duck_db = -12.0
+            else:
+                mask_risk = "LOW"
+                duck_db = -6.0
+
+        return self.attach_agent_interpretation(
+            card=card,
+            evaluator_agent="SoundDirector",
+            scene_context=scene_id,
+            assigned_dramatic_role=dramatic_role,
+            scene_purpose=scene_purpose,
+            emotional_suitability=emotional_suitability,
+            voice_masking_judgment=mask_risk,
+            dialogue_ducking_amount_db=duck_db,
+            placement_usage=placement_usage,
+            final_taxonomy=final_taxonomy,
+            creative_confidence=creative_confidence,
+            mix_notes=mix_notes,
         )
 
 

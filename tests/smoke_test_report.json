@@ -1,0 +1,238 @@
+{
+  "timestamp": "2026-09-27T03:55:19Z",
+  "processed_files": {
+    "453": {
+      "track_id": 453,
+      "filename": "090 The Wolven Storm.mp3",
+      "elapsed_sec": 25.02,
+      "duration_sec": 192.85,
+      "format": "mp3",
+      "sample_rate": 44100,
+      "channels": 2,
+      "integrated_lufs": -32.7,
+      "true_peak_dbtp": -16.5,
+      "spectral_centroid_hz": 598.7,
+      "silence_ratio": 0.002,
+      "top_classifier_tags": [
+        "music.instrumental (0.45)",
+        "music.instrument (0.18)",
+        "vocal.speech (0.16)",
+        "music.instrument.zither (0.11)",
+        "Pizzicato (0.11)"
+      ],
+      "has_clap_embedding": true,
+      "provenance_records_count": 10
+    },
+    "498": {
+      "track_id": 498,
+      "filename": "135 The Leshy Comes.mp3",
+      "elapsed_sec": 1.45,
+      "duration_sec": 37.09,
+      "format": "mp3",
+      "sample_rate": 48000,
+      "channels": 2,
+      "integrated_lufs": -15.0,
+      "true_peak_dbtp": -0.3,
+      "spectral_centroid_hz": 374.4,
+      "silence_ratio": 0.092,
+      "top_classifier_tags": [
+        "music.instrumental (0.70)",
+        "music.mood.scary (0.13)",
+        "music.instrument.timpani (0.12)",
+        "Rumble (0.07)",
+        "Silence (0.05)"
+      ],
+      "has_clap_embedding": true,
+      "provenance_records_count": 10
+    },
+    "164": {
+      "track_id": 164,
+      "filename": "tiny_sword-clash-01.wav",
+      "elapsed_sec": 0.36,
+      "duration_sec": 1.34,
+      "format": "wav",
+      "sample_rate": 44100,
+      "channels": 2,
+      "integrated_lufs": -21.6,
+      "true_peak_dbtp": 0.3,
+      "spectral_centroid_hz": 8781.3,
+      "silence_ratio": 0.197,
+      "top_classifier_tags": [
+        "metal.impact.clang (0.17)",
+        "metal.impact.ding (0.15)",
+        "metal.impact.ping (0.05)",
+        "foley.tableware.clink (0.05)",
+        "Cowbell (0.03)"
+      ],
+      "has_clap_embedding": true,
+      "provenance_records_count": 10
+    },
+    "68": {
+      "track_id": 68,
+      "filename": "tavern_crowd_murmur.ogg",
+      "elapsed_sec": 3.47,
+      "duration_sec": 76.25,
+      "format": "ogg",
+      "sample_rate": 44100,
+      "channels": 2,
+      "integrated_lufs": -19.3,
+      "true_peak_dbtp": -0.7,
+      "spectral_centroid_hz": 455.7,
+      "silence_ratio": 0.001,
+      "top_classifier_tags": [
+        "vocal.speech (0.87)",
+        "foley.tableware.dishes (0.14)",
+        "foley.tableware.clink (0.12)",
+        "Inside, public space (0.10)",
+        "Chatter (0.10)"
+      ],
+      "has_clap_embedding": true,
+      "provenance_records_count": 13
+    },
+    "67": {
+      "track_id": 67,
+      "filename": "rain_thunder.ogg",
+      "elapsed_sec": 0.77,
+      "duration_sec": 18.9,
+      "format": "ogg",
+      "sample_rate": 44100,
+      "channels": 1,
+      "integrated_lufs": -24.8,
+      "true_peak_dbtp": -0.3,
+      "spectral_centroid_hz": 331.5,
+      "silence_ratio": 0.005,
+      "top_classifier_tags": [
+        "weather.thunderstorm (0.75)",
+        "weather.thunder (0.60)",
+        "weather.rain (0.57)",
+        "Rain on surface (0.17)",
+        "weather.raindrop (0.14)"
+      ],
+      "has_clap_embedding": true,
+      "provenance_records_count": 12
+    }
+  },
+  "retrieval_evaluations": [
+    {
+      "query_id": "Q1_EXACT_OBJECT",
+      "query": "steel sword clashing in melee combat",
+      "type": "exact/object",
+      "acceptable_top_ids": [
+        601,
+        164,
+        668
+      ],
+      "actual_top_id": 601,
+      "best_acceptable_rank": 1,
+      "penalized_id": null,
+      "penalized_rank": null,
+      "success": true,
+      "latency_ms": 117.4,
+      "normalized_query": "steel sword clashing in melee combat",
+      "negative_speech_flag": false
+    },
+    {
+      "query_id": "Q2_SEMANTIC_MONSTER",
+      "query": "dark eerie monster lurking in an ancient cursed forest",
+      "type": "semantic",
+      "acceptable_top_ids": [
+        375,
+        498,
+        479,
+        594,
+        503
+      ],
+      "actual_top_id": 375,
+      "best_acceptable_rank": 1,
+      "penalized_id": null,
+      "penalized_rank": null,
+      "success": true,
+      "latency_ms": 108.8,
+      "normalized_query": "dark eerie monster lurking in an ancient cursed forest",
+      "negative_speech_flag": false
+    },
+    {
+      "query_id": "Q3_ACOUSTIC_WEATHER",
+      "query": "heavy continuous rain with sudden loud thunder cracks",
+      "type": "acoustic/environmental",
+      "acceptable_top_ids": [
+        67
+      ],
+      "actual_top_id": 67,
+      "best_acceptable_rank": 1,
+      "penalized_id": null,
+      "penalized_rank": null,
+      "success": true,
+      "latency_ms": 97.3,
+      "normalized_query": "heavy continuous rain with sudden loud thunder cracks",
+      "negative_speech_flag": false
+    },
+    {
+      "query_id": "Q4_AUDIOBOOK_WALLA",
+      "query": "busy tavern crowd murmur with people chatting and drinking",
+      "type": "audiobook/cinematic",
+      "acceptable_top_ids": [
+        68
+      ],
+      "actual_top_id": 68,
+      "best_acceptable_rank": 1,
+      "penalized_id": null,
+      "penalized_rank": null,
+      "success": true,
+      "latency_ms": 41.3,
+      "normalized_query": "busy tavern crowd murmur with people chatting and drinking",
+      "negative_speech_flag": false
+    },
+    {
+      "query_id": "Q5_VOCAL_BALLAD",
+      "query": "melancholic female vocal ballad with acoustic lute accompaniment",
+      "type": "semantic/vocal",
+      "acceptable_top_ids": [
+        453
+      ],
+      "actual_top_id": 453,
+      "best_acceptable_rank": 1,
+      "penalized_id": null,
+      "penalized_rank": null,
+      "success": true,
+      "latency_ms": 27.1,
+      "normalized_query": "melancholic female vocal ballad with acoustic lute accompaniment",
+      "negative_speech_flag": false
+    },
+    {
+      "query_id": "Q6_NEGATIVE_CONSTRAINT",
+      "query": "dark fantasy music without voice",
+      "type": "negative_constraint",
+      "acceptable_top_ids": [
+        502,
+        374,
+        432,
+        498
+      ],
+      "actual_top_id": 502,
+      "best_acceptable_rank": 1,
+      "penalized_id": 453,
+      "penalized_rank": null,
+      "success": true,
+      "latency_ms": 113.0,
+      "normalized_query": "dark fantasy music without voice",
+      "negative_speech_flag": true
+    },
+    {
+      "query_id": "Q7_HINGLISH_QUERY",
+      "query": "sharaabkhane ki bheed ka shor",
+      "type": "multilingual_hinglish",
+      "acceptable_top_ids": [
+        68
+      ],
+      "actual_top_id": 68,
+      "best_acceptable_rank": 1,
+      "penalized_id": null,
+      "penalized_rank": null,
+      "success": true,
+      "latency_ms": 64.9,
+      "normalized_query": "tavern crowd murmur",
+      "negative_speech_flag": false
+    }
+  ]
+}

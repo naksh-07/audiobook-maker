@@ -357,8 +357,33 @@ class SonicIntelligenceEngine:
                 return None
             row_d = dict(row)
 
+            # Retrieve temporal events
+            ev_rows = conn.execute("""
+                SELECT id, track_id, event_type, start_sec, end_sec, confidence,
+                       source_method, detector_id, metadata, created_at
+                FROM sound_temporal_events
+                WHERE track_id = ?
+                ORDER BY start_sec ASC
+            """, (asset_id,)).fetchall()
+            temporal_events = []
+            for ev in ev_rows:
+                ev_d = dict(ev)
+                if ev_d.get("metadata") and isinstance(ev_d["metadata"], str):
+                    try:
+                        ev_d["metadata"] = json.loads(ev_d["metadata"])
+                    except Exception:
+                        pass
+                temporal_events.append(ev_d)
+
         classifier_tags = self.bank.get_classifier_tags(asset_id)
-        card = SoundCardBuilder.from_database_row(row_d, classifier_tags=classifier_tags)
+        sonic_genome = self.bank.get_sonic_genome(asset_id)
+
+        card = SoundCardBuilder.from_database_row(
+            row_d,
+            classifier_tags=classifier_tags,
+            temporal_events=temporal_events,
+            sonic_genome=sonic_genome,
+        )
 
         # Retrieve CLAP embedding presence
         clap_vec = self.bank.get_sound_embedding(asset_id)

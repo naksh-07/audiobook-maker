@@ -30,9 +30,9 @@ flowchart LR
     style P4 fill:#fff3cd,stroke:#ffc107,color:#856404
 ```
 
-- **Phase 1 (Foundation — Certified)**: Deterministic audio analysis pipeline extracting 14 physical ground-truth DSP metrics directly from waveforms, non-destructive SQLite schema migration, and temporal event onsets.
+- **Phase 1 (Foundation — Certified)**: Deterministic audio analysis pipeline extracting physical ground-truth DSP metrics directly from waveforms (`speech_corridor_density`, EBU R128 integrated LUFS, True Peak dBTP, Welch spectral centroid), non-destructive SQLite schema migration, and temporal event onsets.
 - **Phase 2 (AI Enrichment — Certified)**: Dedicated machine-learning adapters (AudioSet 527 classification via AST, open-vocabulary 512-d dual embeddings via LAION-CLAP), thread-safe VRAM model management (`SonicModelManager`), and SQLite vector BLOB storage.
-- **Phase 3 (Sound Intelligence — Certified & Audited)**: Multilingual query planning (`HinglishQueryNormalizer`, `SonicQueryPlanner`), thread-safe LRU query caching (`QueryEmbeddingCache`), 5-source candidate pooling (`CandidatePoolAggregator`), explainable linear reranking with negative penalties (`SonicHybridReranker`), and epistemically honest `AgentSoundCard` (v3.0) models.
+- **Phase 3 (Sound Intelligence — Certified & Hardened)**: Multilingual query planning (`HinglishQueryNormalizer`, `SonicQueryPlanner`), thread-safe LRU query caching (`QueryEmbeddingCache`), 5-source candidate pooling (`CandidatePoolAggregator`), explainable linear reranking with negative penalties (`SonicHybridReranker`), and epistemically honest `AgentSoundCard` (v3.0) models with strict 4-tier labeling.
 - **Phase 4 (Production Scale — Upcoming)**: Bounded batch ingestion of large sound libraries (50GB+), distributed worker clustering, and direct chapter timeline compilation.
 
 ---
@@ -42,7 +42,7 @@ flowchart LR
 Phase 1 provides the mathematical ground-truth foundation for all sound assets without relying on neural models or subjective tags.
 
 ### A. Deterministic Audio Analyzer (`DeterministicAudioAnalyzer`)
-Located in [`audiobook_factory/deterministic_audio_analyzer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/deterministic_audio_analyzer.py), this module extracts 14 physical, reproducible metrics directly from 48kHz audio streams:
+Located in [`audiobook_factory/deterministic_audio_analyzer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/deterministic_audio_analyzer.py), this module extracts physical, reproducible metrics directly from 48kHz audio streams:
 
 | Metric Column | Data Type | Physical Definition & Measurement Method |
 | :--- | :---: | :--- |
@@ -53,13 +53,13 @@ Located in [`audiobook_factory/deterministic_audio_analyzer.py`](file:///c:/User
 | `spectral_rolloff_hz` | `REAL` | Frequency below which 85% of total spectral power resides ($H_z$). |
 | `spectral_flux` | `REAL` | Normalized rate of spectral change between successive analysis frames. |
 | `zero_crossing_rate` | `REAL` | Normalized sign-change rate per second (fricative/noise indicator). |
+| `speech_corridor_density` | `REAL` | Ratio of energy in 1kHz–4kHz human voice corridor (objective masking evidence). |
 | `attack_time_ms` | `REAL` | Time elapsed from 10% to 90% peak transient energy ($ms$). |
 | `decay_time_ms` | `REAL` | Time elapsed from peak energy to -20 dB decay floor ($ms$). |
 | `temporal_character` | `TEXT` | Categorization: `transient`, `percussive`, `evolving`, or `continuous_drone`. |
 | `energy_profile` | `REAL` | Normalized energy distribution index ($0.0$ to $1.0$). |
-| `voice_masking_risk` | `TEXT` | Dialogue occlusion severity (`LOW`, `MODERATE`, `SEVERE`) based on 1kHz–3.5kHz energy. |
-| `whisper_compatibility` | `REAL` | Safety multiplier for whispered or intimate speech ($0.0$ to $1.0$). |
-| `recommended_ducking_db` | `REAL` | Calibrated sidechain attenuation ($-6.0$, $-12.0$, or $-16.0$ dB). |
+
+> **Epistemic Invariant**: Deterministic scripts strictly compute and expose measurable evidence. They **never** assert creative conclusions like `dramatic_role="general"`, pre-baked `voice_masking_risk="LOW"`, or fixed `recommended_ducking_db="-6 dB"`. All creative, scene-specific, and mix decisions are deferred to downstream specialist agents (`SoundDirector`, `MixDirector`).
 
 ### B. Relational Schema & Provenance Ledgers
 The SQLite schema is expanded non-destructively:
@@ -185,28 +185,76 @@ $$\text{Score} = w_{\text{sem}} S_{\text{sem}} + w_{\text{class}} S_{\text{class
 - **Collection Diversity Filter**: Prevents single sound packs from flooding results when scores are close (gap $\le$ `diversity_threshold`, default $0.10$).
 
 ### E. Epistemically Honest Agent Sound Cards (`AgentSoundCard` v3.0)
-Located in [`audiobook_factory/agent_sound_card.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_sound_card.py), sound cards provide AI creative directors complete understanding without listening to audio:
+Located in [`audiobook_factory/agent_sound_card.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_sound_card.py), sound cards provide AI creative directors complete understanding without listening to audio.
+
+#### 1. The Strict 4-Tier Epistemic Hierarchy
+Every field exposed in `AgentSoundCard` is explicitly badged to eliminate confusion between physical reality, statistical ML inference, origin metadata, and creative director interpretation:
+1. **`[MEASURED]`**: Directly extracted from audio DSP and container probing (LUFS, True Peak, Spectral Centroid, Speech Corridor Density, Active Region, Transient Onsets, Tonal Autocorrelation).
+2. **`[CLASSIFIER]`**: Produced by trained neural models (AST AudioSet-527 labels/confidences, Vocal Speech Probability, 10s Observation Windows, CLAP similarity).
+3. **`[SOURCE_METADATA]`**: Origin catalog data (Pack Title, Categories, Physical tags, Pack Mood, Origin License).
+4. **`[AGENT_INTERPRETATION]`**: Downstream creative/mix decisions made by specialist agents (`SoundDirector`, `MixDirector`) at scene/usage time.
+
+#### 2. The 7 Prohibited Premature Inferences (Baseline Invariant)
+To prevent scripts from hallucinating mix decisions, the following 7 dimensions are **never** inferred or hardcoded in catalog storage:
+- `dramatic_role` $\rightarrow$ `UNASSIGNED [AWAITING_AGENT_EVALUATION]`
+- `scene_purpose` $\rightarrow$ `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`
+- `emotional_suitability` $\rightarrow$ `UNINTERPRETED [AWAITING_AGENT_EVALUATION]` (or surfaced conflict)
+- `voice_masking_judgment` $\rightarrow$ `UNASSESSED (Speech Density: X [MEASURED], Vocal Presence: Y [CLASSIFIER]) [AWAITING MIX AGENT]`
+- `dialogue_ducking_amount_db` $\rightarrow$ `SCENE_DEPENDENT (Deferred to Track 11 Mix Director)`
+- `placement_usage` $\rightarrow$ `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`
+- `final_taxonomy` $\rightarrow$ `UNASSIGNED [AGENT_INTERPRETATION: Awaiting creative interpretation]`
+
+#### 3. Transparent Conflict Surfacing
+When catalog source tags contradict neural classifier predictions, both facts are honestly surfaced rather than silently overridden (e.g., Asset #498 where catalog tag is `'peaceful'` but classifier predicts `'scary'`):
+```markdown
+- Emotional Suitability [AGENT_INTERPRETATION]: Catalog: 'peaceful' vs Classifier: 'scary' (0.134) [CONFLICT / REQUIRES AGENT EVALUATION]
+```
+
+#### 4. Active Production Sound Card Markdown View
 
 ```markdown
-### 🎵 Sound Asset Card [ID: 2]: Heavy Wooden Door Slam
-- **Source**: `door_heavy_wood_slam.wav` | Collection: `SoundBank` | License: `Royalty-Free`
-- **Category**: `FOL` > `Door` | Action: `slam` | Exciter: `heavy_wood` | Resonator: `door_frame`
-- **Measured DSP [PHYSICAL GROUND TRUTH]**:
-  - Duration: `1.80s` | Integrated LUFS: `-16.5 LUFS` | True Peak: `-0.8 dBTP`
-  - Brightness: `neutral` (Centroid: `1250 Hz`) | Transient Profile: `percussive`
-  - Voice Masking Risk: `LOW` (Whisper Compatibility: `0.85`, Recommended Ducking: `-6.0 dB`)
-- **AI Classifier Inference [AudioSet-527]**:
-  - `Door` (confidence: 0.94, rank #1)
-  - `Slam` (confidence: 0.81, rank #2)
-- **CLAP Semantic Inference**:
-  - Similarity: `0.89` to query 'heavy wooden door slam'
-- **Retrieval Match Score**: `0.875`
-- **Why Matched**:
-  - Semantic match (0.89 similarity to 'heavy wooden door slam')
-  - Classifier verified 'Door' (confidence: 0.94)
-  - Keyword match for 'door', 'slam'
-  - Acoustic DSP alignment (duration_sec <= 3.0)
+### 🎵 Sound Card [ID: 453] 090 The Wolven Storm.mp3
+- **File / Status [SOURCE_METADATA]**: `090 The Wolven Storm.mp3` | LOCAL (Cached) | **Duration [MEASURED]**: 192.85s
+- **Source [SOURCE_METADATA]**: SoundBank (Royalty-Free)
+- **Taxonomy [SOURCE METADATA]**:
+  - Category [SOURCE_METADATA]: `LEITMOTIF` / `Theme`
+  - Physical [SOURCE_METADATA]: Exciter: `unspecified` | Resonator: `unspecified` | Action: `unspecified` | Surface: `unspecified`
+  - Source Pack Mood [SOURCE_METADATA]: `emotional`
+- **Acoustics [MEASURED DSP]**:
+  - Loudness [MEASURED]: -32.7 LUFS | True Peak [MEASURED]: -16.5 dBTP
+  - Spectral [MEASURED]: Centroid 599 Hz (warm) | Dynamics [MEASURED]: `medium` (transient)
+  - Speech Corridor Density (1kHz–4kHz) [MEASURED]: 0.81
+- **Classifier Inferences [CLASSIFIER]**:
+  - AudioSet [CLASSIFIER]: `music.instrumental` (conf: 0.45, rank #1), `vocal.speech` (conf: 0.16, rank #3)
+  - Vocal Speech Probability [CLASSIFIER]: 0.16
+  - Classifier Mood Evidence [CLASSIFIER]: None
+- **Semantic Embedding [CLAP]**:
+  - Query Similarity [CLASSIFIER]: 0.70
+- **Directorial Decisions & Mix Safety [AGENT_INTERPRETATION]**:
+  - Dramatic Role [AGENT_INTERPRETATION]: `UNASSIGNED [AWAITING_AGENT_EVALUATION]`
+  - Scene Purpose [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`
+  - Emotional Suitability [AGENT_INTERPRETATION]: `emotional [SOURCE METADATA]`
+  - Voice-Masking Judgment [AGENT_INTERPRETATION]: `UNASSESSED (Speech Density: 0.81 [MEASURED], Vocal Presence: 0.16 [CLASSIFIER]) [AWAITING MIX AGENT]` (Whisper Compatibility: `NOT_CALIBRATED`)
+  - Dialogue Ducking Amount [AGENT_INTERPRETATION]: `SCENE_DEPENDENT (Deferred to Track 11 Mix Director)`
+  - Placement / Recommended Usage [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`
+  - Final Taxonomy [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting creative interpretation]`
+- **Temporal Structure**: Active Region: 0.00s - 60.00s [ANALYSIS WINDOW: First 60.0s analyzed of 192.85s total] | Window [0.00s - 10.00s] [OBSERVATION WINDOW]: music.instrumental (0.53) [CLASSIFIER INFERENCE] | 5 transient onsets detected [MEASURED DSP]
+- **Music & Tonal [MEASURED / SOURCE METADATA]**:
+  - Tonal [MEASURED]: True (Pitch: 344.5 Hz) [MEASURED DSP] | BPM [SOURCE_METADATA / MEASURED]: unavailable (unmeasured)
+
+- **Agent Creative Interpretation**: None [AGENT_INTERPRETATION: Asset unassigned in catalog; dramatic role, scene purpose, emotional suitability, and dialogue ducking evaluated per scene by SoundDirector / Mix Director]
+- **Provenance & Quality**:
+  - Metadata Completeness: 70% | Status: `full_phase2`
+  - Provenance: DSP=`1.0.0`, AST=`AudioSet-527`, CLAP=`HTS-AT`
 ```
+
+---
+
+### F. Canonical Sonic Asset Inspector (`SonicAssetInspector`)
+Located in [`audiobook_factory/sonic_asset_inspector.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_asset_inspector.py), this non-destructive module aggregates all existing telemetry, DSP measurements, AI inferences, and provenance runs for any catalog asset:
+- **`inspect_asset(track_id)`**: Returns a structured JSON payload with complete Sonic Genome Layer 1-3 facts.
+- **`export_asset(track_id, output_dir)`**: Exports both a full canonical `.json` dossier and a high-density `.md` inspection report.
+- Zero feature recomputation; completely idempotent and safe.
 
 ---
 
@@ -220,26 +268,30 @@ The Sound Bank maintains **zero raw audio disk bloat** by keeping the full 18,13
 
 ---
 
-## 📊 6. Adversarial Audit & Verification Matrix
+## 📊 6. Adversarial Audit, Verification & Test Matrix
 
-The Phase 3 implementation underwent an independent multi-expert audit and adversarial testing:
+The complete Sonic Intelligence subsystem (Phases 1–3) has undergone extensive forensic audits, adversarial testing, and real-world smoke tests:
 
-| Test Suite | File Link | Test Count | Result | Execution Time |
-| :--- | :--- | :---: | :---: | :---: |
-| **Adversarial Audit Suite** | [`test_sonic_intelligence_phase3_audit.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_intelligence_phase3_audit.py) | 11 | **PASSED** | 37.19s |
-| **Phase 3 Retrieval Suite** | [`test_sonic_intelligence_phase3.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_intelligence_phase3.py) | 16 | **PASSED** | 21.48s |
-| **Phase 2 AI Enrichment Suite** | [`test_sonic_intelligence_phase2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_intelligence_phase2.py) | 14 | **PASSED** | 28.50s |
-| **Phase 1 Foundation DSP Suite** | [`test_sonic_genome_phase1.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_genome_phase1.py) | 12 | **PASSED** | 12.10s |
-| **AST Zero-Hardcoding Contracts** | [`test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py) | 4 | **PASSED** | 4.20s |
-| **Total Test Suite** | **Engine-Wide Regression** | **57** | **100% GREEN** | **95.08s** |
+| Test Suite | File Link | Test Count | Result | Scope / Coverage |
+| :--- | :--- | :---: | :---: | :--- |
+| **Epistemic Boundary Suite** | [`test_sound_card_epistemic_boundary.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sound_card_epistemic_boundary.py) | 11 | **PASSED** | Zero fake defaults, 7 unassigned dimensions, conflict surfacing, 4-tier labeling, specialist agent attachment. |
+| **Asset Inspector Suite** | [`test_sonic_asset_inspector.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_asset_inspector.py) | 2 | **PASSED** | Canonical JSON & MD dossier generation across smoke test tracks (453, 498, 164, 68, 67). |
+| **Adversarial Audit Suite** | [`test_sonic_intelligence_phase3_audit.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_intelligence_phase3_audit.py) | 11 | **PASSED** | FTS5 syntax attacks, unicode/emojis, empty strings, concurrency contention. |
+| **Phase 3 Retrieval Suite** | [`test_sonic_intelligence_phase3.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_intelligence_phase3.py) | 16 | **PASSED** | BM25 lexical, CLAP semantic, structured, classifier, Hinglish, negative constraints. |
+| **Phase 2 AI Enrichment Suite** | [`test_sonic_intelligence_phase2.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_intelligence_phase2.py) | 14 | **PASSED** | AST AudioSet 527 inference, CLAP 512-d embeddings, VRAM model manager. |
+| **Phase 1 Foundation DSP Suite** | [`test_sonic_genome_phase1.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_sonic_genome_phase1.py) | 12 | **PASSED** | EBU R128 LUFS, True Peak dBTP, Welch spectral centroid, speech corridor density. |
+| **AST Zero-Hardcoding Contracts** | [`test_zero_hardcoding_contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_zero_hardcoding_contracts.py) | 4 | **PASSED** | Pydantic strict contracts, zero magic constants. |
+| **Full Repository Test Suite** | **Entire Test Suite (`tests/`)** | **810** | **100% GREEN** | **810 passed in 446s (Zero regressions repository-wide).** |
 
-### Adversarial Vectors Verified:
-- **Empty & Whitespace Inputs**: `""`, `"   "`, `"\t\n"` safely return empty candidate lists without exceptions.
-- **Single-Character & 10,000+ Character Inputs**: Verified bounded latency and zero regex stack overflows.
-- **SQLite FTS5 Syntax Attacks**: Injected unclosed quotes (`'"door'`), wildcards (`'*'`), and boolean operators (`'door AND OR NOT NEAR slam'`). Tokens are cleanly sanitized via regex.
-- **Multilingual Unicode & Emojis**: Devanagari script (`'दरवाजा खटखटाना'`) and emojis (`'💥⚔️'`) processed accurately.
-- **Concurrency Contention**: 20 parallel threads concurrently accessing `QueryEmbeddingCache.get_or_compute` completed with zero deadlocks.
-- **Corrupt / Missing Assets**: `find_similar()` handles missing IDs and zero-measurement rows gracefully.
+### Real-World Smoke Test Battery (`tests/smoke_test_sonic_pipeline.py`)
+Tested across 5 real-world audio assets (Witcher 3 OST vocal cue #453, Witcher 3 monster theme #498, metal blade clash #164, crowd walla #68, heavy rain #67):
+- **Q1 (Exact Object)**: *"steel sword clashing in melee combat"* $\rightarrow$ **PASS** (Actual: #601 / #164)
+- **Q2 (Semantic Monster)**: *"dark eerie monster lurking in an ancient cursed forest"* $\rightarrow$ **PASS** (Actual: #375 / #498)
+- **Q3 (Acoustic Weather)**: *"heavy continuous rain with sudden loud thunder cracks"* $\rightarrow$ **PASS** (Actual: #67)
+- **Q4 (Audiobook Walla)**: *"busy tavern crowd murmur with people chatting and drinking"* $\rightarrow$ **PASS** (Actual: #68)
+- **Q5 (Vocal Ballad)**: *"melancholic female vocal ballad with acoustic lute accompaniment"* $\rightarrow$ **PASS** (Actual: #453)
+- **Q6 (Negative Constraint)**: *"dark fantasy music without voice"* $\rightarrow$ **PASS** (Elevated #502/#374; penalized #453)
+- **Q7 (Hinglish Query)**: *"sharaabkhane ki bheed ka shor"* $\rightarrow$ **PASS** (Normalized to `'tavern crowd murmur'`, retrieved #68)
 
 ---
 
@@ -250,9 +302,12 @@ The Phase 3 implementation underwent an independent multi-expert audit and adver
 ```python
 from audiobook_factory.sound_bank import get_sound_bank
 from audiobook_factory.sonic_intelligence_engine import SonicIntelligenceEngine
+from audiobook_factory.sound_design.asset_retriever import SoundAssetRetriever
+from audiobook_factory.sonic_asset_inspector import SonicAssetInspector
 
 bank = get_sound_bank()
 engine = SonicIntelligenceEngine(sound_bank=bank)
+retriever = SoundAssetRetriever(sound_bank=bank)
 
 # 1. Natural Language Search (English, Hindi, or Hinglish)
 result = engine.search_sounds(
@@ -262,22 +317,33 @@ result = engine.search_sounds(
     diversity_threshold=0.10
 )
 
-for card in result.ranked_cards:
-    print(f"[{card.retrieval_score:.2f}] {card.title} ({card.duration_sec}s)")
-    print(f"  Action: {card.physical_action} | Exciter: {card.exciter}")
-    print(f"  Measured LUFS: {card.integrated_lufs:.1f} | Brightness: {card.spectral_brightness}")
-    print(f"  Why: {', '.join(card.why_matched)}")
-
-# 2. Find Similar Sounds (Strict Separation of Modes)
-# Mode 'semantic': Uses CLAP 512-d latent space
-similar_semantic = engine.find_similar(asset_id=2, mode="semantic", top_k=3)
-
-# Mode 'acoustic': Uses Welch spectral centroid & duration DSP bounds
-similar_acoustic = engine.find_similar(asset_id=2, mode="acoustic", top_k=3)
-
-# 3. Retrieve Typed Agent Sound Card
-card = bank.get_agent_sound_card_v3(sound_id=2)
+# 2. Retrieve Agent Sound Card
+card = bank.get_agent_sound_card_v3(sound_id=453)
 print(card.to_agent_markdown())
+
+# 3. Specialist Agent Directorial Evaluation at Scene Time
+# SoundDirector assigns dramatic role, scene purpose, placement, and taxonomy:
+card = retriever.evaluate_sound_director_decision(
+    card=card,
+    scene_id="scene_04_ballad",
+    dramatic_role="emotional_catharsis",
+    scene_purpose="Priscilla performs for Geralt and Zoltan in tavern",
+    placement_usage="featured_narrative_cue",
+    final_taxonomy="Diegetic Bard Song",
+    emotional_suitability="melancholic_intimacy",
+)
+
+# MixDirector evaluates voice masking and ducking based on scene dialogue:
+card = retriever.evaluate_mix_director_decision(
+    card=card,
+    scene_id="scene_04_ballad",
+    dialogue_present=True,
+    dialogue_style="whisper",
+)
+
+# 4. Canonical Asset Inspection & Export
+inspector = SonicAssetInspector()
+json_path, md_path = inspector.export_asset(453, output_dir="exports/sonic_inspections")
 ```
 
 ### B. CLI Command Interface
@@ -290,8 +356,12 @@ python audiobook_cli.py bank virtual-status
 python audiobook_cli.py bank search "heavy wooden door slam" --limit 3
 
 # Inspect asset with complete Sonic Genome:
-python audiobook_cli.py bank inspect 2
+python audiobook_cli.py bank inspect 453
+
+# Export full canonical JSON and Markdown dossiers:
+python audiobook_factory/sonic_asset_inspector.py 453 --output-dir exports/sonic_inspections
 
 # Prune LRU cache to budget:
 python audiobook_cli.py bank prune-cache --target-mb 1000
 ```
+

@@ -745,13 +745,59 @@ class AudioEventRecord(BaseModel):
     """A timed audio event detected deterministically or inferred."""
     model_config = ConfigDict(extra="ignore")
 
-    event_type: str = Field(..., description="e.g. 'transient_onset', 'silence_region', 'active_region'")
+    event_type: str = Field(
+        ...,
+        description="e.g. 'transient_onset', 'silence_region', 'active_region', 'classifier_observation_window', 'sed_event', 'analysis_window'"
+    )
     start_sec: float = Field(..., ge=0.0)
     end_sec: float = Field(..., ge=0.0)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     source_method: ProvenanceMethod = Field(default="measured_dsp")
     detector_id: str = Field(default="onset_detector_v1")
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentInterpretation(BaseModel):
+    """Creative, narrative, or mix interpretation produced by an autonomous agent."""
+    model_config = ConfigDict(extra="ignore")
+
+    evaluator_agent: str = Field(..., description="Agent name (e.g. 'SoundDesignDirector', 'MusicCueDirector', 'MixDirector', 'RetrievalAgent')")
+    evaluated_at: str = Field(..., description="ISO 8601 timestamp of evaluation")
+    scene_context: Optional[str] = Field(default=None, description="Scene ID or dramatic context")
+
+    # Creative / Directorial Decisions (Evaluated at scene/usage time)
+    assigned_dramatic_role: Optional[str] = Field(default=None, description="Contextual dramatic role assigned by director")
+    scene_purpose: Optional[str] = Field(default=None, description="Specific dramatic purpose in scene")
+    emotional_suitability: Optional[str] = Field(default=None, description="Contextual emotional suitability / mood")
+    assigned_mood: Optional[str] = Field(default=None, description="Contextual mood (alias to emotional_suitability)")
+    voice_masking_judgment: Optional[str] = Field(default=None, description="Voice masking judgment: LOW, MODERATE, SEVERE")
+    voice_masking_assessment: Optional[str] = Field(default=None, description="Voice masking assessment (alias to voice_masking_judgment)")
+    dialogue_ducking_amount_db: Optional[float] = Field(default=None, description="Target dialogue ducking in dB")
+    contextual_ducking_db: Optional[float] = Field(default=None, description="Contextual ducking in dB (alias to dialogue_ducking_amount_db)")
+    placement_usage: Optional[str] = Field(default=None, description="Timeline placement and recommended usage in scene")
+    final_taxonomy: Optional[str] = Field(default=None, description="Final creative taxonomy when requiring interpretation")
+
+    mix_notes: Optional[str] = Field(default=None, description="Directorial or acoustic mix notes")
+    creative_confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Confidence of the agent's interpretation; None if unprovided")
+    conflict_notes: Optional[str] = Field(default=None, description="Explanations of any tension between source tags and classifier evidence")
+
+    def model_post_init(self, __context: Any) -> None:
+        # Harmonize aliases
+        if self.emotional_suitability is None and self.assigned_mood is not None:
+            self.emotional_suitability = self.assigned_mood
+        elif self.assigned_mood is None and self.emotional_suitability is not None:
+            self.assigned_mood = self.emotional_suitability
+
+        if self.voice_masking_judgment is None and self.voice_masking_assessment is not None:
+            self.voice_masking_judgment = self.voice_masking_assessment
+        elif self.voice_masking_assessment is None and self.voice_masking_judgment is not None:
+            self.voice_masking_assessment = self.voice_masking_judgment
+
+        if self.dialogue_ducking_amount_db is None and self.contextual_ducking_db is not None:
+            self.dialogue_ducking_amount_db = self.contextual_ducking_db
+        elif self.contextual_ducking_db is None and self.dialogue_ducking_amount_db is not None:
+            self.contextual_ducking_db = self.dialogue_ducking_amount_db
+
 
 
 class ClassifierPrediction(BaseModel):
@@ -1366,6 +1412,7 @@ from audiobook_factory.sonic_hybrid_reranker import (
 )
 from audiobook_factory.agent_sound_card import (
     AgentSoundCard,
+    AgentInterpretation,
 )
 from audiobook_factory.sonic_intelligence_engine import (
     SoundRetrievalResult,

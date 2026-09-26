@@ -144,6 +144,15 @@ class HinglishQueryNormalizer:
         "aag": {"en": "fire crackle", "cat": "AMB", "sub": "Nature"},
         "dhuni": {"en": "fireplace", "cat": "AMB"},
 
+        # Social & Crowd Ambience
+        "sharaabkhana": {"en": "tavern", "cat": "AMB", "sub": "Tavern", "env": "tavern"},
+        "sharaabkhane": {"en": "tavern", "cat": "AMB", "sub": "Tavern", "env": "tavern"},
+        "sharabkhana": {"en": "tavern", "cat": "AMB", "sub": "Tavern", "env": "tavern"},
+        "sharabkhane": {"en": "tavern", "cat": "AMB", "sub": "Tavern", "env": "tavern"},
+        "bheed": {"en": "crowd", "cat": "AMB", "sub": "Crowd"},
+        "shor": {"en": "murmur", "cat": "AMB"},
+        "hulla": {"en": "clamor", "cat": "AMB"},
+
         # Materials
         "patthar": {"en": "stone", "mat": "stone", "res": "stone"},
         "pathar": {"en": "stone", "mat": "stone", "res": "stone"},
