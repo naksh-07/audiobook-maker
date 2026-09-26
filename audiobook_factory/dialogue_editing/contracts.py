@@ -58,12 +58,33 @@ class DialogueEditorialConfig(BaseModel):
     # Breath editing parameters (relative, conservative)
     breath_reduce_attenuation_db: float = Field(default=-6.0, description="Gentle gain reduction applied to exaggerated breaths")
     breath_relative_loudness_margin_db: float = Field(default=4.0, description="Margin within speech RMS to flag breath as disproportionately loud")
+    mid_line_breath_relative_loudness_margin_db: float = Field(default=10.0, description="Margin within speech RMS to flag mid-line breath as disproportionately loud")
     breath_min_confidence_for_removal: float = Field(default=0.75, description="High confidence required before ever removing a breath")
 
     # Contextual pause realization bounds
     min_pause_ms: int = Field(default=60, description="Hard floor for any non-interrupted pause")
     max_contextual_pause_ms: int = Field(default=2200, description="Hard ceiling for contextual dramatic silence")
     anti_mechanical_jitter_ms: int = Field(default=25, description="Bounded deterministic pseudo-jitter range (±ms)")
+
+    # Interruption & Overlap bounds (DE-05)
+    max_interruption_overlap_ms: int = Field(default=350, description="Ceiling for conversational overlap cross-talk")
+    default_interruption_overlap_ms: int = Field(default=150, description="Default conversational overlap duration")
+
+    # Take boundary continuity parameters (DE-06)
+    inter_take_max_gain_adjust_db: float = Field(default=2.5, description="Maximum inter-take gain leveling adjustment in dB")
+    boundary_elevated_noise_floor_db: float = Field(default=-48.0, description="Noise floor threshold triggering smooth transition micro-fade")
+
+
+class MidLineBreathEdit(BaseModel):
+    """Surgical mid-line breath edit specification (DE-07)."""
+    model_config = ConfigDict(extra="ignore")
+
+    start_ms: int = Field(..., ge=0, description="Start offset within segment in milliseconds")
+    end_ms: int = Field(..., ge=0, description="End offset within segment in milliseconds")
+    action: BreathEditAction = Field(default="KEEP", description="Action applied to mid-line breath")
+    attenuation_db: float = Field(default=0.0, le=0.0, description="Gain attenuation in dB")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Decision confidence")
+    reason: str = Field(default="", description="Explainable rationale")
 
 
 class DialogueEditPlan(BaseModel):
@@ -85,11 +106,12 @@ class DialogueEditPlan(BaseModel):
     head_classification: EndpointClassification = Field(default="NATURAL_SPEECH")
     tail_classification: EndpointClassification = Field(default="NATURAL_SPEECH")
 
-    # Breath editing decisions
+    # Breath editing decisions (Pre/Post roll and Mid-line)
     pre_breath_action: BreathEditAction = Field(default="KEEP")
     post_breath_action: BreathEditAction = Field(default="KEEP")
     pre_breath_attenuation_db: float = Field(default=0.0, le=0.0, description="Gain adjustment for pre-roll breath")
     post_breath_attenuation_db: float = Field(default=0.0, le=0.0, description="Gain adjustment for post-roll breath")
+    mid_breath_edits: List[MidLineBreathEdit] = Field(default_factory=list, description="Mid-line breath edits (DE-07)")
 
     # Contextual pause realization (no hardcoded 400ms default; derived from TimingRealizer)
     pause_before_ms: int = Field(default=0, ge=0, description="Silence to precede segment in milliseconds")
@@ -100,11 +122,11 @@ class DialogueEditPlan(BaseModel):
     crossfade_in_ms: float = Field(default=5.0, ge=0.0, description="Boundary fade-in duration in milliseconds")
     crossfade_out_ms: float = Field(default=5.0, ge=0.0, description="Boundary fade-out duration in milliseconds")
 
-    # Future / Compatibility extensions
-    overlap_ms: int = Field(default=0, ge=0, description="Reserved for DE-05 interruption overlap")
-    interruption_mode: str = Field(default="none", description="Interruption transition mode")
+    # Interruption, Overlap & Continuity extensions (DE-05 / DE-06)
+    overlap_ms: int = Field(default=0, ge=0, description="Interruption overlap cross-talk duration in milliseconds")
+    interruption_mode: str = Field(default="none", description="Interruption transition mode ('none', 'abrupt_cut', 'overlap_start', 'fade_under')")
     gain_adjustment_db: float = Field(default=0.0, ge=-24.0, le=12.0, description="Editorial level balancing gain")
-    room_match_required: bool = Field(default=False, description="Reserved for DE-06 room acoustic matching")
+    room_match_required: bool = Field(default=False, description="Flag indicating elevated noise-floor or transition smoothing required")
     artifact_repairs: List[str] = Field(default_factory=list, description="Descriptions of surgical artifact repairs")
 
     # Observability & QC telemetry
@@ -138,6 +160,10 @@ class DialogueQCReport(BaseModel):
     breaths_kept: int = Field(default=0, ge=0)
     breaths_reduced: int = Field(default=0, ge=0)
     breaths_removed: int = Field(default=0, ge=0)
+    mid_breaths_reduced: int = Field(default=0, ge=0)
+    mid_breaths_kept: int = Field(default=0, ge=0)
+    interruptions_managed: int = Field(default=0, ge=0)
+    overlaps_rendered: int = Field(default=0, ge=0)
     pauses_adjusted: int = Field(default=0, ge=0)
     warnings: List[QCDiagnostic] = Field(default_factory=list)
     hard_failures: List[QCDiagnostic] = Field(default_factory=list)

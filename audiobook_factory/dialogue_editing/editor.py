@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import wave
 import math
+import hashlib
 import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
@@ -63,6 +64,7 @@ class DialogueEditor:
         speaker: str = "Narrator",
         next_speaker: Optional[str] = None,
         direction: Optional[PerformanceDirection] = None,
+        next_direction: Optional[PerformanceDirection] = None,
         evidence: Optional[PerformanceEvidence] = None,
         alignment: Optional[AlignmentResult] = None,
         segment_uid: str = "",
@@ -112,7 +114,7 @@ class DialogueEditor:
             evidence=evidence,
         )
 
-        # 3. Run Breath Analysis (DE-03)
+        # 3. Run Breath Analysis (DE-03, DE-07)
         br_res = self.breath_editor.evaluate_breaths(
             samples=samples,
             sample_rate=sample_rate,
@@ -120,14 +122,16 @@ class DialogueEditor:
             speech_end_ms=ep_res["speech_end_ms"],
             direction=direction,
             evidence=evidence,
+            alignment=alignment,
         )
 
-        # 4. Run Contextual Pause Realization (DE-04)
+        # 4. Run Contextual Pause Realization (DE-04, DE-05)
         pa_res = self.pause_editor.realize_pause(
             text=text,
             speaker=speaker,
             direction=direction,
             next_speaker=next_speaker,
+            next_direction=next_direction,
             segment_uid=segment_uid,
             segment_index=segment_index,
         )
@@ -135,6 +139,11 @@ class DialogueEditor:
         # 5. Synthesize Combined DialogueEditPlan
         all_reasons = ep_res["decision_reasons"] + br_res["reasons"] + [pa_res["decision_reason"]]
         combined_conf = round(min(1.0, br_res["confidence"]), 2)
+
+        interruption_mode = pa_res.get("interruption_mode")
+        overlap_ms = pa_res.get("overlap_ms", 0)
+        # Abrupt cut uses snappy zero-crossing micro-fade (2ms) instead of standard fade
+        crossfade_out = 2.0 if interruption_mode == "abrupt_cut" else ep_res["crossfade_out_ms"]
 
         plan = DialogueEditPlan(
             segment_uid=segment_uid,
@@ -149,11 +158,14 @@ class DialogueEditor:
             post_breath_action=br_res["post_breath_action"],
             pre_breath_attenuation_db=br_res["pre_breath_attenuation_db"],
             post_breath_attenuation_db=br_res["post_breath_attenuation_db"],
+            mid_breath_edits=br_res.get("mid_breath_edits", []),
             pause_before_ms=direction.pause_before_ms if direction else 0,
             pause_after_ms=pa_res["pause_after_ms"],
             pause_classification=pa_res["pause_classification"],
+            overlap_ms=overlap_ms,
+            interruption_mode=interruption_mode,
             crossfade_in_ms=ep_res["crossfade_in_ms"],
-            crossfade_out_ms=ep_res["crossfade_out_ms"],
+            crossfade_out_ms=crossfade_out,
             confidence=combined_conf,
             decision_reason="; ".join(r for r in all_reasons if r),
             diagnostics=[],
@@ -196,11 +208,14 @@ class DialogueEditor:
         total_dur_ms = int(total_samples / sample_rate * 1000.0) if sample_rate > 0 else 0
 
         # Check if plan bypassed editing
+        has_mid_edits = any(me.action != "KEEP" for me in edit_plan.mid_breath_edits)
         if (
             edit_plan.head_trim_ms == 0
             and edit_plan.tail_trim_ms == 0
             and edit_plan.pre_breath_action == "KEEP"
             and edit_plan.post_breath_action == "KEEP"
+            and not has_mid_edits
+            and edit_plan.interruption_mode != "fade_under"
             and abs(edit_plan.gain_adjustment_db) < 0.05
         ):
             if inp != outp:
@@ -254,6 +269,32 @@ class DialogueEditor:
                 ramp = 1.0 - (1.0 - factor) * 0.5 * (1.0 - np.cos(t))
                 sliced[breath_start_idx:] *= ramp
 
+        # Mid-line breath attenuation envelope application (DE-07)
+        if edit_plan.mid_breath_edits:
+            for me in edit_plan.mid_breath_edits:
+                if me.action in ("REDUCE", "REMOVE"):
+                    factor = 0.05 if me.action == "REMOVE" else (10.0 ** (me.attenuation_db / 20.0))
+                    rel_start = max(0, int(me.start_ms / 1000.0 * sample_rate) - head_samples)
+                    rel_end = min(n_sliced, int(me.end_ms / 1000.0 * sample_rate) - head_samples)
+                    span = rel_end - rel_start
+                    if span > 10 and rel_start < n_sliced:
+                        fade_len = min(int(0.020 * sample_rate), span // 3)
+                        ramp = np.full(span, factor, dtype=np.float32)
+                        if fade_len > 2:
+                            t_in = np.linspace(0.0, np.pi, fade_len)
+                            ramp[:fade_len] = factor + (1.0 - factor) * 0.5 * (1.0 + np.cos(t_in))
+                            t_out = np.linspace(np.pi, 0.0, fade_len)
+                            ramp[-fade_len:] = factor + (1.0 - factor) * 0.5 * (1.0 + np.cos(t_out))
+                        sliced[rel_start:rel_end] *= ramp
+
+        # Interruption tail ducking for fade_under (DE-05)
+        if edit_plan.interruption_mode == "fade_under":
+            duck_samples = min(int(0.12 * sample_rate), n_sliced // 3)
+            if duck_samples > 10:
+                t_duck = np.linspace(0.0, np.pi, duck_samples)
+                duck_ramp = 0.35 + 0.65 * 0.5 * (1.0 + np.cos(t_duck))
+                sliced[-duck_samples:] *= duck_ramp
+
         # 4. Micro-Fades (True Hann Raised-Cosine preserving 5.0ms technical de-click baseline)
         fade_in_samples = max(2, min(int(sample_rate * (edit_plan.crossfade_in_ms / 1000.0)), n_sliced // 2))
         fade_out_samples = max(2, min(int(sample_rate * (edit_plan.crossfade_out_ms / 1000.0)), n_sliced // 2))
@@ -266,8 +307,9 @@ class DialogueEditor:
         t_out = np.linspace(np.pi, 0.0, fade_out_samples)
         sliced[-fade_out_samples:] *= 0.5 * (1.0 - np.cos(t_out))
 
-        # 5. TPDF Dithered Quantization to 16-bit PCM WAV
-        seed_int = int(abs(hash(str(edit_plan.source_take) + str(edit_plan.segment_uid))) % (2**31 - 1))
+        # 5. Deterministic TPDF Dithered Quantization to 16-bit PCM WAV (SHA256 seeded)
+        h_bytes = hashlib.sha256(f"{edit_plan.source_take}:{edit_plan.segment_uid}".encode("utf-8")).digest()
+        seed_int = int.from_bytes(h_bytes[:4], byteorder="little") & 0x7FFFFFFF
         rng = np.random.default_rng(seed_int)
         dither = rng.uniform(-0.5, 0.5, size=n_sliced).astype(np.float32) + rng.uniform(-0.5, 0.5, size=n_sliced).astype(np.float32)
         int16_samples = np.clip(np.round(sliced + dither), -32768.0, 32767.0).astype(np.int16)
@@ -286,6 +328,90 @@ class DialogueEditor:
         return outp
 
 
+    def smooth_take_boundaries(
+        self,
+        plans: List[DialogueEditPlan],
+        audio_segments: List[Path],
+        directions: Optional[Dict[int, PerformanceDirection]] = None,
+    ) -> None:
+        """
+        Enhances take boundary continuity between independently generated takes (DE-06).
+        Applies inter-take gain leveling (up to +/-2.5dB) across adjacent takes
+        and detects elevated noise floors to expand transition micro-fades to 15ms.
+        """
+        if not plans or not audio_segments or len(plans) != len(audio_segments):
+            return
+
+        speech_rms_list: List[float] = []
+        noise_floors_db: List[float] = []
+
+        # 1. Measure Speech RMS and Noise Floor for each segment
+        for seg_path, plan in zip(audio_segments, plans):
+            samples, sr = self._load_wav_samples(seg_path)
+            if len(samples) < 200 or sr <= 0:
+                speech_rms_list.append(-24.0)
+                noise_floors_db.append(-60.0)
+                continue
+
+            # Speech portion RMS
+            s_start = int(plan.speech_start_ms / 1000.0 * sr)
+            s_end = int(plan.speech_end_ms / 1000.0 * sr)
+            speech_sub = samples[s_start:s_end] if s_end > s_start else samples
+            if len(speech_sub) > 100:
+                s_rms = float(np.sqrt(np.mean(speech_sub ** 2)))
+                s_db = 20.0 * math.log10(max(s_rms, 1e-5) / 32768.0)
+            else:
+                s_db = -24.0
+            speech_rms_list.append(s_db)
+
+            # Measure noise floor in silence margin (first 80ms or last 80ms)
+            margin_samples = min(int(0.08 * sr), len(samples) // 4)
+            if margin_samples > 20:
+                head_noise = float(np.sqrt(np.mean(samples[:margin_samples] ** 2)))
+                tail_noise = float(np.sqrt(np.mean(samples[-margin_samples:] ** 2)))
+                min_noise = min(head_noise, tail_noise)
+                n_db = 20.0 * math.log10(max(min_noise, 1e-6) / 32768.0)
+            else:
+                n_db = -60.0
+            noise_floors_db.append(n_db)
+
+        # 2. Inter-take Gain Leveling across adjacent takes
+        max_adj = self.config.inter_take_max_gain_adjust_db
+        for i in range(len(plans) - 1):
+            plan_curr = plans[i]
+            plan_next = plans[i + 1]
+
+            dir_curr = directions.get(i + 1) if directions else None
+            dir_next = directions.get(i + 2) if directions else None
+
+            curr_intensity = getattr(dir_curr, "intensity", getattr(dir_curr, "intensity_level", None)) if dir_curr else None
+            next_intensity = getattr(dir_next, "intensity", getattr(dir_next, "intensity_level", None)) if dir_next else None
+
+            curr_is_extreme = bool(curr_intensity in ("explosive", "whisper", "shouting", "screaming", "high"))
+            next_is_extreme = bool(next_intensity in ("explosive", "whisper", "shouting", "screaming", "high"))
+
+            if not curr_is_extreme and not next_is_extreme:
+                rms_curr = speech_rms_list[i]
+                rms_next = speech_rms_list[i + 1]
+                delta = rms_next - rms_curr
+
+                # If jump exceeds 1.2dB, nudge plan_next to level volume smoothly
+                if abs(delta) > 1.2:
+                    adjustment = float(np.clip(-delta * 0.5, -max_adj, max_adj))
+                    if abs(plan_next.gain_adjustment_db) < 0.05:
+                        plan_next.gain_adjustment_db = round(adjustment, 2)
+                        plan_next.decision_reason += f"; Inter-take gain leveling adjusted by {adjustment:+.1f}dB"
+
+        # 3. Elevated Noise-Floor Discontinuity Detection
+        elevated_threshold = self.config.boundary_elevated_noise_floor_db
+        for plan, n_db in zip(plans, noise_floors_db):
+            if n_db > elevated_threshold:
+                # Expand micro-fades to 15ms Hann tapers to prevent vocoder noise drop click
+                plan.crossfade_in_ms = max(plan.crossfade_in_ms, 15.0)
+                plan.crossfade_out_ms = max(plan.crossfade_out_ms, 15.0)
+                plan.metadata["room_match_required"] = True
+                plan.decision_reason += f"; Elevated noise floor ({n_db:.1f} dBFS); expanded boundary micro-fades to 15ms"
+
     def process_chapter(
         self,
         chapter_num: int,
@@ -297,9 +423,10 @@ class DialogueEditor:
         Coordinates full chapter dialogue editing:
         1. Loads TakeBank manifest if present; otherwise infers directions.
         2. Generates DialogueEditPlan for each segment with conversational context.
-        3. Audits complete chapter through DialogueEditingQC.
-        4. Renders edited WAVs into output_dir (defaults to project_dir / 'edited_chunks').
-        5. Fails closed with graceful fallback to unedited takes on hard QC violations.
+        3. Applies inter-take boundary continuity smoothing (DE-06).
+        4. Audits complete chapter through DialogueEditingQC.
+        5. Renders edited WAVs into output_dir (defaults to project_dir / 'edited_chunks').
+        6. Fails closed with graceful fallback to unedited takes on hard QC violations.
         """
         if not audio_segments:
             return [], [], DialogueQCReport(chapter_num=chapter_num, total_segments=0, passed=True)
@@ -337,6 +464,7 @@ class DialogueEditor:
         # 3. Plan Edits Across All Segments
         plans: List[DialogueEditPlan] = []
         seg_durations_ms: List[int] = []
+        alignments: List[Optional[AlignmentResult]] = []
 
         total_segs = len(audio_segments)
         for i, seg_path in enumerate(audio_segments):
@@ -352,10 +480,22 @@ class DialogueEditor:
             text = script_info.get("text", "")
             seg_uid = script_info.get("uid", f"seg_{s_idx}")
 
-            # Next speaker for conversational turn latency
+            # Next speaker and direction for conversational turn latency & interruption context
             next_spk = None
+            next_dir = None
             if script_segments and i + 1 < len(script_segments):
                 next_spk = script_segments[i + 1].get("speaker", None)
+
+            next_s_idx = s_idx + 1
+            if next_s_idx in dir_by_idx:
+                next_dir = dir_by_idx[next_s_idx]
+            elif i + 1 < len(audio_segments):
+                for part in audio_segments[i + 1].stem.split("_"):
+                    if part.startswith("s") and part[1:].isdigit():
+                        candidate_idx = int(part[1:])
+                        if candidate_idx in dir_by_idx:
+                            next_dir = dir_by_idx[candidate_idx]
+                        break
 
             # Match direction & take telemetry
             direction = dir_by_idx.get(s_idx)
@@ -389,12 +529,14 @@ class DialogueEditor:
                 speaker=speaker,
                 next_speaker=next_spk,
                 direction=direction,
+                next_direction=next_dir,
                 evidence=evidence,
                 alignment=alignment,
                 segment_uid=seg_uid,
                 segment_index=s_idx,
             )
             plans.append(plan)
+            alignments.append(alignment)
 
             # Measure segment duration
             try:
@@ -404,20 +546,25 @@ class DialogueEditor:
                 dur_ms = 3000
             seg_durations_ms.append(dur_ms)
 
-        # 4. Audit Full Chapter Plans
+        # 4. Apply Take Boundary Continuity Smoothing (DE-06)
+        self.smooth_take_boundaries(plans=plans, audio_segments=audio_segments, directions=dir_by_idx)
+
+        # 5. Audit Full Chapter Plans
         qc_report = self.qc.audit_chapter_plans(
             chapter_num=chapter_num,
             plans=plans,
             segment_durations_ms=seg_durations_ms,
+            alignments=alignments,
         )
 
-        # 5. Render or Fallback
+        # 6. Render or Fallback
         edited_paths: List[Path] = []
         if qc_report.passed:
             logger.info(
                 f"[*] Dialogue Editorial Layer: Rendering {len(plans)} segments for Chapter {chapter_num:02d} "
                 f"({qc_report.edited_segments} edited, {qc_report.breaths_kept} breaths kept, "
-                f"{qc_report.breaths_reduced} reduced, {qc_report.breaths_removed} removed)..."
+                f"{qc_report.breaths_reduced} reduced, {qc_report.mid_breaths_reduced} mid-reduced, "
+                f"{qc_report.interruptions_managed} interruptions, {qc_report.overlaps_rendered} overlaps)..."
             )
             for seg_path, plan in zip(audio_segments, plans):
                 out_path = target_dir / seg_path.name

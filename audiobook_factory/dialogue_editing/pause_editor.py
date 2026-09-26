@@ -30,17 +30,20 @@ class PauseEditor:
         speaker: str = "Narrator",
         direction: Optional[PerformanceDirection] = None,
         next_speaker: Optional[str] = None,
+        next_direction: Optional[PerformanceDirection] = None,
         segment_uid: str = "",
         segment_index: int = 1,
     ) -> Dict[str, Any]:
         """
-        Calculates realized contextual silence following a dialogue segment.
+        Calculates realized contextual silence and interruption dynamics following a dialogue segment.
 
         Returns:
             Dict containing:
                 - pause_after_ms: int
                 - pause_classification: PauseEditClassification
                 - decision_reason: str
+                - overlap_ms: int
+                - interruption_mode: str
         """
         # ---------------------------------------------------------------------
         # 1. Derive Base Timing from Performance Intent or TimingRealizer
@@ -79,6 +82,9 @@ class PauseEditor:
         cleaned_text = (text or "").strip()
         ends_with_dash = cleaned_text.endswith(("--", "—", "-"))
 
+        overlap_ms = 0
+        interruption_mode = "none"
+
         # Check explicit dramatic silence / emotional freeze FIRST (preserves aposiopesis)
         is_aposiopesis_or_freeze = bool(
             silence_type == "emotional_freeze"
@@ -107,10 +113,45 @@ class PauseEditor:
                 target_pause_ms = max(base_pause_ms, 650)
                 reason = "Reaction space before respondent turn"
 
-        elif interruption_behavior == "abrupt_cut" or silence_type == "interruption_cut" or ends_with_dash:
-            pause_cls: PauseEditClassification = "INTERRUPTED_TURN"
+        elif interruption_behavior == "overlap_start":
+            pause_cls = "INTERRUPTED_TURN"
+            interruption_mode = "overlap_start"
+            overlap_ms = min(self.config.max_interruption_overlap_ms, self.config.default_interruption_overlap_ms)
+            target_pause_ms = 0
+            reason = f"Interrupted turn with conversational overlap ({overlap_ms}ms cross-talk)"
+
+        elif interruption_behavior == "fade_under":
+            pause_cls = "INTERRUPTED_TURN"
+            interruption_mode = "fade_under"
+            overlap_ms = min(self.config.max_interruption_overlap_ms, 120)
+            target_pause_ms = 0
+            reason = f"Interrupted turn with fade-under ducking ({overlap_ms}ms overlap)"
+
+        elif interruption_behavior == "abrupt_cut" or silence_type == "interruption_cut":
+            pause_cls = "INTERRUPTED_TURN"
+            interruption_mode = "abrupt_cut"
             target_pause_ms = 35
             reason = "Abrupt cutoff / interruption turn"
+
+        elif ends_with_dash:
+            # Check if next turn is an eager counter or interruptor
+            next_is_eager = bool(
+                next_direction and (
+                    next_direction.turn_taking_behavior == "eager_counter"
+                    or next_direction.actioning in ("interrupt", "cut_off", "counter", "shout_down")
+                )
+            )
+            if next_is_eager:
+                pause_cls = "INTERRUPTED_TURN"
+                interruption_mode = "overlap_start"
+                overlap_ms = min(self.config.max_interruption_overlap_ms, self.config.default_interruption_overlap_ms)
+                target_pause_ms = 0
+                reason = f"Cutoff dash with eager counter overlap ({overlap_ms}ms cross-talk)"
+            else:
+                pause_cls = "INTERRUPTED_TURN"
+                interruption_mode = "abrupt_cut"
+                target_pause_ms = 35
+                reason = "Abrupt cutoff / interruption turn"
 
         elif turn_taking == "eager_counter" or char_state == "escalation":
             pause_cls = "RAPID_TURN"
@@ -149,8 +190,8 @@ class PauseEditor:
         # ---------------------------------------------------------------------
         # 4. Anti-Mechanical Rhythm Protection (Deterministic Pseudo-Jitter)
         # ---------------------------------------------------------------------
-        # Prevents robotic sequences (e.g. line, 400ms, line, 400ms) without non-deterministic randomness
-        if pause_cls not in ("INTERRUPTED_TURN", "RAPID_TURN"):
+        # Prevents robotic sequences without non-deterministic randomness (never jitter overlaps or hard cuts)
+        if pause_cls not in ("INTERRUPTED_TURN", "RAPID_TURN") and overlap_ms == 0:
             h_str = f"{segment_uid}:{segment_index}:{speaker}:{cleaned_text[:16]}"
             h_int = int(hashlib.sha256(h_str.encode("utf-8")).hexdigest()[:6], 16)
             jitter_span = 2 * self.config.anti_mechanical_jitter_ms + 1
@@ -160,11 +201,16 @@ class PauseEditor:
         # ---------------------------------------------------------------------
         # 5. Bounds Enforcement
         # ---------------------------------------------------------------------
-        min_floor = 25 if pause_cls == "INTERRUPTED_TURN" else self.config.min_pause_ms
-        clamped_pause_ms = max(min_floor, min(self.config.max_contextual_pause_ms, target_pause_ms))
+        if overlap_ms > 0:
+            clamped_pause_ms = 0
+        else:
+            min_floor = 25 if pause_cls == "INTERRUPTED_TURN" else self.config.min_pause_ms
+            clamped_pause_ms = max(min_floor, min(self.config.max_contextual_pause_ms, target_pause_ms))
 
         return {
             "pause_after_ms": clamped_pause_ms,
             "pause_classification": pause_cls,
             "decision_reason": reason,
+            "overlap_ms": overlap_ms,
+            "interruption_mode": interruption_mode,
         }

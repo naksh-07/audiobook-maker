@@ -11,8 +11,9 @@ import math
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 
+from audiobook_factory.alignment_contracts import AlignmentResult
 from audiobook_factory.performance.contracts import PerformanceDirection, PerformanceEvidence, BreathEvidence
-from .contracts import BreathEditAction, DialogueEditorialConfig
+from .contracts import BreathEditAction, DialogueEditorialConfig, MidLineBreathEdit
 
 
 class BreathEditor:
@@ -33,9 +34,10 @@ class BreathEditor:
         speech_end_ms: int,
         direction: Optional[PerformanceDirection] = None,
         evidence: Optional[PerformanceEvidence] = None,
+        alignment: Optional[AlignmentResult] = None,
     ) -> Dict[str, Any]:
         """
-        Evaluates pre-roll and post-roll breaths using multi-signal evidence.
+        Evaluates pre-roll, post-roll, and mid-line breaths using multi-signal evidence.
 
         Returns:
             Dict containing:
@@ -43,6 +45,7 @@ class BreathEditor:
                 - post_breath_action: BreathEditAction
                 - pre_breath_attenuation_db: float
                 - post_breath_attenuation_db: float
+                - mid_breath_edits: List[MidLineBreathEdit]
                 - confidence: float
                 - reasons: List[str]
         """
@@ -56,6 +59,7 @@ class BreathEditor:
                 "post_breath_action": "KEEP",
                 "pre_breath_attenuation_db": 0.0,
                 "post_breath_attenuation_db": 0.0,
+                "mid_breath_edits": [],
                 "confidence": 1.0,
                 "reasons": ["Short segment; bypassed breath modification"],
             }
@@ -98,6 +102,23 @@ class BreathEditor:
         )
         reasons.extend(post_reasons)
 
+        # ---------------------------------------------------------------------
+        # 3. Mid-Line Breath Evaluation (DE-07)
+        # ---------------------------------------------------------------------
+        mid_edits = self.evaluate_mid_line_breaths(
+            samples=samples,
+            sample_rate=sample_rate,
+            speech_start_ms=speech_start_ms,
+            speech_end_ms=speech_end_ms,
+            speech_db=speech_db,
+            direction=direction,
+            evidence=evidence,
+            alignment=alignment,
+        )
+        for me in mid_edits:
+            if me.action != "KEEP":
+                reasons.append(f"Mid-line breath at {me.start_ms}-{me.end_ms}ms: {me.action} ({me.reason})")
+
         overall_conf = round(min(pre_conf, post_conf), 2)
 
         return {
@@ -105,9 +126,180 @@ class BreathEditor:
             "post_breath_action": post_action,
             "pre_breath_attenuation_db": pre_att_db,
             "post_breath_attenuation_db": post_att_db,
+            "mid_breath_edits": mid_edits,
             "confidence": overall_conf,
             "reasons": reasons,
         }
+
+    def evaluate_mid_line_breaths(
+        self,
+        samples: np.ndarray,
+        sample_rate: int,
+        speech_start_ms: int,
+        speech_end_ms: int,
+        speech_db: float,
+        direction: Optional[PerformanceDirection] = None,
+        evidence: Optional[PerformanceEvidence] = None,
+        alignment: Optional[AlignmentResult] = None,
+    ) -> List[MidLineBreathEdit]:
+        """
+        Detects and evaluates mid-line breath events within dialogue (DE-07).
+        Uses alignment pause/word intervals or acoustic energy dips.
+        Preserves emotional/performance-critical breaths; reduces exaggerated gasps on calm lines.
+        """
+        mid_edits: List[MidLineBreathEdit] = []
+        if speech_end_ms - speech_start_ms < 600:
+            return mid_edits
+
+        # 1. Discover Candidate Mid-Line Gaps
+        candidate_gaps: List[Tuple[int, int]] = []
+
+        if alignment and alignment.pauses:
+            for p in alignment.pauses:
+                # Must be strictly internal to speech bounds
+                if p.start_ms >= speech_start_ms + 80 and p.end_ms <= speech_end_ms - 80:
+                    dur = p.end_ms - p.start_ms
+                    if 80 <= dur <= 1200:
+                        candidate_gaps.append((p.start_ms, p.end_ms))
+
+        elif alignment and alignment.words and len(alignment.words) > 1:
+            sorted_words = sorted(alignment.words, key=lambda w: w.start_ms)
+            for k in range(len(sorted_words) - 1):
+                gap_s = sorted_words[k].end_ms
+                gap_e = sorted_words[k + 1].start_ms
+                dur = gap_e - gap_s
+                if 100 <= dur <= 1000 and gap_s >= speech_start_ms + 80 and gap_e <= speech_end_ms - 80:
+                    candidate_gaps.append((gap_s, gap_e))
+
+        # Fallback acoustic energy dip detection if no alignment provided
+        if not candidate_gaps and len(samples) > 0 and sample_rate > 0:
+            frame_ms = 40
+            frame_samples = int(sample_rate * (frame_ms / 1000.0))
+            hop_samples = frame_samples // 2
+
+            start_sample = int((speech_start_ms + 150) / 1000.0 * sample_rate)
+            end_sample = int((speech_end_ms - 150) / 1000.0 * sample_rate)
+
+            in_gap = False
+            gap_start_sm = 0
+            for pos in range(start_sample, max(start_sample, end_sample - frame_samples), hop_samples):
+                frm = samples[pos : pos + frame_samples]
+                rms = float(np.sqrt(np.mean(frm ** 2))) if len(frm) > 0 else 0.0
+                f_db = 20.0 * math.log10(max(rms, 1e-5) / 32768.0)
+
+                # Gap threshold: 14dB below speech RMS
+                is_low = (speech_db - f_db) > 14.0
+                if is_low and not in_gap:
+                    in_gap = True
+                    gap_start_sm = pos
+                elif not is_low and in_gap:
+                    in_gap = False
+                    dur_ms = int((pos - gap_start_sm) / sample_rate * 1000.0)
+                    if 120 <= dur_ms <= 900:
+                        candidate_gaps.append((
+                            int(gap_start_sm / sample_rate * 1000.0),
+                            int(pos / sample_rate * 1000.0)
+                        ))
+
+        # 2. Check Dramatic Intent Protections (Emotional / Strain Safeguards)
+        is_mandated_emotional_breath = bool(
+            direction and (
+                direction.physical_state in ("combat_strain", "exhausted", "wounded")
+                or direction.surface_emotion in (
+                    "fear", "panic", "grief", "shock", "intimacy", "anger", "rage",
+                    "fury", "urgency", "defiance", "sobbing", "sigh", "despair", "crying"
+                )
+                or direction.breath_behavior in ("labored", "sharp_intake", "exhausted", "trembling")
+                or getattr(direction, "silence_type", getattr(direction, "silence_intent", None)) in (
+                    "emotional_freeze", "dramatic_silence", "grief", "shock"
+                )
+                or direction.character_state in ("grief", "wounded", "trauma", "shock")
+            )
+        )
+        has_physical_strain = bool(
+            evidence and evidence.breath and evidence.breath.physical_strain_match >= 0.70
+        )
+        is_suppressed_restraint = bool(
+            direction and direction.restraint >= 0.85
+            and getattr(direction, "character_state", "") in ("grief", "wounded", "trauma", "shock")
+        )
+
+        # 3. Evaluate each candidate mid-line gap
+        for gap_s, gap_e in candidate_gaps:
+            s_idx = int(gap_s / 1000.0 * sample_rate)
+            e_idx = int(gap_e / 1000.0 * sample_rate)
+            gap_chunk = samples[s_idx:e_idx]
+
+            if len(gap_chunk) < 60:
+                continue
+
+            gap_rms = float(np.sqrt(np.mean(gap_chunk ** 2)))
+            gap_db = 20.0 * math.log10(max(gap_rms, 1e-5) / 32768.0)
+            rel_delta_db = speech_db - gap_db
+
+            # Emotional / Physical strain protection (Always KEEP)
+            if is_mandated_emotional_breath or has_physical_strain or is_suppressed_restraint:
+                mid_edits.append(
+                    MidLineBreathEdit(
+                        start_ms=gap_s,
+                        end_ms=gap_e,
+                        action="KEEP",
+                        attenuation_db=0.0,
+                        confidence=0.95,
+                        reason="Preserved emotional/physical-strain mid-line breath",
+                    )
+                )
+                continue
+
+            # Pure silence floor (No breath present)
+            if gap_db < -52.0:
+                mid_edits.append(
+                    MidLineBreathEdit(
+                        start_ms=gap_s,
+                        end_ms=gap_e,
+                        action="KEEP",
+                        attenuation_db=0.0,
+                        confidence=1.0,
+                        reason="Natural ambient pause floor",
+                    )
+                )
+                continue
+
+            # Exaggerated TTS Mid-line Inhale on Calm Line
+            is_calm_line = bool(
+                direction is None
+                or (
+                    direction.surface_emotion in ("neutral", "calm")
+                    and direction.physical_state == "normal"
+                )
+            )
+            if is_calm_line and gap_db > -34.0 and rel_delta_db < self.config.mid_line_breath_relative_loudness_margin_db:
+                att_db = self.config.breath_reduce_attenuation_db
+                mid_edits.append(
+                    MidLineBreathEdit(
+                        start_ms=gap_s,
+                        end_ms=gap_e,
+                        action="REDUCE",
+                        attenuation_db=att_db,
+                        confidence=0.85,
+                        reason=f"Reduced exaggerated mid-line TTS inhale by {att_db:.1f}dB ({gap_db:.1f} dBFS vs speech {speech_db:.1f} dBFS)",
+                    )
+                )
+                continue
+
+            # Default: Keep natural respiration
+            mid_edits.append(
+                MidLineBreathEdit(
+                    start_ms=gap_s,
+                    end_ms=gap_e,
+                    action="KEEP",
+                    attenuation_db=0.0,
+                    confidence=0.90,
+                    reason="Natural mid-line respiration",
+                )
+            )
+
+        return mid_edits
 
     def _evaluate_pre_breath(
         self,

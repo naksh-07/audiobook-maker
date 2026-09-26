@@ -10,6 +10,7 @@ from .contracts import (
     PauseEditClassification,
     DialogueEditorialConfig,
     DialogueEditPlan,
+    MidLineBreathEdit,
     QCDiagnostic,
     DialogueQCReport,
 )
@@ -25,6 +26,7 @@ __all__ = [
     "PauseEditClassification",
     "DialogueEditorialConfig",
     "DialogueEditPlan",
+    "MidLineBreathEdit",
     "QCDiagnostic",
     "DialogueQCReport",
     "EndpointEditor",

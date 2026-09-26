@@ -1,8 +1,8 @@
-# ✂️ Dialogue Editorial Layer (DE-01 through DE-04)
+# ✂️ Dialogue Editorial Layer (DE-01 through DE-07)
 
 **Module:** `audiobook_factory.dialogue_editing`  
 **Pipeline Placement:** Between Take Selection (Stage 3.5 / TakeBank) and Vocal Mastering (Stage 4 / `mastering.py`)  
-**Status:** Production Ready (654/654 tests passing, 100% green)
+**Status:** Production Ready (666/666 tests passing, 100% green)
 
 ---
 
@@ -103,16 +103,34 @@ The Dialogue Editorial Layer operates **non-destructively**. Original takes in `
 ### 3.5 Robust Master Coordinator & Renderer (`editor.py`)
 - **Multi-Format Ingestion**: Decodes 16-bit PCM, 24-bit packed PCM (`sampwidth == 3`), and 32-bit float (`sampwidth == 4`), downmixing multi-channel audio to mono float32.
 - **True Hann Raised-Cosine Micro-Fades**: Implements $0.5(1 - \cos(\pi t / T))$ micro-fades with $w'(0) = 0$, eliminating acceleration spikes and spectral edge splatter.
-- **TPDF Dither & Zero Pinning**: Applies Triangular Probability Density Function (TPDF) dither before 16-bit quantization to eliminate harmonic distortion, and hard-pins boundary samples (`int16_samples[0] = 0`, `int16_samples[-1] = 0`) to guarantee click-free assembly.
+- **Deterministic TPDF Dither & Zero Pinning**: Replaced randomized seeds with stable `hashlib.sha256(f"{source_take}:{segment_uid}")` seeding. Quantization dither is 100% bit-exact across independent process runs, and hard-pins boundary samples (`int16_samples[0] = 0`, `int16_samples[-1] = 0`) to guarantee click-free assembly.
 - **Fail-Closed Fallback**: If QC detects hard failures or corrupt files, `orchestrator.py` automatically resets `edited_segments = segments` and `edit_plans = None`, falling back to unedited raw takes.
+
+### 3.6 Conversational Interruption & Overlap (DE-05)
+- **Controlled Cross-Talk Realization**: Supports `overlap_start` (default 150ms overlap, 0ms pause) for natural dialogue interruptions where Speaker B talks over the end of Speaker A.
+- **Fade-Under Ducking**: Supports `fade_under` (120ms overlap), applying an automated smooth cosine ducking curve (-9dB / factor 0.35) over the final 120ms of the interrupted speaker's line.
+- **Abrupt Cutoffs**: Supports `abrupt_cut` (35ms gap, crisp 2.0ms zero-crossing micro-fade) for sharp interjections without clicks or long trailing decays.
+- **Mastering Cross-Talk Stitching**: In `mastering.py`, overlapping takes are split into `body_A` $\rightarrow$ `transition_AB` (equal-power mixed $A_{\text{tail}} + B_{\text{head}}$) $\rightarrow$ `body_B`. Integrates seamlessly with FFmpeg concat demuxer and preserves 3D stereo spatial soundstages.
+- **QC Safety Gates**: Rejects any overlap exceeding 400ms or 50% of take duration as `HARD_FAILURE`.
+
+### 3.7 Take Boundary Continuity (DE-06)
+- **Inter-Take Gain Leveling**: Computes speech RMS across adjacent takes in a scene. When volume jumps exceed 1.2dB without intentional dramatic justification (e.g. whispering or shouting), smooths the volume jump by adjusting `plan.gain_adjustment_db` up to $\pm 2.5$dB.
+- **Elevated Noise-Floor Tapering**: Detects elevated vocoder background noise floors ($> -48.0$ dBFS) at take boundaries and expands micro-fades from 5.0ms to 15.0ms Hann tapers (`room_match_required = True`), preventing audible digital silence dropouts.
+
+### 3.8 Intra-Segment Mid-Line Breath Editing (DE-07)
+- **Multi-Signal Mid-Line Discovery**: Scans for internal breath events within speech boundaries using forced alignment pause intervals, inter-word gaps, or acoustic energy dips ($>14$dB drop for 120–900ms).
+- **whitelist Protection for Emotional Breaths**: Strictly preserves (`KEEP`) authentic gasps, sobs, and labored breathing during combat strain, fear, grief, crying, or high-restraint moments (`restraint >= 0.85`).
+- **Targeted Calm Inhale Reduction**: Attenuates exaggerated TTS gasps on calm dialogue lines by -6.0dB using professional trapezoidal Hann crossfade envelopes (20ms entry/exit tapers with stable mid-gap hold).
+- **Word Encroachment QC**: Verifies that mid-line breath edits never encroach into aligned spoken words (20ms tolerance), failing closed with `MID_BREATH_WORD_COLLISION` if violated.
 
 ---
 
 ## 4. Verification & Quality Gates
 
-The Dialogue Editorial Layer is protected by a dedicated 34-test suite:
+The Dialogue Editorial Layer is protected by a dedicated 46-test suite:
 1. `tests/test_dialogue_editorial_layer.py` (18 unit tests): Schema defaults, 5ms micro-fades, dead-air trimming, prep-breath retention, emotional decay, cadence audits, PCM rendering.
 2. `tests/test_dialogue_editing_integration.py` (3 E2E integration tests): Golden 7 dialogue scenarios, E2E mastering path, fail-closed fallback execution.
 3. `tests/test_dialogue_editorial_audit_remediation.py` (13 adversarial audit tests): 24/32-bit audio decoding, stereo downmix, float zero-crossing, gain application, whisper dynamic floor, aposiopesis, power dynamics, sob protection, NaN/Inf detection.
+4. `tests/test_dialogue_editorial_de05_de07.py` (12 tests): Interruption abrupt cuts, overlap start cross-talk, fade-under ducking, aposiopesis em-dash eager counters, mastering overlap stitching, inter-take gain leveling, elevated noise-floor micro-fades, mid-line breath reduction and emotional preservation, QC word collision and overlap limits, bit-exact TPDF dither determinism.
 
-**Full Test Suite Run:** `654 passed in 257.67s` (0 failures, 0 regressions).
+**Full Test Suite Run:** `666 passed in 346.39s (0:05:46)` (0 failures, 0 regressions, 100% green).

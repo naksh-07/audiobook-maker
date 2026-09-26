@@ -100,6 +100,50 @@ class DialogueEditingQC:
                 )
             )
 
+        # Overlap duration limits (DE-05)
+        if plan.overlap_ms is not None and plan.overlap_ms > 0:
+            if plan.overlap_ms > 400:
+                diagnostics.append(
+                    QCDiagnostic(
+                        code="EXCESSIVE_OVERLAP_DURATION",
+                        severity="HARD_FAILURE",
+                        message=f"Overlap duration ({plan.overlap_ms}ms) exceeds maximum allowable limit of 400ms.",
+                        segment_uid=plan.segment_uid,
+                    )
+                )
+            if total_audio_ms > 0 and plan.overlap_ms > total_audio_ms * 0.50:
+                diagnostics.append(
+                    QCDiagnostic(
+                        code="OVERLAP_EXCEEDS_HALF_TAKE",
+                        severity="HARD_FAILURE",
+                        message=(
+                            f"Overlap duration ({plan.overlap_ms}ms) exceeds 50% of total "
+                            f"take duration ({total_audio_ms}ms)."
+                        ),
+                        segment_uid=plan.segment_uid,
+                    )
+                )
+
+        # Mid-line breath word encroachment checks (DE-07)
+        if alignment and alignment.words and plan.mid_breath_edits:
+            for me in plan.mid_breath_edits:
+                if me.action != "KEEP":
+                    for w in alignment.words:
+                        if w.start_ms < me.end_ms - 20 and w.end_ms > me.start_ms + 20:
+                            diagnostics.append(
+                                QCDiagnostic(
+                                    code="MID_BREATH_WORD_COLLISION",
+                                    severity="HARD_FAILURE",
+                                    message=(
+                                        f"Mid-line breath edit ({me.start_ms}-{me.end_ms}ms, action={me.action}) "
+                                        f"collides with aligned spoken word '{w.token}' ({w.start_ms}-{w.end_ms}ms)."
+                                    ),
+                                    segment_uid=plan.segment_uid,
+                                    evidence={"word": w.token, "word_span": [w.start_ms, w.end_ms], "breath_span": [me.start_ms, me.end_ms]},
+                                )
+                            )
+                            break
+
         # Clipping and numerical stability audit if samples provided
         if samples is not None and len(samples) > 0:
             if np.isnan(samples).any() or np.isinf(samples).any():
@@ -272,14 +316,35 @@ class DialogueEditingQC:
 
         passed = len(all_hard_failures) == 0
 
+        # Aggregate mid-line breath, interruption, and overlap metrics (DE-05, DE-07)
+        mid_breaths_kept = sum(sum(1 for m in p.mid_breath_edits if m.action == "KEEP") for p in plans)
+        mid_breaths_reduced = sum(sum(1 for m in p.mid_breath_edits if m.action == "REDUCE") for p in plans)
+        mid_breaths_removed = sum(sum(1 for m in p.mid_breath_edits if m.action == "REMOVE") for p in plans)
+        interruptions_managed = sum(1 for p in plans if p.interruption_mode is not None)
+        overlaps_rendered = sum(1 for p in plans if p.overlap_ms > 0)
+        edited_segments = sum(
+            1 for p in plans
+            if p.head_trim_ms > 0
+            or p.tail_trim_ms > 0
+            or p.pre_breath_action != "KEEP"
+            or p.post_breath_action != "KEEP"
+            or any(m.action != "KEEP" for m in p.mid_breath_edits)
+            or abs(p.gain_adjustment_db) >= 0.05
+            or p.interruption_mode is not None
+        )
+
         return DialogueQCReport(
             chapter_num=chapter_num,
             total_segments=len(plans),
-            edited_segments=sum(1 for p in plans if p.head_trim_ms > 0 or p.tail_trim_ms > 0 or p.pre_breath_action != "KEEP" or p.post_breath_action != "KEEP"),
+            edited_segments=edited_segments,
             breaths_kept=breaths_kept,
             breaths_reduced=breaths_reduced,
             breaths_removed=breaths_removed,
             pauses_adjusted=pauses_adjusted,
+            mid_breaths_reduced=mid_breaths_reduced,
+            mid_breaths_kept=mid_breaths_kept,
+            interruptions_managed=interruptions_managed,
+            overlaps_rendered=overlaps_rendered,
             warnings=all_warnings,
             hard_failures=all_hard_failures,
             passed=passed,
