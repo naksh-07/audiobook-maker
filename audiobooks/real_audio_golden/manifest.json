@@ -1,0 +1,323 @@
+{
+  "real_01_narration": {
+    "fixture_id": "real_01_narration",
+    "source": "workstation_synthesis",
+    "license": "Project-Owned",
+    "creation_method": "WinRT David Speech (en-US) studio prose narration at 48kHz stereo",
+    "language": "en",
+    "scene_type": "narration",
+    "performance_type": "formal_narration",
+    "speaker_count": 1,
+    "duration_sec": 5.5,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -21.0,
+      "lra_range": [
+        5.0,
+        9.5
+      ],
+      "true_peak_max": -1.5
+    },
+    "known_risks": [
+      "Tonal fatigue",
+      "over-compression of natural pauses"
+    ],
+    "provenance": {
+      "engine": "WinRT SpeechSynthesizer",
+      "voice": "Microsoft David",
+      "resampler": "scipy.signal.resample_poly"
+    }
+  },
+  "real_02_dialogue": {
+    "fixture_id": "real_02_dialogue",
+    "source": "workstation_synthesis",
+    "license": "Project-Owned",
+    "creation_method": "WinRT Multi-Speaker dialogue (David & Zira, en-US) with turn-taking",
+    "language": "en",
+    "scene_type": "dialogue",
+    "performance_type": "conversational",
+    "speaker_count": 2,
+    "duration_sec": 6.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -20.5,
+      "dialogue_ratio_min_db": 2.0
+    },
+    "known_risks": [
+      "Speaker level mismatch",
+      "turn-taking transition click"
+    ],
+    "provenance": {
+      "voices": [
+        "Microsoft David",
+        "Microsoft Zira"
+      ],
+      "engine": "WinRT"
+    }
+  },
+  "real_03_whisper": {
+    "fixture_id": "real_03_whisper",
+    "source": "workstation_synthesis",
+    "license": "Project-Owned",
+    "creation_method": "WinRT Whisper intimate delivery attenuated to -27 LUFS with breath envelope",
+    "language": "en",
+    "scene_type": "whisper",
+    "performance_type": "intimate",
+    "speaker_count": 1,
+    "duration_sec": 4.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -26.0,
+      "quiet_intent": true
+    },
+    "known_risks": [
+      "Artificial over-amplification by normalizer",
+      "noise floor pump"
+    ],
+    "provenance": {
+      "voice": "Microsoft Zira",
+      "attenuation_db": -12.0
+    }
+  },
+  "real_04_shouting": {
+    "fixture_id": "real_04_shouting",
+    "source": "workstation_synthesis",
+    "license": "Project-Owned",
+    "creation_method": "WinRT High-energy vocal projection boosted to -15.5 LUFS with high transient peaks",
+    "language": "en",
+    "scene_type": "shouting",
+    "performance_type": "aggressive",
+    "speaker_count": 1,
+    "duration_sec": 3.5,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -16.0,
+      "true_peak_max": -1.5
+    },
+    "known_risks": [
+      "Intersample clipping",
+      "harshness in 3-5kHz"
+    ],
+    "provenance": {
+      "voice": "Microsoft David",
+      "boost_db": 6.0
+    }
+  },
+  "real_05_emotional": {
+    "fixture_id": "real_05_emotional",
+    "source": "workstation_synthesis",
+    "license": "Project-Owned",
+    "creation_method": "WinRT Emotional dramatic confession with tremolo and emotional decay tail",
+    "language": "en",
+    "scene_type": "emotional",
+    "performance_type": "dramatic",
+    "speaker_count": 1,
+    "duration_sec": 5.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -21.5,
+      "lra_range": [
+        7.0,
+        13.0
+      ]
+    },
+    "known_risks": [
+      "Squashing emotional micro-dynamics",
+      "gating decay tails"
+    ],
+    "provenance": {
+      "voice": "Microsoft Zira",
+      "modulation": "subtle_vibrato"
+    }
+  },
+  "real_06_hindi_hinglish": {
+    "fixture_id": "real_06_hindi_hinglish",
+    "source": "workstation_synthesis",
+    "license": "Project-Owned",
+    "creation_method": "WinRT Kalpana (hi-IN) authentic spoken Hindi with Hinglish code-switching",
+    "language": "hi",
+    "scene_type": "hindi_hinglish",
+    "performance_type": "natural_hindustani",
+    "speaker_count": 1,
+    "duration_sec": 5.5,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -20.0,
+      "speech_formant_preserved": true
+    },
+    "known_risks": [
+      "Sibilance on aspirated consonants",
+      "tonal imbalance"
+    ],
+    "provenance": {
+      "voice": "Microsoft Kalpana (hi-IN)",
+      "engine": "WinRT"
+    }
+  },
+  "real_07_music_heavy": {
+    "fixture_id": "real_07_music_heavy",
+    "source": "repository_test",
+    "license": "CC0/Project-SoundBank",
+    "creation_method": "Voice narration mixed over real orchestral music track from sound_bank",
+    "language": "en",
+    "scene_type": "music_heavy",
+    "performance_type": "narration_over_score",
+    "speaker_count": 1,
+    "duration_sec": 6.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -18.5,
+      "dialogue_ratio_min_db": 1.5
+    },
+    "known_risks": [
+      "Dialogue masking by music",
+      "limiter pumping on music entrances"
+    ],
+    "provenance": {
+      "music_track": "peaceful_airship_serenity.mp3",
+      "voice": "Microsoft David"
+    }
+  },
+  "real_08_ambience": {
+    "fixture_id": "real_08_ambience",
+    "source": "repository_test",
+    "license": "Project-Owned",
+    "creation_method": "Real recorded environmental bed (forest crickets + subtle room tone)",
+    "language": "non_speech",
+    "scene_type": "ambience",
+    "performance_type": "environmental",
+    "speaker_count": 0,
+    "duration_sec": 5.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -26.0,
+      "bed_preserved": true
+    },
+    "known_risks": [
+      "Aggressive gating of quiet insects",
+      "unintended noise amplification"
+    ],
+    "provenance": {
+      "sources": [
+        "amb_forest_night_crickets_01.wav",
+        "amb_room_tone_quiet_01.wav"
+      ]
+    }
+  },
+  "real_09_foley": {
+    "fixture_id": "real_09_foley",
+    "source": "repository_test",
+    "license": "Project-Owned",
+    "creation_method": "Real acoustic Foley composite: gravel footsteps + door creak/slam + metal strike",
+    "language": "non_speech",
+    "scene_type": "foley",
+    "performance_type": "foley_montage",
+    "speaker_count": 0,
+    "duration_sec": 4.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -22.0,
+      "transients_preserved": true
+    },
+    "known_risks": [
+      "Transient blunting",
+      "limiter distortion on impacts"
+    ],
+    "provenance": {
+      "sources": [
+        "foley_footstep_gravel_01.wav",
+        "foley_door_creak_slam_01.wav",
+        "foley_impact_metal_01.wav"
+      ]
+    }
+  },
+  "real_10_action": {
+    "fixture_id": "real_10_action",
+    "source": "repository_test",
+    "license": "Project-Owned",
+    "creation_method": "Dense full-cast action: shouting voice + metal impact + magic blast + rain thunder + epic music",
+    "language": "en",
+    "scene_type": "action",
+    "performance_type": "intense_soundscape",
+    "speaker_count": 1,
+    "duration_sec": 6.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -17.5,
+      "true_peak_max": -1.5
+    },
+    "known_risks": [
+      "Limiter pumping during density swings",
+      "true-peak overs",
+      "dialogue masking"
+    ],
+    "provenance": {
+      "voice": "David Shouting",
+      "fx": [
+        "foley_impact_metal_01.wav",
+        "magic_arcane_pulse_burst_01.wav",
+        "weather_rain_thunder_crack_01.wav"
+      ]
+    }
+  },
+  "real_11_silence": {
+    "fixture_id": "real_11_silence",
+    "source": "repository_test",
+    "license": "Project-Owned",
+    "creation_method": "Calibrated dramatic chapter silence with natural low-level acoustic room tone (-52 dBFS)",
+    "language": "non_speech",
+    "scene_type": "silence",
+    "performance_type": "dramatic_pause",
+    "speaker_count": 0,
+    "duration_sec": 4.0,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -48.0,
+      "silence_preserved": true
+    },
+    "known_risks": [
+      "False loudness normalization decision",
+      "noise amplification"
+    ],
+    "provenance": {
+      "source": "amb_room_tone_quiet_01.wav",
+      "gain_db": -18.0
+    }
+  },
+  "real_12_difficult_tts": {
+    "fixture_id": "real_12_difficult_tts",
+    "source": "workstation_synthesis",
+    "license": "Project-Owned",
+    "creation_method": "Stressed speech take with excessive sibilance, mouth clicks, and abrupt dynamic jump",
+    "language": "en",
+    "scene_type": "difficult_tts",
+    "performance_type": "stressed_speech",
+    "speaker_count": 1,
+    "duration_sec": 4.5,
+    "sample_rate": 48000,
+    "channels": 2,
+    "expected_properties": {
+      "target_lufs": -19.5,
+      "harshness_contained": true
+    },
+    "known_risks": [
+      "Preexisting sibilance amplification",
+      "mouth click transient overs"
+    ],
+    "provenance": {
+      "voice": "Microsoft David",
+      "added_sibilance_boost": "+4.0dB @ 6.5kHz"
+    }
+  }
+}

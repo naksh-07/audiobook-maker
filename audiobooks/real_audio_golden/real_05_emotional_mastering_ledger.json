@@ -1,0 +1,367 @@
+{
+  "chapter_id": "real_05_emotional",
+  "created_at": "2026-09-30T16:04:09.009204+00:00",
+  "request": {
+    "chapter_id": "real_05_emotional",
+    "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional.wav",
+    "output_master_path": null,
+    "dialogue_stem_path": null,
+    "profile": {
+      "profile_name": "commercial_audiobook_standard",
+      "target_lufs": -19.0,
+      "tolerance_lu": 0.5,
+      "true_peak_ceiling_dbtp": -1.5,
+      "target_lra": 8.5,
+      "subsonic_highpass_hz": 28,
+      "enable_dual_pass_linear": true,
+      "limiter_ceiling_db": -1.6,
+      "limiter_release_ms": 50,
+      "dither_type": "tpdf",
+      "output_sample_rate": 48000,
+      "output_channels": 2,
+      "max_retries": 2,
+      "min_dialogue_to_mix_ratio_db": 0.0
+    },
+    "book_profile": null,
+    "reference_profile": null,
+    "scene_intent": null,
+    "allow_perceptual_multipass": true,
+    "mastering_version": "2.2.0",
+    "metadata": {},
+    "is_premaster": true
+  },
+  "result": {
+    "status": "SUCCESS",
+    "chapter_id": "real_05_emotional",
+    "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional.wav",
+    "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional_cinema_master.wav",
+    "profile": {
+      "profile_name": "commercial_audiobook_standard",
+      "target_lufs": -19.0,
+      "tolerance_lu": 0.5,
+      "true_peak_ceiling_dbtp": -1.5,
+      "target_lra": 8.5,
+      "subsonic_highpass_hz": 28,
+      "enable_dual_pass_linear": true,
+      "limiter_ceiling_db": -1.6,
+      "limiter_release_ms": 50,
+      "dither_type": "tpdf",
+      "output_sample_rate": 48000,
+      "output_channels": 2,
+      "max_retries": 2,
+      "min_dialogue_to_mix_ratio_db": 0.0
+    },
+    "analysis_before": {
+      "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional.wav",
+      "duration_sec": 6.165,
+      "sample_rate": 48000,
+      "channels": 2,
+      "integrated_lufs": -26.5,
+      "short_term_max_lufs": null,
+      "momentary_max_lufs": null,
+      "loudness_range_lra": 1.2,
+      "true_peak_dbtp": -11.7,
+      "sample_peak_dbfs": -11.72,
+      "rms_level_dbfs": -30.33,
+      "dynamic_range_db": 18.61,
+      "crest_factor_db": 18.61,
+      "spectral_centroid_hz": 536.8,
+      "spectral_rolloff_hz": 843.8,
+      "spectral_flatness": 0.0004,
+      "phase_correlation": 1.0,
+      "mono_compatible": true,
+      "silence_ratio": 0.347,
+      "dead_air_sec": 0.0,
+      "transient_count": 19,
+      "clipping_detected": false,
+      "is_valid_audio": true
+    },
+    "analysis_after": {
+      "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional_cinema_master.wav",
+      "duration_sec": 6.165,
+      "sample_rate": 48000,
+      "channels": 2,
+      "integrated_lufs": -19.0,
+      "short_term_max_lufs": null,
+      "momentary_max_lufs": null,
+      "loudness_range_lra": 1.1,
+      "true_peak_dbtp": -4.9,
+      "sample_peak_dbfs": -4.88,
+      "rms_level_dbfs": -23.06,
+      "dynamic_range_db": 18.18,
+      "crest_factor_db": 18.18,
+      "spectral_centroid_hz": 536.8,
+      "spectral_rolloff_hz": 843.8,
+      "spectral_flatness": 0.0001,
+      "phase_correlation": 0.853,
+      "mono_compatible": true,
+      "silence_ratio": 0.341,
+      "dead_air_sec": 0.0,
+      "transient_count": 19,
+      "clipping_detected": false,
+      "is_valid_audio": true
+    },
+    "qc_result": {
+      "status": "PASS",
+      "passed": true,
+      "checks": {
+        "audio_integrity": "PASS",
+        "duration": "PASS",
+        "format_compliance": "PASS",
+        "loudness": "PASS",
+        "true_peak": "PASS",
+        "stereo_phase": "PASS",
+        "dead_air": "PASS"
+      },
+      "failures": [],
+      "warnings": [],
+      "details": {
+        "duration_delta_sec": 0.0,
+        "sample_rate": 48000,
+        "channels": 2,
+        "measured_integrated_lufs": -19.0,
+        "target_lufs": -19.0,
+        "loudness_error_lu": 0.0,
+        "measured_true_peak_dbtp": -4.9,
+        "true_peak_ceiling_dbtp": -1.5,
+        "phase_correlation": 0.853,
+        "dead_air_sec": 0.0
+      }
+    },
+    "action_plan": {
+      "chapter_id": "real_05_emotional",
+      "issues": [
+        {
+          "issue_type": "premaster_loudness_drift",
+          "severity": "MAJOR",
+          "confidence": 0.95,
+          "evidence": {
+            "measured_lufs": -26.5,
+            "target_lufs": -20.5,
+            "delta_lu": 6.0,
+            "direction": "cold"
+          },
+          "recommended_action": "Premaster is cold by 6.00 LU; linear loudnorm pass 2 will normalize.",
+          "bounded_parameters": {
+            "target_lufs_adjust": -17.5
+          }
+        }
+      ],
+      "overall_verdict": "ADJUST",
+      "adjusted_profile": {
+        "profile_name": "commercial_audiobook_standard",
+        "target_lufs": -19.0,
+        "tolerance_lu": 0.5,
+        "true_peak_ceiling_dbtp": -1.5,
+        "target_lra": 8.5,
+        "subsonic_highpass_hz": 28,
+        "enable_dual_pass_linear": true,
+        "limiter_ceiling_db": -1.6,
+        "limiter_release_ms": 50,
+        "dither_type": "tpdf",
+        "output_sample_rate": 48000,
+        "output_channels": 2,
+        "max_retries": 2,
+        "min_dialogue_to_mix_ratio_db": 0.0
+      },
+      "explanation": "Generated bounded profile adjustments for 1 issue(s): ['premaster_loudness_drift']"
+    },
+    "dialogue_protection": {
+      "chapter_id": "real_05_emotional",
+      "dialogue_lufs": -70.0,
+      "mix_lufs": -19.0,
+      "dialogue_anchor_ratio_db": 0.0,
+      "masking_risk": "NONE",
+      "clarity_score": 1.0,
+      "dynamic_contrast_preserved": true,
+      "recommended_adjustments": {},
+      "status": "PASS"
+    },
+    "consistency_audit": null,
+    "perceptual_evaluation": {
+      "overall": "PASS",
+      "scores": {
+        "intelligibility": 1.0,
+        "naturalness": 1.0,
+        "tonal_balance": 1.0,
+        "dynamic_integrity": 1.0,
+        "emotional_preservation": 1.0,
+        "spatial_coherence": 1.0,
+        "fatigue_risk": 1.0
+      },
+      "issues": [],
+      "confidence": 0.8,
+      "evidence": [
+        "intelligibility_score=1.00",
+        "naturalness_score=1.00",
+        "tonal_balance_score=1.00",
+        "dynamic_integrity_score=1.00",
+        "emotional_preservation_score=1.00",
+        "solid_stereo_coherence (r=0.853)",
+        "fatigue_risk_score=1.00"
+      ],
+      "critic_version": "1.0.0"
+    },
+    "scene_decision": {
+      "scene_type": "QUIET",
+      "primary_element": "ambience",
+      "context_confidence": 0.7,
+      "perceptual_findings": [
+        "Quiet/suspenseful scene detected: subdued energy and room-tone stillness."
+      ],
+      "recommended_action": "Allow softer target loudness (-20.5 LUFS) to maintain tension.",
+      "risk": "LOW",
+      "expected_effect": "Preserves dramatic pause without audible gain pumping.",
+      "requires_review": false,
+      "bounded_adjustments": {
+        "target_lufs_offset": 1.5
+      }
+    },
+    "reference_comparison": null,
+    "certification_report": {
+      "certification": "CERTIFIED",
+      "chapter_id": "real_05_emotional",
+      "technical_qc": {
+        "status": "PASS",
+        "passed": true,
+        "checks": {
+          "audio_integrity": "PASS",
+          "duration": "PASS",
+          "format_compliance": "PASS",
+          "loudness": "PASS",
+          "true_peak": "PASS",
+          "stereo_phase": "PASS",
+          "dead_air": "PASS"
+        },
+        "failures": [],
+        "warnings": [],
+        "details": {
+          "duration_delta_sec": 0.0,
+          "sample_rate": 48000,
+          "channels": 2,
+          "measured_integrated_lufs": -19.0,
+          "target_lufs": -19.0,
+          "loudness_error_lu": 0.0,
+          "measured_true_peak_dbtp": -4.9,
+          "true_peak_ceiling_dbtp": -1.5,
+          "phase_correlation": 0.853,
+          "dead_air_sec": 0.0
+        }
+      },
+      "mechanical_mastering": {
+        "passed": true,
+        "details": "Closed-loop DSP verified within bounds"
+      },
+      "dialogue_protection": {
+        "chapter_id": "real_05_emotional",
+        "dialogue_lufs": -70.0,
+        "mix_lufs": -19.0,
+        "dialogue_anchor_ratio_db": 0.0,
+        "masking_risk": "NONE",
+        "clarity_score": 1.0,
+        "dynamic_contrast_preserved": true,
+        "recommended_adjustments": {},
+        "status": "PASS"
+      },
+      "book_consistency": {},
+      "perceptual_evaluation": {
+        "overall": "PASS",
+        "scores": {
+          "intelligibility": 1.0,
+          "naturalness": 1.0,
+          "tonal_balance": 1.0,
+          "dynamic_integrity": 1.0,
+          "emotional_preservation": 1.0,
+          "spatial_coherence": 1.0,
+          "fatigue_risk": 1.0
+        },
+        "issues": [],
+        "confidence": 0.8,
+        "evidence": [
+          "intelligibility_score=1.00",
+          "naturalness_score=1.00",
+          "tonal_balance_score=1.00",
+          "dynamic_integrity_score=1.00",
+          "emotional_preservation_score=1.00",
+          "solid_stereo_coherence (r=0.853)",
+          "fatigue_risk_score=1.00"
+        ],
+        "critic_version": "1.0.0"
+      },
+      "reference_comparison": null,
+      "artifact_info": {
+        "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional_cinema_master.wav",
+        "sha256": "b6d4db943efe3f73e407b41fc031d91248061394234be6bb318df81bce8c6781",
+        "size_bytes": 1183758,
+        "duration_sec": 6.165,
+        "sample_rate": 48000,
+        "channels": 2,
+        "bit_depth": 16,
+        "audio_format": "wav",
+        "analyzer_version": "2.0.0",
+        "mastering_version": "2.2.0",
+        "certifier_version": "1.0.0"
+      },
+      "warnings": [],
+      "review_items": [],
+      "provenance": {
+        "engine": "MasteringEngineV2",
+        "engine_version": "2.2.0",
+        "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
+        "premaster_sha256": "2e4564084c6d8b369c56dc1fdb2d099e8d907ada5a0ccdaab039d6eaea9972af",
+        "master_sha256": "b6d4db943efe3f73e407b41fc031d91248061394234be6bb318df81bce8c6781",
+        "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
+        "effective_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b"
+      },
+      "certified_at": "2026-09-30T16:04:09.009111+00:00"
+    },
+    "iteration_count": 1,
+    "provenance": {
+      "engine": "MasteringEngineV2",
+      "engine_version": "2.2.0",
+      "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
+      "timestamp": "2026-09-30T16:04:09.009151+00:00",
+      "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional.wav",
+      "premaster_sha256": "2e4564084c6d8b369c56dc1fdb2d099e8d907ada5a0ccdaab039d6eaea9972af",
+      "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_05_emotional_cinema_master.wav",
+      "master_sha256": "b6d4db943efe3f73e407b41fc031d91248061394234be6bb318df81bce8c6781",
+      "profile_name": "commercial_audiobook_standard",
+      "profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
+      "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
+      "effective_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
+      "iteration_count": 1,
+      "winning_attempt": 1,
+      "attempts_history": [
+        {
+          "attempt": 1,
+          "target_lufs": -19.0,
+          "limiter_ceiling_db": -1.6,
+          "qc_passed": true,
+          "qc_status": "PASS",
+          "integrated_lufs": -19.0,
+          "true_peak_dbtp": -4.9,
+          "failures": []
+        }
+      ],
+      "remediation_actions": [],
+      "judge_verdict": "ADJUST",
+      "dialogue_protection_status": "PASS",
+      "consistency_status": "UNSPECIFIED",
+      "scene_type": "QUIET",
+      "perceptual_status": "PASS",
+      "certification": "CERTIFIED",
+      "reference_match": "NONE"
+    },
+    "error_message": null
+  },
+  "metadata": {
+    "engine_version": "2.2.0",
+    "remediation_count": 0,
+    "judge_verdict": "ADJUST",
+    "dialogue_protection_status": "PASS",
+    "consistency_status": "UNSPECIFIED",
+    "scene_type": "QUIET",
+    "perceptual_status": "PASS",
+    "certification": "CERTIFIED"
+  }
+}

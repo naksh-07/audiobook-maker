@@ -1,0 +1,380 @@
+{
+  "chapter_id": "long_form_stress_ch01",
+  "created_at": "2026-09-30T16:02:53.781058+00:00",
+  "request": {
+    "chapter_id": "long_form_stress_ch01",
+    "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_premaster.wav",
+    "output_master_path": null,
+    "dialogue_stem_path": null,
+    "profile": {
+      "profile_name": "commercial_audiobook_standard",
+      "target_lufs": -19.0,
+      "tolerance_lu": 0.5,
+      "true_peak_ceiling_dbtp": -1.5,
+      "target_lra": 8.5,
+      "subsonic_highpass_hz": 28,
+      "enable_dual_pass_linear": true,
+      "limiter_ceiling_db": -1.6,
+      "limiter_release_ms": 50,
+      "dither_type": "tpdf",
+      "output_sample_rate": 48000,
+      "output_channels": 2,
+      "max_retries": 2,
+      "min_dialogue_to_mix_ratio_db": 0.0
+    },
+    "book_profile": null,
+    "reference_profile": null,
+    "scene_intent": null,
+    "allow_perceptual_multipass": true,
+    "mastering_version": "2.2.0",
+    "metadata": {},
+    "is_premaster": true
+  },
+  "result": {
+    "status": "SUCCESS",
+    "chapter_id": "long_form_stress_ch01",
+    "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_premaster.wav",
+    "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_stress_ch01_cinema_master.wav",
+    "profile": {
+      "profile_name": "commercial_audiobook_standard",
+      "target_lufs": -17.75,
+      "tolerance_lu": 0.5,
+      "true_peak_ceiling_dbtp": -1.5,
+      "target_lra": 9.0,
+      "subsonic_highpass_hz": 28,
+      "enable_dual_pass_linear": true,
+      "limiter_ceiling_db": -1.9,
+      "limiter_release_ms": 35,
+      "dither_type": "tpdf",
+      "output_sample_rate": 48000,
+      "output_channels": 2,
+      "max_retries": 2,
+      "min_dialogue_to_mix_ratio_db": 0.0
+    },
+    "analysis_before": {
+      "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_premaster.wav",
+      "duration_sec": 79.715,
+      "sample_rate": 48000,
+      "channels": 2,
+      "integrated_lufs": -21.5,
+      "short_term_max_lufs": null,
+      "momentary_max_lufs": null,
+      "loudness_range_lra": 14.8,
+      "true_peak_dbtp": -1.7,
+      "sample_peak_dbfs": -1.75,
+      "rms_level_dbfs": -25.37,
+      "dynamic_range_db": 23.62,
+      "crest_factor_db": 23.62,
+      "spectral_centroid_hz": 701.4,
+      "spectral_rolloff_hz": 1007.8,
+      "spectral_flatness": 0.0337,
+      "phase_correlation": 0.967,
+      "mono_compatible": true,
+      "silence_ratio": 0.251,
+      "dead_air_sec": 0.0,
+      "transient_count": 146,
+      "clipping_detected": false,
+      "is_valid_audio": true
+    },
+    "analysis_after": {
+      "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_stress_ch01_cinema_master.wav",
+      "duration_sec": 79.715,
+      "sample_rate": 48000,
+      "channels": 2,
+      "integrated_lufs": -17.8,
+      "short_term_max_lufs": null,
+      "momentary_max_lufs": null,
+      "loudness_range_lra": 10.8,
+      "true_peak_dbtp": -1.8,
+      "sample_peak_dbfs": -1.9,
+      "rms_level_dbfs": -21.49,
+      "dynamic_range_db": 19.59,
+      "crest_factor_db": 19.59,
+      "spectral_centroid_hz": 705.3,
+      "spectral_rolloff_hz": 1007.8,
+      "spectral_flatness": 0.0279,
+      "phase_correlation": 0.874,
+      "mono_compatible": true,
+      "silence_ratio": 0.2,
+      "dead_air_sec": 0.0,
+      "transient_count": 144,
+      "clipping_detected": false,
+      "is_valid_audio": true
+    },
+    "qc_result": {
+      "status": "PASS",
+      "passed": true,
+      "checks": {
+        "audio_integrity": "PASS",
+        "duration": "PASS",
+        "format_compliance": "PASS",
+        "loudness": "PASS",
+        "true_peak": "PASS",
+        "stereo_phase": "PASS",
+        "dead_air": "PASS"
+      },
+      "failures": [],
+      "warnings": [],
+      "details": {
+        "duration_delta_sec": 0.0,
+        "sample_rate": 48000,
+        "channels": 2,
+        "measured_integrated_lufs": -17.8,
+        "target_lufs": -17.75,
+        "loudness_error_lu": 0.05,
+        "measured_true_peak_dbtp": -1.8,
+        "true_peak_ceiling_dbtp": -1.5,
+        "phase_correlation": 0.874,
+        "dead_air_sec": 0.0
+      }
+    },
+    "action_plan": {
+      "chapter_id": "long_form_stress_ch01",
+      "issues": [
+        {
+          "issue_type": "premaster_loudness_drift",
+          "severity": "MAJOR",
+          "confidence": 0.95,
+          "evidence": {
+            "measured_lufs": -21.5,
+            "target_lufs": -19.0,
+            "delta_lu": 2.5,
+            "direction": "cold"
+          },
+          "recommended_action": "Premaster is cold by 2.50 LU; linear loudnorm pass 2 will normalize.",
+          "bounded_parameters": {
+            "target_lufs_adjust": -17.75
+          }
+        },
+        {
+          "issue_type": "insufficient_dynamics_control",
+          "severity": "MINOR",
+          "confidence": 0.8,
+          "evidence": {
+            "loudness_range_lra": 14.8
+          },
+          "recommended_action": "Loudness range exceeds commercial standard (LRA > 14 LU); recommend tightening dynamics.",
+          "bounded_parameters": {
+            "target_lra_adjust": 9.0
+          }
+        }
+      ],
+      "overall_verdict": "ADJUST",
+      "adjusted_profile": {
+        "profile_name": "commercial_audiobook_standard",
+        "target_lufs": -17.75,
+        "tolerance_lu": 0.5,
+        "true_peak_ceiling_dbtp": -1.5,
+        "target_lra": 9.0,
+        "subsonic_highpass_hz": 28,
+        "enable_dual_pass_linear": true,
+        "limiter_ceiling_db": -1.9,
+        "limiter_release_ms": 35,
+        "dither_type": "tpdf",
+        "output_sample_rate": 48000,
+        "output_channels": 2,
+        "max_retries": 2,
+        "min_dialogue_to_mix_ratio_db": 0.0
+      },
+      "explanation": "Generated bounded profile adjustments for 2 issue(s): ['premaster_loudness_drift', 'insufficient_dynamics_control']"
+    },
+    "dialogue_protection": {
+      "chapter_id": "long_form_stress_ch01",
+      "dialogue_lufs": -70.0,
+      "mix_lufs": -17.8,
+      "dialogue_anchor_ratio_db": 0.0,
+      "masking_risk": "NONE",
+      "clarity_score": 1.0,
+      "dynamic_contrast_preserved": true,
+      "recommended_adjustments": {},
+      "status": "PASS"
+    },
+    "consistency_audit": null,
+    "perceptual_evaluation": {
+      "overall": "PASS",
+      "scores": {
+        "intelligibility": 1.0,
+        "naturalness": 1.0,
+        "tonal_balance": 1.0,
+        "dynamic_integrity": 1.0,
+        "emotional_preservation": 1.0,
+        "spatial_coherence": 1.0,
+        "fatigue_risk": 1.0
+      },
+      "issues": [],
+      "confidence": 0.8,
+      "evidence": [
+        "intelligibility_score=1.00",
+        "naturalness_score=1.00",
+        "tonal_balance_score=1.00",
+        "dynamic_integrity_score=1.00",
+        "emotional_preservation_score=1.00",
+        "solid_stereo_coherence (r=0.874)",
+        "fatigue_risk_score=1.00"
+      ],
+      "critic_version": "1.0.0"
+    },
+    "scene_decision": {
+      "scene_type": "ACTION",
+      "primary_element": "impact_fx",
+      "context_confidence": 0.7,
+      "perceptual_findings": [
+        "Action/combat scene detected: prominent transients and elevated impact energy."
+      ],
+      "recommended_action": "Lower limiter ceiling to -1.8 dBTP and use 35ms release to preserve impact transients.",
+      "risk": "LOW",
+      "expected_effect": "Preserves visceral punch and transient headroom without digital inter-sample clipping.",
+      "requires_review": false,
+      "bounded_adjustments": {
+        "limiter_ceiling_offset_db": -0.3,
+        "limiter_release_ms": 35
+      }
+    },
+    "reference_comparison": null,
+    "certification_report": {
+      "certification": "CERTIFIED",
+      "chapter_id": "long_form_stress_ch01",
+      "technical_qc": {
+        "status": "PASS",
+        "passed": true,
+        "checks": {
+          "audio_integrity": "PASS",
+          "duration": "PASS",
+          "format_compliance": "PASS",
+          "loudness": "PASS",
+          "true_peak": "PASS",
+          "stereo_phase": "PASS",
+          "dead_air": "PASS"
+        },
+        "failures": [],
+        "warnings": [],
+        "details": {
+          "duration_delta_sec": 0.0,
+          "sample_rate": 48000,
+          "channels": 2,
+          "measured_integrated_lufs": -17.8,
+          "target_lufs": -17.75,
+          "loudness_error_lu": 0.05,
+          "measured_true_peak_dbtp": -1.8,
+          "true_peak_ceiling_dbtp": -1.5,
+          "phase_correlation": 0.874,
+          "dead_air_sec": 0.0
+        }
+      },
+      "mechanical_mastering": {
+        "passed": true,
+        "details": "Closed-loop DSP verified within bounds"
+      },
+      "dialogue_protection": {
+        "chapter_id": "long_form_stress_ch01",
+        "dialogue_lufs": -70.0,
+        "mix_lufs": -17.8,
+        "dialogue_anchor_ratio_db": 0.0,
+        "masking_risk": "NONE",
+        "clarity_score": 1.0,
+        "dynamic_contrast_preserved": true,
+        "recommended_adjustments": {},
+        "status": "PASS"
+      },
+      "book_consistency": {},
+      "perceptual_evaluation": {
+        "overall": "PASS",
+        "scores": {
+          "intelligibility": 1.0,
+          "naturalness": 1.0,
+          "tonal_balance": 1.0,
+          "dynamic_integrity": 1.0,
+          "emotional_preservation": 1.0,
+          "spatial_coherence": 1.0,
+          "fatigue_risk": 1.0
+        },
+        "issues": [],
+        "confidence": 0.8,
+        "evidence": [
+          "intelligibility_score=1.00",
+          "naturalness_score=1.00",
+          "tonal_balance_score=1.00",
+          "dynamic_integrity_score=1.00",
+          "emotional_preservation_score=1.00",
+          "solid_stereo_coherence (r=0.874)",
+          "fatigue_risk_score=1.00"
+        ],
+        "critic_version": "1.0.0"
+      },
+      "reference_comparison": null,
+      "artifact_info": {
+        "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_stress_ch01_cinema_master.wav",
+        "sha256": "929dfeabfa1487f240c0a8320618f57c203f412a452b20e525947d7ce1ac1568",
+        "size_bytes": 15305358,
+        "duration_sec": 79.715,
+        "sample_rate": 48000,
+        "channels": 2,
+        "bit_depth": 16,
+        "audio_format": "wav",
+        "analyzer_version": "2.0.0",
+        "mastering_version": "2.2.0",
+        "certifier_version": "1.0.0"
+      },
+      "warnings": [],
+      "review_items": [],
+      "provenance": {
+        "engine": "MasteringEngineV2",
+        "engine_version": "2.2.0",
+        "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
+        "premaster_sha256": "8b0b0beef9c634260effd9b19fe689e0b86cebe6ffc44de5a61dda28c21e6cec",
+        "master_sha256": "929dfeabfa1487f240c0a8320618f57c203f412a452b20e525947d7ce1ac1568",
+        "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
+        "effective_profile_sha256": "9b01054e01011490940a0682c68e1c591dbcabcb1b29c3f4f1255705cf6aee16"
+      },
+      "certified_at": "2026-09-30T16:02:53.780972+00:00"
+    },
+    "iteration_count": 1,
+    "provenance": {
+      "engine": "MasteringEngineV2",
+      "engine_version": "2.2.0",
+      "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
+      "timestamp": "2026-09-30T16:02:53.781010+00:00",
+      "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_premaster.wav",
+      "premaster_sha256": "8b0b0beef9c634260effd9b19fe689e0b86cebe6ffc44de5a61dda28c21e6cec",
+      "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\validation_run\\long_form\\long_form_stress_ch01_cinema_master.wav",
+      "master_sha256": "929dfeabfa1487f240c0a8320618f57c203f412a452b20e525947d7ce1ac1568",
+      "profile_name": "commercial_audiobook_standard",
+      "profile_sha256": "9b01054e01011490940a0682c68e1c591dbcabcb1b29c3f4f1255705cf6aee16",
+      "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
+      "effective_profile_sha256": "9b01054e01011490940a0682c68e1c591dbcabcb1b29c3f4f1255705cf6aee16",
+      "iteration_count": 1,
+      "winning_attempt": 1,
+      "attempts_history": [
+        {
+          "attempt": 1,
+          "target_lufs": -17.75,
+          "limiter_ceiling_db": -1.9,
+          "qc_passed": true,
+          "qc_status": "PASS",
+          "integrated_lufs": -17.8,
+          "true_peak_dbtp": -1.8,
+          "failures": []
+        }
+      ],
+      "remediation_actions": [],
+      "judge_verdict": "ADJUST",
+      "dialogue_protection_status": "PASS",
+      "consistency_status": "UNSPECIFIED",
+      "scene_type": "ACTION",
+      "perceptual_status": "PASS",
+      "certification": "CERTIFIED",
+      "reference_match": "NONE"
+    },
+    "error_message": null
+  },
+  "metadata": {
+    "engine_version": "2.2.0",
+    "remediation_count": 0,
+    "judge_verdict": "ADJUST",
+    "dialogue_protection_status": "PASS",
+    "consistency_status": "UNSPECIFIED",
+    "scene_type": "ACTION",
+    "perceptual_status": "PASS",
+    "certification": "CERTIFIED"
+  }
+}
