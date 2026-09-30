@@ -90,16 +90,23 @@ class MasteringAnalyzer:
         spectral, temporal, _, _ = self.base_analyzer.probe_spectral_and_temporal(p)
 
         # 4. Stereo Phase Correlation & Mono Compatibility
-        phase_r = 1.0
-        try:
-            phase_audit = audit_gate5_3_stereo_phase(p)
-            phase_r = float(phase_audit.details.get("phase_correlation", 1.0))
-            if math.isnan(phase_r) or math.isinf(phase_r):
-                phase_r = 1.0
-        except Exception as e:
-            logger.debug(f"Phase correlation probe fallback for {p.name}: {e}")
+        phase_r = None
+        mono_compatible = None
+        if fmt.channels > 1:
+            try:
+                phase_audit = audit_gate5_3_stereo_phase(p)
+                raw_phase = phase_audit.details.get("mean_phase_correlation", phase_audit.details.get("phase_correlation"))
+                if raw_phase is not None:
+                    phase_val = float(raw_phase)
+                    if not math.isnan(phase_val) and not math.isinf(phase_val):
+                        phase_r = phase_val
+                        mono_compatible = bool(phase_r >= 0.20)
+            except Exception as e:
+                logger.debug(f"Phase correlation probe error on {p.name}: {e}")
+        else:
+            # Mono audio is trivially in-phase and mono-compatible
             phase_r = 1.0
-        mono_compatible = bool(phase_r >= 0.20)
+            mono_compatible = True
 
         # 5. Short-term & Momentary loudness via FFmpeg ebur128 framelog
         short_term_max = None
@@ -180,8 +187,8 @@ class MasteringAnalyzer:
             spectral_centroid_hz=spectral.spectral_centroid_hz,
             spectral_rolloff_hz=spectral.spectral_rolloff_hz,
             spectral_flatness=spectral.spectral_flatness,
-            phase_correlation=round(phase_r, 4),
-            mono_compatible=mono_compatible,
+            phase_correlation=round(phase_r, 4) if phase_r is not None else 1.0,
+            mono_compatible=mono_compatible if mono_compatible is not None else True,
             silence_ratio=temporal.silence_ratio,
             dead_air_sec=total_dead_air_sec,
             transient_count=temporal.transient_count,
@@ -203,6 +210,8 @@ class MasteringAnalyzer:
         """
         dx_facts = self.analyze(dialogue_stem_path)
         master_facts = self.analyze(master_path)
+        if dx_facts.integrated_lufs is None or master_facts.integrated_lufs is None:
+            return 0.0
         if dx_facts.integrated_lufs <= -65.0:
             return 0.0
         return round(dx_facts.integrated_lufs - master_facts.integrated_lufs, 2)

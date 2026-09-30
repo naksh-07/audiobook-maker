@@ -86,12 +86,17 @@ class MasteringQCAgent:
         lufs = master_facts.integrated_lufs
         details["measured_integrated_lufs"] = lufs
         details["target_lufs"] = prof.target_lufs
-        details["loudness_error_lu"] = round(abs(lufs - prof.target_lufs), 2)
 
-        if lufs <= -65.0:
+        if lufs is None:
+            details["loudness_error_lu"] = None
+            failures.append("integrated_loudness_measurement_missing")
+            checks["loudness"] = "FAIL"
+        elif lufs <= -65.0:
+            details["loudness_error_lu"] = round(abs(lufs - prof.target_lufs), 2)
             failures.append("complete_silence_dropout_detected")
             checks["loudness"] = "FAIL"
         elif abs(lufs - prof.target_lufs) > prof.tolerance_lu:
+            details["loudness_error_lu"] = round(abs(lufs - prof.target_lufs), 2)
             # Over tolerance threshold
             if abs(lufs - prof.target_lufs) > prof.tolerance_lu * 2.0:
                 failures.append(f"integrated_loudness_severe_violation: {lufs:.2f} LUFS outside target {prof.target_lufs} +/- {prof.tolerance_lu} LU")
@@ -100,6 +105,7 @@ class MasteringQCAgent:
                 warnings.append(f"integrated_loudness_minor_tolerance_exceeded: {lufs:.2f} LUFS")
                 checks["loudness"] = "WARN"
         else:
+            details["loudness_error_lu"] = round(abs(lufs - prof.target_lufs), 2)
             checks["loudness"] = "PASS"
 
         # 5. True-Peak Inter-Sample Ceiling Compliance
@@ -107,31 +113,37 @@ class MasteringQCAgent:
         details["measured_true_peak_dbtp"] = tp
         details["true_peak_ceiling_dbtp"] = prof.true_peak_ceiling_dbtp
 
-        if tp is not None:
-            if tp > 0.0:
-                failures.append(f"digital_clipping_overshoot_detected: {tp:.2f} dBTP exceeds 0.0 dBFS")
+        if tp is None:
+            failures.append("true_peak_measurement_missing")
+            checks["true_peak"] = "FAIL"
+        elif tp > 0.0:
+            failures.append(f"digital_clipping_overshoot_detected: {tp:.2f} dBTP exceeds 0.0 dBFS")
+            checks["true_peak"] = "FAIL"
+        elif tp > prof.true_peak_ceiling_dbtp:
+            if tp > prof.true_peak_ceiling_dbtp + 0.3:
+                failures.append(f"true_peak_ceiling_violation: {tp:.2f} dBTP exceeds ceiling {prof.true_peak_ceiling_dbtp} dBTP")
                 checks["true_peak"] = "FAIL"
-            elif tp > prof.true_peak_ceiling_dbtp:
-                if tp > prof.true_peak_ceiling_dbtp + 0.3:
-                    failures.append(f"true_peak_ceiling_violation: {tp:.2f} dBTP exceeds ceiling {prof.true_peak_ceiling_dbtp} dBTP")
-                    checks["true_peak"] = "FAIL"
-                else:
-                    warnings.append(f"true_peak_near_ceiling_margin: {tp:.2f} dBTP")
-                    checks["true_peak"] = "WARN"
             else:
-                checks["true_peak"] = "PASS"
+                warnings.append(f"true_peak_near_ceiling_margin: {tp:.2f} dBTP")
+                checks["true_peak"] = "WARN"
         else:
             checks["true_peak"] = "PASS"
 
         # 6. Stereo Phase Correlation & Mono Compatibility
         phase_r = master_facts.phase_correlation
         details["phase_correlation"] = phase_r
-        if phase_r < 0.0:
-            failures.append(f"severe_anti_phase_cancellation_detected: r={phase_r:.2f} < 0.0")
-            checks["stereo_phase"] = "FAIL"
-        elif phase_r < 0.20:
-            warnings.append(f"low_stereo_phase_correlation: r={phase_r:.2f} < 0.20")
-            checks["stereo_phase"] = "WARN"
+        if master_facts.channels > 1:
+            if phase_r is None:
+                failures.append("stereo_phase_measurement_missing")
+                checks["stereo_phase"] = "FAIL"
+            elif phase_r < 0.0:
+                failures.append(f"severe_anti_phase_cancellation_detected: r={phase_r:.2f} < 0.0")
+                checks["stereo_phase"] = "FAIL"
+            elif phase_r < 0.20:
+                warnings.append(f"low_stereo_phase_correlation: r={phase_r:.2f} < 0.20")
+                checks["stereo_phase"] = "WARN"
+            else:
+                checks["stereo_phase"] = "PASS"
         else:
             checks["stereo_phase"] = "PASS"
 

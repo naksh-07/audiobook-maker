@@ -534,35 +534,6 @@ def render_discrete_stems(
     subprocess.run(cmd_premaster, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     premaster_m = measure_audio_metrics(premaster_file, ffmpeg=ff)
 
-    # --- STEM 7: FULL MASTER (Stage 12 Broadcast Mastering via MasteringEngineV2) ---
-    master_file = out_dir / f"{ch_id}_cinema_master.wav"
-    mastering_engine = MasteringEngineV2(ffmpeg_bin=ff)
-    master_target_lufs = -19.0
-    master_target_tp = -1.5
-    if hasattr(manifest, "mastering") and manifest.mastering:
-        master_target_lufs = getattr(manifest.mastering, "target_lufs", -19.0)
-        master_target_tp = getattr(manifest.mastering, "true_peak_dbtp", getattr(manifest.mastering, "true_peak_db", -1.5))
-
-    master_req = MasteringRequest(
-        chapter_id=ch_id,
-        premaster_path=str(premaster_file),
-        output_master_path=str(master_file),
-        dialogue_stem_path=str(dx_file) if dx_file.exists() else None,
-        profile=MasteringProfile(
-            target_lufs=master_target_lufs,
-            true_peak_ceiling_dbtp=master_target_tp,
-        ),
-    )
-    mastering_result = mastering_engine.master(master_req)
-    if mastering_result.analysis_after:
-        master_m = {
-            "duration_sec": mastering_result.analysis_after.duration_sec,
-            "integrated_lufs": mastering_result.analysis_after.integrated_lufs,
-            "true_peak_dbtp": mastering_result.analysis_after.true_peak_dbtp if mastering_result.analysis_after.true_peak_dbtp is not None else -1.5,
-        }
-    else:
-        master_m = measure_audio_metrics(master_file, ffmpeg=ff)
-
     # Stage 11 semantic premaster
     stems_meta["CINEMATIC_MIX_PREMASTER"] = StemMetadata(
         stem_type="CINEMATIC_MIX_PREMASTER",
@@ -570,14 +541,6 @@ def render_discrete_stems(
         duration_sec=premaster_m["duration_sec"],
         integrated_lufs=premaster_m["integrated_lufs"],
         true_peak_dbtp=premaster_m["true_peak_dbtp"],
-    )
-    # Backward-compatible master deliverable for orchestrator and downstream packaging
-    stems_meta["FULL_MASTER"] = StemMetadata(
-        stem_type="FULL_MASTER",
-        filepath=str(master_file),
-        duration_sec=master_m["duration_sec"],
-        integrated_lufs=master_m["integrated_lufs"],
-        true_peak_dbtp=master_m["true_peak_dbtp"],
     )
 
     # Anti-Overengineered DMR Validation (Dialogue-to-Masking Ratio Proxy)
@@ -589,9 +552,6 @@ def render_discrete_stems(
         "ducking_profile": ducking_prof.profile_name,
         "dialogue_masking_ratio_db": dmr_db,
         "dmr_compliant": dmr_compliant,
-        "total_stems": len(stems_meta),
-        "mastering_v2_audit": mastering_result.model_dump(),
-        "mastering_status": mastering_result.status,
     }
     if mix_automation:
         ledger_meta["mix_automation"] = mix_automation.model_dump()
@@ -599,6 +559,7 @@ def render_discrete_stems(
         ledger_meta["automation_event_count"] = len(mix_automation.events)
 
     # --- STAGE 11 MIX JUDGE & AUTOMATIC DIAGNOSIS / REMIX PASS ---
+    # Mix Judge / Remix settles the mixdown BEFORE Stage 12 Mastering executes.
     mix_judge_result: Optional[MixJudgeResult] = None
     if enable_judge:
         judge_instance = judge or MixJudge(ffmpeg_bin=ff)
@@ -652,36 +613,11 @@ def render_discrete_stems(
                 integrated_lufs=premaster_m["integrated_lufs"],
                 true_peak_dbtp=premaster_m["true_peak_dbtp"],
             )
-            # Re-sum Master via Stage 12 MasteringEngineV2
-            master_req_remix = MasteringRequest(
-                chapter_id=ch_id,
-                premaster_path=str(premaster_file),
-                output_master_path=str(master_file),
-                dialogue_stem_path=str(dx_file) if dx_file.exists() else None,
-                profile=MasteringProfile(
-                    target_lufs=master_target_lufs,
-                    true_peak_ceiling_dbtp=master_target_tp,
-                ),
-            )
-            mastering_result = mastering_engine.master(master_req_remix)
-            if mastering_result.analysis_after:
-                master_m = {
-                    "duration_sec": mastering_result.analysis_after.duration_sec,
-                    "integrated_lufs": mastering_result.analysis_after.integrated_lufs,
-                    "true_peak_dbtp": mastering_result.analysis_after.true_peak_dbtp if mastering_result.analysis_after.true_peak_dbtp is not None else -1.5,
-                }
-            else:
-                master_m = measure_audio_metrics(master_file, ffmpeg=ff)
 
-            stems_meta["FULL_MASTER"] = StemMetadata(
-                stem_type="FULL_MASTER",
-                filepath=str(master_file),
-                duration_sec=master_m["duration_sec"],
-                integrated_lufs=master_m["integrated_lufs"],
-                true_peak_dbtp=master_m["true_peak_dbtp"],
-            )
-            ledger_meta["mastering_v2_audit"] = mastering_result.model_dump()
-            ledger_meta["mastering_status"] = mastering_result.status
+            # Invalidate any stale master deliverable so it never survives a remix
+            stale_master = out_dir / f"{ch_id}_cinema_master.wav"
+            if stale_master.exists():
+                stale_master.unlink(missing_ok=True)
 
             # Re-evaluate with judge
             mix_judge_result = judge_instance.evaluate(
@@ -704,6 +640,50 @@ def render_discrete_stems(
         ledger_meta["mix_judge_audit"] = mix_judge_result.model_dump()
         ledger_meta["mix_judge_status"] = mix_judge_result.status
         ledger_meta["mix_judge_score"] = mix_judge_result.overall_score
+
+    # --- STEM 7: FULL MASTER (Stage 12 Broadcast Mastering via MasteringEngineV2) ---
+    # Master strictly from the final settled premaster
+    master_file = out_dir / f"{ch_id}_cinema_master.wav"
+    if master_file.exists():
+        master_file.unlink(missing_ok=True)
+
+    mastering_engine = MasteringEngineV2(ffmpeg_bin=ff)
+    master_target_lufs = -19.0
+    master_target_tp = -1.5
+    if hasattr(manifest, "mastering") and manifest.mastering:
+        master_target_lufs = getattr(manifest.mastering, "target_lufs", -19.0)
+        master_target_tp = getattr(manifest.mastering, "true_peak_dbtp", getattr(manifest.mastering, "true_peak_db", -1.5))
+
+    master_req = MasteringRequest(
+        chapter_id=ch_id,
+        premaster_path=str(premaster_file),
+        output_master_path=str(master_file),
+        dialogue_stem_path=str(dx_file) if dx_file.exists() else None,
+        profile=MasteringProfile(
+            target_lufs=master_target_lufs,
+            true_peak_ceiling_dbtp=master_target_tp,
+        ),
+    )
+    mastering_result = mastering_engine.master(master_req)
+    if mastering_result.analysis_after:
+        master_m = {
+            "duration_sec": mastering_result.analysis_after.duration_sec,
+            "integrated_lufs": mastering_result.analysis_after.integrated_lufs,
+            "true_peak_dbtp": mastering_result.analysis_after.true_peak_dbtp if mastering_result.analysis_after.true_peak_dbtp is not None else -1.5,
+        }
+    else:
+        master_m = measure_audio_metrics(master_file, ffmpeg=ff)
+
+    stems_meta["FULL_MASTER"] = StemMetadata(
+        stem_type="FULL_MASTER",
+        filepath=str(master_file),
+        duration_sec=master_m["duration_sec"],
+        integrated_lufs=master_m["integrated_lufs"],
+        true_peak_dbtp=master_m["true_peak_dbtp"],
+    )
+    ledger_meta["total_stems"] = len(stems_meta)
+    ledger_meta["mastering_v2_audit"] = mastering_result.model_dump()
+    ledger_meta["mastering_status"] = mastering_result.status
 
     ledger = StemLedger(
         chapter_id=ch_id,

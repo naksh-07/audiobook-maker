@@ -40,6 +40,7 @@ from audiobook_factory.mastering_contracts import (
     ReferenceComparisonResult,
     SceneMasteringDecision,
     FinalCertificationReport,
+    FinalArtifactInfo,
 )
 from audiobook_factory.mastering_analyzer import MasteringAnalyzer
 from audiobook_factory.mastering_qc import MasteringQCAgent
@@ -127,34 +128,24 @@ class MasteringEngineV2:
             "-f", "null", "-",
         ]
         proc = subprocess.run(cmd_pass1, capture_output=True, text=True, errors="ignore", timeout=90.0)
+        if proc.returncode != 0:
+            raise RuntimeError(f"Pass 1 loudnorm execution failed on {audio_path.name} (code {proc.returncode}): {proc.stderr[-300:]}")
+
         match = re.search(r"\{[\s\S]*?\"input_i\"[\s\S]*?\}", proc.stderr)
         if not match:
-            logger.warning(f"Pass 1 loudnorm failed to parse JSON on {audio_path.name}: {proc.stderr[-300:]}")
-            return {
-                "input_i": "-24.0",
-                "input_tp": "-2.0",
-                "input_lra": "7.0",
-                "input_thresh": "-34.0",
-                "target_offset": "0.0",
-            }
+            raise RuntimeError(f"Pass 1 loudnorm failed to parse JSON on {audio_path.name}: {proc.stderr[-300:]}")
+
         try:
             stats = json.loads(match.group(0))
-            return {
-                "input_i": str(stats.get("input_i", "-24.0")),
-                "input_tp": str(stats.get("input_tp", "-2.0")),
-                "input_lra": str(stats.get("input_lra", "7.0")),
-                "input_thresh": str(stats.get("input_thresh", "-34.0")),
-                "target_offset": str(stats.get("target_offset", "0.0")),
-            }
         except Exception as e:
-            logger.warning(f"Failed to decode Pass 1 loudnorm JSON: {e}")
-            return {
-                "input_i": "-24.0",
-                "input_tp": "-2.0",
-                "input_lra": "7.0",
-                "input_thresh": "-34.0",
-                "target_offset": "0.0",
-            }
+            raise RuntimeError(f"Failed to decode Pass 1 loudnorm JSON on {audio_path.name}: {e}")
+
+        required_keys = ["input_i", "input_tp", "input_lra", "input_thresh", "target_offset"]
+        missing_keys = [k for k in required_keys if k not in stats]
+        if missing_keys:
+            raise RuntimeError(f"Pass 1 loudnorm JSON missing keys {missing_keys} on {audio_path.name}: {stats}")
+
+        return {k: str(stats[k]) for k in required_keys}
 
     def _render_master(
         self,
@@ -363,50 +354,82 @@ class MasteringEngineV2:
         # Step 2: Closed-Loop Mastering & Remediation Loop
         target_lufs = active_profile.target_lufs
         limiter_ceiling_db = active_profile.limiter_ceiling_db
+        initial_profile_sha256 = profile_sha256
         remediation_actions: List[Dict[str, Any]] = []
+        attempts_history: List[Dict[str, Any]] = []
         analysis_after: Optional[MasteringAnalysisFacts] = None
         qc_result: Optional[MasteringQCResult] = None
         iterations_run = 0
+        winning_attempt = 1
 
         max_attempts = 1 + active_profile.max_retries
 
         for attempt in range(1, max_attempts + 1):
             iterations_run = attempt
+            winning_attempt = attempt
             logger.info(
                 f"[*] Stage 12 Mastering (Attempt {attempt}/{max_attempts}) for {request.chapter_id} "
                 f"[Target: {target_lufs:.1f} LUFS, Limiter: {limiter_ceiling_db:.1f} dBFS]..."
             )
 
-            # Pass 1: Measure
-            pass1_stats = self._measure_loudnorm_pass1(
-                audio_path=premaster_path,
-                target_lufs=target_lufs,
-                profile=active_profile,
-            )
+            try:
+                # Pass 1: Measure
+                pass1_stats = self._measure_loudnorm_pass1(
+                    audio_path=premaster_path,
+                    target_lufs=target_lufs,
+                    profile=active_profile,
+                )
 
-            # Pass 2: Render
-            self._render_master(
-                premaster_path=premaster_path,
-                output_path=master_path,
-                profile=active_profile,
-                target_lufs=target_lufs,
-                limiter_ceiling_db=limiter_ceiling_db,
-                pass1_stats=pass1_stats,
-            )
+                # Pass 2: Render
+                self._render_master(
+                    premaster_path=premaster_path,
+                    output_path=master_path,
+                    profile=active_profile,
+                    target_lufs=target_lufs,
+                    limiter_ceiling_db=limiter_ceiling_db,
+                    pass1_stats=pass1_stats,
+                )
 
-            # Analyze Rendered Deliverable
-            analysis_after = self.analyzer.analyze(
-                master_path,
-                dialogue_stem_path=request.dialogue_stem_path,
-            )
+                self.analyzer.clear_cache()
+                # Analyze Rendered Deliverable
+                analysis_after = self.analyzer.analyze(
+                    master_path,
+                    dialogue_stem_path=request.dialogue_stem_path,
+                )
 
-            # QC Audit
-            qc_result = self.qc_agent.evaluate(
-                master_facts=analysis_after,
-                premaster_facts=analysis_before,
-                dialogue_facts=dialogue_facts,
-                profile=active_profile,
-            )
+                # QC Audit
+                qc_result = self.qc_agent.evaluate(
+                    master_facts=analysis_after,
+                    premaster_facts=analysis_before,
+                    dialogue_facts=dialogue_facts,
+                    profile=active_profile,
+                )
+            except Exception as e:
+                logger.error(f"[!] Stage 12 Mastering render failed on attempt {attempt}: {e}")
+                self.analyzer.clear_cache()
+                analysis_after = self.analyzer.analyze(
+                    master_path if master_path.exists() else premaster_path,
+                    dialogue_stem_path=request.dialogue_stem_path,
+                )
+                qc_result = MasteringQCResult(
+                    status="FAIL",
+                    passed=False,
+                    checks={"dsp_render": "FAIL"},
+                    failures=[f"mastering_dsp_render_failed: {str(e)[:150]}"],
+                    warnings=[],
+                    details={"error": str(e)},
+                )
+
+            attempts_history.append({
+                "attempt": attempt,
+                "target_lufs": target_lufs,
+                "limiter_ceiling_db": limiter_ceiling_db,
+                "qc_passed": qc_result.passed if qc_result else False,
+                "qc_status": qc_result.status if qc_result else "FAIL",
+                "integrated_lufs": analysis_after.integrated_lufs if analysis_after else None,
+                "true_peak_dbtp": analysis_after.true_peak_dbtp if analysis_after else None,
+                "failures": qc_result.failures if qc_result else [],
+            })
 
             if qc_result.passed:
                 logger.info(
@@ -420,20 +443,21 @@ class MasteringEngineV2:
                 remediated = False
                 # Remediation 1: Loudness deviation
                 measured_lufs = qc_result.details.get("measured_integrated_lufs", analysis_after.integrated_lufs)
-                lufs_diff = measured_lufs - active_profile.target_lufs
-                if qc_result.checks.get("loudness") in ("FAIL", "WARN") or abs(lufs_diff) > active_profile.tolerance_lu:
-                    # Adjust target offset inverse to measured delta
-                    adjustment = lufs_diff if abs(lufs_diff) > 0.05 else 0.5
-                    new_target = round(target_lufs - adjustment, 2)
-                    remediation_actions.append({
-                        "attempt": attempt,
-                        "type": "loudness_offset_compensation",
-                        "measured_lufs": measured_lufs,
-                        "target_lufs_before": target_lufs,
-                        "target_lufs_adjusted": new_target,
-                    })
-                    target_lufs = new_target
-                    remediated = True
+                if measured_lufs is not None:
+                    lufs_diff = measured_lufs - active_profile.target_lufs
+                    if qc_result.checks.get("loudness") in ("FAIL", "WARN") or abs(lufs_diff) > active_profile.tolerance_lu:
+                        # Adjust target offset inverse to measured delta
+                        adjustment = lufs_diff if abs(lufs_diff) > 0.05 else 0.5
+                        new_target = round(target_lufs - adjustment, 2)
+                        remediation_actions.append({
+                            "attempt": attempt,
+                            "type": "loudness_offset_compensation",
+                            "measured_lufs": measured_lufs,
+                            "target_lufs_before": target_lufs,
+                            "target_lufs_adjusted": new_target,
+                        })
+                        target_lufs = new_target
+                        remediated = True
 
                 # Remediation 2: True peak overshoot
                 tp = qc_result.details.get("measured_true_peak_dbtp", analysis_after.true_peak_dbtp)
@@ -528,6 +552,7 @@ class MasteringEngineV2:
                         premaster_path, master_path, corrective_profile, corrective_target_lufs, limiter_ceiling_db, pass1_c
                     )
 
+                    self.analyzer.clear_cache()
                     new_analysis = self.analyzer.analyze(master_path, dialogue_stem_path=request.dialogue_stem_path)
                     new_qc = self.qc_agent.evaluate(new_analysis, analysis_before, dialogue_facts, corrective_profile)
                     new_eval = self.perceptual_critic.evaluate(
@@ -542,19 +567,73 @@ class MasteringEngineV2:
                     # Reversion guard: only accept if QC passes and aesthetic scores did not degrade
                     if new_qc.passed and (min(new_eval.scores.values()) >= min(perceptual_eval.scores.values())):
                         logger.info(f"[+] Perceptual multi-pass accepted: improved aesthetic score for {request.chapter_id}")
+                        self.analyzer.clear_cache()
                         analysis_after = new_analysis
                         qc_result = new_qc
+                        # Invalidate stale reports from MASTER A and completely re-evaluate on MASTER B
+                        dialogue_report = self.dialogue_agent.evaluate(
+                            mix_facts=analysis_after,
+                            dialogue_facts=dialogue_facts,
+                            scene_intent=request.scene_intent,
+                            chapter_id=request.chapter_id,
+                        )
+                        if request.book_profile:
+                            consistency_audit = self.consistency_auditor.audit_chapter(
+                                chapter_facts=analysis_after,
+                                book_profile=request.book_profile,
+                                dialogue_facts=dialogue_facts,
+                                scene_intent=request.scene_intent,
+                                chapter_id=request.chapter_id,
+                            )
+                        if request.reference_profile is not None:
+                            reference_comp = self.reference_auditor.compare_to_reference(
+                                facts=analysis_after,
+                                reference=request.reference_profile,
+                                scene_type=scene_decision.scene_type,
+                            )
                         perceptual_eval = new_eval
                         iterations_run += 1
+                        winning_attempt = iterations_run
                         active_profile = corrective_profile
+                        attempts_history.append({
+                            "attempt": iterations_run,
+                            "type": "p4_perceptual_refinement",
+                            "target_lufs": corrective_target_lufs,
+                            "limiter_ceiling_db": limiter_ceiling_db,
+                            "qc_passed": new_qc.passed,
+                            "qc_status": new_qc.status,
+                            "integrated_lufs": new_analysis.integrated_lufs,
+                            "true_peak_dbtp": new_analysis.true_peak_dbtp,
+                        })
                     else:
                         logger.info(f"[!] Perceptual multi-pass reverted: correction did not improve audio, restoring previous master.")
                         shutil.copy2(backup_master_path, master_path)
+                        self.analyzer.clear_cache()
                 finally:
                     if backup_master_path.exists():
                         backup_master_path.unlink(missing_ok=True)
 
-        # Step 4: Final Certification Arbiter
+        # Step 4: Final Certification Arbiter with Physical Artifact Authority
+        master_sha256 = self._compute_sha256(master_path) if master_path.exists() else "render_failed"
+        effective_profile_sha256 = hashlib.sha256(active_profile.model_dump_json().encode("utf-8")).hexdigest()
+
+        artifact_info = None
+        if master_path.exists() and master_sha256 != "render_failed":
+            st = master_path.stat()
+            artifact_info = FinalArtifactInfo(
+                filepath=str(master_path),
+                sha256=master_sha256,
+                size_bytes=st.st_size,
+                duration_sec=analysis_after.duration_sec if analysis_after else 0.0,
+                sample_rate=analysis_after.sample_rate if analysis_after else 48000,
+                channels=analysis_after.channels if analysis_after else 2,
+                bit_depth=16,
+                audio_format="wav",
+                analyzer_version=self.analyzer.version,
+                mastering_version=self.version,
+                certifier_version=self.certifier.version,
+            )
+
         cert_report = self.certifier.certify(
             chapter_id=request.chapter_id,
             qc_result=qc_result,
@@ -562,30 +641,42 @@ class MasteringEngineV2:
             consistency_audit=consistency_audit,
             perceptual_eval=perceptual_eval,
             reference_comp=reference_comp,
+            artifact_info=artifact_info,
             provenance={
                 "engine": "MasteringEngineV2",
                 "engine_version": self.version,
                 "ffmpeg_version": self._ffmpeg_version,
                 "premaster_sha256": premaster_sha256,
+                "master_sha256": master_sha256,
+                "initial_profile_sha256": initial_profile_sha256,
+                "effective_profile_sha256": effective_profile_sha256,
             },
         )
 
-        # Final Status determination (Conservative Precedence)
-        if qc_result.passed and dialogue_report.status != "FAIL" and cert_report.certification != "REJECTED":
-            status = "SUCCESS"
-            error_msg = None
-        elif iterations_run > 1:
+        # Final Status determination (Strict Conservative Precedence)
+        if not qc_result.passed and iterations_run > 1:
             status = "RETRY_EXHAUSTED"
             error_msg = f"Mastering QC failed after {iterations_run} passes: {', '.join(qc_result.failures)}"
         elif cert_report.certification == "REJECTED":
             status = "FAILED"
             first_ev = cert_report.review_items[0].get("evidence") if cert_report.review_items else "Critical defect"
             error_msg = f"Mastering certification REJECTED: {first_ev}"
-        else:
+        elif cert_report.certification == "REVIEW_REQUIRED":
+            status = "REVIEW_REQUIRED"
+            first_item = cert_report.review_items[0] if cert_report.review_items else {}
+            error_msg = f"Mastering requires human review: {first_item.get('evidence', 'Uncertain acoustic presentation')}"
+        elif not qc_result.passed:
             status = "FAILED"
             error_msg = f"Mastering QC failed: {', '.join(qc_result.failures)}"
-
-        master_sha256 = self._compute_sha256(master_path) if master_path.exists() else "render_failed"
+        elif dialogue_report.status == "FAIL":
+            status = "FAILED"
+            error_msg = f"Dialogue protection critical failure: {dialogue_report.masking_risk} speech masking risk"
+        elif cert_report.certification in ("CERTIFIED", "WARNINGS"):
+            status = "SUCCESS"
+            error_msg = None
+        else:
+            status = "FAILED"
+            error_msg = f"Unknown certification state: {cert_report.certification}"
 
         provenance = {
             "engine": "MasteringEngineV2",
@@ -597,8 +688,12 @@ class MasteringEngineV2:
             "master_path": str(master_path),
             "master_sha256": master_sha256,
             "profile_name": active_profile.profile_name,
-            "profile_sha256": profile_sha256,
+            "profile_sha256": effective_profile_sha256,
+            "initial_profile_sha256": initial_profile_sha256,
+            "effective_profile_sha256": effective_profile_sha256,
             "iteration_count": iterations_run,
+            "winning_attempt": winning_attempt,
+            "attempts_history": attempts_history,
             "remediation_actions": remediation_actions,
             "judge_verdict": action_plan.overall_verdict,
             "dialogue_protection_status": dialogue_report.status,

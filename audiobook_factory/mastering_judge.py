@@ -94,31 +94,37 @@ class MasteringJudge:
                 )
             )
 
-        if premaster_facts.phase_correlation < 0.0:
-            issues.append(
-                MasteringIssue(
-                    issue_type="severe_anti_phase_cancellation",
-                    severity="CRITICAL",
-                    confidence=0.95,
-                    evidence={"phase_correlation": premaster_facts.phase_correlation},
-                    recommended_action="Flag stage 11 mix for severe anti-phase cancellation; mono summing will cancel speech.",
-                    bounded_parameters={},
+        if premaster_facts.phase_correlation is not None:
+            if premaster_facts.phase_correlation < 0.0:
+                issues.append(
+                    MasteringIssue(
+                        issue_type="severe_anti_phase_cancellation",
+                        severity="CRITICAL",
+                        confidence=0.95,
+                        evidence={"phase_correlation": premaster_facts.phase_correlation},
+                        recommended_action="Flag stage 11 mix for severe anti-phase cancellation; mono summing will cancel speech.",
+                        bounded_parameters={},
+                    )
                 )
-            )
-        elif premaster_facts.phase_correlation < 0.20:
-            issues.append(
-                MasteringIssue(
-                    issue_type="narrow_stereo_phase_correlation",
-                    severity="MINOR",
-                    confidence=0.85,
-                    evidence={"phase_correlation": premaster_facts.phase_correlation},
-                    recommended_action="Mono compatibility warning; ensure core vocal energy is centered.",
-                    bounded_parameters={},
+            elif premaster_facts.phase_correlation < 0.20:
+                issues.append(
+                    MasteringIssue(
+                        issue_type="narrow_stereo_phase_correlation",
+                        severity="MINOR",
+                        confidence=0.85,
+                        evidence={"phase_correlation": premaster_facts.phase_correlation},
+                        recommended_action="Mono compatibility warning; ensure core vocal energy is centered.",
+                        bounded_parameters={},
+                    )
                 )
-            )
 
         # 2. PRIORITY 2: Dialogue Intelligibility & Masking
-        if dialogue_facts and dialogue_facts.integrated_lufs > -65.0:
+        if (
+            dialogue_facts
+            and dialogue_facts.integrated_lufs is not None
+            and premaster_facts.integrated_lufs is not None
+            and dialogue_facts.integrated_lufs > -65.0
+        ):
             anchor_ratio = round(dialogue_facts.integrated_lufs - premaster_facts.integrated_lufs, 2)
             # Check scene intent context: whisper or combat might legitimately have different ratios
             is_whisper = False

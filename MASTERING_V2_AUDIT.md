@@ -635,3 +635,75 @@ The 10 canonical golden mastering fixtures under `audiobook_factory/golden_maste
 - `09_dramatic_silence` was calibrated with scene-aware intelligence to an intimate target of $-18.7\text{ LUFS}$ to protect dramatic tension while maintaining broadcast EBU R128 compliance.
 - Baseline audit version incremented to `2.2.0` with full governance history preserved.
 
+---
+
+## F. MISSION 5: MASTERING HARDENING & PHYSICAL ARTIFACT INTEGRITY
+
+### 1. Hardening Architecture & Invariants
+
+Mission 5 adversarially hardens the entire Mastering V2 pipeline so that all measurements, evidence, validation, and final certification describe the **exact same physical audio deliverable on disk**.
+
+```
+INPUT (Settled Premaster)
+  ↓
+MASTERING ENGINE (Fail-Closed loudnorm & DSP)
+  ↓
+EVIDENCE (Analyzer Facts & Multi-Pillar Reports)
+  ↓
+VALIDATION (Mastering QC & Invalidation Guard)
+  ↓
+CERTIFICATION (Pillar 0 Physical Disk Verification)
+  ↓
+FINAL MASTER (Cryptographically Bound FinalArtifactInfo)
+```
+
+### 2. Forensic Corrections Implemented
+
+1. **P0-1: Elimination of Fake Measurements & Silent Fallbacks**:
+   - `_measure_loudnorm_pass1` in `audiobook_factory/mastering_engine.py`: Removed hardcoded fake JSON fallback (`{"input_i": "-24.0", ...}`). Now raises `RuntimeError` on FFmpeg non-zero exit, corrupt/unparseable JSON, or missing required keys (`input_i`, `input_tp`, `input_lra`, `input_thresh`).
+   - `MasteringAnalyzer`: Fixed `audit_gate5_3_stereo_phase` key lookup to correctly retrieve `mean_phase_correlation` (previously queried `phase_correlation` which returned default fallback). Handles corrupted/empty audio files with `is_valid_audio=False` and standard digital silence floor `-70.0 LUFS`.
+   - `MasteringJudge`: Guarded `None` comparisons for `phase_correlation` and `integrated_lufs` to prevent runtime `TypeError`.
+   - `MasteringQC`: Rejects audio with missing measurements (`integrated_lufs is None` or `true_peak_dbtp is None` immediately triggers QC failure with `true_peak_measurement_missing`).
+
+2. **P0-2 & P0-5: Final Artifact Authority & Physical Disk Verification**:
+   - `FinalArtifactInfo` contract (`audiobook_factory/mastering_contracts.py`): Captures physical disk facts: `filepath`, `sha256`, `size_bytes`, `duration_sec`, `sample_rate`, `channels`, `bit_depth`, `audio_format`, `analyzer_version`, `mastering_version`, and `certifier_version`.
+   - Integrated into `FinalCertificationReport.artifact_info`.
+   - `MasteringCertifier`: Added Pillar 0 verification before evaluating technical QC or perceptual scores:
+     - Verifies physical audio deliverable exists on disk.
+     - Computes live SHA-256 of the file and verifies exact match against `FinalArtifactInfo.sha256`.
+     - Fails closed with `REJECTED` and `artifact_hash_mismatch_or_tampered` if bytes have been altered or file is missing.
+
+3. **P0-3: Stale Evidence Invalidation Across Multi-Pass Iterations**:
+   - In `audiobook_factory/mastering_engine.py`: When a second-pass candidate (Master B) is accepted, the analyzer cache is invalidated (`analyzer.clear_cache()`), and all evaluation pillars (`dialogue_report`, `consistency_audit`, `reference_comp`) are completely re-evaluated against Master B.
+   - Prevents certifying Master B using stale telemetry or reports computed for Master A.
+
+4. **P0-4: Strict Status Alignment & No False Positives**:
+   - `MasteringResult.status` updated to `Literal["SUCCESS", "FAILED", "RETRY_EXHAUSTED", "REVIEW_REQUIRED"]`.
+   - When certifier returns `REVIEW_REQUIRED`, `result.status` strictly returns `"REVIEW_REQUIRED"` (never falsely claimed as `"SUCCESS"`).
+   - When certifier returns `REJECTED`, `result.status` strictly returns `"FAILED"`.
+
+5. **P0-6 & P0-7: Complete Provenance & Remediation Traceability**:
+   - `MasteringProvenance` tracks both `initial_profile_sha256` and `effective_profile_sha256` to capture dynamic adjustments made by the Mastering Judge or Scene-Aware engine.
+   - Added `attempts_history` recording all remediation passes and `winning_attempt` pointer to denote which iteration was certified.
+
+6. **P0-8: Pipeline Execution Ordering**:
+   - In `audiobook_factory/cinema_audio_engine.py`, settled premaster generation: Stage 11 Mix Judge and `RemixController` fully settle the mixdown before Stage 12 Mastering runs.
+   - Any intermediate master deliverable is invalidated/unlinked if a remix is triggered, ensuring no stale master survives.
+
+### 3. Verification & Hardening Test Suite
+
+Added `tests/test_mastering_hardening.py` containing 7 adversarial verification cases:
+
+| Test Case | Invariant Tested | Result |
+|---|---|---|
+| `test_p0_1_loudnorm_pass1_failure_raises_and_fails_closed` | Loudnorm pass 1 failure raises RuntimeError; zero fake fallbacks | **PASS** |
+| `test_p0_1_missing_true_peak_or_loudness_fails_qc` | Missing TP or LUFS fails QC closed | **PASS** |
+| `test_p0_2_tampered_artifact_rejected_by_certification` | Bit-tampered deliverable detected by SHA-256 and rejected | **PASS** |
+| `test_p0_3_p4_second_pass_re_evaluates_all_pillars` | Master B re-evaluates dialogue, consistency, and reference pillars | **PASS** |
+| `test_p0_4_certification_status_integrity_rejected` | Certification REJECTED strictly produces result.status == FAILED | **PASS** |
+| `test_p0_4_certification_status_integrity_review_required` | Certification REVIEW_REQUIRED strictly produces result.status == REVIEW_REQUIRED | **PASS** |
+| `test_p0_6_provenance_integrity_and_dual_profile_hashes` | Provenance tracks initial vs effective hashes, winning attempt, disk facts | **PASS** |
+
+**Complete Pipeline Verification**: 139/139 tests passing across all Stage 11 and Stage 12 suites.
+
+

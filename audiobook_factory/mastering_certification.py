@@ -18,7 +18,9 @@ Precedence Invariants:
 """
 
 from __future__ import annotations
+import hashlib
 import logging
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from audiobook_factory.mastering_contracts import (
@@ -30,6 +32,7 @@ from audiobook_factory.mastering_contracts import (
     FinalCertificationReport,
     HumanReviewItem,
     MasteringResult,
+    FinalArtifactInfo,
 )
 
 logger = logging.getLogger("AudiobookFactory")
@@ -54,6 +57,7 @@ class MasteringCertifier:
         consistency_audit: Optional[ChapterConsistencyAudit] = None,
         perceptual_eval: Optional[PerceptualEvaluation] = None,
         reference_comp: Optional[ReferenceComparisonResult] = None,
+        artifact_info: Optional[FinalArtifactInfo] = None,
         provenance: Optional[Dict[str, Any]] = None,
     ) -> FinalCertificationReport:
         """
@@ -62,6 +66,96 @@ class MasteringCertifier:
         warnings: List[str] = []
         review_items: List[Dict[str, Any]] = []
         provenance = provenance or {}
+
+        # 0. Pillar 0: Artifact Authority Verification
+        if artifact_info is not None:
+            p_artifact = Path(artifact_info.filepath)
+            if not p_artifact.exists() or p_artifact.stat().st_size <= 0:
+                review_items.append(
+                    HumanReviewItem(
+                        issue_code="final_artifact_missing_on_disk",
+                        category="artifact_authority",
+                        severity="CRITICAL",
+                        chapter_id=chapter_id,
+                        evidence=f"Certified artifact does not exist or is empty on disk: {artifact_info.filepath}",
+                        suggested_action="Re-render master deliverable and verify filesystem path.",
+                        confidence=1.0,
+                    ).model_dump()
+                )
+                return FinalCertificationReport(
+                    certification="REJECTED",
+                    chapter_id=chapter_id,
+                    technical_qc=qc_result.model_dump(),
+                    mechanical_mastering={"passed": False, "reason": "Artifact missing on disk"},
+                    dialogue_protection=dialogue_report.model_dump() if dialogue_report else {},
+                    book_consistency=consistency_audit.model_dump() if consistency_audit else {},
+                    perceptual_evaluation=perceptual_eval.model_dump() if perceptual_eval else {},
+                    reference_comparison=reference_comp.model_dump() if reference_comp else None,
+                    artifact_info=artifact_info,
+                    warnings=qc_result.warnings,
+                    review_items=review_items,
+                    provenance=provenance,
+                )
+
+            try:
+                hasher = hashlib.sha256()
+                with open(p_artifact, "rb") as f:
+                    for chunk in iter(lambda: f.read(65536), b""):
+                        hasher.update(chunk)
+                current_sha = hasher.hexdigest()
+                if current_sha != artifact_info.sha256:
+                    review_items.append(
+                        HumanReviewItem(
+                            issue_code="artifact_hash_mismatch_or_tampered",
+                            category="artifact_authority",
+                            severity="CRITICAL",
+                            chapter_id=chapter_id,
+                            evidence=f"Artifact on-disk hash {current_sha[:12]} does not match claimed hash {artifact_info.sha256[:12]}",
+                            suggested_action="Re-master deliverable; file was mutated after measurement.",
+                            confidence=1.0,
+                        ).model_dump()
+                    )
+                    return FinalCertificationReport(
+                        certification="REJECTED",
+                        chapter_id=chapter_id,
+                        technical_qc=qc_result.model_dump(),
+                        mechanical_mastering={"passed": False, "reason": "Artifact hash verification failed"},
+                        dialogue_protection=dialogue_report.model_dump() if dialogue_report else {},
+                        book_consistency=consistency_audit.model_dump() if consistency_audit else {},
+                        perceptual_evaluation=perceptual_eval.model_dump() if perceptual_eval else {},
+                        reference_comparison=reference_comp.model_dump() if reference_comp else None,
+                        artifact_info=artifact_info,
+                        warnings=qc_result.warnings,
+                        review_items=review_items,
+                        provenance=provenance,
+                    )
+            except Exception as e:
+                logger.error(f"Error reading artifact file {p_artifact}: {e}")
+                review_items.append(
+                    HumanReviewItem(
+                        issue_code="artifact_read_error",
+                        category="artifact_authority",
+                        severity="CRITICAL",
+                        chapter_id=chapter_id,
+                        evidence=f"Could not read artifact file: {e}",
+                        suggested_action="Inspect disk filesystem permissions and file locks.",
+                        confidence=1.0,
+                    ).model_dump()
+                )
+                return FinalCertificationReport(
+                    certification="REJECTED",
+                    chapter_id=chapter_id,
+                    technical_qc=qc_result.model_dump(),
+                    mechanical_mastering={"passed": False, "reason": f"Artifact read error: {e}"},
+                    dialogue_protection=dialogue_report.model_dump() if dialogue_report else {},
+                    book_consistency=consistency_audit.model_dump() if consistency_audit else {},
+                    perceptual_evaluation=perceptual_eval.model_dump() if perceptual_eval else {},
+                    reference_comparison=reference_comp.model_dump() if reference_comp else None,
+                    artifact_info=artifact_info,
+                    warnings=qc_result.warnings,
+                    review_items=review_items,
+                    provenance=provenance,
+                )
 
         # 1. Pillar 1: Technical & Mechanical QC (Hardest Authority)
         tech_status = qc_result.status
@@ -203,6 +297,7 @@ class MasteringCertifier:
             book_consistency=consistency_audit.model_dump() if consistency_audit else {},
             perceptual_evaluation=perceptual_eval.model_dump() if perceptual_eval else {},
             reference_comparison=reference_comp.model_dump() if reference_comp else None,
+            artifact_info=artifact_info,
             warnings=warnings,
             review_items=review_items,
             provenance=provenance,

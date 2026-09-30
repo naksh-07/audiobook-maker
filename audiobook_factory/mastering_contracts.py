@@ -349,6 +349,26 @@ class SceneMasteringDecision(BaseModel):
     bounded_adjustments: Dict[str, Any] = Field(default_factory=dict, description="Concrete bounded DSP parameters")
 
 
+class FinalArtifactInfo(BaseModel):
+    """
+    Physical facts of the exact certified deliverable on disk.
+    Guarantees that evidence and certification describe the exact same physical artifact.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    filepath: str = Field(..., description="Absolute path to final master WAV file")
+    sha256: str = Field(..., description="Cryptographic SHA-256 hash of final master file")
+    size_bytes: int = Field(default=0, ge=0, description="File size in bytes")
+    duration_sec: float = Field(default=0.0, ge=0.0, description="Audio duration in seconds")
+    sample_rate: int = Field(default=48000, description="Sample rate in Hz")
+    channels: int = Field(default=2, description="Channel count")
+    bit_depth: int = Field(default=16, description="Bit depth (e.g. 16 or 24)")
+    audio_format: str = Field(default="wav", description="Container format")
+    analyzer_version: str = Field(default="2.0.0", description="Analyzer version used")
+    mastering_version: str = Field(default="2.2.0", description="Mastering engine version used")
+    certifier_version: str = Field(default="1.0.0", description="Certifier version used")
+
+
 class FinalCertificationReport(BaseModel):
     """
     Authoritative final certification gate combining technical, mechanical,
@@ -366,6 +386,7 @@ class FinalCertificationReport(BaseModel):
     book_consistency: Dict[str, Any] = Field(default_factory=dict, description="P1 Book consistency evaluation")
     perceptual_evaluation: Dict[str, Any] = Field(default_factory=dict, description="P4 Perceptual critic evaluation")
     reference_comparison: Optional[Dict[str, Any]] = Field(default=None, description="P4 Reference comparison")
+    artifact_info: Optional[FinalArtifactInfo] = Field(default=None, description="Verified physical artifact facts on disk")
     warnings: List[str] = Field(default_factory=list, description="Non-blocking warning notices")
     review_items: List[Dict[str, Any]] = Field(default_factory=list, description="Items requiring human review")
     provenance: Dict[str, Any] = Field(default_factory=dict, description="Traceability provenance")
@@ -421,7 +442,9 @@ class MasteringResult(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
-    status: Literal["SUCCESS", "FAILED", "RETRY_EXHAUSTED"] = Field(..., description="Mastering execution outcome")
+    status: Literal["SUCCESS", "FAILED", "RETRY_EXHAUSTED", "REVIEW_REQUIRED"] = Field(
+        ..., description="Mastering execution outcome"
+    )
     chapter_id: str = Field(..., description="Chapter identifier")
     premaster_path: str = Field(..., description="Input premaster file path")
     master_path: str = Field(..., description="Final certified master file path")
