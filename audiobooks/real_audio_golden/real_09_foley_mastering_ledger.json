@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_09_foley",
-  "created_at": "2026-09-30T16:04:17.534666+00:00",
+  "created_at": "2026-09-30T17:14:18.224468+00:00",
   "request": {
     "chapter_id": "real_09_foley",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_09_foley.wav",
@@ -335,14 +335,14 @@
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
         "effective_profile_sha256": "7f07ad21d348f6a7dcc51fefe4fd52b22be1206b7f892a2e5e080be1d1530afa"
       },
-      "certified_at": "2026-09-30T16:04:17.534618+00:00"
+      "certified_at": "2026-09-30T17:14:18.224368+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T16:04:17.534638+00:00",
+      "timestamp": "2026-09-30T17:14:18.224400+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_09_foley.wav",
       "premaster_sha256": "62032daac241a76946b1f4985a99a4e2c0246ece2b4a67a5b00952df64446e22",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_09_foley_cinema_master.wav",

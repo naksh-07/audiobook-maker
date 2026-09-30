@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_12_difficult_tts",
-  "created_at": "2026-09-30T16:04:24.354503+00:00",
+  "created_at": "2026-09-30T17:14:27.191763+00:00",
   "request": {
     "chapter_id": "real_12_difficult_tts",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_12_difficult_tts.wav",
@@ -311,14 +311,14 @@
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
         "effective_profile_sha256": "d0d9fcb713da75b0ce1b6f148618d0bcaf651de37c431154542bb990ab5ad673"
       },
-      "certified_at": "2026-09-30T16:04:24.354455+00:00"
+      "certified_at": "2026-09-30T17:14:27.191682+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T16:04:24.354473+00:00",
+      "timestamp": "2026-09-30T17:14:27.191716+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_12_difficult_tts.wav",
       "premaster_sha256": "2f26322bb69ceb88c13a6c016334a7449d77cf8d9f9c9155103511964f10e02a",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_12_difficult_tts_cinema_master.wav",

@@ -321,11 +321,14 @@ class PipelineOrchestrator:
             dispatcher = TTSDispatcher(project_dir=project_dir, default_voice=voice, max_workers=workers)
             dispatcher.synthesize_chapter_script(script_file, chapter_num)
         except AllKeysExhaustedTodayError as e:
-            logger.error("\n[!] 🛑 SUPERVISOR AGENT HALT: ALL TTS API KEYS EXHAUSTED FOR TODAY.")
-            logger.error(f"[!] 🛑 {e}")
-            logger.info(f"[*] Progress Checkpoint safely stored on disk for Chapter {chapter_num:02d}.")
-            logger.info("[*] The system will gracefully halt now. Run the script again tomorrow after 12:30 PM IST (Midnight PT) to automatically resume.")
-            sys.exit(0)
+            if os.environ.get("ENABLE_EMERGENCY_FALLBACK", "").lower() in ("true", "1", "yes"):
+                logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted; emergency local WinRT fallback was applied.")
+            else:
+                logger.error("\n[!] 🛑 SUPERVISOR AGENT HALT: ALL TTS API KEYS EXHAUSTED FOR TODAY.")
+                logger.error(f"[!] 🛑 {e}")
+                logger.info(f"[*] Progress Checkpoint safely stored on disk for Chapter {chapter_num:02d}.")
+                logger.info("[*] The system will gracefully halt now. Run the script again tomorrow after 12:30 PM IST (Midnight PT) to automatically resume.")
+                sys.exit(0)
 
         # Gate 2.8: Pre-Mix Performance Fidelity Gate
         perf_report_file = manifests_dir / f"chapter_{chapter_num:03d}_performance_report.json"

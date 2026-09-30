@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_07_music_heavy",
-  "created_at": "2026-09-30T16:04:13.671822+00:00",
+  "created_at": "2026-09-30T17:14:13.554377+00:00",
   "request": {
     "chapter_id": "real_07_music_heavy",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_07_music_heavy.wav",
@@ -338,14 +338,14 @@
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
         "effective_profile_sha256": "206a88cdb0d96fb56dc1ddd1f359852b1922ed84e375016b32f329ba1bd9291c"
       },
-      "certified_at": "2026-09-30T16:04:13.671765+00:00"
+      "certified_at": "2026-09-30T17:14:13.554268+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T16:04:13.671788+00:00",
+      "timestamp": "2026-09-30T17:14:13.554312+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_07_music_heavy.wav",
       "premaster_sha256": "7a9a1a50630ded51b240a0b563d294a86964e20ca2c4e7f1f81a00773e87ba74",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_07_music_heavy_cinema_master.wav",

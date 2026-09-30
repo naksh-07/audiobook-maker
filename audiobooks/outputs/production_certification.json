@@ -1,0 +1,197 @@
+{
+  "certificate_version": "1.0.0",
+  "certification_run_id": "cert_run_1790788173",
+  "repository_revision": "bd29ac382d6136b8b4239dcea683edb051de8c4d",
+  "fixture_id": "dastan_e_hastinapur",
+  "fixture_name": "Dastan-e-Hastinapur (दास्तान-ए-हस्तिनापुर)",
+  "input_hash": "7d8d3f63d01129e9faf1351e08c90ad479e6bdf91b84c2e2574397a8f71bd56d",
+  "final_deliverable_hash": "2f9afdf25a94c615cec29984134c0c5fe8e794ba0251f937878f20487d739473",
+  "mastering_version": "2.2.0",
+  "validation_version": "1.0.0",
+  "packaging_version": "1.0.0",
+  "environment": {
+    "os": "win32",
+    "python": "3.13.13",
+    "ffmpeg": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers"
+  },
+  "performance_summary": {
+    "total_runtime_sec": 189.84,
+    "chapters_count": 3,
+    "avg_chapter_runtime_sec": 63.28
+  },
+  "chapters_mastered": [
+    {
+      "chapter_id": "chapter_001",
+      "master_wav": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\projects\\dastan_e_hastinapur\\mastered\\chapter_001_cinema_master.wav",
+      "master_hash": "c707eb3c88de50f4fa760b154b6ff39ee831d88c5db0859f3d562a3e64562151",
+      "deliverable_m4a": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\projects\\dastan_e_hastinapur\\mastered\\chapter_001_hi_cinematic.m4a",
+      "deliverable_hash": "045e936ec935b8a04372adbd5bb767ff2d072f7bd99265939d5889e3f0e282d3",
+      "integrated_lufs": -19.4,
+      "true_peak_dbtp": -1.5,
+      "lra": 2.2,
+      "phase_correlation": 0.995,
+      "gate5_status": "PASS",
+      "gate53_status": "PASS"
+    },
+    {
+      "chapter_id": "chapter_002",
+      "master_wav": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\projects\\dastan_e_hastinapur\\mastered\\chapter_002_cinema_master.wav",
+      "master_hash": "bda6adfbb4fbddc243a6c8baffcff23626f3381afedd086378abc596f9a7e6a0",
+      "deliverable_m4a": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\projects\\dastan_e_hastinapur\\mastered\\chapter_002_hi_cinematic.m4a",
+      "deliverable_hash": "c997245e8165d40138d41fb9d3442055bd53d25752f08700dc7587053d87be71",
+      "integrated_lufs": -19.4,
+      "true_peak_dbtp": -1.5,
+      "lra": 2.6,
+      "phase_correlation": 0.932,
+      "gate5_status": "PASS",
+      "gate53_status": "PASS"
+    },
+    {
+      "chapter_id": "chapter_003",
+      "master_wav": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\projects\\dastan_e_hastinapur\\mastered\\chapter_003_cinema_master.wav",
+      "master_hash": "1ae41d4c2b81c5b6f797690edba04a2edbb95cccf3fb1e5496117a019ddbc937",
+      "deliverable_m4a": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\projects\\dastan_e_hastinapur\\mastered\\chapter_003_hi_cinematic.m4a",
+      "deliverable_hash": "81cd79a9662f4eab77f98a0c24942fb7c3230801f6f4f637fe3d514e5559b140",
+      "integrated_lufs": -19.5,
+      "true_peak_dbtp": -1.5,
+      "lra": 2.3,
+      "phase_correlation": 0.917,
+      "gate5_status": "PASS",
+      "gate53_status": "PASS"
+    }
+  ],
+  "book_consistency_summary": {
+    "book_profile": {
+      "target_lufs": -19.4,
+      "lufs_iqr": 0.05,
+      "lra_median": 2.3,
+      "sample_count": 3,
+      "confidence_score": 1.0
+    },
+    "consistency_verdict": "PASS",
+    "mean_deviation_lu": 0.03,
+    "max_deviation_lu": 0.1,
+    "passed_count": 3,
+    "warn_count": 0,
+    "review_count": 0,
+    "report_summary": "# BOOK CONSISTENCY AUDIT REPORT: dastan_e_hastinapur\n**Book Profile Version**: 1.0.0 (Confidence: 100%)\n**Total Chapters**: 3 | **PASS**: 3 | **WARN**: 0 | **REVIEW**: 0\n\n| Chapter | Status | Priority | Intentional? | Primary Deviations |\n| :--- | :---: | :---: | :---: | :--- |\n| **chapter_001** | `PASS` | NONE | No | All within tolerance |\n| **chapter_002** | `PASS` | NONE | No | All within tolerance |\n| **chapter_003** | `PASS` | NONE | No | All within tolerance |"
+  },
+  "reproducibility_summary": {
+    "is_bit_identical": true,
+    "is_acoustically_equivalent": true,
+    "classification": "EXPECTED",
+    "lufs_delta": 0.0,
+    "true_peak_delta": 0.0,
+    "detail": "Dual-pass loudnorm and limiter are deterministic: EXPECTED"
+  },
+  "failure_injection_summary": {
+    "missing_input": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "FileNotFoundError raised as expected"
+    },
+    "corrupt_audio": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "Analyzer flagged is_valid_audio=False"
+    },
+    "analyzer_failure": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "MasteringQCAgent rejected invalid facts: ['audio_integrity_failed_empty_or_corrupt', 'complete_silence_dropout_detected', 'true_peak_measurement_missing']"
+    },
+    "mastering_render_failure": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "MasteringRequest model validator failed closed on missing premaster file"
+    },
+    "qc_constraint_failure": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "QC caught peak violation: ['audio_integrity_failed_empty_or_corrupt', 'integrated_loudness_severe_violation: -10.00 LUFS outside target -19.0 +/- 0.5 LU', 'digital_clipping_overshoot_detected: 1.50 dBTP exceeds 0.0 dBFS']"
+    },
+    "packaging_failure": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "Exception raised for missing chapters"
+    },
+    "provenance_mismatch": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "Pillar 0 detected hash mismatch: REJECTED"
+    },
+    "stale_artifact_guard": {
+      "caught": true,
+      "status": "PASS",
+      "detail": "Cache clearing and disk hash validation invalidates stale in-memory facts"
+    }
+  },
+  "fatigue_and_long_form_summary": {
+    "long_form_stress_fatigue_index": 0.1,
+    "long_form_stress_passed": true,
+    "book_lufs_spread_lu": 0.1,
+    "book_avg_lra_lu": 2.37,
+    "fatigue_risk": "LOW",
+    "best_chapter": "chapter_001 (Pristine atmosphere and dialogue intelligibility)",
+    "most_dynamic_chapter": "chapter_002 (High combat dynamics and peak control)",
+    "outliers": "Zero acoustic outliers detected across 3 chapters"
+  },
+  "production_gates": {
+    "GATE_1_Code_Correctness": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "149/149 test suites passing; zero unhandled exceptions"
+    },
+    "GATE_2_Audio_Technical_Integrity": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "All 3 chapters meet EBU R128 (-19.0 LUFS, TP <= -1.4 dBTP)"
+    },
+    "GATE_3_Mastering_Correctness": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "Closed-loop DSP, Stage 11 Mix Judge, and Stage 12 Mastering V2 certified"
+    },
+    "GATE_4_Real_Audio_Validation": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "12 canonical real audio categories validated in Mission 6 (11 PASS, 1 approved silence warning)"
+    },
+    "GATE_5_Book_Consistency": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "Book Master Profile confidence 1.00, max deviation 0.10 LU"
+    },
+    "GATE_6_Packaging_Integrity": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "Valid M4B container with AAC 192k stream, monotonic TOC markers and embedded metadata"
+    },
+    "GATE_7_Provenance_Integrity": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "Complete unbroken SHA-256 chain from source text (7d8d3f63d011) to M4B (2f9afdf25a94)"
+    },
+    "GATE_8_Failure_Safety": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "8/8 failure injection scenarios failed closed with zero false certifications"
+    },
+    "GATE_9_Full_Regression": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "Full Stage 11, Stage 12 P0-P5, and Real Audio suites verified green"
+    },
+    "GATE_10_Production_Risk_Review": {
+      "passed": true,
+      "verdict": "PASS",
+      "evidence": "Fatigue risk LOW, zero P0/P1 production blockers"
+    }
+  },
+  "production_blockers": [],
+  "warnings": [
+    "Standalone pure silence tracks should bypass loudnorm to prevent noise-floor amplification (handled via REVIEW_REQUIRED gate)"
+  ],
+  "final_status": "PRODUCTION_CERTIFIED",
+  "timestamp": "2026-09-30T17:13:26Z"
+}

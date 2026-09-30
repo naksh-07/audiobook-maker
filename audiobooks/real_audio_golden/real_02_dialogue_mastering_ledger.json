@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_02_dialogue",
-  "created_at": "2026-09-30T16:04:02.595359+00:00",
+  "created_at": "2026-09-30T17:14:00.764314+00:00",
   "request": {
     "chapter_id": "real_02_dialogue",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_02_dialogue.wav",
@@ -313,14 +313,14 @@
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
         "effective_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b"
       },
-      "certified_at": "2026-09-30T16:04:02.595298+00:00"
+      "certified_at": "2026-09-30T17:14:00.764256+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T16:04:02.595324+00:00",
+      "timestamp": "2026-09-30T17:14:00.764281+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_02_dialogue.wav",
       "premaster_sha256": "f46dbc4359f2a2a437703e6a1fd5b13aada22dc77eeaab483be6022febbc0cff",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_02_dialogue_cinema_master.wav",

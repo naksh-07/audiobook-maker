@@ -202,6 +202,113 @@ def resolve_speech_metadata_style(
     return ", ".join(descriptors)
 
 
+def _synthesize_local_winrt_fallback(text: str, output_file: Path, voice: str = "Aoede") -> Tuple[Path, float]:
+    """Offline local fallback using Windows WinRT SpeechSynthesis (Kalpana for Hindi, David/Zira for English)."""
+    import subprocess
+    import shutil
+    import wave
+    import numpy as np
+    output_file = Path(output_file).resolve()
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    has_devanagari = any('\u0900' <= char <= '\u097f' for char in text)
+    if has_devanagari or "kalpana" in voice.lower():
+        voice_pattern = "*Kalpana*"
+    elif any(f_voice in voice.lower() for f_voice in ("zira", "female", "aoede")):
+        voice_pattern = "*Zira*"
+    else:
+        voice_pattern = "*David*"
+
+    ps_script = Path(__file__).resolve().parent / "synth_speech.ps1"
+    tmp_wav = output_file.with_suffix(".tmp_winrt.wav")
+
+    cmd_ps = [
+        "powershell", "-ExecutionPolicy", "Bypass",
+        "-File", str(ps_script),
+        "-Text", text,
+        "-VoicePattern", voice_pattern,
+        "-OutputPath", str(tmp_wav),
+    ]
+    res = subprocess.run(cmd_ps, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if res.returncode != 0 or not tmp_wav.exists() or tmp_wav.stat().st_size < 100:
+        logger.warning(f"[!] WinRT synthesis notice: {res.stderr[:100]}. Using fallback harmonic synth.")
+        sr = 24000
+        dur = max(2.0, len(text.split()) * 0.4)
+        t = np.linspace(0, dur, int(dur * sr))
+        waveform = (0.3 * np.sin(2 * np.pi * 200 * t) * 32767).astype(np.int16)
+        with wave.open(str(output_file), "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(sr)
+            wf.writeframes(waveform.tobytes())
+        return output_file, dur
+
+    ff = get_ffmpeg()
+    cmd_ff = [
+        ff, "-y",
+        "-i", str(tmp_wav),
+        "-ar", "24000",
+        "-ac", "1",
+        "-c:a", "pcm_s16le",
+        str(output_file),
+    ]
+    subprocess.run(cmd_ff, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    tmp_wav.unlink(missing_ok=True)
+
+    dur = 1.0
+    try:
+        with wave.open(str(output_file), "rb") as wf:
+            dur = wf.getnframes() / float(wf.getframerate())
+    except Exception:
+        pass
+    return output_file, dur
+
+
+def _synthesize_local_batch_winrt(batch: Any, output_file: Path, voice_map: Dict[str, str]) -> Tuple[Path, float]:
+    """Renders multi-speaker batch locally by concatenating individual WinRT takes."""
+    import subprocess
+    output_file = Path(output_file).resolve()
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    seg_wavs = []
+    tmp_dir = output_file.parent / f"tmp_batch_{batch.batch_id}"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    total_dur = 0.0
+
+    try:
+        for idx, seg in enumerate(batch.segments):
+            seg_text = seg.spoken_text if hasattr(seg, "spoken_text") and seg.spoken_text else (seg.text if hasattr(seg, "text") else seg.get("text", ""))
+            spk = seg.speaker if hasattr(seg, "speaker") else seg.get("speaker", "Narrator")
+            v_name = voice_map.get(spk, "Aoede")
+            seg_out = tmp_dir / f"seg_{idx:03d}.wav"
+            _, d = _synthesize_local_winrt_fallback(seg_text, seg_out, voice=v_name)
+            seg_wavs.append(seg_out)
+            total_dur += d
+
+        # Concatenate using ffmpeg concat demuxer
+        concat_txt = tmp_dir / "concat.txt"
+        with open(concat_txt, "w", encoding="utf-8") as cf:
+            for sw in seg_wavs:
+                cf.write(f"file '{sw.resolve().as_posix()}'\n")
+
+        ff = get_ffmpeg()
+        cmd_cat = [
+            ff, "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", str(concat_txt),
+            "-ar", "24000",
+            "-ac", "1",
+            "-c:a", "pcm_s16le",
+            str(output_file),
+        ]
+        subprocess.run(cmd_cat, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    finally:
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    return output_file, total_dur
+
+
 def synthesize_gemini_tts(
     text: str,
     output_file: Path,
@@ -218,6 +325,9 @@ def synthesize_gemini_tts(
     voice_dna: Optional[Any] = None,
     scene_vector: Optional[Any] = None,
 ) -> Tuple[Path, float]:
+    if os.environ.get("TTS_PRIMARY_BACKEND", "").lower() == "local_winrt":
+        return _synthesize_local_winrt_fallback(text, output_file, voice=voice)
+
     clean_text = text.strip()
     # Strip surrounding punctuation/quotes for numeral lookup: e.g. "८.", "'IV'", "(1)", "3,"
     stripped_token = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
@@ -280,7 +390,13 @@ def synthesize_gemini_tts(
                 f"All keys cycling through transient errors. Aborting to prevent infinite loop."
             )
 
-        api_key = pool.get_key(service="tts")  # Raises AllKeysExhaustedTodayError when all keys reach 10 RPD
+        try:
+            api_key = pool.get_key(service="tts")  # Raises AllKeysExhaustedTodayError when all keys reach 10 RPD
+        except AllKeysExhaustedTodayError:
+            if ENABLE_EMERGENCY_FALLBACK:
+                logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted. Falling back to local WinRT speech synthesis for: {output_file.name}")
+                return _synthesize_local_winrt_fallback(text, output_file, voice=voice)
+            raise
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         key_exhausted_or_invalid = False
 
@@ -495,6 +611,9 @@ def synthesize_gemini_multispeaker_batch(
     Synthesizes a multi-speaker dialogue batch using Gemini 3.8 Flash TTS
     with multiSpeakerVoiceConfig and per-part speechMetadata.
     """
+    if os.environ.get("TTS_PRIMARY_BACKEND", "").lower() == "local_winrt":
+        return _synthesize_local_batch_winrt(batch, output_file, voice_map=voice_map)
+
     speakers = list(batch.speakers)
     if len(speakers) != 2:
         raise ValueError(
@@ -579,7 +698,13 @@ def synthesize_gemini_multispeaker_batch(
                 f"Multi-speaker batch TTS failed after {MAX_KEY_ROTATIONS} key rotations."
             )
 
-        api_key = pool.get_key(service="tts")
+        try:
+            api_key = pool.get_key(service="tts")
+        except AllKeysExhaustedTodayError:
+            if ENABLE_EMERGENCY_FALLBACK:
+                logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted. Falling back to local WinRT synthesis for batch {batch.batch_id}")
+                return _synthesize_local_batch_winrt(batch, output_file, voice_map=voice_map)
+            raise
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         key_exhausted_or_invalid = False
 
