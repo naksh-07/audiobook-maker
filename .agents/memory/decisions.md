@@ -836,3 +836,23 @@
      - Developed `tests/test_sonic_library_harvester.py` verifying all 10 unit and integration milestones: 10/10 tests passing green in 53s; 30/30 core regression tests green in 4.6s.
 - **Rationale:** Turns massive 200GB physical audio archives into a fast, rich, machine-searchable Sonic Intelligence layer with zero metadata invention, complete container tag preservation, and resilient workstation VRAM stability.
 
+## ADR-041: IP Lore & Franchise Affinity System, Witcher 3 Studio Vault Ingestion & Sliding-Window Ephemeral Streaming Ingest
+- **Context:** To achieve GraphicAudio / Pottermore dramatized audiobook standards for universe-specific literature (*The Witcher*, *Game of Thrones*, dark fantasy), generic audio catalogs lack franchise authenticity (Witcher magic signs, specific monster roars, Slavic combat audio). Furthermore, downloading and permanently storing 150GB+ external archives exhausts developer storage.
+- **Decision:**
+  1. **IP Lore & Franchise Affinity System:**
+     - Non-destructively added `franchise_affinity TEXT DEFAULT 'generic'`, `lore_tags TEXT DEFAULT ''`, and `ip_priority REAL DEFAULT 0.0` to `sound_catalog`.
+     - Stamped all 230 Witcher 3 OST tracks with `franchise_affinity = 'the_witcher'`, `lore_tags`, and `ip_priority = 1.0`.
+  2. **The Witcher 3 Studio Library Ingestion (Option A - 26,906 WAVs, 22.25 GB):**
+     - Executed in-place parallel 12-worker CPU DSP analysis (EBU R128 integrated LUFS, True Peak, Spectral Centroid) and batched RTX 4050 GPU CLAP vector embeddings (512-dim).
+     - Enforced Zero Audio Touch Invariant: 100% read-only access to existing WAVs on disk (0 bytes duplicate audio files).
+     - Fixed PS5 DualSense controller haptic waveforms (`fx_haptic_*.wav`) via `-70.0 LUFS` sentinels to guarantee 0 database nulls.
+  3. **Master Sound Bank Bridge & Unified Catalog:**
+     - Synchronized all 26,906 Witcher studio audio assets into `audiobooks/sound_bank/sound_bank.db`.
+     - Master Catalog now contains **61,048 sounds** and **44,940 CLAP 512-d neural embeddings**.
+     - FTS5 and vector search queries (`sword`, `igni`, `leshen`) return authentic Witcher assets with top priority (`ip_priority = 1.0`).
+  4. **Sliding-Window Ephemeral Streaming Ingestion (`streaming_harvester.py`):**
+     - Implemented sliding-window batch ingestion (5–10 GB batches): stream from remote CDN -> extract DSP facts & CLAP vectors -> commit to SQLite -> immediately wipe scratch folder (0 permanent disk bloat).
+     - Tracked checkpoint progress in `ingestion_batches` table for crash-proof resumability.
+- **Rationale:** Provides Hollywood/AAA game-level audio drama production capabilities for Witcher and dark fantasy literature while keeping the local repository completely lightweight (0 audio bloat) and preserving existing disk archives.
+
+

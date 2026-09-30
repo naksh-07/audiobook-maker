@@ -59,6 +59,7 @@ class SoundBank:
     ):
         self.bank_root = Path(bank_root or DEFAULT_BANK_DIR).resolve()
         self.bank_root.mkdir(parents=True, exist_ok=True)
+        self.bank_dir = self.bank_root
         self.cache_dir = self.bank_root / "cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = Path(db_path or (self.bank_root / "sound_bank.db")).resolve()
@@ -161,6 +162,17 @@ class SoundBank:
                 ("silence_ratio", "REAL DEFAULT NULL"),
                 ("analysis_version", "TEXT DEFAULT ''"),
                 ("last_analyzed_at", "TIMESTAMP DEFAULT NULL"),
+                # Metadata Harvesting Pilot additions (non-destructive)
+                ("raw_metadata", "TEXT DEFAULT '{}'"),
+                ("source_provenance", "TEXT DEFAULT '{}'"),
+                ("bundle_name", "TEXT DEFAULT ''"),
+                ("source_asset_id", "TEXT DEFAULT ''"),
+                ("variation_group", "TEXT DEFAULT ''"),
+                ("duplicate_of_id", "INTEGER DEFAULT NULL"),
+                # IP Lore & Franchise Affinity System
+                ("franchise_affinity", "TEXT DEFAULT 'generic'"),
+                ("lore_tags", "TEXT DEFAULT ''"),
+                ("ip_priority", "REAL DEFAULT 0.0"),
             ]
             for col_name, col_type in column_defs:
                 if col_name not in existing_cols:
@@ -168,6 +180,11 @@ class SoundBank:
 
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_lufs ON sound_catalog(integrated_lufs);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_centroid ON sound_catalog(spectral_centroid_hz);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_bundle ON sound_catalog(bundle_name);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_source_asset_id ON sound_catalog(source_asset_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_duplicate_of ON sound_catalog(duplicate_of_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_franchise ON sound_catalog(franchise_affinity);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_ip_priority ON sound_catalog(ip_priority);")
 
             # Check if FTS5 table needs upgrade to cover rich fields
             fts_cols = set()
@@ -424,7 +441,25 @@ class SoundBank:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_exciter ON sound_assets(exciter);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_assets_resonator ON sound_assets(resonator);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_lru ON sound_catalog(is_downloaded, cache_pin_status, last_accessed_at);")
+
+            # Sliding-Window Streaming Ingestion Batches table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS ingestion_batches (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    batch_index INTEGER NOT NULL,
+                    source_name TEXT NOT NULL,
+                    total_assets INTEGER DEFAULT 0,
+                    bytes_downloaded INTEGER DEFAULT 0,
+                    bytes_reclaimed INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'PENDING',
+                    error_message TEXT DEFAULT NULL,
+                    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP DEFAULT NULL
+                );
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_ingestion_batches_source ON ingestion_batches(source_name, status);")
             conn.commit()
+
 
             # Auto-seed sections if empty
             sec_row = conn.execute("SELECT COUNT(*) FROM sound_track_sections").fetchone()
@@ -2406,6 +2441,57 @@ class SoundBank:
             except Exception as e:
                 logger.error(f"Failed to rebuild FTS5 index: {e}")
                 return False
+
+    def run_metadata_pilot(
+        self,
+        export_dir: Optional[Any] = None,
+        force: bool = False,
+        bbc_csv_limit: int = 150,
+        limit_per_bundle: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Executes the non-destructive metadata-harvesting pilot across target Foley and Ambience bundles.
+        """
+        from audiobook_factory.metadata_pilot_harvester import MetadataPilotHarvester
+        harvester = MetadataPilotHarvester(sound_bank=self)
+        return harvester.run_pilot(
+            export_dir=export_dir,
+            force=force,
+            bbc_csv_limit=bbc_csv_limit,
+            bundle_limit=limit_per_bundle,
+        )
+
+    def stream_harvest(
+        self,
+        source: str = "bbc",
+        batch_size_gb: float = 10.0,
+        batch_limit_items: int = 500,
+        max_batches: Optional[int] = None,
+        workers: int = 4,
+        ai_mode: str = "full",
+        scratch_dir: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Executes sliding-window ephemeral batch streaming ingestion:
+        Download -> Extract Metadata + DSP + CLAP -> Commit to SQLite -> Wipe Scratch.
+        """
+        from audiobook_factory.streaming_harvester import (
+            StreamingBatchConfig,
+            StreamingLibraryHarvester,
+        )
+        cfg = StreamingBatchConfig(
+            source=source,
+            batch_size_bytes=int(batch_size_gb * 1024 * 1024 * 1024),
+            max_items_per_batch=batch_limit_items,
+            max_batches=max_batches,
+            workers=workers,
+            ai_mode=ai_mode,
+            scratch_dir=Path(scratch_dir) if scratch_dir else (self.bank_root / "temp_scratch"),
+        )
+        harvester = StreamingLibraryHarvester(sound_bank=self, config=cfg)
+        return harvester.run_streaming_pipeline()
+
+
 
 
 _GLOBAL_SOUND_BANK: Optional[SoundBank] = None

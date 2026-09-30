@@ -55,7 +55,7 @@ flowchart TD
 
     subgraph Room3["🚪 Room 3: Acoustic Compositor & DSP Mastering"]
         Manifest --> Renderer["Manifest Soundscape Renderer"]
-        SoundBank["Sonic Intelligence Engine & Virtual Sound Bank<br/>(Phases 1-4 Certified: DSP + AI + Hybrid Retrieval + Library Harvester)"] --> Renderer
+        SoundBank["Sonic Intelligence Engine & Virtual Sound Bank<br/>(Phases 1-5 Certified: 61k Master Assets + 45k CLAP Vectors + Witcher 3 Studio Library)"] --> Renderer
         Renderer --> Ducking["Whisper-Safe Sidechain Ducking (0.018 Threshold)"]
         Renderer --> Reverb["Dynamic Room Reverb Presets (Cathedral, Bedroom, Open Road)"]
         Renderer --> VocalDSP["5-Stage Vocal DSP Chain (SOXR 48kHz + EBU R128)"]
@@ -306,7 +306,19 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - 7 behavioral benchmark proofs verifying that restraint beats loudness, dramatic pause beats dead air, voice stability beats pitch drift, chemistry beats isolated score, scene arc beats segment score, naturalness beats distortion, and subtext beats generic aggressive yelling.
   - 10 targeted regression proofs for alignment fallback honesty, missing alignment unverified handling, single-take gate enforcement, and auto-alignment.
   - 100% AST zero-hardcoding compliance verified by `tests/test_zero_hardcoding_contracts.py`.
-  - 591/591 passing tests (100% green, 0 regressions).
+### 17. Sonic Intelligence Master Sound Bank & Franchise Affinity System (Phases 1–5 Certified)
+*(See authoritative architecture manual: [`docs/SOUND_BANK.md`](docs/SOUND_BANK.md))*
+- **Unified Master Sound Bank (61,048 Tracks, 44,940 Embeddings)**:
+  - High-performance SQLite FTS5 database (`audiobooks/sound_bank/sound_bank.db`) with sub-millisecond lexical and semantic retrieval.
+  - Combines BBC Sound Archive (32,015 records), The Witcher 3 Game SFX (26,906 assets), Incompetech orchestral tracks (1,442 tracks), The Witcher 3 OST (230 tracks), and curated foley/SFX packs.
+  - 44,940 512-dimensional CLAP neural embeddings for hybrid semantic + lexical search on RTX 4050 Tensor Cores.
+- **The Witcher 3 Studio Audio Vault Ingestion (Option A)**:
+  - 26,906 CD PROJEKT RED studio audio assets (22.25 GB) fully analyzed with 12-worker CPU DSP and batched RTX 4050 GPU CLAP inference.
+  - Zero Audio Touch Invariant: 100% in-place processing with zero duplicate audio files created on disk.
+- **IP Lore & Franchise Affinity System**:
+  - `franchise_affinity = 'the_witcher'`, `ip_priority = 1.0`, and deep lore tags (`sign_igni`, `sign_aard`, `monster_leshen`, `geralt`, `ciri`, `novigrad`, `skellige`) tagged on all 26,906 game sounds + 230 Witcher OST tracks for automatic priority during universe-specific audiobook production.
+- **Sliding-Window Ephemeral Streaming Ingest Pipeline**:
+  - Ingests massive remote audio archives in 5–10 GB batches: downloads to ephemeral scratch, extracts DSP facts & CLAP vectors, commits to SQLite, and immediately purges scratch files for zero permanent disk bloat.
 
 ---
 
@@ -329,7 +341,7 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 | **[🎛️ Audio Engineering & DSP](docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, music-only 2.2kHz notch, whisper ducking, barrier occlusion, dynamic filter scripts, and reverb. |
 | **[🛡️ Quality Gates Manual](docs/QUALITY_GATES.md)** | Complete specification of Gates 0.1 through 6E and Translation Gates T0 through T15, thresholds, and CLI audit syntax. |
 | **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Comprehensive engineering report on P0-P3 fixes and all 13 ADR-020 forensic audit remediations. |
-| **[🎹 Sonic Intelligence Catalog & JIT Sound Bank](docs/SOUND_BANK.md)** | SQLite FTS5 database schema, 18,133+ open-source virtual tracks, Sonic Genome v2.0, bounded 1.5GB LRU cache, and JIT audio streaming. |
+| **[🎹 Sonic Intelligence Catalog & Master Sound Bank](docs/SOUND_BANK.md)** | SQLite FTS5 database schema, 61,048 master tracks, 44,940 CLAP vectors, IP Lore & Franchise Affinity System, Witcher 3 Studio Audio Vault, and Ephemeral Streaming Ingest. |
 | **[🤖 AI Agent & MCP Integration](docs/MCP_AGENT_INTEGRATION.md)** | Autonomous agent workflows, Agent Skills (`novel-audiobook-factory`, `audio-engineer-ffmpeg`), and MCP tools. |
 | **[🛠️ Developer Guide](docs/DEVELOPER_GUIDE.md)** | Development environment setup, testing standards, and contribution guide. |
 

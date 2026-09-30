@@ -1,9 +1,9 @@
 # 🎹 Sonic Intelligence Engine & Virtual Sound Bank
 
-> **Specification Version:** 4.0  
-> **Status:** Production-Ready & Certified (Phases 1–4 Complete)  
-> **Target Subsystem:** Sound Retrieval, Audio Analysis, AI Enrichment, Agent Sound Cards, and Large-Scale Library Harvesting  
-> **Database:** `audiobooks/sound_bank/sound_bank.db` (~45 MB SQLite with WAL mode)
+> **Specification Version:** 4.5  
+> **Status:** Production-Ready & Certified (Phases 1–5 Complete)  
+> **Target Subsystem:** Sound Retrieval, Audio Analysis, AI Enrichment, Agent Sound Cards, IP Lore & Franchise Affinity, and Large-Scale Library Harvesting  
+> **Database:** `audiobooks/sound_bank/sound_bank.db` (~150 MB SQLite with WAL mode, indexing 61,048 sounds and 44,940 CLAP neural embeddings)
 
 ---
 
@@ -14,26 +14,29 @@ In cinematic audio drama production, sound asset retrieval has historically suff
 2. **Context Bloat & LLM Hallucinations**: Passing raw file lists, directory paths, or arbitrary vector dumps into LLM context windows causes severe token consumption, latency, and hallucinations of nonexistent audio filenames.
 3. **Epistemic Dishonesty & Keyword Traps**: Traditional keyword retrieval cannot distinguish measured physical acoustics (e.g. true loudness, spectral brightness) from provider-injected marketing tags, nor can it understand rustic multilingual idioms (*"talwar ka bhaari vaar"*, *"door se aati footsteps"*).
 
-To solve this, **AudioBookmaker** implements the **Sonic Intelligence Engine**, a four-phase studio infrastructure:
+To solve this, **AudioBookmaker** implements the **Sonic Intelligence Engine**, a five-phase studio infrastructure:
 
 ```mermaid
 flowchart LR
     P1["Phase 1: Foundation\n- Sonic Genome v2.1\n- Deterministic DSP\n- Welch/LUFS/EBU R128"]
     P2["Phase 2: AI Enrichment\n- AudioSet-527 (AST)\n- LAION-CLAP 512-d\n- SonicModelManager"]
     P3["Phase 3: Sound Intelligence\n- Hinglish Query Planner\n- 5x Candidate Pool\n- Hybrid Reranker\n- Agent Sound Cards v3"]
-    P4["Phase 4: Library Harvester\n- Embedded Metadata (ID3/BWF/RIFF/Vorbis)\n- UCS & Folder Grammar\n- Multi-Scale DSP & AI\n- Idempotent Fingerprinting\n- Periodic VRAM Eviction"]
+    P4["Phase 4: Library Harvester\n- Embedded Metadata (ID3/BWF/RIFF/Vorbis)\n- UCS & Folder Grammar\n- Multi-Scale DSP & AI\n- Idempotent Fingerprinting\n- Ephemeral Streaming"]
+    P5["Phase 5: IP Lore & Affinity\n- Franchise Affinity Tagging\n- Priority Weighting\n- 26.9k Studio Ingestion\n- Zero Audio Touch"]
 
-    P1 --> P2 --> P3 --> P4
+    P1 --> P2 --> P3 --> P4 --> P5
     style P1 fill:#d4edda,stroke:#28a745,color:#155724
     style P2 fill:#d4edda,stroke:#28a745,color:#155724
     style P3 fill:#d4edda,stroke:#28a745,color:#155724
     style P4 fill:#d4edda,stroke:#28a745,color:#155724
+    style P5 fill:#d4edda,stroke:#28a745,color:#155724
 ```
 
 - **Phase 1 (Foundation — Certified)**: Deterministic audio analysis pipeline extracting physical ground-truth DSP metrics directly from waveforms (`speech_corridor_density`, EBU R128 integrated LUFS, True Peak dBTP, Welch spectral centroid), non-destructive SQLite schema migration, and temporal event onsets.
 - **Phase 2 (AI Enrichment — Certified)**: Dedicated machine-learning adapters (AudioSet 527 classification via AST, open-vocabulary 512-d dual embeddings via LAION-CLAP), thread-safe VRAM model management (`SonicModelManager`), and SQLite vector BLOB storage.
 - **Phase 3 (Sound Intelligence — Certified & Hardened)**: Multilingual query planning (`HinglishQueryNormalizer`, `SonicQueryPlanner`), thread-safe LRU query caching (`QueryEmbeddingCache`), 5-source candidate pooling (`CandidatePoolAggregator`), explainable linear reranking with negative penalties (`SonicHybridReranker`), and epistemically honest `AgentSoundCard` (v3.0) models with strict 4-tier labeling.
-- **Phase 4 (Production Scale Library Harvester — Certified)**: High-throughput, non-destructive 11-stage ingestion engine for massive local sound collections (~200GB). Extracts rich container metadata (ID3v1/ID3v2, BWF/BEXT, RIFF INFO, Vorbis comments), Universal Category System (UCS) naming grammar, folder taxonomy tokens, and companion variation groupings without data loss. Features length-aware multi-scale DSP and AI analysis (composite 3-window spectral analysis, multi-window CLAP pooling, AST sliding-window onsets, micro-SFX Hann centering), rapid 64KB SHA-256 header fingerprinting, idempotent skip/resume, and strict GPU VRAM eviction.
+- **Phase 4 (Production Scale Library Harvester — Certified)**: High-throughput, non-destructive 11-stage ingestion engine for massive local sound collections (~200GB). Extracts rich container metadata (ID3v1/ID3v2, BWF/BEXT, RIFF INFO, Vorbis comments), Universal Category System (UCS) naming grammar, folder taxonomy tokens, and companion variation groupings without data loss. Features sliding-window ephemeral streaming ingest (`streaming_harvester.py`), rapid 64KB SHA-256 header fingerprinting, idempotent skip/resume, and strict GPU VRAM eviction.
+- **Phase 5 (IP Lore & Franchise Affinity System — Certified)**: First-class franchise ontology (`franchise_affinity`, `lore_tags`, `ip_priority`) boosting authentic studio sound assets during universe-specific audiobook production. Ingests all **26,906 CD PROJEKT RED Witcher 3 studio audio assets** (22.25 GB) and 230 Witcher OST tracks 100% in-place with zero audio duplication, providing instant Hollywood-grade combat, magic, creature, and foley soundscapes.
 
 ---
 
@@ -485,4 +488,52 @@ The Library Harvester subsystem has been verified with a dedicated automated tes
 | `test_long_form_composite_sampling` | 3-window spectral pooling & multi-window CLAP | **PASSED** |
 | `test_error_isolation_corrupt_files` | Unreadable/corrupt files isolated without crash | **PASSED** |
 | `test_end_to_end_library_harvest` | Full 11-stage pipeline, SQLite persistence & FTS5 | **PASSED** |
+
+---
+
+## ⚔️ 9. Phase 5: IP Lore & Franchise Affinity System
+
+Phase 5 introduces first-class intellectual property (IP) affinity and lore tagging across the audio drama production pipeline. When producing universe-specific audiobooks (such as *The Witcher*, *Game of Thrones*, or epic fantasy/period dramas), the engine automatically prioritizes genuine studio recordings over generic catalog assets.
+
+### A. Non-Destructive Schema Expansion
+Three dedicated columns are added to `sound_catalog`:
+```sql
+ALTER TABLE sound_catalog ADD COLUMN franchise_affinity TEXT DEFAULT 'generic';
+ALTER TABLE sound_catalog ADD COLUMN lore_tags TEXT DEFAULT '';
+ALTER TABLE sound_catalog ADD COLUMN ip_priority REAL DEFAULT 0.0;
+
+CREATE INDEX IF NOT EXISTS idx_sound_catalog_franchise ON sound_catalog(franchise_affinity);
+CREATE INDEX IF NOT EXISTS idx_sound_catalog_ip_priority ON sound_catalog(ip_priority);
+```
+
+### B. The Witcher 3 Wild Hunt Studio Audio Vault Ingestion
+- **Source**: 26,906 CD PROJEKT RED studio audio WAV files (22.25 GB) extracted directly from game packages.
+- **Zero Audio Touch Invariant**: All 26,906 WAV files remain 100% in-place on disk in read-only mode (`0 bytes permanent audio duplication`).
+- **Parallel DSP Analysis**: 12-worker CPU analysis computing EBU R128 integrated LUFS, True Peak dBTP, Spectral Centroid, Bandwidth, Rolloff, Flatness, and Silence Ratios.
+- **GPU CLAP AI Embeddings**: Batched 512-dim neural vector embeddings computed directly on NVIDIA GeForce RTX 4050 Tensor Cores.
+- **Lore Tagging**: Automated parsing of monster species (`leshen`, `drowner`, `bruxa`, `fiend`), Witcher magic signs (`aard`, `igni`, `quen`, `axii`, `yrden`), key characters (`geralt`, `ciri`, `yennefer`), locations (`novigrad`, `skellige`, `velen`, `kaer_morhen`), and dramatic combat roles (`combat_impact`, `magical_spell`, `monster_threat`, `foley_movement`).
+- **Haptic Signal Stabilization**: Edge-case resolution for DualSense vibration waveforms (`fx_haptic_*.wav`) via `-70.0 LUFS` sentinels, ensuring zero database nulls.
+
+### C. Master Sound Bank Unified Bridge
+Via [`sync_witcher3_to_master_catalog.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sync_witcher3_to_master_catalog.py), all 26,906 studio assets and their 512-dim CLAP vector embeddings are synchronized into the Master Sound Bank:
+
+| Catalog Component | Assets Count | Description |
+| :--- | :---: | :--- |
+| **BBC Sound Archive** | 32,015 | Real-world environmental beds, weather, domestic foley |
+| **The Witcher 3 Game SFX** | 26,906 | Authentic medieval combat, sword clashes, signs, monsters, foley |
+| **Incompetech Library** | 1,442 | Cinematic background musical scores (Kevin MacLeod) |
+| **The Witcher 3 OST** | 230 | Full authentic Slavic/Celtic orchestral soundtracks |
+| **Curated Foley / SFX / Kenney** | 455 | UI clicks, organic impacts, micro-stingers |
+| **TOTAL MASTER CATALOG** | **61,048** | **Sub-millisecond FTS5 & Hybrid Vector Search** |
+| **TOTAL NEURAL EMBEDDINGS** | **44,940** | **512-dimensional CLAP vectors in SQLite BLOBs** |
+
+### D. Sliding-Window Ephemeral Streaming Ingest Pipeline
+Located in [`audiobook_factory/streaming_harvester.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/streaming_harvester.py):
+Enables ingesting massive open-source sound repositories (e.g. BBC 16k collection, Sonniss GDC 150GB packs) with **0 permanent disk bloat**:
+1. Streams batches (5–10 GB) into an ephemeral scratch buffer (`temp_scratch`).
+2. Extracts source metadata and executes 12-worker DSP + RTX 4050 CLAP vector inference.
+3. Commits remote CDN streaming URLs, acoustic facts, and neural embeddings to SQLite.
+4. Immediately purges scratch audio files, reclaiming 100% of temporary disk space.
+5. Logs atomic checkpoint progress in `ingestion_batches` for 100% crash-proof resumability.
+
 

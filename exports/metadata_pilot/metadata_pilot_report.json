@@ -1,0 +1,695 @@
+{
+  "metadata_pilot_version": "1.0.0",
+  "executed_at": "2026-09-27T00:05:27.646317+00:00",
+  "statistics": {
+    "discovered": 209,
+    "added": 0,
+    "updated": 209,
+    "skipped": 0,
+    "duplicates": 160,
+    "bundles": {
+      "Kenney_CC0_RPG_Foley_Pack": 21,
+      "Curated_Open_Ambient_Beds": 9,
+      "BBC_Sound_Effects_Cached_Pilot": 19,
+      "BBC_SFX_ECD095": 11,
+      "BBC_SFX_ECD153": 10,
+      "BBC_SFX_ECD082": 3,
+      "BBC_SFX_ECD132": 52,
+      "BBC_SFX_ECD108": 1,
+      "BBC_SFX_ECD028": 1,
+      "BBC_SFX_ECD056": 72,
+      "Sonniss_GDC_Curated_Archive": 10
+    },
+    "categories": {
+      "FOL": 122,
+      "AMB": 66,
+      "SFX": 21
+    },
+    "provenance_sources": {
+      "filename_stem": 49,
+      "derived_title": 36,
+      "folder_hierarchy": 60,
+      "audio_container_header": 49,
+      "filename_extension": 209,
+      "filesystem": 209,
+      "bundle_manifest": 418,
+      "fused_tokens": 209,
+      "embedded_tag": 13,
+      "accompanying_csv": 750,
+      "accompanying_json": 50,
+      "regex_variation_detector": 9
+    }
+  },
+  "sample_records": [
+    {
+      "filename": "sword_clash_sword_clash.1.ogg",
+      "title": "Sword Clash Sword Clash.1",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.1"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.1"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 1.033288
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 16491
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.10.ogg",
+      "title": "Sword Clash Sword Clash.10",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.10"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.10"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 0.847528
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 14339
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.2.ogg",
+      "title": "Sword Clash Sword Clash.2",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.2"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.2"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 0.801088
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 13951
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.3.ogg",
+      "title": "Sword Clash Sword Clash.3",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.3"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.3"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 0.928798
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 15421
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.4.ogg",
+      "title": "Sword Clash Sword Clash.4",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.4"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.4"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 0.917188
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 15545
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.5.ogg",
+      "title": "Sword Clash Sword Clash.5",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.5"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.5"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 0.661769
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 12225
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.6.ogg",
+      "title": "Sword Clash Sword Clash.6",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.6"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.6"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 1.323537
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 20300
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.7.ogg",
+      "title": "Sword Clash Sword Clash.7",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.7"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.7"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 1.172608
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 18481
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.8.ogg",
+      "title": "Sword Clash Sword Clash.8",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.8"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.8"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 1.021678
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 16417
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    },
+    {
+      "filename": "sword_clash_sword_clash.9.ogg",
+      "title": "Sword Clash Sword Clash.9",
+      "category": "FOL",
+      "subcategory": "Foley",
+      "source_collection": "Kenney_RPG_Audio",
+      "bundle_name": "Kenney_CC0_RPG_Foley_Pack",
+      "provenance": {
+        "title": {
+          "source": "filename_stem",
+          "key": "stem",
+          "value": "Sword Clash Sword Clash.9"
+        },
+        "description": {
+          "source": "derived_title",
+          "key": "title",
+          "value": "Sword Clash Sword Clash.9"
+        },
+        "category": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "FOL"
+        },
+        "subcategory": {
+          "source": "folder_hierarchy",
+          "key": "parent_dir",
+          "value": "Foley"
+        },
+        "duration_sec": {
+          "source": "audio_container_header",
+          "key": "duration_sec",
+          "value": 1.091338
+        },
+        "format": {
+          "source": "filename_extension",
+          "key": "suffix",
+          "value": ".ogg"
+        },
+        "size_bytes": {
+          "source": "filesystem",
+          "key": "st_size",
+          "value": 17005
+        },
+        "creator": {
+          "source": "bundle_manifest",
+          "key": "creator",
+          "value": "Kenney (kenney.nl)"
+        },
+        "license": {
+          "source": "bundle_manifest",
+          "key": "license",
+          "value": "CC0 1.0 Universal"
+        },
+        "tags": {
+          "source": "fused_tokens",
+          "count": 4
+        }
+      },
+      "raw_metadata_sample": {
+        "bundle_manifest": "dict",
+        "embedded_tags": "dict",
+        "container_facts": "dict",
+        "filesystem": "dict"
+      }
+    }
+  ]
+}

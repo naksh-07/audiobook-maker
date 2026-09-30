@@ -534,6 +534,48 @@ def cmd_bank(args):
             print("[+] Successfully rebuilt sound_catalog_fts search index.")
         else:
             print("[-] Failed to rebuild FTS5 search index.")
+    elif action in ("pilot-metadata", "pilot"):
+        export_dir = getattr(args, "export_dir", "exports/metadata_pilot")
+        limit = getattr(args, "limit", None)
+        force = getattr(args, "force", False)
+        print(f"[*] Starting Non-Destructive Metadata-Harvesting Pilot...")
+        print(f"    Export Directory: {export_dir} | Limit/bundle: {limit} | Force: {force}")
+        res = bank.run_metadata_pilot(
+            export_dir=export_dir,
+            limit_per_bundle=limit,
+            force=force,
+        )
+        print("\n=======================================================")
+        print("   METADATA-HARVESTING PILOT SUMMARY                  ")
+        print("=======================================================")
+        print(f"  Discovered Assets   : {res.get('total_discovered', 0)}")
+        print(f"  Upserted to Catalog : {res.get('total_upserted', 0)}")
+        print(f"  Duplicates Detected : {res.get('total_duplicates', 0)}")
+        print(f"  Failed Extractions  : {res.get('total_failed', 0)}")
+        print(f"  Execution Time      : {res.get('elapsed_seconds', 0.0):.2f}s")
+        print(f"  Canonical CSV       : {res.get('canonical_csv_path', 'N/A')}")
+        print(f"  Audit Report JSON   : {res.get('report_json_path', 'N/A')}")
+        print(f"  Summary Markdown    : {res.get('summary_md_path', 'N/A')}")
+        print("=======================================================\n")
+    elif action in ("stream-harvest", "stream"):
+        source = getattr(args, "source", "bbc")
+        batch_size_gb = getattr(args, "batch_size_gb", 10.0)
+        batch_limit_items = getattr(args, "batch_limit_items", 500)
+        max_batches = getattr(args, "max_batches", None)
+        workers = getattr(args, "workers", 4)
+        ai_mode = getattr(args, "ai_mode", "full")
+        scratch = getattr(args, "scratch", None)
+        res = bank.stream_harvest(
+            source=source,
+            batch_size_gb=batch_size_gb,
+            batch_limit_items=batch_limit_items,
+            max_batches=max_batches,
+            workers=workers,
+            ai_mode=ai_mode,
+            scratch_dir=scratch,
+        )
+
+
 
 
 def cmd_produce(args):
@@ -905,6 +947,21 @@ def main():
         subs.add_parser("harvest-status", help="Display Sonic Intelligence library harvest status & coverage")
 
         subs.add_parser("rebuild-index", help="Rebuild SQLite FTS5 search index")
+
+        p_pilot = subs.add_parser("pilot-metadata", aliases=["pilot"], help="Run non-destructive metadata-harvesting pilot on Foley/Ambience slices")
+        p_pilot.add_argument("--export-dir", default="exports/metadata_pilot", help="Directory to save audit reports & canonical CSV export")
+        p_pilot.add_argument("--limit", type=int, default=None, help="Optional limit per bundle")
+        p_pilot.add_argument("--force", action="store_true", help="Force re-harvest of unchanged assets")
+
+        p_stream = subs.add_parser("stream-harvest", aliases=["stream"], help="Run sliding-window batch ingestion (download -> extract DSP/AI -> commit -> wipe scratch)")
+        p_stream.add_argument("--source", choices=["bbc", "sonniss", "incompetech", "all"], default="bbc", help="Sound source collection")
+        p_stream.add_argument("--batch-size-gb", type=float, default=10.0, help="Target batch size in GB before wiping scratch")
+        p_stream.add_argument("--batch-limit-items", type=int, default=500, help="Max items per batch chunk")
+        p_stream.add_argument("--max-batches", type=int, default=None, help="Stop after N batches (default: continue until complete)")
+        p_stream.add_argument("--workers", type=int, default=4, help="Download concurrency threads")
+        p_stream.add_argument("--ai-mode", choices=["full", "dsp_only"], default="full", help="AI embedding depth (full: DSP + CLAP; dsp_only: fast DSP)")
+        p_stream.add_argument("--scratch", default=None, help="Custom scratch folder path")
+
 
     # bank
     p_bank = subparsers.add_parser("bank", help="Manage and search local Sound Bank (SQLite FTS5)")

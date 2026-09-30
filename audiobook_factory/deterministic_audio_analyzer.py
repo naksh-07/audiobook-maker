@@ -94,7 +94,7 @@ class DeterministicAudioAnalyzer:
             str(filepath),
         ]
         try:
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=15.0)
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=30.0)
             if res.returncode == 0 and res.stdout.strip():
                 data = json.loads(res.stdout)
                 streams = data.get("streams", [])
@@ -165,7 +165,7 @@ class DeterministicAudioAnalyzer:
             "-",
         ]
         try:
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=20.0)
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=90.0)
             err = res.stderr
 
             # 1. Integrated loudness (LUFS)
