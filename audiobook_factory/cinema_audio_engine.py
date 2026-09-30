@@ -178,7 +178,7 @@ def measure_audio_metrics(audio_file: Path, ffmpeg: str = "ffmpeg") -> Dict[str,
     cmd = [
         ffmpeg, "-y",
         "-i", str(p),
-        "-af", "ebur128=framelog=verbose",
+        "-af", "ebur128=peak=true:framelog=verbose",
         "-f", "null", "-"
     ]
     try:
@@ -186,7 +186,7 @@ def measure_audio_metrics(audio_file: Path, ffmpeg: str = "ffmpeg") -> Dict[str,
         output = proc.stderr
         import re
         i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
-        tp_match = re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output) or re.search(r"True peak:\s+([-\d.]+)\s+dBFS", output)
+        tp_match = re.search(r"True peak:\s+Peak:\s+([-\d.]+)(?:\s+([-\d.]+))?", output) or re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output)
         dur_match = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.?\d*)", output)
 
         dur_sec = 0.0
@@ -195,7 +195,11 @@ def measure_audio_metrics(audio_file: Path, ffmpeg: str = "ffmpeg") -> Dict[str,
             dur_sec = int(h) * 3600 + int(m) * 60 + float(s)
 
         lufs = float(i_match.group(1)) if i_match else -24.0
-        peak = float(tp_match.group(1)) if tp_match else -1.5
+        if tp_match:
+            tp_vals = [float(v) for v in tp_match.groups() if v is not None]
+            peak = max(tp_vals) if tp_vals else -1.5
+        else:
+            peak = -1.5
         return {"integrated_lufs": round(lufs, 2), "true_peak_dbtp": round(peak, 2), "duration_sec": round(dur_sec, 2)}
     except Exception as e:
         logger.warning(f"Audio measurement failed for {p.name}: {e}")
@@ -502,7 +506,7 @@ def render_discrete_stems(
         "-i", str(amb_file),
         "-filter_complex",
         f"[0:a]{notch_filter}[mx_notched];"
-        f"[mx_notched][1:a][2:a]amix=inputs=3:duration=first:normalize=0,aresample=48000[meout]",
+        f"[mx_notched][1:a][2:a]amix=inputs=3:duration=first:normalize=0,aresample=48000,alimiter=limit=0.95:attack=5:release=50[meout]",
         "-map", "[meout]",
         "-c:a", "pcm_s16le",
         str(me_file),
@@ -526,7 +530,7 @@ def render_discrete_stems(
         "-i", str(me_file),
         "-filter_complex",
         f"[1:a][0:a]sidechaincompress=threshold=0.018:knee=3.0:ratio=4:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
-        f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000[premaster_out]",
+        f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000,alimiter=limit=0.95:attack=5:release=50[premaster_out]",
         "-map", "[premaster_out]",
         "-c:a", "pcm_s16le",
         str(premaster_file),

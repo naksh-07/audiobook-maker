@@ -12,6 +12,7 @@ import argparse
 import json
 import re
 import shutil
+import shlex
 from pathlib import Path
 
 if sys.platform == "win32":
@@ -22,7 +23,9 @@ else:
     RNNOISE_DEFAULT_MODEL = "/root/.local/share/rnnoise/cb.rnnn"
 
 def run_cmd(cmd):
-    result = subprocess.run(cmd, shell=isinstance(cmd, str), capture_output=True, text=True)
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd)
+    result = subprocess.run(cmd, shell=False, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"Command failed (code {result.returncode}):\n{result.stderr}")
     return result

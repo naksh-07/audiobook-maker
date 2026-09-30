@@ -17,8 +17,10 @@ Features:
 """
 
 import math
+import os
 import subprocess
 import tempfile
+import uuid
 import wave
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union, Tuple
@@ -281,16 +283,24 @@ def render_music_bus(
         mix_ins = "[0:a]" + "".join(f"[m_{i}]" for i in range(len(cue_files)))
         filter_str = ";".join(filters) + f";{mix_ins}amix=inputs={len(cue_files)+1}:duration=first:normalize=0:dropout_transition=0[bgm_master]"
 
+        filter_script = tmp_dir / f"music_filter_{os.getpid()}_{uuid.uuid4().hex[:6]}.txt"
+        filter_script.write_text(filter_str, encoding="utf-8")
+
         cmd = [
             ffmpeg, "-y",
             *inputs,
-            "-filter_complex", filter_str,
+            "-filter_complex_script", str(filter_script),
             "-map", "[bgm_master]",
             "-ar", "48000",
             "-c:a", "pcm_s16le",
             str(output_bus_file),
         ]
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if filter_script.exists():
+            try:
+                filter_script.unlink()
+            except OSError:
+                pass
         return res.returncode == 0 and output_bus_file.exists()
 
 

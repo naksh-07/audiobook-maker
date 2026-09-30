@@ -234,6 +234,13 @@ def stitch_dialogue_track_from_ledger(
             fade_in_ms=fade_in_ms,
             fade_out_ms=fade_out_ms
         )
+
+        # Prepend pre-roll breath silence if present to align audio with ledger start_ms
+        pre_breath = int(getattr(seg, "pre_roll_breath_ms", 0) or 0)
+        if pre_breath > 0:
+            breath_samples = int(sample_rate * (pre_breath / 1000.0))
+            all_frames.append(b"\x00\x00" * breath_samples)
+
         all_frames.append(in_frames)
 
         # Add silence padding with strict timeline synchronization (ADR-028)

@@ -19,7 +19,7 @@ import contextlib
 class ProjectStateLedger:
     """Manages chapter and segment state in SQLite (project_state.db)."""
 
-    def __init__(self, project_dir: Path):
+    def __init__(self, project_dir: Path, auto_recover: bool = True):
         path = Path(project_dir).resolve()
         if path.suffix == ".db":
             self.db_path = path
@@ -29,6 +29,8 @@ class ProjectStateLedger:
             self.db_path = self.project_dir / "project_state.db"
         self.project_dir.mkdir(parents=True, exist_ok=True)
         self._init_db()
+        if auto_recover:
+            self.recover_orphaned_segments()
 
     @contextlib.contextmanager
     def _connection(self):
@@ -36,7 +38,7 @@ class ProjectStateLedger:
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode = WAL;")
         conn.execute("PRAGMA synchronous = NORMAL;")
-        conn.execute("PRAGMA busy_timeout = 5000;")
+        conn.execute("PRAGMA busy_timeout = 30000;")
         try:
             with conn:
                 yield conn
@@ -85,8 +87,14 @@ class ProjectStateLedger:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_chap ON segments(chapter_num);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_status ON segments(status);")
             conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_segments_chap_seg ON segments(chapter_num, seg_num);")
-            # Auto-recover orphaned in-progress segments from previous crashes
-            conn.execute("UPDATE segments SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE status = 'IN_PROGRESS';")
+
+    def recover_orphaned_segments(self) -> int:
+        """Explicitly reset any interrupted IN_PROGRESS segments to PENDING after a crash or on resume."""
+        with self._connection() as conn:
+            cur = conn.execute(
+                "UPDATE segments SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE status = 'IN_PROGRESS';"
+            )
+            return cur.rowcount
 
     def set_meta(self, key: str, value: Any):
         val_str = json.dumps(value) if not isinstance(value, str) else value

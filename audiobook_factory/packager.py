@@ -10,6 +10,8 @@ import re
 import shutil
 import subprocess
 import json
+import time
+import uuid
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from audiobook_factory.contracts import BookMasterManifest
@@ -122,7 +124,7 @@ def package_m4b_audiobook(
     output_filename: str | None = None,
     cover_image: Path | None = None,
     manifest: Optional[BookMasterManifest] = None,
-    enforce_gate6: bool = False,
+    enforce_gate6: bool = True,
 ) -> Path:
     """
     Packages all mastered chapters of a project into a single, chapterized .m4b audiobook.
@@ -313,30 +315,47 @@ def package_m4b_audiobook(
         pack_cmd.extend(["-map", "0:a", "-map_metadata", "1"])
         pack_cmd.extend(["-c:a", "copy"])
 
+    tmp_m4b = final_m4b.with_suffix(f".tmp_{os.getpid()}_{uuid.uuid4().hex[:6]}.m4b")
     pack_cmd.extend(["-movflags", "+faststart"])
-    pack_cmd.append(str(final_m4b))
+    pack_cmd.append(str(tmp_m4b))
 
     try:
-        subprocess.run(pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except subprocess.CalledProcessError:
-        # Fallback to two-step intermediate concatenation if single-pass demuxer metadata mapping fails
-        temp_concat = output_dir / "temp_full.m4a"
-        concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c:a", "copy", str(temp_concat)]
-        subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        fb_pack_cmd = [ffmpeg, "-y", "-i", str(temp_concat), "-i", str(meta_txt)]
-        if has_cover:
-            fb_pack_cmd.extend(["-i", str(cover_image), "-map", "0:a", "-map", "2:v", "-map_metadata", "1", "-c:a", "copy", "-c:v", "mjpeg", "-disposition:v", "attached_pic"])
-        else:
-            fb_pack_cmd.extend(["-map", "0:a", "-map_metadata", "1", "-c:a", "copy"])
-        fb_pack_cmd.extend(["-movflags", "+faststart"])
-        fb_pack_cmd.append(str(final_m4b))
         try:
-            subprocess.run(fb_pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        finally:
-            if temp_concat.exists():
-                temp_concat.unlink()
+            subprocess.run(pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError:
+            # Fallback to two-step intermediate concatenation if single-pass demuxer metadata mapping fails
+            temp_concat = output_dir / "temp_full.m4a"
+            concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c:a", "copy", str(temp_concat)]
+            subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            fb_pack_cmd = [ffmpeg, "-y", "-i", str(temp_concat), "-i", str(meta_txt)]
+            if has_cover:
+                fb_pack_cmd.extend(["-i", str(cover_image), "-map", "0:a", "-map", "2:v", "-map_metadata", "1", "-c:a", "copy", "-c:v", "mjpeg", "-disposition:v", "attached_pic"])
+            else:
+                fb_pack_cmd.extend(["-map", "0:a", "-map_metadata", "1", "-c:a", "copy"])
+            fb_pack_cmd.extend(["-movflags", "+faststart"])
+            fb_pack_cmd.append(str(tmp_m4b))
+            try:
+                subprocess.run(fb_pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            finally:
+                if temp_concat.exists():
+                    temp_concat.unlink()
+
+        # Atomic promotion with retry backoff for Windows file locks
+        for attempt in range(5):
+            try:
+                os.replace(tmp_m4b, final_m4b)
+                break
+            except (PermissionError, OSError):
+                if attempt == 4:
+                    raise
+                time.sleep(0.1 * (2 ** attempt))
     finally:
+        if tmp_m4b.exists():
+            try:
+                tmp_m4b.unlink()
+            except OSError:
+                pass
         if concat_list.exists():
             concat_list.unlink()
         if staging_dir.exists():

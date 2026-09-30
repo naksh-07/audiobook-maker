@@ -171,20 +171,18 @@ def _parse_dramatized_chunk_llm(
         "`[gasp]`, `[growl]`, `[groan]`, `[spits]`, `[bellowing rage]`, `[bellowing battlecry]`, `[combat strain]`, `[guttural grunt on blade deflect]`, "
         "`[choked gasp]`, `[ragged heaving pant]`, `[breathless_exhaustion]`, `[slow motion]`, `[mocking chuckle]`. Do NOT emit non-vocal action tags in text.\n"
         "4. CYNICAL PROTAGONIST GRUNT ENGINE & PROSODY: When a brooding, cynical protagonist reacts with skepticism, weary resignation, or menacing brevity, "
-        "prepend `[growl] हूँ...` or `[sighs] हम्म...` and set 'pause_after_ms' to 1000-1400ms to enforce the iconic 1.2s pregnant pause prosody.\n"
+        "prepend `[growl] हूँ...` or `[sighs] हम्म...` to enforce the iconic pregnant pause prosody.\n"
         "5. DURAANGI ZUBAAN (INNER MONOLOGUES): When a character thinks an unfiltered thought or aside (contrasting with polite outward speech), "
         "tag the text with `[whispers] (मन में: ...)` and set spatial.proximity: 'intimate_close' and acoustic_env: 'binaural_whisper'.\n"
         "6. INTIMATE SCENES & ASMR STAGING: For romantic, sensual, erotic, or dirty bedroom scenes, pair raw passion with "
-        "`[whispers]` or `[intimate, breathy]` tags, spatial.proximity: 'intimate_close', spatial.pan: 0.0, intensity_level: 'low', "
-        "pre_roll_breath_ms: 200-250, and music.ducking_db: -22.0 ('The Erotic Silence'). Use ellipses ('...') for breathless pauses. "
+        "`[whispers]` or `[intimate, breathy]` tags, spatial.proximity: 'intimate_close', and intensity_level: 'low'. Use ellipses ('...') for breathless pauses. "
         "Never censor dirty talk or physical passion during explicit encounters.\n"
-        "7. TAVERN SHOCK BEAT & COMBAT CHOREOGRAPHY: When a climactic death threat or filthy curse drops in a tavern, set pause_after_ms: 800-1200ms "
-        "with a solitary coin_clink or tankard_slam cue for an acoustic shock drop. "
+        "7. TAVERN SHOCK BEAT & COMBAT CHOREOGRAPHY: When a climactic death threat or filthy curse drops in a tavern, "
+        "add a solitary coin_clink or tankard_slam cue for an acoustic shock drop. "
         "For physical combat (sword parries, shield bashes, bone crunches, body slams), emit dedicated segments with type: 'action', speaker: 'Foley', text: '[ACTION]' "
-        "and set 'pause_after_ms' to 800-1500ms to allocate speech-free acoustic real estate for the 3-layer combat impact. "
-        "DUAL-PERSPECTIVE SPATIAL STAGING: Pan Attacker actions/vocals Left (-0.6), Defender parries/vocals Right (+0.6), and Clash points / fatal strikes Dead Center (0.0). "
+        "to allocate speech-free acoustic real estate for the 3-layer combat impact. "
         "Set intensity_level: 'explosive' for heavy lethal strikes or concussion shockwaves.\n"
-        "8. For EVERY segment, assign audio direction: acting delivery & pacing, spatial stereo panning, acoustic environment, inline Foley SFX cues, and musical mood."
+        "8. For EVERY segment, assign audio direction: acting delivery style, proximity, acoustic environment, inline Foley SFX cues, and musical mood."
     )
 
     roster_hint = ""
@@ -235,14 +233,10 @@ Output JSON: A list of objects where each object has:
 - "subtext": string (optional unsaid psychological subtext if strongly justified by context, else "")
 - "underlying_emotion": string (optional concealed emotional state, else "")
 - "intensity_level": "low" | "medium" | "high" | "explosive" (DSP dynamic headroom: "low" for whispered/intimate, "medium" for standard dialogue/narration, "high" for intense confrontation/shouts, "explosive" for climactic battle cries and fatal strikes)
-- "pre_roll_breath_ms": int (150 to 250 for intimate/terrified lines, 0 for standard delivery)
-- "pause_after_ms": int (300 to 800 for normal dialogue, 800 to 1500 for action impacts)
 - "acting": {{
-    "delivery_style": "whispering_fear" | "cold_menace" | "breathless_exhaustion" | "ironic_mockery" | "bellowing_rage" | "combat_strain" | "slow_motion" | "calm_authoritative" | "gentle_tender" | "neutral",
-    "pacing": float (0.88 to 1.15, e.g. 0.92 for slow/bassy/deliberate, 1.0 for normal, 1.10 for fast action)
+    "delivery_style": "whispering_fear" | "cold_menace" | "breathless_exhaustion" | "ironic_mockery" | "bellowing_rage" | "combat_strain" | "slow_motion" | "calm_authoritative" | "gentle_tender" | "neutral"
   }}
 - "spatial": {{
-    "pan": float (-0.6 to 0.6, e.g. 0.0 for Narrator / clash point, -0.6 for attacker, +0.6 for defender),
     "proximity": "intimate_close" | "normal_room" | "distant"
   }}
 - "acoustic_env": "tavern_interior" | "stone_crypt" | "royal_hall" | "damp_dungeon" | "dense_forest_night" | "quiet_chamber" | "open_road"
@@ -256,8 +250,7 @@ Output JSON: A list of objects where each object has:
     }}
   ]
 - "music": {{
-    "mood": "peaceful" | "mysterious" | "tense" | "emotional" | "epic",
-    "ducking_db": float (-18.0 to -10.0)
+    "mood": "peaceful" | "mysterious" | "tense" | "emotional" | "epic"
   }}
 """
 
@@ -317,46 +310,13 @@ Output JSON: A list of objects where each object has:
                 try:
                     parsed = json.loads(raw_json)
                 except json.JSONDecodeError:
-                    # [AGENTIC SHIFT] LLM-based Truncation Recovery Loop
-                    if (raw_json.startswith("[") or raw_json.startswith("{")) and candidate.get("finishReason") == "MAX_TOKENS":
-                        logger.info("  [*] JSON truncated (MAX_TOKENS). Invoking Data Healer Agent...")
-                        healer_prompt = f"The following JSON array was truncated. Please continue outputting valid JSON exactly from where it left off, closing the array properly. Only return the continued JSON without markdown.\n\nTruncated JSON end:\n{raw_json[-1000:]}"
-                        healer_payload = {
-                            "contents": [{"parts": [{"text": healer_prompt}]}],
-                            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4096},
-                        }
-                        try:
-                            h_req = urllib.request.Request(
-                                url,  # Reusing the same URL with current key
-                                data=json.dumps(healer_payload).encode("utf-8"),
-                                headers=headers,
-                                method="POST",
-                            )
-                            with urllib.request.urlopen(h_req, timeout=90.0) as h_resp:
-                                h_data = json.loads(h_resp.read().decode("utf-8"))
-                                h_parts = h_data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-                                continuation = "".join([p.get("text", "") for p in h_parts if "text" in p]).strip()
-                                if continuation.startswith("```"):
-                                    continuation = re.sub(r"^```(?:json)?\s*", "", continuation)
-                                    continuation = re.sub(r"\s*```$", "", continuation).strip()
-                                
-                                repaired_json = raw_json + continuation
-                                parsed = json.loads(repaired_json)
-                                logger.info("  [+] Data Healer Agent successfully repaired the truncated JSON.")
-                        except Exception as e:
-                            logger.warning(f"  [!] Data Healer failed: {e}. Falling back to last safe brace.")
-                            repaired = raw_json.strip()
-                            last_brace = repaired.rfind("}")
-                            if last_brace != -1 and not repaired.endswith("]"):
-                                candidate_str = repaired[:last_brace + 1].rstrip() + "\n]"
-                                try:
-                                    parsed = json.loads(candidate_str)
-                                except Exception:
-                                    raise
-                            else:
-                                raise
-                    else:
-                        # Fallback for incomplete JSON array with safe closing brace
+                    # Deterministic JSON repair (eliminates secondary network call and hallucinations)
+                    try:
+                        import json_repair
+                        parsed = json_repair.loads(raw_json)
+                        logger.info("  [+] Deterministic json_repair successfully restored JSON payload.")
+                    except Exception as jr_err:
+                        logger.warning(f"  [!] json_repair fallback error: {jr_err}. Attempting brace closure.")
                         repaired = raw_json.strip()
                         last_brace = repaired.rfind("}")
                         if last_brace != -1 and repaired.startswith("[") and not repaired.endswith("]"):
@@ -375,7 +335,11 @@ Output JSON: A list of objects where each object has:
                     raise ValueError(f"Unexpected JSON structure: {type(parsed)}")
 
         except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
+            try:
+                err_body = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
+            finally:
+                if hasattr(e, "close"):
+                    e.close()
             logger.warning(f"  [!] Screenplay LLM HTTP {e.code} on key ...{curr_key[-6:]}: {err_body[:120]}")
             if e.code == 429:
                 pool.mark_temporary_backoff(curr_key, 12.0, "RPM rate limit in script parsing")

@@ -10,6 +10,7 @@ import sys
 import io
 import time
 import json
+import uuid
 import re
 import random
 import wave
@@ -220,7 +221,7 @@ def _synthesize_local_winrt_fallback(text: str, output_file: Path, voice: str = 
         voice_pattern = "*David*"
 
     ps_script = Path(__file__).resolve().parent / "synth_speech.ps1"
-    tmp_wav = output_file.with_suffix(".tmp_winrt.wav")
+    tmp_wav = output_file.with_suffix(f".tmp_winrt_{uuid.uuid4().hex[:6]}.wav")
 
     cmd_ps = [
         "powershell", "-ExecutionPolicy", "Bypass",
@@ -437,98 +438,104 @@ def synthesize_gemini_tts(
 
                     # Convert 24kHz raw PCM to temporary WAV before SNR inspection
                     output_file.parent.mkdir(parents=True, exist_ok=True)
-                    tmp_file = output_file.with_suffix(".tmp.wav")
-                    with wave.open(str(tmp_file), "wb") as wf:
-                        wf.setnchannels(1)
-                        wf.setsampwidth(2)
-                        wf.setframerate(sample_rate)
-                        wf.writeframes(raw_pcm)
+                    tmp_file = output_file.with_suffix(f".tmp_{uuid.uuid4().hex[:6]}.wav")
+                    try:
+                        with wave.open(str(tmp_file), "wb") as wf:
+                            wf.setnchannels(1)
+                            wf.setsampwidth(2)
+                            wf.setframerate(sample_rate)
+                            wf.writeframes(raw_pcm)
 
-                    # Compute duration & raw PCM metrics
-                    dur_sec = frames / float(sample_rate)
-                    word_count = max(len(text.split()), 1)
-                    ratio = dur_sec / word_count
+                        # Compute duration & raw PCM metrics
+                        dur_sec = frames / float(sample_rate)
+                        word_count = max(len(text.split()), 1)
+                        ratio = dur_sec / word_count
 
-                    # Audio Quality & SNR Gatekeeper (Mathematical PCM Probe)
-                    import struct
-                    import math
-                    sample_count = len(raw_pcm) // 2
-                    if sample_count > 0:
-                        samples = struct.unpack(f"<{sample_count}h", raw_pcm)
-                        peak_amp = max(abs(s) for s in samples)
-                        sum_sq = sum(s * s for s in samples)
-                        rms = math.sqrt(sum_sq / sample_count)
-                        dc_offset = abs(sum(samples) / sample_count)
-                    else:
-                        peak_amp = 0
-                        rms = 0.0
-                        dc_offset = 0.0
-
-                    # True flat-top clipping requires >= 6 consecutive samples pinned at rail
-                    consec = 0
-                    max_consec = 0
-                    for s in samples:
-                        if abs(s) >= 32760:
-                            consec += 1
-                            if consec > max_consec:
-                                max_consec = consec
+                        # Audio Quality & SNR Gatekeeper (Mathematical PCM Probe)
+                        import struct
+                        import math
+                        sample_count = len(raw_pcm) // 2
+                        if sample_count > 0:
+                            samples = struct.unpack(f"<{sample_count}h", raw_pcm)
+                            peak_amp = max(abs(s) for s in samples)
+                            sum_sq = sum(s * s for s in samples)
+                            rms = math.sqrt(sum_sq / sample_count)
+                            dc_offset = abs(sum(samples) / sample_count)
                         else:
-                            consec = 0
-                    is_clipped = (max_consec >= 6)
-                    faint_limit = 8.0 if ("[whispers]" in text.lower() or "whisper" in emotion.lower() or "tender" in emotion.lower()) else 20.0
-                    is_silent_faint = (peak_amp > 0 and word_count >= 3 and rms < faint_limit)
-                    is_dc_corrupted = (peak_amp > 0 and dur_sec >= 2.0 and dc_offset > 1500.0)
-                    is_stutter = (word_count > 3 and ratio > 3.2 and dur_sec >= 15.0)
-                    is_empty = (dur_sec < 0.20 and word_count >= 3)
+                            peak_amp = 0
+                            rms = 0.0
+                            dc_offset = 0.0
 
-                    # Dead air / internal silence gap detector (prevents model pausing for 10s+ in long chunks)
-                    has_long_silence = False
-                    if dur_sec >= 6.0 and sample_count > 0:
-                        window = 24000
-                        silent_run = 0
-                        max_silent_run = 0
-                        for w_idx in range(0, sample_count, window):
-                            sub = samples[w_idx:w_idx + window]
-                            sub_rms = math.sqrt(sum(s * s for s in sub) / len(sub))
-                            if sub_rms < 15.0:
-                                silent_run += 1
-                                if silent_run > max_silent_run:
-                                    max_silent_run = silent_run
+                        # True flat-top clipping requires >= 6 consecutive samples pinned at rail
+                        consec = 0
+                        max_consec = 0
+                        for s in samples:
+                            if abs(s) >= 32760:
+                                consec += 1
+                                if consec > max_consec:
+                                    max_consec = consec
                             else:
-                                silent_run = 0
-                        if max_silent_run >= 4:
-                            has_long_silence = True
+                                consec = 0
+                        is_clipped = (max_consec >= 6)
+                        faint_limit = 8.0 if ("[whispers]" in text.lower() or "whisper" in emotion.lower() or "tender" in emotion.lower()) else 20.0
+                        is_silent_faint = (peak_amp > 0 and word_count >= 3 and rms < faint_limit)
+                        is_dc_corrupted = (peak_amp > 0 and dur_sec >= 2.0 and dc_offset > 1500.0)
+                        is_stutter = (word_count > 3 and ratio > 3.2 and dur_sec >= 15.0)
+                        is_empty = (dur_sec < 0.20 and word_count >= 3)
 
-                    has_defect = (is_clipped or is_silent_faint or is_dc_corrupted or is_stutter or is_empty or has_long_silence)
-                    if has_defect:
-                        tmp_file.unlink(missing_ok=True)
-                        reasons = []
-                        if is_clipped: reasons.append(f"Clipping Distortion (Consec Rail {max_consec} >= 6)")
-                        if is_silent_faint: reasons.append(f"Faint Audio (RMS {rms:.1f} < {faint_limit})")
-                        if is_dc_corrupted: reasons.append(f"DC Offset Anomaly ({dc_offset:.1f} > 1500)")
-                        if is_stutter: reasons.append(f"Stutter Loop (Ratio {ratio:.2f}s/w)")
-                        if is_empty: reasons.append("Empty Audio Truncation")
-                        if has_long_silence: reasons.append("Excessive Dead Air (>= 4s internal silence)")
-                        reason_str = " | ".join(reasons)
-                        if network_attempt < 2:
-                            logger.warning(
-                                f"  [SNR GATEKEEPER: {reason_str}] Generated {dur_sec:.1f}s for {word_count} words. "
-                                f"Retrying segment (Attempt {network_attempt+1}/3)..."
-                            )
-                            time.sleep(2.0)
-                            continue
-                        else:
-                            raise ValueError(
-                                f"SNR Gatekeeper rejected segment audio after 3 failed attempts: {reason_str} "
-                                f"(dur={dur_sec:.1f}s, words={word_count}, peak={peak_amp}, rms={rms:.1f})"
-                            )
+                        # Dead air / internal silence gap detector (prevents model pausing for 10s+ in long chunks)
+                        has_long_silence = False
+                        if dur_sec >= 6.0 and sample_count > 0:
+                            window = 24000
+                            silent_run = 0
+                            max_silent_run = 0
+                            for w_idx in range(0, sample_count, window):
+                                sub = samples[w_idx:w_idx + window]
+                                sub_rms = math.sqrt(sum(s * s for s in sub) / len(sub))
+                                if sub_rms < 15.0:
+                                    silent_run += 1
+                                    if silent_run > max_silent_run:
+                                        max_silent_run = silent_run
+                                else:
+                                    silent_run = 0
+                            if max_silent_run >= 4:
+                                has_long_silence = True
 
-                    # Atomically promote verified audio to target destination
-                    tmp_file.replace(output_file)
+                        has_defect = (is_clipped or is_silent_faint or is_dc_corrupted or is_stutter or is_empty or has_long_silence)
+                        if has_defect:
+                            reasons = []
+                            if is_clipped: reasons.append(f"Clipping Distortion (Consec Rail {max_consec} >= 6)")
+                            if is_silent_faint: reasons.append(f"Faint Audio (RMS {rms:.1f} < {faint_limit})")
+                            if is_dc_corrupted: reasons.append(f"DC Offset Anomaly ({dc_offset:.1f} > 1500)")
+                            if is_stutter: reasons.append(f"Stutter Loop (Ratio {ratio:.2f}s/w)")
+                            if is_empty: reasons.append("Empty Audio Truncation")
+                            if has_long_silence: reasons.append("Excessive Dead Air (>= 4s internal silence)")
+                            reason_str = " | ".join(reasons)
+                            if network_attempt < 2:
+                                logger.warning(
+                                    f"  [SNR GATEKEEPER: {reason_str}] Generated {dur_sec:.1f}s for {word_count} words. "
+                                    f"Retrying segment (Attempt {network_attempt+1}/3)..."
+                                )
+                                time.sleep(2.0)
+                                continue
+                            else:
+                                raise ValueError(
+                                    f"SNR Gatekeeper rejected segment audio after 3 failed attempts: {reason_str} "
+                                    f"(dur={dur_sec:.1f}s, words={word_count}, peak={peak_amp}, rms={rms:.1f})"
+                                )
 
-                    # Record success in persistent key pool
-                    pool.record_success(api_key)
-                    return output_file, dur_sec
+                        # Atomically promote verified audio to target destination
+                        tmp_file.replace(output_file)
+
+                        # Record success in persistent key pool
+                        pool.record_success(api_key)
+                        return output_file, dur_sec
+                    finally:
+                        if tmp_file.exists():
+                            try:
+                                tmp_file.unlink()
+                            except OSError:
+                                pass
 
             except urllib.error.HTTPError as e:
                 try:
@@ -821,7 +828,7 @@ def synthesize_gemini_multispeaker_batch(
                             )
 
                     output_file.parent.mkdir(parents=True, exist_ok=True)
-                    tmp_file = output_file.with_suffix(".tmp.wav")
+                    tmp_file = output_file.with_suffix(f".tmp_{uuid.uuid4().hex[:6]}.wav")
                     with wave.open(str(tmp_file), "wb") as wf:
                         wf.setnchannels(1)
                         wf.setsampwidth(2)
@@ -969,7 +976,7 @@ def slice_and_declick_batch(
 
         filter_str = ",".join(filter_parts)
 
-        tmp_slice = out_wav.with_suffix(".tmp.wav")
+        tmp_slice = out_wav.with_suffix(f".tmp_{uuid.uuid4().hex[:6]}.wav")
         cmd = [
             ffmpeg_bin, "-y",
             "-ss", f"{start_sec:.3f}",
@@ -1046,7 +1053,7 @@ class TTSDispatcher:
         self.rate_limiter = TokenBucketRateLimiter(rate_rpm=rpm)
         self.voice_map = self._load_voice_registry()
         self.alias_map, self.gender_map = self._load_character_roster()
-        self.ledger = ProjectStateLedger(self.project_dir)
+        self.ledger = ProjectStateLedger(self.project_dir, auto_recover=False)
         self.batching_enabled = DEFAULT_BATCHING_ENABLED
         self.forced_aligner = WorkstationForcedAligner() if DEFAULT_FORCED_ALIGNMENT_ENABLED else None
         self.batch_planner = BatchDispatchPlanner()
@@ -1545,7 +1552,7 @@ class TTSDispatcher:
             post_filters.append(f"afade=t=in:ss=0:d={f_sec:.3f}:curve=qsin")
             post_filters.append(f"afade=t=out:st={f_out_st:.3f}:d={f_sec:.3f}:curve=qsin")
 
-            tmp_calib = out_file.with_suffix(".calib.wav")
+            tmp_calib = out_file.with_suffix(f".calib_{uuid.uuid4().hex[:6]}.wav")
             ffmpeg_bin = get_ffmpeg()
             cmd = [
                 ffmpeg_bin, "-y",

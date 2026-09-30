@@ -342,6 +342,16 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - Multi-pass snapshot reversion guard: Immediate rollback if 2nd-pass refinement degrades score or fails QC.
   - `MasteringCertifier`: 5-pillar conservative hierarchy (`CERTIFIED`, `WARNINGS`, `REVIEW_REQUIRED`, `REJECTED`) with actionable `HumanReviewItem` packaging.
 
+### 19. Production Hardening, Telemetry Ledger & Fail-Closed Safety Suite (ADR-036)
+- **Production Telemetry Ledger (`audiobook_factory/telemetry.py`):** Multi-stage telemetry logging backed by SQLite WAL (`audiobooks/telemetry.db`) with zero table-locking overhead. Captures monotonic stage durations, Gemini API latency and token consumption, rate-limit cooldown events, and acoustic facts (True Peak, integrated LUFS, stereo phase correlation). Emits formatted production summaries to `audiobooks/TELEMETRY_REPORT.json`.
+- **Fail-Closed Quality Gates:** Rigid gating on Gate 0.1 (Extraction), Gate 1 (Character Roster & Voice Alignment), Gate 2.5 (Dramatic Fidelity), Gate 3.5 (Sound Bank Asset Verification), Gate 4.5 (Action Beat & Segment Pacing), Gate 5 (Master Acoustic Compliance), and Gate 6A–6D (Final Packaging Verification). Gate failures raise structured `GateAuditError` to prevent bad audio from propagating.
+- **Sample-Accurate Pre-Roll Breath Alignment:** Audio frames in `stitch_dialogue_track_from_ledger()` and timeline offsets in `resolve_timeline_start_offsets()` explicitly account for `pre_roll_breath_ms`, eliminating subtle micro-drifts between dialogue speech and Foley/BGM trigger points.
+- **DSP Inter-Sample Peak & Headroom Defense:** Lookahead peak limiting (`alimiter=limit=0.95`) injected into intermediate stem sum graphs (`cmd_me`, `cmd_premaster`) prevents 16-bit integer clipping prior to Stage 12 mastering; mastering filter graph inverted to `aresample -> loudnorm -> alimiter` to protect True Peak ceilings against sinc interpolation overshoots.
+- **Win32 Shell Overflow Shield:** Large multi-cue soundscape graphs automatically offload to temporary script files via `-filter_complex_script`, completely eliminating Windows 8,191-character command-line limits.
+- **Atomic File Writing with Lock Retry:** `atomic_write_json()` in `orchestrator.py` and M4B packaging in `packager.py` employ retry backoff to survive transient Windows indexing and antivirus file locks.
+- **Resilient CLAP GPU Fallback:** Graceful VRAM recovery and CPU inference fallback during PyTorch CUDA memory pressure, preventing pipeline termination or corrupted dummy embeddings.
+- **Security & Integrity:** Zero API keys or secrets in repository; `shell=False` enforced across subprocess calls, dynamic SQLite DDL column sanitization, and HTTP error socket lifecycle management.
+
 ---
 
 ## 📚 Complete Documentation Hub

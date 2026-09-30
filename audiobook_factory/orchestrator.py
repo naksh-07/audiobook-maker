@@ -23,7 +23,14 @@ def atomic_write_json(filepath: Path, data: Any, indent: int = 2) -> None:
     try:
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=indent)
-        os.replace(tmp_path, filepath)
+        for attempt in range(5):
+            try:
+                os.replace(tmp_path, filepath)
+                break
+            except (PermissionError, OSError):
+                if attempt == 4:
+                    raise
+                time.sleep(0.05 * (2 ** attempt))
     finally:
         if tmp_path.exists():
             try:
@@ -63,6 +70,7 @@ from audiobook_factory.gate_auditor import (
     audit_gate6c_toc_monotonicity,
     GateAuditError,
 )
+from audiobook_factory.telemetry import get_telemetry_ledger
 
 
 class PipelineOrchestrator:
@@ -110,108 +118,128 @@ class PipelineOrchestrator:
         logger.info(f"   Voice Lead : {voice}")
         logger.info("=======================================================\n")
 
-        # -------------------------------------------------------------
-        # Stage 1: Document Extraction
-        # -------------------------------------------------------------
-        logger.info("[Stage 1/6] Ingesting document and extracting chapters...")
-        meta = process_book_file(input_file, self.projects_dir, force_gate=force_gate)
-        book_slug = meta["book_id"]
-        project_dir = self.projects_dir / book_slug
-        ledger = ProjectStateLedger(project_dir)
-        ledger.set_meta("title", meta.get("title", book_slug))
-        ledger.set_meta("author", meta.get("author", "Unknown Author"))
-        ledger.set_meta("source_file", str(input_file))
-
-        # -------------------------------------------------------------
-        # Stage 2: Literary Translation (Sense-for-Sense Hindustani)
-        # -------------------------------------------------------------
-        if hindi:
-            logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
-            translate_book_project(project_dir, force_gate=force_gate)
-            # Inline Gate 0: Translation Coverage Verification
-            extracted_dir = project_dir / "extracted"
-            translation_dir = project_dir / "translation"
-            ext_files = sorted(extracted_dir.glob("chapter_*.md"))
-            for ef in ext_files:
-                tf = translation_dir / f"{ef.stem}_hi.md"
-                if not tf.exists():
-                    tf = translation_dir / ef.name
-                if tf.exists():
-                    try:
-                        g0_res = audit_gate0_translation(ef, tf)
-                        logger.info(f"[*] Gate 0 Translation Coverage: PASSED for {ef.name} ({g0_res.get('translation_chars')} chars)")
-                    except Exception as e:
-                        logger.warning(f"[!] Gate 0 Translation Coverage notice for {ef.name}: {e}")
-        else:
-            logger.info("\n[Stage 2/6] Translation skipped (English/Native language selected).")
-
-        # -------------------------------------------------------------
-        # Stage 3: Screenplay Attribution (Sliding Window, No Truncation)
-        # -------------------------------------------------------------
-        logger.info("\n[Stage 3/6] Generating screenplay scripts with dialogue attribution...")
-        scripts_dir = generate_project_scripts(
-            project_dir=project_dir,
-            use_hindi=hindi,
-            dramatized=dramatized,
+        telemetry = get_telemetry_ledger()
+        run_id = f"run_{int(time.time())}_{uuid.uuid4().hex[:6]}"
+        os.environ["CURRENT_AUDIOBOOK_RUN_ID"] = run_id
+        telemetry.start_run(
+            run_id=run_id,
+            project_id=f"proj-{input_file.stem}",
+            book_title=input_file.stem,
+            config={
+                "hindi": hindi,
+                "dramatized": dramatized,
+                "voice": voice,
+                "adult_literary_mode": adult_literary_mode,
+            },
         )
 
-        script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
-        if not script_files:
-            raise RuntimeError(f"No script files generated in {scripts_dir}")
+        try:
+            # -------------------------------------------------------------
+            # Stage 1: Document Extraction
+            # -------------------------------------------------------------
+            with telemetry.stage_timer(run_id, "Document Extraction", 1):
+                logger.info("[Stage 1/6] Ingesting document and extracting chapters...")
+                meta = process_book_file(input_file, self.projects_dir, force_gate=force_gate)
+                book_slug = meta["book_id"]
+                project_dir = self.projects_dir / book_slug
+                ledger = ProjectStateLedger(project_dir)
+                ledger.set_meta("title", meta.get("title", book_slug))
+                ledger.set_meta("author", meta.get("author", "Unknown Author"))
+                ledger.set_meta("source_file", str(input_file))
 
-        # Inline Gate 1: Voice Collision & Roster Sanity
-        roster_file = project_dir / "character_roster.json"
-        registry_file = project_dir / "voice_registry.json"
-        if roster_file.exists() or registry_file.exists():
-            try:
-                g1_res = audit_gate1_roster(
-                    roster_file=roster_file if roster_file.exists() else {},
-                    registry_file=registry_file if registry_file.exists() else {},
+            # -------------------------------------------------------------
+            # Stage 2: Literary Translation (Sense-for-Sense Hindustani)
+            # -------------------------------------------------------------
+            if hindi:
+                with telemetry.stage_timer(run_id, "Literary Translation", 2):
+                    logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
+                    translate_book_project(project_dir, force_gate=force_gate)
+                    # Inline Gate 0: Translation Coverage Verification
+                    extracted_dir = project_dir / "extracted"
+                    translation_dir = project_dir / "translation"
+                    ext_files = sorted(extracted_dir.glob("chapter_*.md"))
+                    for ef in ext_files:
+                        tf = translation_dir / f"{ef.stem}_hi.md"
+                        if not tf.exists():
+                            tf = translation_dir / ef.name
+                        if tf.exists():
+                            g0_res = audit_gate0_translation(ef, tf)
+                            logger.info(f"[*] Gate 0 Translation Coverage: PASSED for {ef.name} ({g0_res.get('translation_chars')} chars, ratio {g0_res.get('length_ratio')})")
+            else:
+                telemetry.record_stage(run_id, "Literary Translation", 2, duration_sec=0.0, status="SKIPPED")
+                logger.info("\n[Stage 2/6] Translation skipped (English/Native language selected).")
+
+            # -------------------------------------------------------------
+            # Stage 3: Screenplay Attribution (Sliding Window, No Truncation)
+            # -------------------------------------------------------------
+            with telemetry.stage_timer(run_id, "Screenplay Attribution", 3):
+                logger.info("\n[Stage 3/6] Generating screenplay scripts with dialogue attribution...")
+                scripts_dir = generate_project_scripts(
+                    project_dir=project_dir,
+                    use_hindi=hindi,
+                    dramatized=dramatized,
                 )
-                logger.info(f"[*] Gate 1 Character Roster & Voice Collision: PASSED ({g1_res.get('status')})")
-            except Exception as e:
-                logger.warning(f"[!] Gate 1 Roster Notice: {e}")
 
-        # Inline Gate 6A: Voice Continuity Across Chapters
-        try:
-            g6a_res = audit_gate6a_voice_continuity(project_dir)
-            if g6a_res.passed:
+                script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
+                if not script_files:
+                    raise RuntimeError(f"No script files generated in {scripts_dir}")
+
+                # Inline Gate 1: Voice Collision & Roster Sanity
+                roster_file = project_dir / "character_roster.json"
+                registry_file = project_dir / "voice_registry.json"
+                if roster_file.exists() or registry_file.exists():
+                    g1_res = audit_gate1_roster(
+                        roster_file=roster_file if roster_file.exists() else {},
+                        registry_file=registry_file if registry_file.exists() else {},
+                    )
+                    logger.info(f"[*] Gate 1 Character Roster & Voice Collision: PASSED ({g1_res.get('status')})")
+
+                # Inline Gate 6A: Voice Continuity Across Chapters
+                g6a_res = audit_gate6a_voice_continuity(project_dir)
+                if not g6a_res.passed:
+                    raise GateAuditError(f"Gate 6A Voice Continuity Failed across chapters: {'; '.join(g6a_res.errors)}")
                 logger.info("[*] Gate 6A Voice Continuity: PASSED across all chapters")
-            else:
-                logger.warning(f"[!] Gate 6A Voice Continuity notice: {g6a_res.errors}")
+
+            # -------------------------------------------------------------
+            # Stage 4 & 5: Concurrent Synthesis & 5-Track Cinematic Production
+            # -------------------------------------------------------------
+            with telemetry.stage_timer(run_id, "Cinematic Audio Production", 4):
+                logger.info(f"\n[Stage 4-5/6] 5-Track Cinematic Audio Drama Production across {len(script_files)} chapters (Workers: {workers})...")
+                for idx in range(1, len(script_files) + 1):
+                    logger.info(f"\n--- Producing Chapter {idx}/{len(script_files)} ---")
+                    self.produce_chapter(
+                        project_dir=project_dir,
+                        chapter_num=idx,
+                        voice=voice,
+                        workers=workers,
+                        duck_db=duck_db,
+                        spatial_staging=spatial_staging,
+                    )
+
+            # -------------------------------------------------------------
+            # Stage 6: Final M4B Containerization with Chapter Markers
+            # -------------------------------------------------------------
+            with telemetry.stage_timer(run_id, "M4B Container Packaging", 6):
+                logger.info("\n[Stage 6/6] Packaging final M4B container with chapter navigation & cover art...")
+                final_m4b = package_m4b_audiobook(project_dir, cover_image=cover_image)
+
+                # Inline Gate 6C: Table of Contents Monotonicity & Chapter Boundaries
+                try:
+                    g6c_res = audit_gate6c_toc_monotonicity(project_dir)
+                    if g6c_res.passed:
+                        logger.info("[*] Gate 6C Table of Contents Monotonicity: PASSED")
+                    else:
+                        logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {g6c_res.errors}")
+                except Exception as e:
+                    logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {e}")
+
+            telemetry.end_run(run_id, status="SUCCESS")
+            report_file = project_dir / "TELEMETRY_REPORT.json"
+            telemetry.generate_report(run_id, output_path=report_file)
+
         except Exception as e:
-            logger.warning(f"[!] Gate 6A Voice Continuity notice: {e}")
-
-        # -------------------------------------------------------------
-        # Stage 4 & 5: Concurrent Synthesis & 5-Track Cinematic Production
-        # -------------------------------------------------------------
-        logger.info(f"\n[Stage 4-5/6] 5-Track Cinematic Audio Drama Production across {len(script_files)} chapters (Workers: {workers})...")
-        for idx in range(1, len(script_files) + 1):
-            logger.info(f"\n--- Producing Chapter {idx}/{len(script_files)} ---")
-            self.produce_chapter(
-                project_dir=project_dir,
-                chapter_num=idx,
-                voice=voice,
-                workers=workers,
-                duck_db=duck_db,
-                spatial_staging=spatial_staging,
-            )
-
-        # -------------------------------------------------------------
-        # Stage 6: Final M4B Containerization with Chapter Markers
-        # -------------------------------------------------------------
-        logger.info("\n[Stage 6/6] Packaging final M4B container with chapter navigation & cover art...")
-        final_m4b = package_m4b_audiobook(project_dir, cover_image=cover_image)
-
-        # Inline Gate 6C: Table of Contents Monotonicity & Chapter Boundaries
-        try:
-            g6c_res = audit_gate6c_toc_monotonicity(project_dir)
-            if g6c_res.passed:
-                logger.info("[*] Gate 6C Table of Contents Monotonicity: PASSED")
-            else:
-                logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {g6c_res.errors}")
-        except Exception as e:
-            logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {e}")
+            telemetry.end_run(run_id, status="FAILED", error=str(e))
+            raise
 
         elapsed_min = round((time.time() - start_time) / 60.0, 1)
         progress = ledger.get_progress()
@@ -219,6 +247,7 @@ class PipelineOrchestrator:
         logger.info("\n=======================================================")
         logger.info("   [SUCCESS] NOVEL AUDIOBOOK PRODUCTION COMPLETED!    ")
         logger.info(f"   Deliverable   : {final_m4b}")
+        logger.info(f"   Telemetry     : {report_file}")
         logger.info(f"   Total Segments: {progress['completed']}/{progress['total_segments']}")
         logger.info(f"   Audio Duration: {progress['total_duration_min']} minutes")
         logger.info(f"   Total Elapsed : {elapsed_min} minutes")
@@ -499,12 +528,32 @@ class PipelineOrchestrator:
                 logger.warning(f"[!] Gate 5.3 Stereo Phase notice: {e}")
 
         # Gate 5: Broadcast Master EBU R128 Probe
+        gate5_certified = False
         if cinematic_out.exists():
             try:
                 gate5_res = audit_gate5_master(cinematic_out, target_lufs=-19.0, tolerance_lu=2.0, max_true_peak=-1.4)
+                gate5_certified = (gate5_res.get("status") == "PASS")
                 logger.info(f"[*] Gate 5 Broadcast Master: PASSED (LUFS: {gate5_res.get('integrated_lufs')}, TP: {gate5_res.get('true_peak_dbtp')})")
+                if gate5_certified:
+                    try:
+                        t_ledger = get_telemetry_ledger()
+                        phase_corr = float(gate53_res.details.get("mean_phase_correlation", 1.0)) if ('gate53_res' in locals() and gate53_res.passed) else 1.0
+                        t_ledger.record_acoustic_metrics(
+                            run_id=os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", f"chap_{chapter_num}"),
+                            chapter_num=chapter_num,
+                            duration_sec=float(gate5_res.get("duration_sec", 0.0) or 0.0),
+                            integrated_lufs=float(gate5_res.get("integrated_lufs", -19.0)),
+                            true_peak_dbtp=float(gate5_res.get("true_peak_dbtp", -1.5)),
+                            loudness_range_lu=float(gate5_res.get("loudness_range_lu", 0.0) or 0.0),
+                            phase_correlation=phase_corr,
+                        )
+                    except Exception as te:
+                        logger.debug(f"Telemetry acoustic recording notice: {te}")
+            except GateAuditError:
+                raise
             except Exception as e:
-                logger.warning(f"[!] Gate 5 Broadcast Master notice: {e}")
+                logger.error(f"[!] 🛑 Gate 5 Broadcast Master FAILED for Chapter {chapter_num:02d}: {e}")
+                raise GateAuditError(f"Chapter {chapter_num:02d} master failed EBU R128 broadcast certification: {e}")
 
         # 6. Build Millisecond Timeline Ledger (Canonical in scripts_dir, mirrored to bgm_dir)
         ledger_file = scripts_dir / f"{chap_stem}_timeline_ledger.json"
@@ -535,7 +584,7 @@ class PipelineOrchestrator:
         #    Safety Invariant: Chunks are NEVER purged if cinematic master failed, is corrupt,
         #    or if AUDIOBOOK_RETAIN_CHUNKS is set.
         retain_chunks_flag = os.environ.get("AUDIOBOOK_RETAIN_CHUNKS", "").lower() in ("1", "true", "yes")
-        master_certified = cinematic_out.exists() and cinematic_out.stat().st_size > 1000
+        master_certified = cinematic_out.exists() and gate5_certified and cinematic_out.stat().st_size > 1000
 
         chunk_pattern = f"c{chapter_num:03d}_*.wav"
         all_chunks = list(audio_dir.glob(chunk_pattern))
@@ -544,7 +593,7 @@ class PipelineOrchestrator:
             logger.info(f"  [JANITOR] Retaining {len(all_chunks)} raw WAV chunks for chapter {chapter_num:02d} (AUDIOBOOK_RETAIN_CHUNKS enabled).")
         elif not master_certified:
             logger.warning(
-                f"  [JANITOR SHIELD] Master render missing or incomplete for chapter {chapter_num:02d}. "
+                f"  [JANITOR SHIELD] Master render missing or Gate 5 uncertified for chapter {chapter_num:02d}. "
                 f"Retaining {len(all_chunks)} raw WAV chunks to protect synthesized progress."
             )
         else:

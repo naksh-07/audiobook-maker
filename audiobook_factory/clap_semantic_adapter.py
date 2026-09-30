@@ -104,17 +104,18 @@ class CLAPSemanticAdapter:
                 inputs = {k: v.to(device) for k, v in inputs.items()}
 
                 with torch.inference_mode():
-                    out = model.get_audio_features(**inputs)
-                    if hasattr(out, "pooler_output"):
-                        embed = out.pooler_output
-                    elif hasattr(out, "last_hidden_state"):
-                        embed = out.last_hidden_state[:, 0, :]
-                    else:
-                        embed = out
-                    embed = embed / embed.norm(dim=-1, keepdim=True)
-                    vec = embed.squeeze(0).cpu().numpy().astype(np.float32)
-                    window_vectors.append(vec)
-                    weights.append(max(rms, 1e-4))
+                    with self._model_manager.manage_gpu_memory():
+                        out = model.get_audio_features(**inputs)
+                        if hasattr(out, "pooler_output"):
+                            embed = out.pooler_output
+                        elif hasattr(out, "last_hidden_state"):
+                            embed = out.last_hidden_state[:, 0, :]
+                        else:
+                            embed = out
+                        embed = embed / embed.norm(dim=-1, keepdim=True)
+                        vec = embed.squeeze(0).cpu().numpy().astype(np.float32)
+                        window_vectors.append(vec)
+                        weights.append(max(rms, 1e-4))
 
             # Energy-weighted average and L2 normalize
             total_weight = sum(weights)
@@ -127,15 +128,16 @@ class CLAPSemanticAdapter:
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
             with torch.inference_mode():
-                out = model.get_audio_features(**inputs)
-                if hasattr(out, "pooler_output"):
-                    embed = out.pooler_output
-                elif hasattr(out, "last_hidden_state"):
-                    embed = out.last_hidden_state[:, 0, :]
-                else:
-                    embed = out
-                embed = embed / embed.norm(dim=-1, keepdim=True)
-                vector = embed.squeeze(0).cpu().numpy().astype(np.float32)
+                with self._model_manager.manage_gpu_memory():
+                    out = model.get_audio_features(**inputs)
+                    if hasattr(out, "pooler_output"):
+                        embed = out.pooler_output
+                    elif hasattr(out, "last_hidden_state"):
+                        embed = out.last_hidden_state[:, 0, :]
+                    else:
+                        embed = out
+                    embed = embed / embed.norm(dim=-1, keepdim=True)
+                    vector = embed.squeeze(0).cpu().numpy().astype(np.float32)
 
         provenance = ProvenanceRecord(
             source_method="semantic_model",
@@ -202,17 +204,18 @@ class CLAPSemanticAdapter:
                 inputs = processor(audio=chunk, sampling_rate=48000, return_tensors="pt", padding=True)
                 inputs = {k: v.to(device) for k, v in inputs.items()}
                 with torch.inference_mode():
-                    out = model.get_audio_features(**inputs)
-                    if hasattr(out, "pooler_output"):
-                        embed = out.pooler_output
-                    elif hasattr(out, "last_hidden_state"):
-                        embed = out.last_hidden_state[:, 0, :]
-                    else:
-                        embed = out
-                    embed = embed / embed.norm(dim=-1, keepdim=True)
-                    vecs = embed.cpu().numpy().astype(np.float32)
-                    for v in vecs:
-                        all_vectors.append(v)
+                    with self._model_manager.manage_gpu_memory():
+                        out = model.get_audio_features(**inputs)
+                        if hasattr(out, "pooler_output"):
+                            embed = out.pooler_output
+                        elif hasattr(out, "last_hidden_state"):
+                            embed = out.last_hidden_state[:, 0, :]
+                        else:
+                            embed = out
+                        embed = embed / embed.norm(dim=-1, keepdim=True)
+                        vecs = embed.cpu().numpy().astype(np.float32)
+                        for v in vecs:
+                            all_vectors.append(v)
             except Exception as e:
                 logger.warning(f"Batch embedding failed for chunk {i}:{i+batch_size} ({e}), falling back to single-item")
                 # Fallback to single-item processing for this chunk
@@ -221,14 +224,26 @@ class CLAPSemanticAdapter:
                         inp_s = processor(audio=wf_single, sampling_rate=48000, return_tensors="pt")
                         inp_s = {k: v.to(device) for k, v in inp_s.items()}
                         with torch.inference_mode():
-                            o = model.get_audio_features(**inp_s)
-                            e = o.pooler_output if hasattr(o, "pooler_output") else o
-                            e = e / e.norm(dim=-1, keepdim=True)
-                            all_vectors.append(e.squeeze(0).cpu().numpy().astype(np.float32))
-                    except Exception:
-                        dummy = np.random.randn(self.embedding_dim).astype(np.float32)
-                        dummy /= np.linalg.norm(dummy)
-                        all_vectors.append(dummy)
+                            with self._model_manager.manage_gpu_memory():
+                                o = model.get_audio_features(**inp_s)
+                                e = o.pooler_output if hasattr(o, "pooler_output") else o
+                                e = e / e.norm(dim=-1, keepdim=True)
+                    except Exception as err:
+                        logger.warning(f"GPU processing failed for single audio item ({err}), attempting CPU fallback")
+                        try:
+                            self._model_manager.clear_vram()
+                            inp_cpu = processor(audio=wf_single, sampling_rate=48000, return_tensors="pt")
+                            model_cpu = model.to("cpu")
+                            with torch.inference_mode():
+                                o = model_cpu.get_audio_features(**inp_cpu)
+                                e = o.pooler_output if hasattr(o, "pooler_output") else o
+                                e = e / e.norm(dim=-1, keepdim=True)
+                                all_vectors.append(e.squeeze(0).cpu().numpy().astype(np.float32))
+                            if str(device) != "cpu":
+                                model.to(device)
+                        except Exception as cpu_err:
+                            logger.error(f"CPU fallback also failed ({cpu_err}), using zero vector placeholder")
+                            all_vectors.append(np.zeros(self.embedding_dim, dtype=np.float32))
 
         # Clean VRAM once after the entire batch finishes
         self._model_manager.clear_vram()

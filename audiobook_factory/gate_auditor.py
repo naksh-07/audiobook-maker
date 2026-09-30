@@ -60,10 +60,18 @@ def audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dic
     if len(trans_text) < 100:
         raise GateAuditError(f"Gate 0 Failed: Translation text suspiciously short ({len(trans_text)} chars)")
 
+    ratio = len(trans_text) / len(ext_text)
+    if ratio < 0.65 or ratio > 1.85:
+        raise GateAuditError(
+            f"Gate 0 Failed: Translation character length ratio {ratio:.2f} is outside acceptable range [0.65, 1.85] "
+            f"(extracted: {len(ext_text)}, translation: {len(trans_text)})"
+        )
+
     return {
         "status": "PASS",
         "extracted_chars": len(ext_text),
         "translation_chars": len(trans_text),
+        "length_ratio": round(ratio, 3),
         "extracted_lines": len(ext_text.splitlines()),
         "translation_lines": len(trans_text.splitlines()),
     }
@@ -898,20 +906,24 @@ def audit_gate5_master(
     cmd = [
         ffmpeg_bin, "-y",
         "-i", str(master_file),
-        "-af", "ebur128=framelog=verbose",
+        "-af", "ebur128=peak=true:framelog=verbose",
         "-f", "null", "-"
     ]
     try:
         proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
         output = proc.stderr
         i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
-        tp_match = re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output) or re.search(r"True peak:\s+([-\d.]+)\s+dBFS", output)
+        tp_match = re.search(r"True peak:\s+Peak:\s+([-\d.]+)(?:\s+([-\d.]+))?", output) or re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output)
 
         if not i_match:
             raise GateAuditError(f"Gate 5 Failed: Could not parse Integrated Loudness from FFmpeg output on {master_file}")
 
         measured_lufs = float(i_match.group(1))
-        measured_tp = float(tp_match.group(1)) if tp_match else -1.5
+        if tp_match:
+            tp_vals = [float(v) for v in tp_match.groups() if v is not None]
+            measured_tp = max(tp_vals) if tp_vals else -1.5
+        else:
+            measured_tp = -1.5
     except GateAuditError:
         raise
     except Exception as e:
@@ -1386,7 +1398,7 @@ def audit_gate6b_loudness_continuity(
         cmd = [
             ffmpeg_bin, "-y",
             "-i", str(c_path),
-            "-af", "ebur128=framelog=verbose",
+            "-af", "ebur128=peak=true:framelog=verbose",
             "-f", "null", "-"
         ]
         try:
@@ -1401,7 +1413,7 @@ def audit_gate6b_loudness_continuity(
             else:
                 output = proc.stderr
                 i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
-                tp_match = re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output) or re.search(r"True peak:\s+([-\d.]+)\s+dBFS", output)
+                tp_match = re.search(r"True peak:\s+Peak:\s+([-\d.]+)(?:\s+([-\d.]+))?", output) or re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output)
                 if not i_match:
                     if strict:
                         errors.append(f"Chapter {c_path.name}: Failed to parse Integrated Loudness from FFmpeg output.")
@@ -1411,7 +1423,11 @@ def audit_gate6b_loudness_continuity(
                         m_tp = -1.5
                 else:
                     m_lufs = float(i_match.group(1))
-                    m_tp = float(tp_match.group(1)) if tp_match else -1.5
+                    if tp_match:
+                        tp_vals = [float(v) for v in tp_match.groups() if v is not None]
+                        m_tp = max(tp_vals) if tp_vals else -1.5
+                    else:
+                        m_tp = -1.5
         except Exception as e:
             if strict:
                 errors.append(f"Chapter {c_path.name}: FFmpeg loudness probe failed: {e}")

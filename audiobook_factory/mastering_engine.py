@@ -178,6 +178,15 @@ class MasteringEngineV2:
 
         filter_chain_parts = [f"highpass=f={profile.subsonic_highpass_hz}"]
 
+        if dither_method == "none":
+            filter_chain_parts.append(
+                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser"
+            )
+        else:
+            filter_chain_parts.append(
+                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser:dither_method={dither_method}"
+            )
+
         if profile.enable_dual_pass_linear and not is_silent:
             loudnorm_filter = (
                 f"loudnorm=I={target_lufs:.1f}:TP={profile.true_peak_ceiling_dbtp:.1f}:"
@@ -201,14 +210,6 @@ class MasteringEngineV2:
         filter_chain_parts.append(
             f"alimiter=limit={lim_linear:.4f}:attack=5:release={profile.limiter_release_ms}:asc=0:level=0"
         )
-        if dither_method == "none":
-            filter_chain_parts.append(
-                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser"
-            )
-        else:
-            filter_chain_parts.append(
-                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser:dither_method={dither_method}"
-            )
 
         filter_chain = ",".join(filter_chain_parts)
 

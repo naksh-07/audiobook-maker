@@ -70,10 +70,10 @@ class SoundBank:
 
     @contextlib.contextmanager
     def _get_conn(self) -> Generator[sqlite3.Connection, None, None]:
-        conn = sqlite3.connect(str(self.db_path), timeout=20.0)
+        conn = sqlite3.connect(str(self.db_path), timeout=30.0)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA busy_timeout=5000;")
+        conn.execute("PRAGMA busy_timeout=30000;")
         try:
             yield conn
             conn.commit()
@@ -176,6 +176,8 @@ class SoundBank:
             ]
             for col_name, col_type in column_defs:
                 if col_name not in existing_cols:
+                    if not re.match(r"^[a-zA-Z0-9_]+$", col_name):
+                        raise ValueError(f"Invalid column name: {col_name}")
                     conn.execute(f"ALTER TABLE sound_catalog ADD COLUMN {col_name} {col_type};")
 
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sound_catalog_lufs ON sound_catalog(integrated_lufs);")

@@ -52,6 +52,61 @@ def get_audio_duration(file_path: Path) -> float:
     return 60.0
 
 
+def resolve_timeline_start_offsets(
+    segment_durations: Dict[int, float],
+    timeline_ledger: Optional[Any] = None,
+    script_segments: Optional[List[Dict[str, Any]]] = None,
+    default_pause_ms: int = 400,
+) -> Dict[int, float]:
+    """
+    Computes sample-accurate segment start offsets in seconds.
+    Priority 1: Post-editorial TimelineLedger (actual rendered audio timestamps).
+    Priority 2: Sum of script-aware dynamic pause_after_ms + pre_roll_breath_ms.
+    Priority 3: Default pause_ms accumulation.
+    """
+    seg_starts: Dict[int, float] = {}
+    if timeline_ledger:
+        segs = getattr(timeline_ledger, "segments", None)
+        if segs is None and isinstance(timeline_ledger, dict):
+            segs = timeline_ledger.get("segments") or timeline_ledger.get("timeline")
+        if segs:
+            for seg in segs:
+                if isinstance(seg, dict):
+                    s_idx = seg.get("segment_index") if seg.get("segment_index") is not None else seg.get("index")
+                    start_ms = seg.get("start_ms", seg.get("t_start_ms", 0.0))
+                else:
+                    s_idx = getattr(seg, "segment_index", None) or getattr(seg, "index", None)
+                    start_ms = getattr(seg, "start_ms", 0.0)
+                if s_idx is not None:
+                    seg_starts[int(s_idx)] = float(start_ms) / 1000.0
+            if seg_starts:
+                return seg_starts
+
+    # Priority 2: Script-aware dynamic pauses + pre_roll_breath_ms
+    curr_t = 0.0
+    seg_meta_by_idx = {}
+    if script_segments:
+        for s in script_segments:
+            if isinstance(s, dict) and "index" in s:
+                seg_meta_by_idx[int(s["index"])] = s
+            elif hasattr(s, "index"):
+                seg_meta_by_idx[int(getattr(s, "index"))] = s
+
+    for s_idx in sorted(segment_durations.keys()):
+        seg_info = seg_meta_by_idx.get(s_idx, {})
+        if isinstance(seg_info, dict):
+            pre_breath = float(seg_info.get("pre_roll_breath_ms", 0) or 0) / 1000.0
+            pause_ms = float(seg_info.get("pause_after_ms", default_pause_ms) or default_pause_ms) / 1000.0
+        else:
+            pre_breath = float(getattr(seg_info, "pre_roll_breath_ms", 0) or 0) / 1000.0
+            pause_ms = float(getattr(seg_info, "pause_after_ms", default_pause_ms) or default_pause_ms) / 1000.0
+
+        seg_starts[s_idx] = curr_t + pre_breath
+        curr_t = seg_starts[s_idx] + segment_durations[s_idx] + pause_ms
+
+    return seg_starts
+
+
 def detect_chapter_mood(chapter_text: str, model: str | None = None) -> Dict[str, Any]:
     """
     Use Gemini Flash to analyze the emotional narrative and tone of a chapter/scene.
@@ -817,11 +872,11 @@ def render_hierarchical_soundscape(
         # 3. Level 1: Leitmotifs & Level 3 Accent Stingers (Time-Aligned Hits)
         time_aligned_events = []
         if segment_durations:
-            seg_starts = {}
-            curr_t = 0.0
-            for s_idx in sorted(segment_durations.keys()):
-                seg_starts[s_idx] = curr_t
-                curr_t += segment_durations[s_idx] + (pause_ms / 1000.0)
+            seg_starts = resolve_timeline_start_offsets(
+                segment_durations=segment_durations,
+                timeline_ledger=plan.get("timeline_ledger") if isinstance(plan, dict) else getattr(plan, "timeline_ledger", None),
+                default_pause_ms=pause_ms,
+            )
 
             # Level 1 Leitmotifs
             for lm in plan.get("level1_leitmotifs", []):
@@ -976,13 +1031,29 @@ def render_multitrack_chapter_audio(
     vocal_dur = get_audio_duration(vocal_file)
     bank = get_sound_bank()
 
-    # 1. Timeline Segmentation
+    # 1. Timeline Segmentation (Ledger-Authoritative Sync)
     seg_starts = {}
-    curr_t = 0.0
     if segment_durations:
-        for s_idx in sorted(segment_durations.keys()):
-            seg_starts[s_idx] = curr_t
-            curr_t += segment_durations[s_idx] + (pause_ms / 1000.0)
+        active_ledger = None
+        ledger_candidates = [
+            vocal_file.parent.parent / "scripts" / f"{vocal_file.stem.replace('_dialogue', '')}_timeline_ledger.json",
+            vocal_file.parent / f"{vocal_file.stem.replace('_dialogue', '')}_timeline_ledger.json",
+        ]
+        for lc in ledger_candidates:
+            if lc.exists():
+                try:
+                    with open(lc, "r", encoding="utf-8") as lf:
+                        from audiobook_factory.contracts import TimelineLedger
+                        active_ledger = TimelineLedger.model_validate_json(lf.read())
+                        break
+                except Exception:
+                    pass
+
+        seg_starts = resolve_timeline_start_offsets(
+            segment_durations=segment_durations,
+            timeline_ledger=active_ledger,
+            default_pause_ms=pause_ms,
+        )
 
     # 2. Resolve Foley Events
     foley_cues = cue_sheet.get("foley_cues", []) if cue_sheet else []
@@ -1019,36 +1090,67 @@ def render_multitrack_chapter_audio(
     primary_env = cue_sheet.get("primary_environment", "dense_forest_night") if cue_sheet else "dense_forest_night"
     resolve_environment_ambience(primary_env, vocal_dur, amb_raw)
 
-    # 4. Render Foley Bus (if any Foley events found)
+    # 4. Render Foley Bus (Chunked to prevent Win32 8191 CLI overflow)
     foley_bus_file = tmp_dir / "foley_bus.wav"
     has_foley = False
     if valid_foley_events:
-        print(f"[*] Assembling Foley Bus with {len(valid_foley_events)} physical object cues...")
-        foley_slice = valid_foley_events
-        f_inputs = []
-        f_filters = []
-        for idx, (f_path, t_ms, vol) in enumerate(foley_slice):
-            f_inputs.extend(["-i", str(f_path)])
-            f_filters.append(f"[{idx}:a]adelay={t_ms}|{t_ms},volume={vol:.2f}[f_{idx}]")
+        print(f"[*] Assembling Foley Bus with {len(valid_foley_events)} physical object cues (Chunked)...")
+        chunk_size = 15
+        sub_bus_files = []
+        for c_idx in range(0, len(valid_foley_events), chunk_size):
+            foley_slice = valid_foley_events[c_idx : c_idx + chunk_size]
+            sub_bus_file = tmp_dir / f"foley_sub_{c_idx//chunk_size:03d}.wav"
+            f_inputs = []
+            f_filters = []
+            for idx, (f_path, t_ms, vol) in enumerate(foley_slice):
+                f_inputs.extend(["-i", str(f_path)])
+                f_filters.append(f"[{idx}:a]adelay={t_ms}|{t_ms},volume={vol:.2f}[f_{idx}]")
 
-        f_mix_ins = "".join(f"[f_{i}]" for i in range(len(foley_slice)))
-        f_filter_str = ";".join(f_filters) + f";{f_mix_ins}amix=inputs={len(foley_slice)}:normalize=0[fout]"
+            f_mix_ins = "".join(f"[f_{i}]" for i in range(len(foley_slice)))
+            f_filter_str = ";".join(f_filters) + f";{f_mix_ins}amix=inputs={len(foley_slice)}:normalize=0[fout]"
 
-        foley_cmd = [
-            ffmpeg, "-y",
-            *f_inputs,
-            "-filter_complex", f_filter_str,
-            "-map", "[fout]",
-            "-t", f"{vocal_dur + 1.0:.2f}",
-            "-ar", "48000",
-            "-c:a", "pcm_s16le",
-            str(foley_bus_file),
-        ]
-        try:
-            subprocess.run(foley_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            foley_cmd = [
+                ffmpeg, "-y",
+                *f_inputs,
+                "-filter_complex", f_filter_str,
+                "-map", "[fout]",
+                "-t", f"{vocal_dur + 1.0:.2f}",
+                "-ar", "48000",
+                "-c:a", "pcm_s16le",
+                str(sub_bus_file),
+            ]
+            try:
+                subprocess.run(foley_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if sub_bus_file.exists() and sub_bus_file.stat().st_size > 1000:
+                    sub_bus_files.append(sub_bus_file)
+            except Exception as e:
+                print(f"  [!] Sub-Foley chunk assembly notice ({c_idx}): {e}")
+
+        if len(sub_bus_files) == 1:
+            shutil.copy2(sub_bus_files[0], foley_bus_file)
             has_foley = foley_bus_file.exists() and foley_bus_file.stat().st_size > 5000
-        except Exception as e:
-            print(f"  [!] Foley bus assembly notice: {e}")
+        elif len(sub_bus_files) > 1:
+            merge_inputs = []
+            for sf in sub_bus_files:
+                merge_inputs.extend(["-i", str(sf)])
+            merge_filter = f"amix=inputs={len(sub_bus_files)}:normalize=0[fout]"
+            merge_cmd = [
+                ffmpeg, "-y",
+                *merge_inputs,
+                "-filter_complex", merge_filter,
+                "-map", "[fout]",
+                "-t", f"{vocal_dur + 1.0:.2f}",
+                "-ar", "48000",
+                "-c:a", "pcm_s16le",
+                str(foley_bus_file),
+            ]
+            try:
+                subprocess.run(merge_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                has_foley = foley_bus_file.exists() and foley_bus_file.stat().st_size > 5000
+            except Exception as e:
+                print(f"  [!] Foley sub-bus merge notice: {e}")
+                has_foley = False
+        else:
             has_foley = False
 
     # 5. Master Multi-Bus Assembly
