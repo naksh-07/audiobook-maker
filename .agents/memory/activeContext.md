@@ -1,14 +1,16 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: Stage 11 Cinematic Mix v2
+# Active Context: Mastering V2 & Audio Engine
 
-## Live Sprint State: Prompt 5 (Final Integration + Optimization + Independent Audit) Complete
-- **Status**: PRODUCTION READY. All 115 tests passing across 8 test suites (100% green).
-- **Final Architecture Delivered**:
-  - **End-to-End Orchestrator & Engine Integration**: `render_discrete_stems()` executes `MixJudge`, persists `mix_judge_audit` into `StemLedger.metadata`, and supports bounded remediation (`RemixController`).
-  - **High-Performance Analysis Caching**: `DeterministicAudioAnalyzer` and `MixJudge` stat-based caching (`_format_cache`, `_loudness_cache`, `_corridor_cache`, `_phase_cache`) eliminates redundant FFmpeg and SciPy overhead.
-  - **Single Source of Truth**: Unified `MixAutomation` timeline (Levels 10-50), no parallel models, verified contracts for `SceneMixIntent`, `AttentionMap`, and `MixJudgeResult`.
-  - **Golden Suite**: 20/20 canonical scenarios passing in 19.48s.
-- **Verification**: 115/115 tests passing across 8 suites (`test_cinematic_mix_integration.py` [5], `test_cinematic_mix_golden.py` [9], `test_cinematic_mix_judge.py` [11], `test_cinematic_mix_behavior.py` [17], `test_cinematic_mix_automation.py` [31], `test_cinematic_mix_foundation.py` [22], `test_uncompromised_cinema_audio.py` [14], `test_cinema_pipeline_upgrade.py` [6]).
-- **Output Contract**: Stage 11 produces `CINEMATIC_MIX_PREMASTER` feeding Stage 12 Mastering.
+## Live Sprint State: Mastering V2 - Mission 4 Complete (Perceptual Premium Layer)
+- **Status**: MISSION 4 FULLY IMPLEMENTED & CERTIFIED. 109/109 tests passing green.
+- **P4 Capabilities Delivered**:
+  - **PerceptualCritic**: 7 aesthetic axes (Intelligibility, Naturalness, Tonal Balance, Dynamic Integrity, Emotional Preservation, Spatial Coherence, Fatigue Risk Indicators) with empirical grounding & confidence scoring.
+  - **ReferenceMasteringAuditor**: 7 canonical acoustic profiles (`narration`, `dialogue`, `intimate`, `emotional`, `action`, `quiet`, `music_heavy`) with inappropriate comparison guards (`REFERENCE != TRUTH`).
+  - **SceneAwareDecisionEngine**: Maps narrative intent to bounded adjustments (`quiet != bad`, `loud != good`).
+  - **Multi-Pass Review & Reversion Guard**: Bounded 2nd-pass refinement with automatic rollback snapshot if score degrades or QC fails.
+  - **MasteringCertifier**: 5-pillar conservative production release gate (`CERTIFIED`, `WARNINGS`, `REVIEW_REQUIRED`, `REJECTED`) with actionable `HumanReviewItem` packaging.
+  - **Golden Suite Calibration**: Governed baseline v2.2.0 audited with 10 canonical golden fixtures passing.
+- **Verification Matrix**: 64/64 Stage 12 Mastering tests + 45/45 Stage 11 Mix Automation tests = 109/109 green.
+- **Next Phase**: Production deployment or live novel end-to-end rendering.

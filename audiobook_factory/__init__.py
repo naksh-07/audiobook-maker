@@ -100,6 +100,34 @@ from .cinema_audio_engine import (
     StemMetadata,
     StemLedger,
 )
+from .mastering_contracts import (
+    MasteringProfile,
+    MasteringAnalysisFacts,
+    MasteringQCResult,
+    MasteringRequest,
+    MasteringResult,
+    MasteringLedger,
+    MasteringIssueSeverity,
+    MasteringIssue,
+    MasteringActionPlan,
+    DialogueProtectionReport,
+    BookMasterProfile,
+    DimensionDeviation,
+    ChapterConsistencyAudit,
+    BookConsistencyReport,
+)
+from .mastering_analyzer import MasteringAnalyzer
+from .mastering_qc import MasteringQCAgent
+from .mastering_engine import MasteringEngineV2
+from .mastering_judge import MasteringJudge
+from .dialogue_protection import DialogueProtectionAgent
+from .book_master_profile import BookMasterProfileBuilder
+from .chapter_consistency import ChapterConsistencyAuditor, BookConsistencyReportBuilder
+from .golden_mastering_suite import GoldenMasteringSuite
+from .perceptual_critic import PerceptualCritic
+from .reference_mastering import ReferenceMasteringAuditor, CANONICAL_REFERENCE_PROFILES
+from .scene_aware_engine import SceneAwareDecisionEngine
+from .mastering_certification import MasteringCertifier
 from .cinematic_mix import (
     SceneMixIntent,
     AttentionMap,

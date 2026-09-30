@@ -554,6 +554,9 @@ class TestEngineAdapterAndCinemaAudioEngine(unittest.TestCase):
         self.assertIn("CINEMATIC_MIX_PREMASTER", ledger.stems)
         self.assertIn("FULL_MASTER", ledger.stems)
         self.assertEqual(ledger.premaster.stem_type, "CINEMATIC_MIX_PREMASTER")
+        self.assertTrue(Path(ledger.stems["CINEMATIC_MIX_PREMASTER"].filepath).exists())
+        self.assertTrue(Path(ledger.stems["FULL_MASTER"].filepath).exists())
+        self.assertNotEqual(ledger.stems["CINEMATIC_MIX_PREMASTER"].filepath, ledger.stems["FULL_MASTER"].filepath)
 
         # Verify Stage 11 metadata and inspectable decisions recorded in ledger
         self.assertIn("mix_automation", ledger.metadata)

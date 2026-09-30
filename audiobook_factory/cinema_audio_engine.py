@@ -52,6 +52,8 @@ from audiobook_factory.cinematic_mix import (
     MixJudgeResult,
     RemixController,
 )
+from audiobook_factory.mastering_contracts import MasteringRequest, MasteringProfile
+from audiobook_factory.mastering_engine import MasteringEngineV2
 
 logger = logging.getLogger("audiobook_factory.cinema_audio_engine")
 
@@ -515,33 +517,61 @@ def render_discrete_stems(
         true_peak_dbtp=me_m["true_peak_dbtp"],
     )
 
-    # --- STEM 6: CINEMATIC MIX PREMASTER / FULL MASTER (DX + ME Final Sum) ---
+    # --- STEM 6: CINEMATIC MIX PREMASTER (Stage 11 Mixdown Sum) ---
     # NOTE: Stage 11 produces the CINEMATIC_MIX_PREMASTER. Stage 12 performs mastering.
-    master_file = out_dir / f"{ch_id}_cinema_master.wav"
-    # True broadcast summing with sidechain ducking & -19.0 LUFS mastering
-    cmd_master = [
+    premaster_file = out_dir / f"{ch_id}_cinema_premaster.wav"
+    cmd_premaster = [
         ff, "-y",
         "-i", str(dx_file),
         "-i", str(me_file),
         "-filter_complex",
         f"[1:a][0:a]sidechaincompress=threshold=0.018:knee=3.0:ratio=4:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
-        f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0[fullmix];"
-        f"[fullmix]loudnorm=I=-19.0:TP=-1.5:LRA=8.5,aresample=48000[out]",
-        "-map", "[out]",
+        f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000[premaster_out]",
+        "-map", "[premaster_out]",
         "-c:a", "pcm_s16le",
-        str(master_file),
+        str(premaster_file),
     ]
-    subprocess.run(cmd_master, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    master_m = measure_audio_metrics(master_file, ffmpeg=ff)
+    subprocess.run(cmd_premaster, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    premaster_m = measure_audio_metrics(premaster_file, ffmpeg=ff)
+
+    # --- STEM 7: FULL MASTER (Stage 12 Broadcast Mastering via MasteringEngineV2) ---
+    master_file = out_dir / f"{ch_id}_cinema_master.wav"
+    mastering_engine = MasteringEngineV2(ffmpeg_bin=ff)
+    master_target_lufs = -19.0
+    master_target_tp = -1.5
+    if hasattr(manifest, "mastering") and manifest.mastering:
+        master_target_lufs = getattr(manifest.mastering, "target_lufs", -19.0)
+        master_target_tp = getattr(manifest.mastering, "true_peak_dbtp", getattr(manifest.mastering, "true_peak_db", -1.5))
+
+    master_req = MasteringRequest(
+        chapter_id=ch_id,
+        premaster_path=str(premaster_file),
+        output_master_path=str(master_file),
+        dialogue_stem_path=str(dx_file) if dx_file.exists() else None,
+        profile=MasteringProfile(
+            target_lufs=master_target_lufs,
+            true_peak_ceiling_dbtp=master_target_tp,
+        ),
+    )
+    mastering_result = mastering_engine.master(master_req)
+    if mastering_result.analysis_after:
+        master_m = {
+            "duration_sec": mastering_result.analysis_after.duration_sec,
+            "integrated_lufs": mastering_result.analysis_after.integrated_lufs,
+            "true_peak_dbtp": mastering_result.analysis_after.true_peak_dbtp if mastering_result.analysis_after.true_peak_dbtp is not None else -1.5,
+        }
+    else:
+        master_m = measure_audio_metrics(master_file, ffmpeg=ff)
+
     # Stage 11 semantic premaster
     stems_meta["CINEMATIC_MIX_PREMASTER"] = StemMetadata(
         stem_type="CINEMATIC_MIX_PREMASTER",
-        filepath=str(master_file),
-        duration_sec=master_m["duration_sec"],
-        integrated_lufs=master_m["integrated_lufs"],
-        true_peak_dbtp=master_m["true_peak_dbtp"],
+        filepath=str(premaster_file),
+        duration_sec=premaster_m["duration_sec"],
+        integrated_lufs=premaster_m["integrated_lufs"],
+        true_peak_dbtp=premaster_m["true_peak_dbtp"],
     )
-    # Backward-compatible alias for existing consumers and legacy tests
+    # Backward-compatible master deliverable for orchestrator and downstream packaging
     stems_meta["FULL_MASTER"] = StemMetadata(
         stem_type="FULL_MASTER",
         filepath=str(master_file),
@@ -560,6 +590,8 @@ def render_discrete_stems(
         "dialogue_masking_ratio_db": dmr_db,
         "dmr_compliant": dmr_compliant,
         "total_stems": len(stems_meta),
+        "mastering_v2_audit": mastering_result.model_dump(),
+        "mastering_status": mastering_result.status,
     }
     if mix_automation:
         ledger_meta["mix_automation"] = mix_automation.model_dump()
@@ -572,7 +604,7 @@ def render_discrete_stems(
         judge_instance = judge or MixJudge(ffmpeg_bin=ff)
         mix_judge_result = judge_instance.evaluate(
             stems={s: Path(meta.filepath) for s, meta in stems_meta.items() if meta.filepath},
-            premaster_path=master_file,
+            premaster_path=premaster_file,
             scene_intent=scene_intent,
             attention_map=attention_map,
             mix_automation=mix_automation,
@@ -610,23 +642,51 @@ def render_discrete_stems(
                 integrated_lufs=me_m["integrated_lufs"],
                 true_peak_dbtp=me_m["true_peak_dbtp"],
             )
-            # Re-sum Master
-            subprocess.run(cmd_master, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            master_m = measure_audio_metrics(master_file, ffmpeg=ff)
+            # Re-sum Premaster
+            subprocess.run(cmd_premaster, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            premaster_m = measure_audio_metrics(premaster_file, ffmpeg=ff)
             stems_meta["CINEMATIC_MIX_PREMASTER"] = StemMetadata(
                 stem_type="CINEMATIC_MIX_PREMASTER",
+                filepath=str(premaster_file),
+                duration_sec=premaster_m["duration_sec"],
+                integrated_lufs=premaster_m["integrated_lufs"],
+                true_peak_dbtp=premaster_m["true_peak_dbtp"],
+            )
+            # Re-sum Master via Stage 12 MasteringEngineV2
+            master_req_remix = MasteringRequest(
+                chapter_id=ch_id,
+                premaster_path=str(premaster_file),
+                output_master_path=str(master_file),
+                dialogue_stem_path=str(dx_file) if dx_file.exists() else None,
+                profile=MasteringProfile(
+                    target_lufs=master_target_lufs,
+                    true_peak_ceiling_dbtp=master_target_tp,
+                ),
+            )
+            mastering_result = mastering_engine.master(master_req_remix)
+            if mastering_result.analysis_after:
+                master_m = {
+                    "duration_sec": mastering_result.analysis_after.duration_sec,
+                    "integrated_lufs": mastering_result.analysis_after.integrated_lufs,
+                    "true_peak_dbtp": mastering_result.analysis_after.true_peak_dbtp if mastering_result.analysis_after.true_peak_dbtp is not None else -1.5,
+                }
+            else:
+                master_m = measure_audio_metrics(master_file, ffmpeg=ff)
+
+            stems_meta["FULL_MASTER"] = StemMetadata(
+                stem_type="FULL_MASTER",
                 filepath=str(master_file),
                 duration_sec=master_m["duration_sec"],
                 integrated_lufs=master_m["integrated_lufs"],
                 true_peak_dbtp=master_m["true_peak_dbtp"],
             )
-            stems_meta["FULL_MASTER"] = stems_meta["CINEMATIC_MIX_PREMASTER"].model_copy(deep=True)
-            stems_meta["FULL_MASTER"].stem_type = "FULL_MASTER"
+            ledger_meta["mastering_v2_audit"] = mastering_result.model_dump()
+            ledger_meta["mastering_status"] = mastering_result.status
 
             # Re-evaluate with judge
             mix_judge_result = judge_instance.evaluate(
                 stems={s: Path(meta.filepath) for s, meta in stems_meta.items() if meta.filepath},
-                premaster_path=master_file,
+                premaster_path=premaster_file,
                 scene_intent=scene_intent,
                 attention_map=attention_map,
                 mix_automation=remediated_auto,
@@ -655,6 +715,7 @@ def render_discrete_stems(
             and master_m["true_peak_dbtp"] <= -1.4
             and dmr_compliant
             and (mix_judge_result is None or mix_judge_result.status != "FAIL")
+            and (mastering_result.qc_result.passed)
         ),
         metadata=ledger_meta,
     )

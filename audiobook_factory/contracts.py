@@ -1087,6 +1087,24 @@ class MasteringConfig(BaseModel):
 
 MasteringSettings = MasteringConfig
 
+# Stage 12 Mastering V2 Contract Re-exports
+from audiobook_factory.mastering_contracts import (
+    MasteringProfile,
+    MasteringAnalysisFacts,
+    MasteringQCResult,
+    MasteringRequest,
+    MasteringResult,
+    MasteringLedger,
+    MasteringIssueSeverity,
+    MasteringIssue,
+    MasteringActionPlan,
+    DialogueProtectionReport,
+    BookMasterProfile,
+    DimensionDeviation,
+    ChapterConsistencyAudit,
+    BookConsistencyReport,
+)
+
 
 class CreativeManifest(BaseModel):
     """
@@ -1421,5 +1439,31 @@ from audiobook_factory.sonic_intelligence_engine import (
     SoundRetrievalResult,
 )
 
-
-
+# ==============================================================================
+# Stage 12: Mastering V2 Contracts Re-exports
+# ==============================================================================
+from audiobook_factory.mastering_contracts import (
+    MasteringProfile,
+    MasteringAnalysisFacts,
+    MasteringQCResult,
+    MasteringIssueSeverity,
+    MasteringIssue,
+    MasteringActionPlan,
+    DialogueProtectionReport,
+    BookMasterProfile,
+    DimensionDeviation,
+    ChapterConsistencyAudit,
+    BookConsistencyReport,
+    PerceptualDimension,
+    PerceptualIssueSeverity,
+    PerceptualIssue,
+    PerceptualEvaluation,
+    ReferenceProfile,
+    ReferenceComparisonResult,
+    SceneMasteringDecision,
+    FinalCertificationReport,
+    HumanReviewItem,
+    MasteringRequest,
+    MasteringResult,
+    MasteringLedger,
+)

@@ -53,20 +53,27 @@ flowchart TB
         Renderer --> DSPMaster["5-Stage DSP Mastering Chain<br/>(audiobook_factory/mastering.py)"]
     end
 
-    subgraph Room4["🚪 Room 4: Cinema Discrete Multi-Stem Engine"]
+    subgraph Room4["🚪 Room 4: Cinema Discrete Multi-Stem Engine (Stage 11)"]
         direction TB
         Manifest --> CinemaEngine["Cinema Audio Engine<br/>(audiobook_factory/cinema_audio_engine.py)<br/>• Music-Only 2.2kHz Notch EQ"]
         DSPMaster --> CinemaEngine
         CinemaEngine --> Stems["Discrete 5-Track DME Stems:<br/>- stem_DX.wav (Dialogue)<br/>- stem_MX.wav (Music)<br/>- stem_FX.wav (Foley/SFX)<br/>- stem_AMB.wav (Ambience)<br/>- stem_ME.wav (Music & FX)"]
-        CinemaEngine --> FullMaster["Cinema Broadcast Master<br/>(EBU R128: -19 LUFS, -1.5 dBTP)"]
+        CinemaEngine --> Premaster["Cinema Premaster<br/>(_cinema_premaster.wav)"]
         CinemaEngine --> StemLedger["chapter_XXX_stem_ledger.json"]
+    end
+
+    subgraph Room5["🎛️ Stage 12: Mastering V2 Pipeline"]
+        direction TB
+        Premaster --> MasterEngine["MasteringEngine (Missions 1–4)<br/>(audiobook_factory/mastering_engine.py)<br/>• Forensic Analyzer & Closed-Loop Remediation<br/>• Scene-Aware Engine & Reference Auditor<br/>• Mastering Judge & Dialogue Protection Agent<br/>• Deterministic DSP Core (Dual-Pass Loudnorm)<br/>• Perceptual Critic & Multi-Pass Reversion Guard<br/>• Mastering Certifier (5-Pillar Conservative Precedence)"]
+        MasterEngine --> FullMaster["Certified Cinema Master<br/>(_cinema_master.wav + ledger + report)"]
     end
 
     Room1 --> Room2
     Room2 --> Room3
     Room2 --> Room4
     Room3 --> Room4
-    Room4 --> Packager["M4B Container Packager<br/>(audiobook_factory/packager.py)<br/>• AAC Safety Auto-Transcode"]
+    Room4 --> Room5
+    Room5 --> Packager["M4B Container Packager<br/>(audiobook_factory/packager.py)<br/>• AAC Safety Auto-Transcode"]
     Packager --> Deliverable["Final M4B Audiobook<br/>(Chapter Navigation + FastStart Artwork)"]
 ```
 
@@ -289,8 +296,8 @@ flowchart TB
 
 ---
 
-### 4. Room 4: Cinema Discrete Multi-Stem Engine
-*Purpose: Professional film/broadcast stem separation and delivery package certification.*
+### 4. Room 4: Cinema Discrete Multi-Stem Engine (Stage 11)
+*Purpose: Professional film/broadcast stem separation and premaster rendering.*
 
 - **Cinema Audio Engine ([`audiobook_factory/cinema_audio_engine.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py))**:
   - Renders and preserves **5 discrete stems** standardized to 48,000 Hz 16-bit stereo PCM:
@@ -301,11 +308,29 @@ flowchart TB
     5. **`stem_ME.wav`**: Combined Music & Effects
   - **Dialogue-to-Masking Ratio (DMR $\ge +10.0$ dB) Verification (ADR-018)**:
     Computes $\text{DMR} = \text{LUFS}_{\text{DX}} - \text{LUFS}_{\text{ME}}$, ensuring the background composite bed never exceeds speech intelligibility thresholds.
-  - Generates the unified **`chapter_XXX_stem_ledger.json`** recording duration, integrated LUFS, true peak, and DMR compliance across every stem.
+  - Outputs the unmastered **`chapter_XXX_cinema_premaster.wav`** and unified **`chapter_XXX_stem_ledger.json`** recording duration, integrated LUFS, true peak, and DMR compliance across every stem.
+
+---
+
+### 5. Room 5: Stage 12 Mastering V2 Pipeline
+*Purpose: Deterministic DSP mastering, multi-signal intelligence, perceptual evaluation, and commercial certification (Missions 1–4).*
+
+- **Mastering Engine ([`audiobook_factory/mastering_engine.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering_engine.py))**:
+  - Ingests `_cinema_premaster.wav`, `AttentionMap`, and `SceneMixIntent` under a strict contract ([`MasteringRequest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering_contracts.py)).
+  - **P0 Deterministic DSP Core**: Subsonic highpass (28Hz 18dB/oct) $\rightarrow$ Dual-pass linear-phase loudnorm (`linear=true`) $\rightarrow$ True-peak lookahead limiter (-1.5 dBTP) $\rightarrow$ SOXR sinc resampler (48kHz) with TPDF dither.
+  - **Closed-Loop Remediation**: Iterates up to 3 passes with automatic calibrated target trimming ($\Delta I$).
+  - **P1 Multi-Signal Intelligence**:
+    - [`MasteringJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering_judge.py): Audits 7 defect categories and clamps adjustments strictly inside `SAFETY_BOUNDS` ($\pm 1.5$ LUFS, $-0.8$ dBTP, $+12$ Hz HPF).
+    - [`DialogueProtectionAgent`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dialogue_protection.py): Audits vocal anchor ratio and enforces speech masking threshold ($\text{DMR} \ge +6.0\text{ dB}$).
+    - [`BookMasterProfile`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_master_profile.py) & [`ChapterConsistencyAuditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/chapter_consistency.py): Robust median/IQR book-level consistency auditing across 5 dimensions ($DEVIATION \neq ERROR$).
+  - **P4 Perceptual Premium Layer**:
+    - [`PerceptualCritic`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/perceptual_critic.py): Evaluates 7 aesthetic dimensions (Intelligibility, Naturalness, Tonal Balance, Dynamic Integrity, Emotional Preservation, Spatial Coherence, Fatigue Risk Indicators) with explicit confidence scoring.
+    - [`ReferenceMasteringAuditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/reference_mastering.py): Audits against 7 canonical reference profiles ($REFERENCE \neq TRUTH$).
+    - [`SceneAwareDecisionEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/scene_aware_engine.py): Protects quiet dynamics (+1.2 LUFS) and action punch (-1.8 dBTP).
+    - **Multi-Pass Reversion Guard**: Automatic file snapshot rollback if 2nd-pass refinement degrades scores or fails QC.
+    - [`MasteringCertifier`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering_certification.py): 5-pillar conservative release gate (`CERTIFIED`, `WARNINGS`, `REVIEW_REQUIRED`, `REJECTED`) with actionable `HumanReviewItem` packaging.
 - **M4B Container Packager ([`audiobook_factory/packager.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/packager.py))**:
-  - Assembles all mastered chapters into a single chapterized `.m4b` container with embedded cover artwork and `FFMETADATA1` chapter markers.
-  - **AAC Packaging Safety**: Inspects all input chapters with `is_all_aac`. Non-AAC or uncompressed WAV (`pcm_s16le`) chapters are automatically transcoded to high-fidelity AAC (`-c:a aac -b:a 192k`), preventing FFmpeg container multiplexer crashes.
-  - Guarantees strict timeline monotonicity and clean seekability (`+faststart`) in Audible, Apple Books, and Smart AudioBook Player.
+  - Assembles certified masters into chapterized `.m4b` containers with embedded cover artwork, `FFMETADATA1` markers, AAC safety auto-transcoding, and `+faststart` optimization.
 
 ---
 

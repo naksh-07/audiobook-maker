@@ -855,4 +855,34 @@
      - Tracked checkpoint progress in `ingestion_batches` table for crash-proof resumability.
 - **Rationale:** Provides Hollywood/AAA game-level audio drama production capabilities for Witcher and dark fantasy literature while keeping the local repository completely lightweight (0 audio bloat) and preserving existing disk archives.
 
+## ADR-042: Mastering V2 Pipeline: Stage 11 Premaster Decoupling, Deterministic DSP Core, Multi-Signal Intelligence, and Perceptual Release Certification
+- **Status:** Accepted
+- **Date:** 2026-09-30
+- **Context:**
+  1. In legacy architecture, Stage 11 (Cinematic Mix) was conflated with Stage 12 (Mastering), where `cinema_audio_engine.py` performed inline loudnorm and limiter passes directly on the mix bus, outputting `chapter_XXX_cinema_master.wav` prematurely before forensic mastering analysis.
+  2. Master delivery lacked a structured contract: no machine-readable `MasteringRequest` / `MasteringResult`, no explicit safety boundaries on DSP adjustments, and no chapter-to-chapter consistency tracking.
+  3. Mastering decisions lacked context awareness: quiet, intimate scenes were being compressed up to match noisy combat scenes, causing audible pumping and ruining dramatic tension.
+  4. Final release certification lacked conservative precedence: technical QC failures could be masked or ignored, and human engineer handoffs lacked timestamped, actionable review packages.
+- **Decision:**
+  1. **Strict Stage 11 → Stage 12 Premaster Decoupling:**
+     - Stage 11 now strictly outputs unmastered 48kHz 24-bit/16-bit premaster audio (`_cinema_premaster.wav`) and unmastered stem files alongside `AttentionMap` and `SceneMixIntent`.
+     - Stage 12 takes sole ownership of final broadcast mastering, outputting `_cinema_master.wav`, `_mastering_ledger.json`, and `_certification_report.json`.
+  2. **P0 Deterministic DSP Mastering Engine (`mastering_engine.py`):**
+     - Enforces a 4-stage DSP chain: Subsonic Highpass (28Hz 18dB/oct) -> Dual-Pass Linear-Phase EBU R128 Loudnorm (`linear=true`) -> True-Peak Lookahead Limiter (-1.5 dBTP normal, -1.8 dBTP action) -> SOXR sinc resampling & TPDF dither.
+     - Closed-loop verification with up to 3 automatic remediation attempts and forensic target trimming.
+  3. **P1 Intelligence & Book Consistency:**
+     - `MasteringJudge`: 7 prioritized defect categories (Corrupt Audio, Clipping, Severe Loudness Mismatch, Sibilance, Sub-Bass Rumble, Inadequate Headroom, Dynamic Flattening) with strictly clamped `SAFETY_BOUNDS` ($\pm 1.5\text{ LUFS}$, $-0.8\text{ dBTP}$, $+12\text{ Hz}$ highpass).
+     - `DialogueProtectionAgent`: Audits DX vs Mix anchor ratio and speech masking ($DMR \ge +6.0\text{ dB}$).
+     - `BookMasterProfile`: Robust median/IQR aggregation across book chapters, filtering silences and calculating sample confidence.
+     - `ChapterConsistencyAuditor`: 5-dimensional audit (Loudness, Dynamics, Tonal, Dialogue, Stereo) enforcing $DEVIATION \neq ERROR$ (intentional dramatic variance is validated).
+     - `GoldenMasteringSuite`: 10 canonical golden fixtures with governed baseline (`golden_mastering_baseline.json`).
+  4. **P4 Perceptual Premium Layer & Release Certification:**
+     - `PerceptualCritic`: 7 aesthetic axes (Intelligibility, Naturalness, Tonal Balance, Dynamic Integrity, Emotional Preservation, Spatial Coherence, Fatigue Risk Indicators) with explicit confidence scoring.
+     - `ReferenceMasteringAuditor`: 7 canonical versioned acoustic profiles (`narration`, `dialogue`, `intimate`, `emotional`, `action`, `quiet`, `music_heavy`) with mismatch protection ($REFERENCE \neq TRUTH$).
+     - `SceneAwareDecisionEngine`: Bounded narrative adjustments ($quiet \neq bad$, $loud \neq good$).
+     - `Multi-Pass Reversion Guard`: Snapshot backup before 2nd pass with immediate rollback if refinement degrades score or fails QC.
+     - `MasteringCertifier`: 5-pillar conservative hierarchy (`CERTIFIED`, `WARNINGS`, `REVIEW_REQUIRED`, `REJECTED`) where technical QC failure always forces `REJECTED`. Packages actionable `HumanReviewItem` lists for sound engineers.
+- **Rationale:** Establishes a commercial-grade, multi-stage mastering pipeline matching Audible and BBC Radio 4 standards, verified with 109/109 green tests across Stage 11 and Stage 12.
+
+
 

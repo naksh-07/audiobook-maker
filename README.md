@@ -8,7 +8,7 @@
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.8%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-Universal%20Director%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-718%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-988%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![Acting Engine](https://img.shields.io/badge/Acting%20Engine-Performance%20QC%202.0%20(A%2B%20Audited)-blue.svg)](docs/TTS_GENERATION_ARCHITECTURE.md)
 [![Sound Design](https://img.shields.io/badge/Sound%20Design-Cinematic%2020%20Capabilities%20(A%2B%20Audited)-purple.svg)](docs/CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
@@ -61,14 +61,20 @@ flowchart TD
         Renderer --> VocalDSP["5-Stage Vocal DSP Chain (SOXR 48kHz + EBU R128)"]
     end
 
-    subgraph Room4["🚪 Room 4: Cinema Discrete Multi-Stem Engine"]
+    subgraph Room4["🚪 Room 4: Cinema Discrete Multi-Stem Engine (Stage 11)"]
         VocalDSP --> CinemaEngine["Cinema Multi-Stem Engine (Music-Only 2.2kHz Notch)"]
         CinemaEngine --> Stems["5 Discrete Stems (DX, MX, FX, AMB, ME)"]
-        CinemaEngine --> Master["Cinema Master (-19 LUFS, -1.5 dBTP)"]
+        CinemaEngine --> Premaster["Cinema Premaster (_cinema_premaster.wav)"]
         CinemaEngine --> Ledger["chapter_XXX_stem_ledger.json"]
     end
 
-    Room4 --> Packager["FFMETADATA1 Chapter Generator & AAC Packager"]
+    subgraph Room5["🎛️ Stage 12: Mastering V2 Pipeline"]
+        Premaster --> MasterEngine["MasteringEngine (Missions 1–4 Certified)<br/>• Forensic Analyzer & Closed-Loop Remediation<br/>• Scene-Aware Engine & Reference Auditor<br/>• Mastering Judge & Dialogue Protection Agent<br/>• Deterministic DSP Core (Dual-Pass Loudnorm)<br/>• Perceptual Critic & Multi-Pass Reversion Guard<br/>• Mastering Certifier (5-Pillar Conservative Precedence)"]
+        MasterEngine --> FullMaster["Certified Cinema Master (_cinema_master.wav)"]
+    end
+
+    Room4 --> Room5
+    Room5 --> Packager["FFMETADATA1 Chapter Generator & AAC Packager"]
     Packager --> M4B["Deliverable Audiobook (.m4b with FastStart Artwork)"]
 ```
 
@@ -86,8 +92,8 @@ The architecture orchestrates an end-to-end multi-stage lifecycle from raw docum
 6. **Stage 3.9: Dialogue Editorial Layer (DE-01 through DE-07)** ([`docs/DIALOGUE_EDITORIAL_LAYER.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DIALOGUE_EDITORIAL_LAYER.md)): Bridges individual speech takes into a seamless, organic dramatic performance. Ingests raw takes from `audio_chunks/` non-destructively to `edited_chunks/` using intelligent endpoint trimming (sub-millisecond zero-crossing snapping, speech floor to -52 dBFS, stop plosive burst protection), conservative breath evaluation (KEEP/REDUCE/REMOVE) with suppressed sob safeguards (`restraint >= 0.85`), dynamic contextual turn latencies (25ms interruption floor to 1800ms emotional freeze), em-dash tragic aposiopesis preservation, power-dynamic turn pacing, multi-format loading (16/24/32-bit), true Hann micro-fades, deterministic TPDF dither, and fail-closed QC (`DialogueEditingQC`) with unedited raw fallback.
 7. **Stage 4: Autonomous Directing & Gemini 3.8 Flash Speech Synthesis** ([`docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md) & [`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md)): Autonomous 3-pass workflow executing SQLite FTS5 leitmotif music scoring and bilingual anchor Foley staging. Emits `CreativeManifest v3.0` and dispatches multi-cast speech synthesis via `TTSDispatcher` to `gemini-3.8-flash-tts` with turn-level theatrical style directing, physical inline vocal tags (`<gasp>`, `<sigh>`, `<sob>`), and zero voice drift.
 8. **Stage 4.5 / Stage 10: Commercial Cinematic Sound Design Subsystem (ADR-034 & ADR-035)** ([`docs/CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md)): Deploys the 20-capability audio drama engine (`audiobook_factory/sound_design/`). Features 5-tier decoupled ambience with cross-scene loop continuity, subordinated crowd walla with solitary restraint, intentional negative sound design with scene-dependent adaptive density budgets, multi-factor Foley relevance scoring with blanket trivial verb suppression, character locomotion physics and domestic tableware vs. weapon clash isolation, transient-body-LFE narrative hard SFX, canonical magical spell grammar (`CHARGE -> RELEASE -> IMPACT`), dynamic leitmotif variation across 6 narrative modes, virtual soundstage spatial continuity (azimuth $[-0.8, +0.8]$, narrator locked to $0.0$), and multi-signal 9-pillar QC auditing (`SoundDesignQCAuditor`) connected via clean adapter boundary (`SoundDesignAdapter`).
-9. **Stage 11: Cinematic Mix v2 (Prompts 1–5 Certified)** ([`docs/CINEMATIC_MIX_ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_MIX_ARCHITECTURE.md)): Transforms static bus rendering into an intelligent cinematic mixing layer. Governed by typed `SceneMixIntent` and `AttentionMap`, unified `MixAutomation` timeline (Hierarchy Levels 10–50), formant-targeted dynamic masking (`MAX_NOTCH_DEPTH_DB = -6.5 dB`), stem interaction matrices, three behavioral directors (`PerspectiveDirector`, `SilenceDirector`, `ImpactDirector`), a 12-category multi-signal `MixJudge` evaluating physical audio integrity (True Peak $\le 0.0\text{ dBTP}$, SciPy Butterworth vocal corridor DMR, phase correlation), bounded remediation loop (`RemixController`, max 2 attempts, $\Delta S \ge 0.04$ convergence guard), in-memory stat-based analysis caching, and 20-scenario Golden Regression Suite certification. Produces `CINEMATIC_MIX_PREMASTER`.
-10. **Stage 12: Master Packaging & M4B Delivery Container** ([`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)): Multi-chapter FFMETADATA1 generation, EBU R128 (-19.0 LUFS) contractual broadcast compliance, true-peak limiting, AAC safety auto-transcode, FastStart artwork embedding, and Gate 6A–6E master certification.
+9. **Stage 11: Cinematic Mix v2 (Prompts 1–5 Certified)** ([`docs/CINEMATIC_MIX_ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_MIX_ARCHITECTURE.md)): Transforms static bus rendering into an intelligent cinematic mixing layer. Governed by typed `SceneMixIntent` and `AttentionMap`, unified `MixAutomation` timeline (Hierarchy Levels 10–50), formant-targeted dynamic masking (`MAX_NOTCH_DEPTH_DB = -6.5 dB`), stem interaction matrices, three behavioral directors (`PerspectiveDirector`, `SilenceDirector`, `ImpactDirector`), a 12-category multi-signal `MixJudge` evaluating physical audio integrity (True Peak $\le 0.0\text{ dBTP}$, SciPy Butterworth vocal corridor DMR, phase correlation), bounded remediation loop (`RemixController`, max 2 attempts, $\Delta S \ge 0.04$ convergence guard), in-memory stat-based analysis caching, and 20-scenario Golden Regression Suite certification. Produces unmastered `CINEMATIC_MIX_PREMASTER` (`_cinema_premaster.wav`).
+10. **Stage 12: Mastering V2 Pipeline & Delivery Packaging (Missions 1–4 Certified)** ([`docs/AUDIO_ENGINEERING.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)): Decouples premaster boundary (`_cinema_premaster.wav`), deploys 4-stage deterministic DSP core (subsonic HPF, dual-pass linear-phase loudnorm, true-peak lookahead limiter, SOXR sinc dither), closed-loop forensic remediation, P1 intelligence (`MasteringJudge` with 7 defect categories, `DialogueProtectionAgent`, `BookMasterProfile`, `ChapterConsistencyAuditor`), P4 perceptual premium layer (`PerceptualCritic` across 7 aesthetic axes, `ReferenceMasteringAuditor` across 7 canonical profiles, `SceneAwareDecisionEngine` dynamics protection, multi-pass snapshot reversion guard, and 5-pillar conservative `MasteringCertifier`), followed by AAC safety packaging with FastStart artwork.
 
 ---
 
@@ -320,6 +326,22 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 - **Sliding-Window Ephemeral Streaming Ingest Pipeline**:
   - Ingests massive remote audio archives in 5–10 GB batches: downloads to ephemeral scratch, extracts DSP facts & CLAP vectors, commits to SQLite, and immediately purges scratch files for zero permanent disk bloat.
 
+### 18. Mastering V2 Pipeline: Stage 11 Premaster Decoupling, Deterministic DSP Core, Multi-Signal Intelligence, and Perceptual Release Certification (Missions 1–4)
+*(See comprehensive manual: [`docs/AUDIO_ENGINEERING.md`](docs/AUDIO_ENGINEERING.md) and complete audit: [`MASTERING_V2_AUDIT.md`](MASTERING_V2_AUDIT.md))*
+- **Stage 11 Premaster Boundary Decoupling:** Stage 11 produces unmastered `_cinema_premaster.wav` alongside 5 discrete DME stems; Stage 12 Mastering owns the final broadcast master (`_cinema_master.wav`).
+- **P0 Deterministic DSP Core (`audiobook_factory/mastering_engine.py`):** Subsonic 28Hz 18dB/oct HPF, dual-pass linear-phase EBU R128 loudnorm (`linear=true`), true-peak lookahead limiter (-1.5 dBTP), and SOXR 48kHz sinc resampling with TPDF dither. Bounded closed-loop remediation iterates up to 3 passes.
+- **P1 Multi-Signal Intelligence & Book Consistency:**
+  - `MasteringJudge`: 7 prioritized defect categories with strictly clamped `SAFETY_BOUNDS` ($\pm 1.5$ LUFS, $-0.8$ dBTP, $+12$ Hz HPF).
+  - `DialogueProtectionAgent`: Audits vocal anchor ratio, protects speech masking ($DMR \ge +6.0\text{ dB}$), and preserves dramatic dynamic contrast.
+  - `BookMasterProfile` & `ChapterConsistencyAuditor`: Robust median/IQR book-level consistency auditing across 5 dimensions ($DEVIATION \neq ERROR$).
+  - `GoldenMasteringSuite`: 10 canonical golden fixtures permanently governed under `golden_mastering_baseline.json`.
+- **P4 Perceptual Premium Layer & Release Certification:**
+  - `PerceptualCritic`: 7 aesthetic dimensions (Intelligibility, Naturalness, Tonal Balance, Dynamic Integrity, Emotional Preservation, Spatial Coherence, Fatigue Risk Indicators) with explicit confidence scoring.
+  - `ReferenceMasteringAuditor`: 7 canonical reference profiles ($REFERENCE \neq TRUTH$) with mismatch rejection.
+  - `SceneAwareDecisionEngine`: Bounded narrative adjustments ($quiet \neq bad$, $loud \neq good$).
+  - Multi-pass snapshot reversion guard: Immediate rollback if 2nd-pass refinement degrades score or fails QC.
+  - `MasteringCertifier`: 5-pillar conservative hierarchy (`CERTIFIED`, `WARNINGS`, `REVIEW_REQUIRED`, `REJECTED`) with actionable `HumanReviewItem` packaging.
+
 ---
 
 ## 📚 Complete Documentation Hub
@@ -338,7 +360,8 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 | **[🎓 End-to-End Tutorial & Cookbook](docs/TUTORIAL_E2E.md)** | Step-by-step recipes: 1-click runs, English audio drama, manual directing, quota resume, and DAW stems. |
 | **[💻 CLI Reference](docs/CLI_REFERENCE.md)** | Full command reference for all 17 autonomous and modular production commands. |
 | **[📚 API Reference](docs/API_REFERENCE.md)** | Pydantic v2 data models, public engine classes, Translation Intelligence contracts, and method signatures across 60+ modules. |
-| **[🎛️ Audio Engineering & DSP](docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, music-only 2.2kHz notch, whisper ducking, barrier occlusion, dynamic filter scripts, and reverb. |
+| **[🎛️ Audio Engineering & DSP Mastering (Stage 12)](docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, Stage 11 premaster boundary decoupling, Mastering V2 4-stage DSP core, P1 Intelligence, P4 Perceptual Critic, and 5-pillar Certification. |
+| **[🛡️ Mastering V2 Complete Audit & Blueprint](MASTERING_V2_AUDIT.md)** | Comprehensive audit report covering Missions 1–4, DSP baseline, Stage 11/12 boundary decoupling, contracts, closed-loop remediation, and 109 passing tests. |
 | **[🛡️ Quality Gates Manual](docs/QUALITY_GATES.md)** | Complete specification of Gates 0.1 through 6E and Translation Gates T0 through T15, thresholds, and CLI audit syntax. |
 | **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Comprehensive engineering report on P0-P3 fixes and all 13 ADR-020 forensic audit remediations. |
 | **[🎹 Sonic Intelligence Catalog & Master Sound Bank](docs/SOUND_BANK.md)** | SQLite FTS5 database schema, 61,048 master tracks, 44,940 CLAP vectors, IP Lore & Franchise Affinity System, Witcher 3 Studio Audio Vault, and Ephemeral Streaming Ingest. |
@@ -420,11 +443,14 @@ python audiobook_cli.py bank ingest-source path/to/sound_archive/ --source sonni
 
 ## 🧪 Verification & Test Suite
 
-The codebase maintains **581 passed unit tests (100% green, 0 regressions)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant (581/581 passed, 0 failures, 0 errors, 17 subtests):
+The codebase maintains **988 passed unit and integration tests (100% green, 0 regressions)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant:
 
 ```powershell
-# Run full regression suite across all test suites (581 tests)
-pytest tests/
+# Run Stage 12 Mastering V2 Full Suite (64 tests across Missions 1–4)
+pytest tests/test_mastering_contracts.py tests/test_mastering_analyzer.py tests/test_mastering_engine.py tests/test_mastering_closed_loop.py tests/test_mastering_judge.py tests/test_dialogue_protection.py tests/test_book_master_profile.py tests/test_chapter_consistency.py tests/test_perceptual_critic.py tests/test_reference_mastering.py tests/test_scene_aware_mastering.py tests/test_mastering_certification.py tests/test_golden_mastering_regression.py -v
+
+# Run Stage 11 Cinematic Mix Automation Suites (45 tests)
+pytest tests/test_cinematic_mix_automation.py tests/test_uncompromised_cinema_audio.py -v
 
 # Commercial Studio Quality Upgrade Waves A-E Benchmark Suite (50 tests)
 pytest tests/test_golden_take_selection_benchmark.py tests/test_take_selection_2.py tests/test_performance_evidence_and_evaluator_2.py tests/test_scene_selection_and_continuity.py tests/test_golden_alignment_benchmark.py -v

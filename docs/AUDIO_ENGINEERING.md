@@ -285,4 +285,94 @@ Dialogue-anchored sound effects (e.g. unsheathing a sword, slamming a door, clin
 - **The Flat 106-Minute Monolithic Ambience Problem:** In long chapters traversing multiple locations (e.g. Castle Bath $\rightarrow$ Royal Banquet Hall $\rightarrow$ Dense Forest Night), previous builds applied a single static ambient bed loop across the entire chapter duration.
 - **Dynamic Partitioning (`_partition_script_ambience_scenes`):** The director monitors transitions in `acoustic_env` across screenplay segments. When the environment shifts, it partitions the timeline into distinct acoustic scene blocks with smooth crossfades and decoupled 4-stem profiles, matching the listener's journey through physical space.
 
+---
+
+## 🎧 13. Stage 12: Mastering V2 Pipeline Architecture (Missions 1–4)
+
+Stage 12 transforms the raw cinematic mix into a commercially certified, perceptual-grade master deliverable. It is structured into a strict four-mission hierarchy:
+
+```
+[Stage 11 Cinematic Mix]
+           ↓
+[_cinema_premaster.wav + AttentionMap + SceneMixIntent]
+           ↓
+[Stage 12: MasteringAnalyzer (Integrated LUFS, TP, LRA, Centroid, Phase, Anchor Ratio)]
+           ↓
+[SceneAwareDecisionEngine (P4 Contextual Dynamics: whisper +1.2 LUFS, action -1.8 dBTP)]
+           ↓
+[ReferenceMasteringAuditor (P4 Aesthetic Anchoring against 7 Canonical Profiles)]
+           ↓
+[MasteringJudge (P1 Intelligence: 7 Defect Categories, Clamped SAFETY_BOUNDS)]
+           ↓
+[DialogueProtectionAgent (P1 Vocal Guard: DMR >= +6.0 dB, Contrast Preservation)]
+           ↓
+[Deterministic DSP Engine (P0 Core: HPF 28Hz -> Dual-Pass Loudnorm -> Limiter -> SOXR Dither)]
+           ↓
+[Forensic Re-Analysis & Remediation Loop (Closed-loop up to 3 passes)]
+           ↓
+[PerceptualCritic (P4 Multi-Dimensional Evaluation: 7 Aesthetic Axes + Fatigue Indicators)]
+           ↓
+[Multi-Pass Perceptual Review with Reversion Guard (Snapshot Rollback Protection)]
+           ↓
+[MasteringCertifier (P4 Production Release Gate: 5-Pillar Conservative Precedence)]
+           ↓
+[_cinema_master.wav + _mastering_ledger.json + _certification_report.json]
+```
+
+### A. Stage 11 → Stage 12 Premaster Boundary Decoupling
+- **Decoupled Boundary:** Stage 11 (`cinema_audio_engine.py`) strictly outputs unmastered 48kHz stereo premaster audio (`_cinema_premaster.wav`) and raw DME stems without inline EBU R128 mastering.
+- **Master Ownership:** Stage 12 (`mastering_engine.py`) takes sole ownership of final broadcast mastering, producing `_cinema_master.wav`, cryptographic ledgers, and certification reports.
+- **Mastering Contract:** Formally governed by typed Pydantic models ([`MasteringRequest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering_contracts.py) and [`MasteringResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering_contracts.py)).
+
+### B. P0 Deterministic DSP Core
+1. **Subsonic Highpass Filter:** 28 Hz 18 dB/oct Butterworth filter (`highpass=f=28:p=3`) eliminating inaudible transducer rumble without thinning vocal presence.
+2. **Dual-Pass Linear-Phase EBU R128 Loudnorm:**
+   - *Pass 1:* Forensic measurement of integrated loudness, true peak, loudness range, and speech threshold.
+   - *Pass 2:* Application with `loudnorm=linear=true:i=-19.0:tp=-1.5:lra=7.0:measured_i=...:measured_tp=...:measured_lra=...:measured_thresh=...:offset=...`. Eliminates the pumping artifacts of single-pass dynamic loudnorm.
+3. **True-Peak Lookahead Brickwall Limiter:** Dedicated `alimiter=limit=-1.5dB:attack=5:release=50:asc=true:level=false` (relaxed to `-1.8 dBTP` for explosive action scenes).
+4. **Resampling & Dithering:** 48,000 Hz sinc resampling (`aresample=osr=48000`) with deterministic Triangular Probability Density Function (TPDF) dither, pinning boundary endpoints to zero (`samples[0] = samples[-1] = 0`).
+5. **Closed-Loop Remediation:** If re-analysis deviates from $-19.0\text{ LUFS} \pm 0.5\text{ LU}$ or exceeds $-1.5\text{ dBTP}$, the engine automatically iterates up to 3 passes with calibrated target trimming ($\Delta I$).
+
+### C. P1 Intelligence & Book Consistency
+1. **MasteringJudge (`mastering_judge.py`):**
+   - Evaluates 7 prioritized defect categories: Corrupt Audio, Digital Clipping, Severe Loudness Mismatch, Sibilance Accumulation, Sub-Bass Rumble, Inadequate True-Peak Headroom, and Over-Compression/Dynamic Flattening.
+   - Clamps all adjustments strictly to `SAFETY_BOUNDS`: $\Delta I \in [-1.5, +1.5]\text{ LUFS}$, $TP \in [-2.5, -1.0]\text{ dBTP}$, Highpass cutoff $\le 40\text{ Hz}$.
+2. **DialogueProtectionAgent (`dialogue_protection.py`):**
+   - Audits Dialogue-to-Mix Anchor Ratio and enforces Speech Masking Risk threshold ($\text{DMR} \ge +6.0\text{ dB}$).
+   - Preserves dynamic contrast between quiet intimate whispers and explosive battle cries.
+3. **BookMasterProfile (`book_master_profile.py`):**
+   - Computes robust, outlier-resistant median and Interquartile Range (IQR) metrics across all book chapters, filtering out silent pauses.
+4. **ChapterConsistencyAuditor (`chapter_consistency.py`):**
+   - Audits 5 dimensions: Integrated Loudness, Dynamic Range (LRA), Tonal Balance (Spectral Centroid), Dialogue Prominence, and Stereo Coherence.
+   - Enforces $DEVIATION \neq ERROR$: intentional narrative variation (e.g. quiet chapter in a monastery vs battle chapter) is validated rather than homogenized.
+5. **GoldenMasteringSuite (`golden_mastering_suite.py`):**
+   - 10 canonical golden audio fixtures permanently governed under `golden_mastering_baseline.json` protecting against DSP and metric regressions.
+
+### D. P4 Perceptual Premium Layer
+1. **PerceptualCritic (`perceptual_critic.py`):**
+   - Evaluates 7 aesthetic dimensions: Intelligibility, Naturalness, Tonal Balance, Dynamic Integrity, Emotional Preservation, Spatial Coherence, and Fatigue Risk Indicators.
+   - Grounded in physical waveform analysis: DMR, spectral flatness, centroid drift, crest factor, and inter-channel phase correlation ($r > 0.3$).
+   - Anti-Hallucination Guard: Identifies "Fatigue Risk Indicators" (hyper-compression, high-frequency buildup > 6kHz) without making ungrounded medical claims.
+   - Emits explicit confidence ratings (`HIGH`, `MEDIUM`, `LOW`).
+2. **ReferenceMasteringAuditor (`reference_mastering.py`):**
+   - 7 canonical reference profiles (`narration`, `dialogue`, `intimate`, `emotional`, `action`, `quiet`, `music_heavy`).
+   - Mismatch guard: Rejects inappropriate comparisons (e.g. intimate scene compared to action profile).
+   - Invariant: $REFERENCE \neq TRUTH$ — guides bounded polish without forcing uniformity.
+3. **SceneAwareDecisionEngine (`scene_aware_engine.py`):**
+   - Preserves dramatic dynamic intent: $quiet \neq bad$, $loud \neq good$.
+   - Whisper/intimate scenes relax loudness target by $+1.2\text{ LUFS}$ to protect fragile atmosphere.
+   - Combat scenes lower limiter ceiling to $-1.8\text{ dBTP}$ to prevent inter-sample clipping on sharp weapon transients.
+4. **Multi-Pass Reversion Guard (`mastering_engine.py`):**
+   - Iterative 2nd-pass refinement with damped parameter deltas.
+   - Snapshot rollback: If pass 2 degrades the perceptual composite score, introduces new critical issues, or fails technical QC, the audio and ledger immediately revert to pass 1.
+5. **MasteringCertifier (`mastering_certification.py`):**
+   - Authoritative production release arbiter with 5-pillar conservative precedence:
+     - **Technical QC Failure** $\rightarrow$ `REJECTED` (Technical integrity always trumps perceptual scores).
+     - **Critical Perceptual Defect** $\rightarrow$ `REJECTED`.
+     - **Extreme Book Outlier / Low Confidence** $\rightarrow$ `REVIEW_REQUIRED`.
+     - **Minor Non-Critical Warnings** $\rightarrow$ `WARNINGS`.
+     - **Clean 5-Pillar Passage** $\rightarrow$ `CERTIFIED`.
+   - Packages actionable `HumanReviewItem` lists containing timestamp intervals, suggested parameter corrections, and severity ratings for audio engineers.
+
+
 

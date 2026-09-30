@@ -444,6 +444,9 @@ class PipelineOrchestrator:
             judge_audit = stem_ledger.metadata.get("mix_judge_audit", {})
             logger.warning(f"[!] Stage 11 Mix Judge Flagged Issues: {judge_audit.get('failures', [])}")
 
+        mastering_status = stem_ledger.metadata.get("mastering_status", "UNKNOWN")
+        logger.info(f"[*] Stage 12 Mastering V2: {mastering_status}")
+
         master_wav = mastered_dir / f"{cinema_manifest.chapter_id}_cinema_master.wav"
         if not master_wav.exists():
             master_wav = mastered_dir / f"{chap_stem}_cinema_master.wav"
