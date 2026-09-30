@@ -100,6 +100,19 @@ from .cinema_audio_engine import (
     StemMetadata,
     StemLedger,
 )
+from .cinematic_mix import (
+    SceneMixIntent,
+    AttentionMap,
+    AttentionEvent,
+    MixAutomation,
+    AutomationPlanner,
+    AcousticPerspective,
+    PerspectiveDirector,
+    SilenceEvent,
+    SilenceDirector,
+    ImpactEvent,
+    ImpactDirector,
+)
 from .sonic_bible import SonicBible, LeitmotifDefinition
 from .manifest_renderer import render_manifest_soundscape, assemble_master_filter_graph, get_reverb_filter_string
 from .sound_bank_ingest import UniversalSoundBankIngester

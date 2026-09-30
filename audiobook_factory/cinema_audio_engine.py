@@ -34,6 +34,24 @@ from audiobook_factory.acoustic_bus_matrix import (
 )
 from audiobook_factory.sound_bank import SoundBank, get_sound_bank
 from audiobook_factory.manifest_renderer import render_music_bus, render_foley_bus
+from audiobook_factory.cinematic_mix import (
+    SceneMixIntent,
+    AttentionMap,
+    AttentionEvent,
+    MixAutomation,
+    AutomationPlanner,
+    build_stem_filter_chain,
+    apply_automation_to_stem,
+    AcousticPerspective,
+    PerspectiveDirector,
+    SilenceEvent,
+    SilenceDirector,
+    ImpactEvent,
+    ImpactDirector,
+    MixJudge,
+    MixJudgeResult,
+    RemixController,
+)
 
 logger = logging.getLogger("audiobook_factory.cinema_audio_engine")
 
@@ -42,7 +60,7 @@ class StemMetadata(BaseModel):
     """Acoustic and technical metadata for a discrete audio stem."""
     model_config = ConfigDict(extra="ignore")
 
-    stem_type: Literal["DX", "MX", "FX", "AMB", "ME", "FULL_MASTER"]
+    stem_type: Literal["DX", "MX", "FX", "AMB", "ME", "FULL_MASTER", "CINEMATIC_MIX_PREMASTER"]
     filepath: str
     duration_sec: float = 0.0
     integrated_lufs: float = -70.0
@@ -66,6 +84,11 @@ class StemLedger(BaseModel):
     master_peak: float = -1.5
     compliance_status: bool = True
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def premaster(self) -> Optional[StemMetadata]:
+        """Returns the Stage 11 cinematic mix premaster stem."""
+        return self.stems.get("CINEMATIC_MIX_PREMASTER") or self.stems.get("FULL_MASTER")
 
     def save_to_disk(self, target_path: Union[str, Path]) -> Path:
         """Save stem ledger to disk."""
@@ -106,6 +129,24 @@ class CinemaAudioManifest(BaseModel):
     ducking_policy: DuckingProfile = Field(default_factory=lambda: PROFILE_STANDARD)
     total_duration_sec: float = Field(default=0.0, ge=0.0)
     silence_percentage: float = Field(default=100.0, ge=0.0, le=100.0)
+    scene_intent: Optional[SceneMixIntent] = Field(
+        default=None, description="Stage 11 Scene Mix Intent"
+    )
+    attention_map: Optional[AttentionMap] = Field(
+        default=None, description="Stage 11 Time-aware Listener Attention Map"
+    )
+    mix_automation: Optional[MixAutomation] = Field(
+        default=None, description="Stage 11 Continuous Mix Automation Timeline"
+    )
+    acoustic_perspective: Optional[AcousticPerspective] = Field(
+        default=None, description="Stage 11 Acoustic Perspective (distance & occlusion)"
+    )
+    silence_events: List[SilenceEvent] = Field(
+        default_factory=list, description="Stage 11 Narrative Silence Events"
+    )
+    impact_events: List[ImpactEvent] = Field(
+        default_factory=list, description="Stage 11 Cinematic Impact Events"
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     def save_to_disk(self, target_path: Union[str, Path]) -> Path:
@@ -165,6 +206,10 @@ def render_discrete_stems(
     output_dir: Path,
     sound_bank: Optional[SoundBank] = None,
     ffmpeg: Optional[str] = None,
+    enable_judge: bool = True,
+    enable_remix: bool = False,
+    max_remix_attempts: int = 2,
+    judge: Optional[MixJudge] = None,
 ) -> StemLedger:
     """
     Renders discrete audio stems (DX, MX, FX, AMB, ME, FULL_MASTER)
@@ -381,13 +426,71 @@ def render_discrete_stems(
         true_peak_dbtp=amb_m["true_peak_dbtp"],
     )
 
+    # --- STAGE 11 MIX AUTOMATION & DYNAMIC MASKING EVALUATION ---
+    mix_automation: Optional[MixAutomation] = getattr(manifest, "mix_automation", None)
+    scene_intent = getattr(manifest, "scene_intent", None)
+    attention_map = getattr(manifest, "attention_map", None)
+
+    has_behaviors = bool(
+        getattr(manifest, "acoustic_perspective", None)
+        or getattr(manifest, "silence_events", None)
+        or getattr(manifest, "impact_events", None)
+    )
+
+    if mix_automation is None and (scene_intent is not None or attention_map is not None or has_behaviors):
+        has_dx = dx_file.exists() and dx_m.get("duration_sec", 0) > 0.05 and dx_m.get("integrated_lufs", -70) > -65.0
+        has_mx = mx_file.exists() and mx_m.get("duration_sec", 0) > 0.05 and mx_m.get("integrated_lufs", -70) > -65.0
+        has_fx = fx_file.exists() and fx_m.get("duration_sec", 0) > 0.05 and fx_m.get("integrated_lufs", -70) > -65.0
+        has_amb = amb_file.exists() and amb_m.get("duration_sec", 0) > 0.05 and amb_m.get("integrated_lufs", -70) > -65.0
+
+        est_dmr = round(dx_m["integrated_lufs"] - mx_m["integrated_lufs"], 2) if has_dx and has_mx else None
+
+        planner = AutomationPlanner()
+        mix_automation = planner.plan(
+            scene_intent=scene_intent,
+            attention_map=attention_map,
+            total_duration_sec=total_dur,
+            has_dialogue=has_dx,
+            has_music=has_mx,
+            has_foley=has_fx,
+            has_ambience=has_amb,
+            estimated_dmr_db=est_dmr,
+            acoustic_perspective=getattr(manifest, "acoustic_perspective", None),
+            silence_events=getattr(manifest, "silence_events", None),
+            impact_events=getattr(manifest, "impact_events", None),
+        )
+
+    # Apply dynamic automation envelopes to discrete stems if planned
+    has_dynamic_eq = False
+    if mix_automation and mix_automation.events:
+        for stem_name, stem_file in [("DX", dx_file), ("MX", mx_file), ("FX", fx_file), ("AMB", amb_file)]:
+            if stem_file.exists():
+                tmp_auto = out_dir / f"{ch_id}_stem_{stem_name}_auto.wav"
+                apply_automation_to_stem(stem_file, stem_name, tmp_auto, mix_automation, ffmpeg=ff)
+                if tmp_auto.exists() and tmp_auto.stat().st_size > 1000:
+                    shutil.move(str(tmp_auto), str(stem_file))
+                    # Refresh stem metadata with post-automation metrics
+                    stem_m = measure_audio_metrics(stem_file, ffmpeg=ff)
+                    stems_meta[stem_name] = StemMetadata(
+                        stem_type=stem_name,
+                        filepath=str(stem_file),
+                        duration_sec=stem_m["duration_sec"],
+                        integrated_lufs=stem_m["integrated_lufs"],
+                        true_peak_dbtp=stem_m["true_peak_dbtp"],
+                    )
+        has_dynamic_eq = bool(mix_automation.get_events_for_target("MX", "eq_depth"))
+
     # --- STEM 5: ME (Music & Effects Mix) ---
     me_file = out_dir / f"{ch_id}_stem_ME.wav"
     ducking_prof = getattr(manifest, "ducking_policy", PROFILE_STANDARD)
-    notch_filter = get_spectral_pocketing_filter(
-        notch_hz=ducking_prof.spectral_carve_hz,
-        depth_db=ducking_prof.spectral_carve_depth_db,
-    )
+    if has_dynamic_eq:
+        # Dynamic vocal corridor notch was already applied to MX via mix_automation
+        notch_filter = "anull"
+    else:
+        notch_filter = get_spectral_pocketing_filter(
+            notch_hz=ducking_prof.spectral_carve_hz,
+            depth_db=ducking_prof.spectral_carve_depth_db,
+        )
 
     # Sum MX, FX, AMB with spectral pocketing
     cmd_me = [
@@ -412,7 +515,8 @@ def render_discrete_stems(
         true_peak_dbtp=me_m["true_peak_dbtp"],
     )
 
-    # --- STEM 6: FULL MASTER (DX + ME Final Sum) ---
+    # --- STEM 6: CINEMATIC MIX PREMASTER / FULL MASTER (DX + ME Final Sum) ---
+    # NOTE: Stage 11 produces the CINEMATIC_MIX_PREMASTER. Stage 12 performs mastering.
     master_file = out_dir / f"{ch_id}_cinema_master.wav"
     # True broadcast summing with sidechain ducking & -19.0 LUFS mastering
     cmd_master = [
@@ -429,6 +533,15 @@ def render_discrete_stems(
     ]
     subprocess.run(cmd_master, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     master_m = measure_audio_metrics(master_file, ffmpeg=ff)
+    # Stage 11 semantic premaster
+    stems_meta["CINEMATIC_MIX_PREMASTER"] = StemMetadata(
+        stem_type="CINEMATIC_MIX_PREMASTER",
+        filepath=str(master_file),
+        duration_sec=master_m["duration_sec"],
+        integrated_lufs=master_m["integrated_lufs"],
+        true_peak_dbtp=master_m["true_peak_dbtp"],
+    )
+    # Backward-compatible alias for existing consumers and legacy tests
     stems_meta["FULL_MASTER"] = StemMetadata(
         stem_type="FULL_MASTER",
         filepath=str(master_file),
@@ -441,6 +554,97 @@ def render_discrete_stems(
     dmr_db = round(dx_m["integrated_lufs"] - me_m["integrated_lufs"], 2)
     dmr_compliant = bool(dmr_db >= 6.0 or me_m["integrated_lufs"] <= -30.0)
 
+    ledger_meta = {
+        "engine": "CinemaAudioEngine v4.0",
+        "ducking_profile": ducking_prof.profile_name,
+        "dialogue_masking_ratio_db": dmr_db,
+        "dmr_compliant": dmr_compliant,
+        "total_stems": len(stems_meta),
+    }
+    if mix_automation:
+        ledger_meta["mix_automation"] = mix_automation.model_dump()
+        ledger_meta["automation_decisions"] = mix_automation.decisions
+        ledger_meta["automation_event_count"] = len(mix_automation.events)
+
+    # --- STAGE 11 MIX JUDGE & AUTOMATIC DIAGNOSIS / REMIX PASS ---
+    mix_judge_result: Optional[MixJudgeResult] = None
+    if enable_judge:
+        judge_instance = judge or MixJudge(ffmpeg_bin=ff)
+        mix_judge_result = judge_instance.evaluate(
+            stems={s: Path(meta.filepath) for s, meta in stems_meta.items() if meta.filepath},
+            premaster_path=master_file,
+            scene_intent=scene_intent,
+            attention_map=attention_map,
+            mix_automation=mix_automation,
+            acoustic_perspective=getattr(manifest, "acoustic_perspective", None),
+            silence_events=getattr(manifest, "silence_events", None),
+            impact_events=getattr(manifest, "impact_events", None),
+        )
+
+        # Bounded remix remediation if requested and needed
+        if enable_remix and mix_judge_result.status == "REMIX" and mix_judge_result.remix_plan and mix_automation:
+            remix_controller = RemixController(judge=judge_instance, max_attempts=max_remix_attempts)
+            remediated_auto = remix_controller.apply_remix_plan(mix_automation, mix_judge_result.remix_plan)
+            # Re-apply automation to stems
+            for stem_name, stem_file in [("DX", dx_file), ("MX", mx_file), ("FX", fx_file), ("AMB", amb_file)]:
+                if stem_file.exists():
+                    tmp_auto = out_dir / f"{ch_id}_stem_{stem_name}_remix.wav"
+                    apply_automation_to_stem(stem_file, stem_name, tmp_auto, remediated_auto, ffmpeg=ff)
+                    if tmp_auto.exists() and tmp_auto.stat().st_size > 1000:
+                        shutil.move(str(tmp_auto), str(stem_file))
+                        stem_m = measure_audio_metrics(stem_file, ffmpeg=ff)
+                        stems_meta[stem_name] = StemMetadata(
+                            stem_type=stem_name,
+                            filepath=str(stem_file),
+                            duration_sec=stem_m["duration_sec"],
+                            integrated_lufs=stem_m["integrated_lufs"],
+                            true_peak_dbtp=stem_m["true_peak_dbtp"],
+                        )
+            # Re-sum ME
+            subprocess.run(cmd_me, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            me_m = measure_audio_metrics(me_file, ffmpeg=ff)
+            stems_meta["ME"] = StemMetadata(
+                stem_type="ME",
+                filepath=str(me_file),
+                duration_sec=me_m["duration_sec"],
+                integrated_lufs=me_m["integrated_lufs"],
+                true_peak_dbtp=me_m["true_peak_dbtp"],
+            )
+            # Re-sum Master
+            subprocess.run(cmd_master, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            master_m = measure_audio_metrics(master_file, ffmpeg=ff)
+            stems_meta["CINEMATIC_MIX_PREMASTER"] = StemMetadata(
+                stem_type="CINEMATIC_MIX_PREMASTER",
+                filepath=str(master_file),
+                duration_sec=master_m["duration_sec"],
+                integrated_lufs=master_m["integrated_lufs"],
+                true_peak_dbtp=master_m["true_peak_dbtp"],
+            )
+            stems_meta["FULL_MASTER"] = stems_meta["CINEMATIC_MIX_PREMASTER"].model_copy(deep=True)
+            stems_meta["FULL_MASTER"].stem_type = "FULL_MASTER"
+
+            # Re-evaluate with judge
+            mix_judge_result = judge_instance.evaluate(
+                stems={s: Path(meta.filepath) for s, meta in stems_meta.items() if meta.filepath},
+                premaster_path=master_file,
+                scene_intent=scene_intent,
+                attention_map=attention_map,
+                mix_automation=remediated_auto,
+                acoustic_perspective=getattr(manifest, "acoustic_perspective", None),
+                silence_events=getattr(manifest, "silence_events", None),
+                impact_events=getattr(manifest, "impact_events", None),
+                iteration=2,
+            )
+            mix_automation = remediated_auto
+            ledger_meta["mix_automation"] = remediated_auto.model_dump()
+            ledger_meta["automation_decisions"] = remediated_auto.decisions
+            ledger_meta["automation_event_count"] = len(remediated_auto.events)
+            ledger_meta["remix_cycles_executed"] = 1
+
+        ledger_meta["mix_judge_audit"] = mix_judge_result.model_dump()
+        ledger_meta["mix_judge_status"] = mix_judge_result.status
+        ledger_meta["mix_judge_score"] = mix_judge_result.overall_score
+
     ledger = StemLedger(
         chapter_id=ch_id,
         stems=stems_meta,
@@ -450,14 +654,9 @@ def render_discrete_stems(
             master_m["integrated_lufs"] >= -21.0
             and master_m["true_peak_dbtp"] <= -1.4
             and dmr_compliant
+            and (mix_judge_result is None or mix_judge_result.status != "FAIL")
         ),
-        metadata={
-            "engine": "CinemaAudioEngine v4.0",
-            "ducking_profile": ducking_prof.profile_name,
-            "dialogue_masking_ratio_db": dmr_db,
-            "dmr_compliant": dmr_compliant,
-            "total_stems": len(stems_meta),
-        },
+        metadata=ledger_meta,
     )
 
     ledger_path = out_dir / f"{ch_id}_stem_ledger.json"

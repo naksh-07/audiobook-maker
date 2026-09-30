@@ -27,6 +27,16 @@ In legacy audiobook production, music often drowns out whispers, abrupt volume s
 
 ---
 
+## 🎛️ Pipeline Boundary: Stage 11 Cinematic Mix vs. Stage 12 Mastering
+
+> **Stage 11 determines the cinematic mix. Stage 12 performs mastering.**
+
+* **Stage 11: Cinematic Mix**: Produces the **Cinematic Mix Premaster** (`CINEMATIC_MIX_PREMASTER`) by balancing narrative elements, focusing listener attention via `SceneMixIntent` and `AttentionMap`, and generating discrete DME broadcast stems (`DX`, `MX`, `FX`, `AMB`, `ME`).
+* **Stage 12: Mastering**: Performs final EBU R128 loudness normalization ($-19.0$ LUFS $\pm 0.5$ LU), true peak limiting ($-1.5$ dBTP), SOXR 48kHz sinc resampling, dithering, chapter concatenation, and multi-format audio packaging (M4B / MP3 / AAC).
+* For detailed architecture, see [Stage 11 Cinematic Mix Architecture](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_MIX_ARCHITECTURE.md).
+
+---
+
 ## 🎚️ The 5-Track Audio Drama Hierarchy
 
 ```text

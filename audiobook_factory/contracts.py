@@ -1111,6 +1111,8 @@ class CreativeManifest(BaseModel):
     scene_acoustics: Optional[Any] = Field(default=None, description="Decoupled 4-stem SceneSoundscapeManifest")
     music_cues: List[MusicCue] = Field(default_factory=list, description="Surgical musical score cues")
     foley_cues: List[FoleyCue] = Field(default_factory=list, description="Physical foley sound cues")
+    scene_intent: Optional[Any] = Field(default=None, description="Stage 11 Scene Mix Intent")
+    attention_map: Optional[Any] = Field(default=None, description="Stage 11 Time-aware Listener Attention Map")
     total_duration_ms: Optional[int] = Field(default=0, ge=0, description="Total chapter duration in milliseconds")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary creative / project metadata")
 

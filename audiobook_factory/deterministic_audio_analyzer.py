@@ -63,6 +63,13 @@ class DeterministicAudioAnalyzer:
     ):
         self.ffprobe = ffprobe_bin or shutil.which("ffprobe") or "ffprobe"
         self.ffmpeg = ffmpeg_bin or shutil.which("ffmpeg") or "ffmpeg"
+        self._format_cache: Dict[Tuple[str, int, int], FormatFacts] = {}
+        self._loudness_cache: Dict[Tuple[str, int, int], LoudnessFacts] = {}
+
+    def clear_cache(self) -> None:
+        """Clear cached format and loudness analysis results."""
+        self._format_cache.clear()
+        self._loudness_cache.clear()
 
     def is_supported(self, filepath: Union[Path, str]) -> bool:
         """Check if file extension is supported."""
@@ -84,6 +91,15 @@ class DeterministicAudioAnalyzer:
                 file_size_bytes=0,
                 bit_rate=0,
             )
+
+        cache_key = None
+        try:
+            st = filepath.stat()
+            cache_key = (str(filepath.resolve()), st.st_size, st.st_mtime_ns)
+            if cache_key in self._format_cache:
+                return self._format_cache[cache_key].model_copy(deep=True)
+        except Exception:
+            cache_key = None
 
         cmd = [
             self.ffprobe,
@@ -121,7 +137,7 @@ class DeterministicAudioAnalyzer:
                 if isinstance(fmt_tags, dict):
                     combined_tags.update(fmt_tags)
 
-                return FormatFacts(
+                facts = FormatFacts(
                     duration_sec=round(duration, 4),
                     sample_rate=sr,
                     channels=channels,
@@ -132,11 +148,14 @@ class DeterministicAudioAnalyzer:
                     bit_rate=bit_rate,
                     tags=combined_tags,
                 )
+                if cache_key:
+                    self._format_cache[cache_key] = facts
+                return facts.model_copy(deep=True)
         except Exception as e:
             logger.debug(f"ffprobe encountered error on {filepath.name}: {e}")
 
         # Fallback using os.stat
-        return FormatFacts(
+        fallback_facts = FormatFacts(
             duration_sec=0.0,
             sample_rate=48000,
             channels=2,
@@ -146,6 +165,9 @@ class DeterministicAudioAnalyzer:
             file_size_bytes=filepath.stat().st_size if filepath.exists() else 0,
             bit_rate=0,
         )
+        if cache_key:
+            self._format_cache[cache_key] = fallback_facts
+        return fallback_facts.model_copy(deep=True)
 
     def probe_loudness(self, filepath: Path) -> LoudnessFacts:
         """
@@ -155,6 +177,15 @@ class DeterministicAudioAnalyzer:
         facts = LoudnessFacts()
         if not filepath.exists() or filepath.stat().st_size < 100:
             return facts
+
+        cache_key = None
+        try:
+            st = filepath.stat()
+            cache_key = (str(filepath.resolve()), st.st_size, st.st_mtime_ns)
+            if cache_key in self._loudness_cache:
+                return self._loudness_cache[cache_key].model_copy(deep=True)
+        except Exception:
+            cache_key = None
 
         cmd = [
             self.ffmpeg,
@@ -197,10 +228,13 @@ class DeterministicAudioAnalyzer:
             if facts.peak_level_db is not None and facts.rms_level_db is not None:
                 facts.dynamic_range_db = round(abs(facts.peak_level_db - facts.rms_level_db), 2)
 
+            if cache_key:
+                self._loudness_cache[cache_key] = facts
+
         except Exception as e:
             logger.debug(f"ffmpeg loudness analysis encountered error on {filepath.name}: {e}")
 
-        return facts
+        return facts.model_copy(deep=True)
 
     def probe_spectral_and_temporal(
         self,
