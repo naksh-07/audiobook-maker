@@ -106,8 +106,8 @@ class TakeBank:
         target = Path(filepath).resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
         dump_data = {
-            uid: [t.model_dump() for t in var_list]
+            uid: [t.model_dump(mode="json") if hasattr(t, "model_dump") else t for t in var_list]
             for uid, var_list in self.takes.items()
         }
         with open(target, "w", encoding="utf-8") as f:
-            json.dump(dump_data, f, ensure_ascii=False, indent=2)
+            json.dump(dump_data, f, ensure_ascii=False, indent=2, default=str)

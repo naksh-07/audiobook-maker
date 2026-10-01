@@ -1690,6 +1690,12 @@ def run_standalone_pipeline(
     spatial_staging: bool = True,
 ) -> Path:
     """End-to-end execution of the standalone audiobook pipeline."""
+    print("\n" + "=" * 80)
+    print("  [DEPRECATION WARNING] standalone_pipeline.py is a legacy unmastered runner.")
+    print("  For canonical production audio (including Dialogue Editing, Sound Design,")
+    print("  5-Stem Bus Matrix, and Stage 12 MasteringEngineV2), use ProductionOrchestrator:")
+    print("    python -m audiobook_factory.cli produce --input <file>")
+    print("=" * 80 + "\n")
     pool = get_persistent_key_pool()
     print_keypool_status(pool)
 

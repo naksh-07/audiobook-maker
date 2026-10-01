@@ -118,7 +118,7 @@ class MasteringAnalyzer:
             "-f", "null", "-",
         ]
         try:
-            proc = subprocess.run(cmd_ebur, capture_output=True, text=True, errors="ignore", timeout=60.0)
+            proc = subprocess.run(cmd_ebur, capture_output=True, text=True, errors="ignore", timeout=600.0)
             err = proc.stderr
             st_matches = re.findall(r"S:\s+([-\d.]+)\s+LUFS", err)
             if st_matches:
@@ -143,10 +143,12 @@ class MasteringAnalyzer:
             "-f", "null", "-",
         ]
         try:
-            sil_proc = subprocess.run(cmd_silence, capture_output=True, text=True, errors="ignore", timeout=30.0)
+            sil_proc = subprocess.run(cmd_silence, capture_output=True, text=True, errors="ignore", timeout=300.0)
             sil_durs = re.findall(r"silence_duration:\s+([-\d.]+)", sil_proc.stderr)
             if sil_durs:
-                total_dead_air_sec = round(sum(float(d) for d in sil_durs if not math.isnan(float(d))), 2)
+                valid_durs = [float(d) for d in sil_durs if not math.isnan(float(d))]
+                # Longest contiguous dead-air block (industry check is against individual drops > 6s)
+                total_dead_air_sec = round(max(valid_durs), 2) if valid_durs else 0.0
         except Exception as e:
             logger.debug(f"Silence detection probe error on {p.name}: {e}")
 

@@ -497,10 +497,13 @@ class IntelligentTakeSelector:
         if nat_score < self.config.unnaturalness_threshold:
             bonus -= self.config.unnaturalness_penalty
 
-        # 4. Chemistry Context Bonus (Wave D)
+        # 4. Chemistry Context Bonus & Penalty (Wave D)
         if chemistry_context and take.take_id in chemistry_context:
             chem = chemistry_context[take.take_id]
-            bonus += (chem - 0.70) * self.config.chemistry_weight
+            if chem >= 0.70:
+                bonus += (chem - 0.70) * self.config.chemistry_weight
+            elif chem < 0.50:
+                bonus -= (0.50 - chem) * (self.config.chemistry_weight * 1.5)
 
         # 5. Scene Arc Context Bonus (Wave D)
         if arc_context and take.take_id in arc_context:
@@ -518,6 +521,7 @@ class IntelligentTakeSelector:
         voice_dna: Optional[Any] = None,
         chemistry_context: Optional[Dict[str, float]] = None,
         arc_context: Optional[Dict[str, float]] = None,
+        prev_take: Optional[TakeVariant] = None,
     ) -> TakeSelectionResult:
         """
         Executes the full staged take selection pipeline:
@@ -526,6 +530,25 @@ class IntelligentTakeSelector:
         if not takes:
             raise ValueError(f"No candidate takes provided for segment {direction.segment_uid}")
 
+        # Compute dynamic chemistry context from prev_take if not explicitly provided
+        if prev_take and getattr(prev_take, "direction", None) and chemistry_context is None:
+            prev_spk = prev_take.direction.speaker
+            curr_spk = direction.speaker
+            if prev_spk not in ("Narrator", "Foley") and curr_spk not in ("Narrator", "Foley") and prev_spk != curr_spk:
+                from audiobook_factory.performance.chemistry import ConversationalChemistry
+                chem_eval = ConversationalChemistry()
+                chem_map: Dict[str, float] = {}
+                for cand in takes:
+                    gap = getattr(cand.direction, "pause_before_ms", 400) if getattr(cand, "direction", None) else 400
+                    c_res = chem_eval.evaluate_dialogue_chemistry(
+                        prev_take, cand, actual_gap_ms=gap
+                    )
+                    chem_map[cand.take_id] = c_res.composite_chemistry_score
+                chemistry_context = chem_map
+
+        # Use effective spoken text representation for alignment and evaluation
+        effective_text = getattr(direction, "spoken_text", None) or text
+
         # Ensure all takes are evaluated and aligned
         for t in takes:
             # If take does not have an alignment result and aligner is provided, run alignment
@@ -533,7 +556,7 @@ class IntelligentTakeSelector:
                 try:
                     t.alignment_result = self.aligner.align_segment(
                         audio_path=t.audio_path,
-                        text=text,
+                        text=effective_text,
                         segment_uid=direction.segment_uid,
                         direction=direction,
                     )
@@ -544,11 +567,12 @@ class IntelligentTakeSelector:
                 t.evaluation = self.evaluator.evaluate_take(
                     take_id=t.take_id,
                     audio_file=t.audio_path,
-                    text=text,
+                    text=effective_text,
                     direction=direction,
                     signature=signature,
                     voice_dna=voice_dna,
                     alignment_result=getattr(t, "alignment_result", None),
+                    prev_take=prev_take,
                 )
             elif (
                 t.evaluation.evidence is not None
@@ -558,11 +582,12 @@ class IntelligentTakeSelector:
                 t.evaluation = self.evaluator.evaluate_take(
                     take_id=t.take_id,
                     audio_file=t.audio_path,
-                    text=text,
+                    text=effective_text,
                     direction=direction,
                     signature=signature,
                     voice_dna=voice_dna,
                     alignment_result=t.alignment_result,
+                    prev_take=prev_take,
                 )
 
         # Single candidate take path
@@ -590,15 +615,17 @@ class IntelligentTakeSelector:
             fused_score = fusion_res.fused_score
             fused_status = fusion_res.status
 
-            if gates_passed and eval_passed and fused_status == "ACCEPT":
+            if gates_passed and eval_passed and fused_status in ("ACCEPT", "ACCEPT_WITH_WARNING"):
                 sole.is_selected = True
-                status = "ACCEPT"
-                review_req = False
-                confidence = 1.0
+                status = fused_status
+                review_req = (fused_status == "ACCEPT_WITH_WARNING")
+                confidence = 1.0 if fused_status == "ACCEPT" else 0.75
                 reason = (
                     f"Selected sole candidate ({sole.variant_type}): overall score {fused_score:.2f} "
                     f"satisfies performance and technical standards."
                 )
+                if fused_status == "ACCEPT_WITH_WARNING":
+                    reason += " [ACCEPT_WITH_WARNING: Marginal confidence or mild warning]"
                 reason_codes = fusion_res.reason_codes or ["STRONGER_INTENT_MATCH"]
             else:
                 sole.is_selected = False
@@ -876,6 +903,9 @@ class IntelligentTakeSelector:
         direction: PerformanceDirection,
         signature: Optional[Any] = None,
         voice_dna: Optional[Any] = None,
+        prev_take: Optional[TakeVariant] = None,
+        chemistry_context: Optional[Dict[str, float]] = None,
+        arc_context: Optional[Dict[str, float]] = None,
     ) -> TakeVariant:
         """
         Evaluates and selects the winning take from a list of candidate TakeVariants.
@@ -891,6 +921,9 @@ class IntelligentTakeSelector:
             direction=direction,
             signature=signature,
             voice_dna=voice_dna,
+            chemistry_context=chemistry_context,
+            arc_context=arc_context,
+            prev_take=prev_take,
         )
         if result.winner is not None:
             return result.winner

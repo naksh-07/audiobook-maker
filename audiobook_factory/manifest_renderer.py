@@ -232,8 +232,8 @@ def render_music_bus(
 
             dur_sec = max(1.0, cue.duration_ms / 1000.0)
             vol_linear = 10.0 ** (cue.volume_db / 20.0)
-            fade_in = min(3.0, dur_sec / 3.0)
-            fade_out = min(4.0, dur_sec / 3.0)
+            fade_in = (cue.fade_in_ms / 1000.0) if getattr(cue, "fade_in_ms", 0) else min(3.0, dur_sec / 3.0)
+            fade_out = (cue.fade_out_ms / 1000.0) if getattr(cue, "fade_out_ms", 0) else min(4.0, dur_sec / 3.0)
             start_offset_sec = max(0.0, float(getattr(cue, "section_start_sec", 0.0)))
             out_cue = tmp_dir / f"music_cue_{idx:03d}.wav"
             af_filters = [
@@ -248,6 +248,7 @@ def render_music_bus(
 
             cmd = [
                 ffmpeg, "-y",
+                "-stream_loop", "-1",
                 *(["-ss", f"{start_offset_sec:.2f}"] if start_offset_sec > 0 else []),
                 "-i", str(cue_path),
                 "-t", f"{dur_sec:.2f}",

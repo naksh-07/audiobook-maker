@@ -161,13 +161,8 @@ class SceneAwareDecisionEngine:
         elif any(t in ("confession", "grief", "emotional") for t in tags):
             return "EMOTIONAL", "dialogue", 0.80
 
-        # C. Priority 3: Acoustic facts signatures (Empirical heuristic)
-        if facts.integrated_lufs < -23.0 and (facts.loudness_range_lra or 0.0) < 4.0:
-            return "QUIET", "ambience", 0.70
-        elif facts.integrated_lufs < -21.0 and (facts.spectral_centroid_hz or 0.0) < 600.0:
-            return "INTIMATE", "whisper_dialogue", 0.75
-        elif (facts.crest_factor_db or 0.0) > 11.0 and (facts.loudness_range_lra or 0.0) > 8.0:
-            return "ACTION", "impact_fx", 0.70
+        # C. Priority 3: Removed empirical heuristics. 
+        # Rely purely on LLM semantic tags or default to NORMAL, instead of forcing "QUIET" due to low LUFS.
 
         # D. Default fallback
         return "NORMAL", "dialogue", 0.60

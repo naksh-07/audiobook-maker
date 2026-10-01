@@ -51,7 +51,7 @@ from audiobook_factory.forced_aligner import WorkstationForcedAligner
 DEFAULT_BACKEND = os.environ.get("TTS_PRIMARY_BACKEND", "gemini_tts")
 DEFAULT_VOICE = os.environ.get("GEMINI_DEFAULT_VOICE", "Aoede")
 DEFAULT_MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
-DEFAULT_BATCHING_ENABLED = os.environ.get("TTS_BATCHING_ENABLED", "true").lower() in ("true", "1", "yes")
+DEFAULT_BATCHING_ENABLED = os.environ.get("TTS_BATCHING_ENABLED", "false").lower() in ("true", "1", "yes")
 DEFAULT_FORCED_ALIGNMENT_ENABLED = os.environ.get("TTS_FORCED_ALIGNMENT_ENABLED", "true").lower() in ("true", "1", "yes")
 DEFAULT_DECLICK_FADE_MS = float(os.environ.get("TTS_DECLICK_FADE_MS", "5.0"))
 ENABLE_EMERGENCY_FALLBACK = os.environ.get("ENABLE_EMERGENCY_FALLBACK", "false").lower() in ("true", "1", "yes")
@@ -338,11 +338,13 @@ def synthesize_gemini_tts(
         text = NUMERAL_NORMALIZATION[clean_text]
 
     part_payload: Dict[str, Any] = {"text": text}
+    base_temp = None
     if performance_direction:
         from audiobook_factory.performance.tts_adapter import GeminiTTSPerformanceAdapter
         adapter = GeminiTTSPerformanceAdapter()
         adapted = adapter.adapt_direction_to_payload(text, performance_direction, variant_type=variant_type)
         part_payload = adapted["part_payload"]
+        base_temp = adapted.get("temperature")
     else:
         style_desc = resolve_speech_metadata_style(acting, emotion, intensity, memory_vocal_constraint=memory_vocal_constraint)
         if style_desc and style_desc.lower() not in ("neutral", "standard"):
@@ -371,9 +373,13 @@ def synthesize_gemini_tts(
     # Note: gemini-3.1-flash-tts-preview does not support systemInstruction/Developer instruction (HTTP 400).
     # Emotion styling is governed by character voice mapping and punctuation prosody.
 
-    # Subtle temperature micro-entropy (0.685 - 0.715) to avoid static robotic payload fingerprints
+    # Subtle temperature micro-entropy around calibrated director temperature (or default median)
     gen_config = payload["generationConfig"]
-    gen_config["temperature"] = round(random.uniform(0.685, 0.715), 3)
+    if base_temp is not None:
+        jitter = random.uniform(-0.01, 0.01)
+        gen_config["temperature"] = round(max(0.2, min(1.0, float(base_temp) + jitter)), 3)
+    else:
+        gen_config["temperature"] = round(random.uniform(0.685, 0.715), 3)
 
     data = json.dumps(payload).encode("utf-8")
     cadence = get_human_cadence_controller()
@@ -910,7 +916,7 @@ def slice_and_declick_batch(
     aligner: Optional[WorkstationForcedAligner] = None,
     declick_fade_ms: float = DEFAULT_DECLICK_FADE_MS,
     dispatcher: Optional[Any] = None,
-) -> List[Tuple[Path, float]]:
+) -> List[Tuple[Path, float, List[Dict[str, Any]]]]:
     """
     Slices a merged multi-speaker WAV into individual canonical segment WAV files.
     Uses WorkstationForcedAligner on RTX 4050 GPU for sample-accurate boundaries,
@@ -919,15 +925,18 @@ def slice_and_declick_batch(
     if aligner is None:
         aligner = WorkstationForcedAligner()
 
-    boundaries = aligner.align_batch(raw_audio, batch.segments)
-    sliced_results: List[Tuple[Path, float]] = []
+    alignment_results = aligner.align_batch_detailed(raw_audio, batch.segments)
+    sliced_results: List[Tuple[Path, float, List[Dict[str, Any]]]] = []
     ffmpeg_bin = get_ffmpeg()
 
     fade_sec = max(0.001, declick_fade_ms / 1000.0)
 
-    for seg, (start_ms, end_ms) in zip(batch.segments, boundaries):
+    for seg, align_res in zip(batch.segments, alignment_results):
+        start_ms = align_res.start_ms
+        end_ms = align_res.end_ms
         dur_ms = max(200, end_ms - start_ms)
         dur_sec = dur_ms / 1000.0
+        words_metadata = [w.model_dump(mode="json") for w in align_res.words]
         start_sec = start_ms / 1000.0
 
         sp_cfg = dispatcher.get_speaker_config(seg.speaker, getattr(seg, "type", "dialogue")) if dispatcher else {}
@@ -1011,7 +1020,7 @@ def slice_and_declick_batch(
                     actual_dur = wf.getnframes() / float(wf.getframerate())
             except Exception:
                 pass
-            sliced_results.append((out_wav, actual_dur))
+            sliced_results.append((out_wav, actual_dur, words_metadata))
         except Exception as e:
             logger.error(f"[!] Failed to slice segment {seg.index} from batch {batch.batch_id}: {e}")
             if tmp_slice.exists():
@@ -1117,6 +1126,7 @@ class TTSDispatcher:
         self.voice_dna_bank = VoiceDNABank(self.project_dir)
         self.reference_voice_bank = ReferenceVoiceBank(self.project_dir)
         self.scene_tracker = SceneEmotionalStateTracker()
+        self._prev_take = None
 
     def _load_character_roster(self) -> Tuple[Dict[str, str], Dict[str, str]]:
         """Loads character aliases and gender mappings from character_roster.json."""
@@ -1425,6 +1435,25 @@ class TTSDispatcher:
             segment.spoken_text = tts_text
             segment.pronunciation_metadata = [r.model_dump() for r in spoken_res.resolutions]
 
+        if hasattr(p_dir, "spoken_text"):
+            p_dir.spoken_text = tts_text
+            p_dir.pronunciation_metadata = [r.model_dump() for r in spoken_res.resolutions]
+
+        # Fail-closed check: Unresolved critical pronunciation failures
+        if getattr(spoken_res, "has_unresolved_critical", False) is True:
+            from audiobook_factory.pronunciation.contracts import PronunciationStatus
+            unres = [
+                getattr(r, "original_token", str(r)) for r in getattr(spoken_res, "resolutions", [])
+                if getattr(r, "status", None) in (PronunciationStatus.FAILED, PronunciationStatus.UNCERTAIN)
+            ]
+            if unres:
+                allow_degraded = os.environ.get("TTS_ALLOW_DEGRADED_TAKES", "false").lower() in ("true", "1", "yes")
+                if not allow_degraded:
+                    raise RuntimeError(
+                        f"Critical pronunciation resolution failed for Chapter {chapter_num:03d} Segment {seg_num:04d}: "
+                        f"unresolved tokens {unres}. Halting production to prevent defective speech."
+                    )
+
         # Multi-Take Candidate Generation via TakeBank + GenerationStrategyResolver
         from audiobook_factory.performance.strategy_resolver import GenerationStrategyResolver
         strategy_plan = GenerationStrategyResolver.resolve_strategy(p_dir, text=tts_text)
@@ -1462,13 +1491,14 @@ class TTSDispatcher:
             )
             takes_for_seg.append(take_var)
 
-        # Intelligent Take Selection with Voice Identity & Reference Signature
+        # Intelligent Take Selection with Voice Identity & Conversational Chemistry
         winning_take = self.take_selector.select_best_take(
             takes_for_seg,
-            text,
+            tts_text,
             p_dir,
             signature=signature,
             voice_dna=voice_dna,
+            prev_take=getattr(self, "_prev_take", None),
         )
 
         # Pronunciation Audio QA & Targeted Take Repair
@@ -1490,6 +1520,28 @@ class TTSDispatcher:
             )
             if repaired_take:
                 winning_take = repaired_take
+            else:
+                # Targeted repair failed: fail-closed to prevent dropped or corrupted speech in master
+                winning_take.is_selected = False
+                winning_take.selection_reason = (
+                    f"[PRONUNCIATION_QA_FAILED] Audio failed pronunciation QA ({qa_res.status.value}): "
+                    f"{'; '.join(qa_res.omissions or qa_res.review_reasons or qa_res.repetitions)}"
+                )
+
+        if not getattr(winning_take, "is_selected", True):
+            allow_degraded = os.environ.get("TTS_ALLOW_DEGRADED_TAKES", "false").lower() in ("true", "1", "yes")
+            if not allow_degraded:
+                raise RuntimeError(
+                    f"Take selection failed for Chapter {chapter_num:03d} Segment {seg_num:04d} "
+                    f"({getattr(winning_take, 'selection_reason', 'Unacceptable take')}). "
+                    f"Halting production to prevent defective audio from entering master."
+                )
+            logger.critical(
+                f"  [DEGRADED FALLBACK PERMITTED] Segment {seg_num}: {getattr(winning_take, 'selection_reason', '')}"
+            )
+
+        # Update previous take reference for conversational turn continuity and chemistry
+        self._prev_take = winning_take
 
         if str(winning_take.audio_path) != str(out_file):
             shutil.copy2(winning_take.audio_path, str(out_file))
@@ -1604,6 +1656,7 @@ class TTSDispatcher:
             script = script.get("segments", script)
 
         total = len(script)
+        self._prev_take = None
 
         # Pre-flight voice registry validation across all segments (ADR-021 Zero Voice Drift)
         for seg_idx, seg in enumerate(script, 1):
@@ -1668,14 +1721,22 @@ class TTSDispatcher:
                     if batch.strategy in ("multi_speaker_duo", "narrator_chunk"):
                         all_exist = True
                         for seg in batch.segments:
-                            existing = list(self.audio_dir.glob(f"c{chapter_num:03d}_s{seg.index:04d}_*.wav"))
-                            if not existing or existing[0].stat().st_size <= 1000:
+                            spk_cfg = self.get_speaker_config(seg.speaker, getattr(seg, "type", "dialogue"))
+                            exp_name = compute_canonical_segment_filename(
+                                chapter_num, seg.index, seg.text, spk_cfg, default_voice=batch.voice_map.get(seg.speaker, self.default_voice)
+                            )
+                            exp_file = self.audio_dir / exp_name
+                            if not (exp_file.exists() and exp_file.stat().st_size > 1000):
                                 all_exist = False
                                 break
 
                         if all_exist:
                             for seg in batch.segments:
-                                existing = list(self.audio_dir.glob(f"c{chapter_num:03d}_s{seg.index:04d}_*.wav"))[0]
+                                spk_cfg = self.get_speaker_config(seg.speaker, getattr(seg, "type", "dialogue"))
+                                exp_name = compute_canonical_segment_filename(
+                                    chapter_num, seg.index, seg.text, spk_cfg, default_voice=batch.voice_map.get(seg.speaker, self.default_voice)
+                                )
+                                existing = self.audio_dir / exp_name
                                 dur = 1.0
                                 try:
                                     with wave.open(str(existing), "rb") as wf:
@@ -1716,9 +1777,26 @@ class TTSDispatcher:
                                 aligner=self.forced_aligner,
                                 dispatcher=self,
                             )
-                            for seg, (s_file, dur) in zip(batch.segments, sliced):
+                            for seg, (s_file, dur, words_metadata) in zip(batch.segments, sliced):
                                 results[seg.index - 1] = s_file
+                                # Save words_metadata for timeline ledger to pick up
+                                with open(s_file.with_suffix(".words.json"), "w", encoding="utf-8") as wf:
+                                    json.dump(words_metadata, wf)
                                 self.ledger.mark_segment_completed(s_file.stem, str(s_file), dur, chapter_num=chapter_num, seg_num=seg.index)
+                                seg_dir = dir_by_idx.get(seg.index)
+                                if seg_dir and hasattr(self, "take_bank") and self.take_bank:
+                                    try:
+                                        t_var = self.take_bank.create_take(
+                                            segment_uid=seg_dir.segment_uid,
+                                            segment_index=seg.index,
+                                            variant_type="batched",
+                                            audio_file=s_file,
+                                            direction=seg_dir,
+                                        )
+                                        t_var.is_selected = True
+                                        t_var.selection_reason = f"Batched synthesis from {batch.batch_id} ({batch.strategy})"
+                                    except Exception as tb_err:
+                                        logger.warning(f"  [!] TakeBank batch registration notice for segment {seg.index}: {tb_err}")
                                 logger.info(f"  [{seg.index}/{total}] Batch Sliced: {seg.speaker} ({s_file.name}, {dur:.1f}s)")
                         except AllKeysExhaustedTodayError as e:
                             logger.critical(f"  [QUOTA PAUSE] All keys exhausted during batch {batch.batch_id}: {e}")
@@ -1746,10 +1824,12 @@ class TTSDispatcher:
                 logger.info(f"  [{idx}/{total}] Generated Action Beat Foley Canvas ({audio_path.name}, {dur:.1f}s)")
                 continue
 
-            # If already cached on disk, fast-forward with zero sleep
-            existing_matches = list(self.audio_dir.glob(f"c{chapter_num:03d}_s{idx:04d}_*.wav"))
-            if existing_matches and existing_matches[0].stat().st_size > 1000:
-                audio_file = existing_matches[0]
+            # If already cached on disk with exact canonical content hash, fast-forward with zero sleep
+            sp_cfg = self.get_speaker_config(speaker, segment.get("type", "narration"))
+            expected_filename = compute_canonical_segment_filename(chapter_num, idx, text, sp_cfg, default_voice=self.default_voice)
+            expected_file = self.audio_dir / expected_filename
+            if expected_file.exists() and expected_file.stat().st_size > 1000:
+                audio_file = expected_file
                 dur = 1.0
                 try:
                     with wave.open(str(audio_file), "rb") as wf:

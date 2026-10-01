@@ -83,9 +83,9 @@ COMPILED_TTS_TAG_RE = re.compile(rf"^\[\s*(?:{'|'.join(SUPPORTED_TTS_TAG_PATTERN
 
 
 def filter_bracketed_tags(match: re.Match) -> str:
-    """Preserve valid Gemini TTS expressive tags; strip leaked Foley and Devanagari stage cues."""
+    """Preserve valid Gemini TTS expressive tags and SFX/ACTION cues; strip leaked Devanagari stage cues."""
     tag_str = match.group(0).strip()
-    if COMPILED_TTS_TAG_RE.match(tag_str):
+    if COMPILED_TTS_TAG_RE.match(tag_str) or "SFX" in tag_str.upper() or "ACTION" in tag_str.upper():
         return tag_str
     return ""
 

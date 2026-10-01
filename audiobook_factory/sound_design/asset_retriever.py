@@ -67,6 +67,11 @@ class SoundAssetRetriever:
         lufs = float(metrics.get("integrated_lufs", -23.0))
         peak = float(metrics.get("true_peak_db", -1.5))
         duration = float(metrics.get("duration_sec", 0.0))
+        if duration <= 0.0 and hasattr(self.bank, "_extract_duration"):
+            try:
+                duration = float(self.bank._extract_duration(p) or 0.0)
+            except Exception:
+                pass
 
         # Sanity validation
         is_sane = True
@@ -422,6 +427,9 @@ class SoundAssetRetriever:
         asset_id = cand.get("id")
         has_url = bool(cand.get("source_url") or cand.get("mirror_url"))
         is_virtual = cand.get("is_downloaded") == 0 or has_url
+        if cand.get("url_status") == "broken":
+            return None
+
         if asset_id and is_virtual and hasattr(self.bank, "download_virtual_asset"):
             try:
                 dl_path = self.bank.download_virtual_asset(asset_id)

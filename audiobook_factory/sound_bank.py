@@ -739,17 +739,18 @@ class SoundBank:
         Updates sound_catalog so future lookups are local.
         """
         # If source_url or filename omitted, query from database
-        if not source_url or not filename:
-            with self._get_conn() as conn:
-                row = conn.execute(
-                    "SELECT filename, category, source_url, mirror_url FROM sound_catalog WHERE id = ?",
-                    (sound_id,)
-                ).fetchone()
-                if row:
-                    filename = filename or row["filename"]
-                    category = category or row["category"] or "SFX"
-                    source_url = source_url or row["source_url"]
-                    mirror_url = mirror_url or row["mirror_url"]
+        with self._get_conn() as conn:
+            row = conn.execute(
+                "SELECT filename, category, source_url, mirror_url, url_status FROM sound_catalog WHERE id = ?",
+                (sound_id,)
+            ).fetchone()
+            if row:
+                if row["url_status"] == "broken":
+                    return None
+                filename = filename or row["filename"]
+                category = category or row["category"] or "SFX"
+                source_url = source_url or row["source_url"]
+                mirror_url = mirror_url or row["mirror_url"]
 
         category = category or "SFX"
         urls_to_try = [u for u in [source_url, mirror_url] if u]
@@ -777,7 +778,7 @@ class SoundBank:
                             url,
                             headers={"User-Agent": "AudiobookFactory/2.0 (https://github.com/naksh-07/audiobook-maker)"}
                         )
-                        with urllib.request.urlopen(req, timeout=20.0) as resp:
+                        with urllib.request.urlopen(req, timeout=5.0) as resp:
                             with open(temp_path, "wb") as out_f:
                                 shutil.copyfileobj(resp, out_f)
 
@@ -794,6 +795,16 @@ class SoundBank:
                         temp_path.replace(target_path)
                         downloaded = True
                         break
+                    except urllib.error.HTTPError as e:
+                        last_err = e
+                        if temp_path.exists():
+                            try:
+                                temp_path.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                        if e.code in (400, 401, 403, 404, 410, 500, 502, 503):
+                            # Fatal remote error - abort retries on this URL immediately
+                            break
                     except Exception as e:
                         last_err = e
                         if isinstance(e, OSError) and getattr(e, "errno", None) == errno.ENOSPC:

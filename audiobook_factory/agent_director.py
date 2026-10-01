@@ -46,7 +46,7 @@ class AgentDirector:
     def __init__(
         self,
         sound_bank: Optional[SoundBank] = None,
-        model: str = "gemini-flash-latest",
+        model: str = "gemini-2.5-flash",
         sonic_bible: Optional[Any] = None,
         project_dir: Optional[Path] = None,
     ):
@@ -270,7 +270,9 @@ class AgentDirector:
             speaker = seg.get("speaker", "Narrator")
             seg_type = seg.get("type", "narration")
             text = seg.get("text", "")[:150]
-            sfx = f" [SFX: {','.join(seg.get('sfx_cues', []))}]" if seg.get("sfx_cues") else ""
+            sfx_list = seg.get("sfx_cues", [])
+            sfx_tags = [c.get("tag", str(c)) if isinstance(c, dict) else str(c) for c in sfx_list]
+            sfx = f" [SFX: {','.join(sfx_tags)}]" if sfx_tags else ""
             sample_lines.append(f"[{s_idx:03d}|{seg_type}] {speaker}: {text}{sfx}")
 
         script_sample = "\n".join(sample_lines)
@@ -314,23 +316,24 @@ MANDATORY ACOUSTIC DIRECTING RULES:
 3. SONIC GENOME & DYNAMIC SOUNDTRACK DESCRIPTORS (Do NOT specify filenames or titles):
    - Provide valence: float between -1.0 (grim tragedy, terror, mourning) and +1.0 (triumphant victory, joy, solace).
    - Provide arousal: float between 0.0 (quiet, somber, contemplative, stealth) and 1.0 (violent combat, intense adrenaline, frenzy).
-   - Provide narrative_archetype: string tag (e.g. "TAVERN_BRAWL", "MONSTER_HUNT", "ROYAL_CONSPIRACY", "TRAGIC_ROMANCE", "CRYPT_VIGIL", "MEDIEVAL_FESTIVAL", "WILDERNESS_VIGIL", "WAR_MARCH", "MYSTIC_RITUAL").
-   - Provide musical mood, tempo ("slow", "moderate", "fast"), timbre ("solo cello", "dark strings", "brass", "flute", "percussion"), and energy section ("INTRO_BED", "RISING_TENSION", "CLIMAX_DROP", "AFTERMATH_FADE").
+   - Provide narrative_archetype: string tag (e.g. "MYSTERY_PROLOGUE", "TENSION", "NOCTURNAL_VIGIL", "MAGICAL_DESTINY", "BITTERSWEET_PARTING", "HERO_LEGACY", "ROYAL_CONSPIRACY", "TAVERN_BRAWL").
+   - Provide musical mood, tempo ("slow", "moderate", "fast"), timbre ("solo cello", "dark strings", "brass", "flute", "percussion", "harp", "ethereal choir"), and energy section ("INTRO_BED", "RISING_TENSION", "CLIMAX_DROP", "AFTERMATH_FADE").
    - Provide 3-5 descriptive keyword search terms for SQLite FTS5 search.
 
 4. CONTEXTUAL GRAMMATICAL FOLEY (Physical Interactions Only - Zero Metaphors):
-   - Identify physical actions described in text (e.g. draws sword, door creak, tankard slammed, body impact, torch ignite).
+   - Identify physical actions described in text (e.g. door click, cup clatter, newspaper rustle, lighter click, footsteps).
+   - IMPORTANT: NEVER invent weapons, combat, swords, or medieval sounds in peaceful, domestic, suburban, or contemporary scenes.
    - Specify: segment_index, action_verb, object_material, anchor_word.
 
 5. CONTINUOUS AMBIENCE BED:
-   - Identify environmental atmosphere (e.g. wind_howl, fireplace, tavern_murmur, dungeon_drip). Target: -32 LUFS.
+   - Identify environmental atmosphere (e.g. suburban_street_night, quiet_room, wind_howl, fireplace, tavern_murmur). Target: -32 LUFS.
 
 Output STRICT JSON schema:
 {{
   "dramatic_theme": "Brief 1-sentence dramatic theme",
   "ambience": [
     {{
-      "name": "wind_howl" | "fireplace" | "tavern_murmur" | "dungeon_drip",
+      "name": "suburban_street_night" | "domestic_room" | "office_commercial" | "wind_howl" | "fireplace" | "room_tone",
       "target_lufs": -32.0,
       "description": "Why this ambient room tone fits the setting"
     }}
@@ -341,18 +344,18 @@ Output STRICT JSON schema:
       "cue_type": "TRANSITION_BRIDGE" | "EMOTIONAL_UNDERSCORE" | "CLIMACTIC_ACTION_CUE",
       "trigger_segment": int,
       "until_segment": int,
-      "narrative_archetype": "MONSTER_HUNT" | "TAVERN_BRAWL" | "ROYAL_CONSPIRACY" | "TRAGIC_ROMANCE" | "CRYPT_VIGIL" | "MEDIEVAL_FESTIVAL" | "WILDERNESS_VIGIL" | "WAR_MARCH",
+      "narrative_archetype": str,
       "valence": float (-1.0 to 1.0),
       "arousal": float (0.0 to 1.0),
-      "mood": "mournful" | "tense" | "triumphant" | "mysterious" | "combat",
+      "mood": "mournful" | "tense" | "triumphant" | "mysterious" | "somber" | "magical",
       "tempo": "slow" | "moderate" | "fast",
-      "timbre": "solo cello" | "dark strings" | "brass" | "lute" | "ethereal choir",
+      "timbre": "solo cello" | "dark strings" | "brass" | "ethereal choir" | "harp",
       "energy_section": "INTRO_BED" | "RISING_TENSION" | "CLIMAX_DROP" | "AFTERMATH_FADE",
       "search_query": "3-5 descriptive keywords for FTS5",
       "duration_sec": float (25.0 to 240.0),
       "fade_in_sec": float (2.0 to 4.0),
       "fade_out_sec": float (3.0 to 5.0),
-      "volume_db": float (-20.0 to -14.0),
+      "volume_db": float (-9.0 to -6.5),
       "dramatic_justification": "Why music enters here and why silence surrounds it"
     }}
   ],
@@ -360,8 +363,8 @@ Output STRICT JSON schema:
     {{
       "segment_index": int,
       "subject": str,
-      "action_verb": "draw" | "clash" | "slam" | "creak" | "pour" | "ignite" | "step",
-      "object_material": "steel" | "wood" | "stone" | "liquid" | "leather",
+      "action_verb": str,
+      "object_material": str,
       "anchor_word": str,
       "target_gain_dbfs": float (-14.0 to -18.0),
       "azimuth_pan": float (-0.8 to +0.8)
@@ -369,11 +372,17 @@ Output STRICT JSON schema:
   ]
 }}"""
 
+        candidate_models = [self.model, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        # Deduplicate preserving order
+        seen_models = set()
+        models_to_try = [m for m in candidate_models if not (m in seen_models or seen_models.add(m))]
+
         for attempt in range(max_retries):
             api_key = self.pool.get_key(service="text")
             if not api_key:
                 break
 
+            current_model = models_to_try[attempt % len(models_to_try)]
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
@@ -388,7 +397,7 @@ Output STRICT JSON schema:
                 ],
             }
             data_bytes = json.dumps(payload).encode("utf-8")
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
             req = urllib.request.Request(
                 url,
                 data=data_bytes,
@@ -401,10 +410,14 @@ Output STRICT JSON schema:
                     candidates = res.get("candidates", [])
                     if candidates:
                         raw_text = candidates[0]["content"]["parts"][0]["text"].strip()
+                        # Clean potential markdown fences
+                        if raw_text.startswith("```"):
+                            lines = raw_text.splitlines()
+                            raw_text = "\n".join(lines[1:-1] if lines[-1].startswith("```") else lines[1:])
                         parsed = json.loads(raw_text)
                         if parsed and "music_cues" in parsed:
                             logger.info(
-                                f"  [+] Pass 1 Dramaturgy: {len(parsed['music_cues'])} cues planned, "
+                                f"  [+] Pass 1 Dramaturgy (model {current_model}): {len(parsed['music_cues'])} cues planned, "
                                 f"{len(parsed.get('foley_events', []))} foley events."
                             )
                             # Enforce silence carving math
@@ -414,10 +427,10 @@ Output STRICT JSON schema:
                     self.pool.mark_temporary_backoff(api_key, 15.0, error_msg=str(e))
                 time.sleep(0.5 * (attempt + 1))
             except Exception as e:
-                logger.warning(f"  [!] Pass 1 Dramaturge attempt {attempt+1} warning: {e}")
-                time.sleep(1.5 * (attempt + 1))
+                logger.warning(f"  [!] Pass 1 Dramaturge attempt {attempt+1} ({current_model}) warning: {e}")
+                time.sleep(1.0 * (attempt + 1))
 
-        # Deterministic Pass 1 fallback guaranteeing 75% silence
+        # Deterministic Pass 1 fallback guaranteeing 70-75% silence
         logger.warning("  [!] LLM API unavailable. Activating calibrated 75% silence dramatic template.")
         return self._build_deterministic_dramaturgy_plan(script_segments, total_duration_sec, sonic_bible=sonic_bible)
 
@@ -454,11 +467,16 @@ Output STRICT JSON schema:
         total_duration_sec: float,
         sonic_bible: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Deterministic plan with high acoustic silence (75% silence)."""
-        dur_sec = round(min(25.0, max(2.0, total_duration_sec * 0.20)), 1)
+        """
+        Deterministic multi-scene dramatic plan distributing 5-6 cues across the chapter (~20-25% music coverage,
+        guaranteeing ~75-80% pure acoustic silence) with audible mix levels (-7.0 dBFS).
+        """
+        n_segs = max(1, len(script_segments))
+        t_dur = max(30.0, total_duration_sec)
+
         leitmotif_ref = ""
         timbre = "dark strings"
-        query = "mystery solo cello destination"
+        query_base = "mystery solo cello strings"
         if sonic_bible and hasattr(sonic_bible, "leitmotifs"):
             for seg in script_segments:
                 spk = seg.get("speaker", "")
@@ -467,38 +485,134 @@ Output STRICT JSON schema:
                     if m:
                         leitmotif_ref = getattr(m, "motif_id", "")
                         timbre = getattr(m, "primary_instrument", timbre)
-                        query = getattr(m, "track_name", query)
+                        query_base = getattr(m, "track_name", query_base)
                         break
             if not leitmotif_ref and sonic_bible.leitmotifs:
                 first_m = next(iter(sonic_bible.leitmotifs.values()))
                 leitmotif_ref = getattr(first_m, "motif_id", "")
                 timbre = getattr(first_m, "primary_instrument", timbre)
-                query = getattr(first_m, "track_name", query)
+                query_base = getattr(first_m, "track_name", query_base)
+
+        cue_definitions = [
+            {
+                "id": "cue_01_prologue",
+                "type": "TRANSITION_BRIDGE",
+                "seg_ratio": 0.0,
+                "dur_sec": min(25.0, max(12.0, t_dur * 0.02)),
+                "archetype": "MYSTERY_PROLOGUE",
+                "mood": "mysterious",
+                "tempo": "slow",
+                "timbre": timbre,
+                "energy": "INTRO_BED",
+                "query": f"{query_base} atmospheric intro bed",
+                "volume_db": -7.0,
+                "justification": "Opening narrative establishment into silence",
+            },
+            {
+                "id": "cue_02_tension",
+                "type": "EMOTIONAL_UNDERSCORE",
+                "seg_ratio": 0.20,
+                "dur_sec": min(45.0, max(15.0, t_dur * 0.03)),
+                "archetype": "INVESTIGATION_TENSION",
+                "mood": "tense",
+                "tempo": "slow",
+                "timbre": "pizzicato strings",
+                "energy": "RISING_TENSION",
+                "query": "tension suspense subtle strings intrigue",
+                "volume_db": -7.5,
+                "justification": "Curious and strange occurrences in ordinary daylight",
+            },
+            {
+                "id": "cue_03_nocturnal",
+                "type": "EMOTIONAL_UNDERSCORE",
+                "seg_ratio": 0.45,
+                "dur_sec": min(40.0, max(15.0, t_dur * 0.03)),
+                "archetype": "NOCTURNAL_VIGIL",
+                "mood": "mysterious",
+                "tempo": "slow",
+                "timbre": "dark strings",
+                "energy": "INTRO_BED",
+                "query": "ambient cello mystery atmospheric calm",
+                "volume_db": -7.0,
+                "justification": "Evening transition as darkness settles",
+            },
+            {
+                "id": "cue_04_destiny",
+                "type": "EMOTIONAL_UNDERSCORE",
+                "seg_ratio": 0.65,
+                "dur_sec": min(55.0, max(20.0, t_dur * 0.04)),
+                "archetype": "MAGICAL_DESTINY",
+                "mood": "mysterious",
+                "tempo": "slow",
+                "timbre": "ethereal choir",
+                "energy": "RISING_TENSION",
+                "query": "ethereal magic destiny wonder atmospheric",
+                "volume_db": -7.0,
+                "justification": "Arrival of legendary figures in the dead of night",
+            },
+            {
+                "id": "cue_05_parting",
+                "type": "CLIMACTIC_ACTION_CUE",
+                "seg_ratio": 0.85,
+                "dur_sec": min(45.0, max(18.0, t_dur * 0.035)),
+                "archetype": "BITTERSWEET_PARTING",
+                "mood": "mournful",
+                "tempo": "slow",
+                "timbre": "solo cello",
+                "energy": "CLIMAX_DROP",
+                "query": "emotional solo cello bittersweet solemn parting",
+                "volume_db": -6.5,
+                "justification": "Bittersweet farewell and momentous handover",
+            },
+            {
+                "id": "cue_06_legacy",
+                "type": "TRANSITION_BRIDGE",
+                "seg_ratio": 0.96,
+                "dur_sec": min(30.0, max(12.0, t_dur * 0.02)),
+                "archetype": "HERO_LEGACY",
+                "mood": "triumphant",
+                "tempo": "moderate",
+                "timbre": "brass",
+                "energy": "AFTERMATH_FADE",
+                "query": "triumphant solemn legacy legend horn strings",
+                "volume_db": -7.0,
+                "justification": "Final solemn toast into silence",
+            },
+        ]
+
+        music_cues = []
+        for c in cue_definitions:
+            trig_idx = max(1, min(n_segs, int(n_segs * c["seg_ratio"]) + 1))
+            music_cues.append({
+                "cue_id": c["id"],
+                "cue_type": c["type"],
+                "trigger_segment": trig_idx,
+                "narrative_archetype": c["archetype"],
+                "valence": -0.2,
+                "arousal": 0.3,
+                "mood": c["mood"],
+                "tempo": c["tempo"],
+                "timbre": c["timbre"],
+                "energy_section": c["energy"],
+                "search_query": c["query"],
+                "duration_sec": round(c["dur_sec"], 1),
+                "fade_in_sec": 3.0,
+                "fade_out_sec": 4.0,
+                "volume_db": c["volume_db"],
+                "dramatic_justification": c["justification"],
+                "leitmotif_ref": leitmotif_ref,
+            })
 
         return {
-            "dramatic_theme": "Grim Dark Fantasy Mystery",
-            "ambience": [{"name": "room_tone", "target_lufs": -32.0, "description": "Atmospheric subtle room tone"}],
-            "music_cues": [
+            "dramatic_theme": "Literary Cinematic Audio Drama",
+            "ambience": [
                 {
-                    "cue_id": "cue_01_bridge",
-                    "cue_type": "TRANSITION_BRIDGE",
-                    "trigger_segment": 1,
-                    "narrative_archetype": "CRYPT_VIGIL",
-                    "valence": -0.4,
-                    "arousal": 0.25,
-                    "mood": "mysterious",
-                    "tempo": "slow",
-                    "timbre": timbre,
-                    "energy_section": "INTRO_BED",
-                    "search_query": query,
-                    "duration_sec": dur_sec,
-                    "fade_in_sec": 3.0,
-                    "fade_out_sec": 4.0,
-                    "volume_db": -18.0,
-                    "dramatic_justification": "Introductory dramatic scene transition into silence",
-                    "leitmotif_ref": leitmotif_ref,
+                    "name": "suburban_street_night",
+                    "target_lufs": -32.0,
+                    "description": "Quiet nighttime suburban ambience with subtle distant crickets and breeze",
                 }
             ],
+            "music_cues": music_cues,
             "foley_events": [],
         }
 
@@ -686,13 +800,14 @@ Output STRICT JSON schema:
         segment_durations_sec: Dict[int, float],
     ) -> List[FoleyCue]:
         """
-        Pass 3: Acoustic Foley using grammatical dependency parsing without regex.
+        Pass 3: Acoustic Foley using structured screenplay cues and explicit physical actions.
         Aligns physical contact events to exact anchor word timestamps with transient pre-roll.
+        Zero guessing of weapons or combat in domestic/modern scenes.
         """
         foley_cues: List[FoleyCue] = []
         seg_by_index = {s.get("index", idx + 1): s for idx, s in enumerate(script_segments)}
 
-        # If LLM did not generate foley events (or offline), run grammatical dependency parsing
+        # If LLM did not generate foley events (or offline), run explicit dependency parsing
         candidates = list(foley_events_plan) if foley_events_plan else self._parse_grammatical_foley_dependencies(script_segments)
 
         # Register any dedicated action beats in script_segments not already in candidates
@@ -701,8 +816,8 @@ Output STRICT JSON schema:
             s_idx = s.get("index", 1)
             if s.get("type") == "action" and s_idx not in registered_indices:
                 sfx_list = s.get("sfx_cues", [])
-                action_verb = "draw"
-                material = "steel"
+                action_verb = "creak"
+                material = "wood"
                 anchor_tag = "[ACTION]"
                 if sfx_list:
                     raw_sfx = sfx_list[0]
@@ -715,15 +830,15 @@ Output STRICT JSON schema:
                             material = parts[1]
                         elif len(parts) == 1:
                             action_verb = parts[0]
-                candidates.append({
-                    "segment_index": s_idx,
-                    "subject": "Foley",
-                    "action_verb": action_verb,
-                    "object_material": material,
-                    "anchor_word": anchor_tag,
-                    "target_gain_dbfs": -14.0,
-                    "azimuth_pan": 0.0,
-                })
+                    candidates.append({
+                        "segment_index": s_idx,
+                        "subject": "Foley",
+                        "action_verb": action_verb,
+                        "object_material": material,
+                        "anchor_word": anchor_tag,
+                        "target_gain_dbfs": -16.0,
+                        "azimuth_pan": 0.0,
+                    })
 
         for idx, event in enumerate(candidates):
             s_idx = event.get("segment_index", 1)
@@ -731,10 +846,13 @@ Output STRICT JSON schema:
             if not seg:
                 continue
 
-            action_verb = event.get("action_verb", "draw")
-            object_material = event.get("object_material", "steel")
+            action_verb = event.get("action_verb", "")
+            object_material = event.get("object_material", "")
+            if not action_verb:
+                continue
+
             anchor_word = event.get("anchor_word", "")
-            target_gain_dbfs = float(event.get("target_gain_dbfs", -15.0))
+            target_gain_dbfs = float(event.get("target_gain_dbfs", -16.0))
             pan_val = float(event.get("azimuth_pan", 0.0))
             pan_val = max(-0.8, min(0.8, pan_val))
 
@@ -749,8 +867,7 @@ Output STRICT JSON schema:
 
             is_action_seg = (seg.get("type") == "action") or (seg.get("speaker") == "Foley")
             if is_action_seg:
-                # Dedicated action beat: anchor Foley directly to seg_start_ms + 50ms with 50ms transient lead-in,
-                # bypassing linear word-ratio calculation completely!
+                # Dedicated action beat: anchor Foley directly to seg_start_ms + 50ms with 50ms transient lead-in
                 pre_roll_ms = 50
                 cue_start_ms = max(0, seg_start_ms + 50)
             else:
@@ -760,6 +877,7 @@ Output STRICT JSON schema:
                     anchor_word=anchor_word,
                     seg_dur_ms=seg_dur_ms,
                     action_verb=action_verb,
+                    word_alignments=seg.get("word_alignments")
                 )
                 pre_roll_ms = 100  # 100ms transient lead-in for physical impact
                 cue_start_ms = max(0, seg_start_ms + anchor_offset_ms - pre_roll_ms)
@@ -793,128 +911,68 @@ Output STRICT JSON schema:
         self, script_segments: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
-        Grammatical dependency parsing without regex:
-        Analyzes grammatical tokens (Action Verbs + Object Materials) across segments.
-        Identifies physical interactions (e.g. unsheathe/draw -> sword; open/creak -> door).
+        Extracts physical Foley events strictly from explicit segment metadata (sfx_cues)
+        or dedicated action segments. Never hallucinates weapons, combat, or fantasy actions
+        in domestic, suburban, or peaceful scenes.
         """
-        action_verb_semantics = {
-            "draw": {"materials": ["steel", "iron", "blade", "sword", "seax", "talwar"], "canonical": "draw"},
-            "unsheathe": {"materials": ["steel", "sword", "blade"], "canonical": "draw"},
-            "खींची": {"materials": ["तलवार", "खंजर", "ब्लेड"], "canonical": "draw"},
-            "निकाल": {"materials": ["तलवार", "चाकू"], "canonical": "draw"},
-            "slam": {"materials": ["door", "tankard", "fist", "table", "gate"], "canonical": "impact"},
-            "पटक": {"materials": ["दरवाजा", "कटोरा", "थाली"], "canonical": "impact"},
-            "creak": {"materials": ["door", "floor", "wood", "hinge"], "canonical": "creak"},
-            "चूं": {"materials": ["दरवाजा", "फर्श"], "canonical": "creak"},
-            "clash": {"materials": ["sword", "steel", "blade", "shield"], "canonical": "clash"},
-            "टकरा": {"materials": ["तलवार", "लोहा"], "canonical": "clash"},
-            "pour": {"materials": ["water", "wine", "ale", "tankard", "beer"], "canonical": "pour"},
-            "उड़ेल": {"materials": ["शराब", "पानी"], "canonical": "pour"},
-            "ignite": {"materials": ["torch", "fire", "match", "flame"], "canonical": "ignite"},
-            "जला": {"materials": ["मशाल", "आग"], "canonical": "ignite"},
-            "थाली": {"materials": ["plate", "dish", "ceramic", "tableware", "थाली"], "canonical": "tableware"},
-            "plate": {"materials": ["plate", "dish", "ceramic", "tableware"], "canonical": "tableware"},
-            "dish": {"materials": ["plate", "dish", "ceramic", "tableware"], "canonical": "tableware"},
-            "कटोरा": {"materials": ["bowl", "ceramic", "wood", "tableware", "कटोरा"], "canonical": "tableware"},
-            "bowl": {"materials": ["bowl", "ceramic", "wood", "tableware"], "canonical": "tableware"},
-            "हड्डी": {"materials": ["bone", "हड्डी"], "canonical": "snap"},
-            "bone": {"materials": ["bone"], "canonical": "snap"},
-        }
-
         candidates: List[Dict[str, Any]] = []
 
         for seg in script_segments:
             s_idx = seg.get("index", 1)
-            # 1. Dedicated physical action beat: parse directly from sfx_cues / metadata
-            if seg.get("type") == "action":
-                sfx_list = seg.get("sfx_cues", [])
-                action_verb = "draw"
-                material = "steel"
-                anchor_tag = "[ACTION]"
-                if sfx_list:
-                    raw_sfx = sfx_list[0]
-                    tag = raw_sfx.get("tag", "") if isinstance(raw_sfx, dict) else str(raw_sfx)
-                    if tag:
-                        anchor_tag = tag
-                        parts = tag.split("_")
-                        if len(parts) >= 2:
-                            action_verb = parts[0]
-                            material = parts[1]
-                        elif len(parts) == 1:
-                            action_verb = parts[0]
-                candidates.append({
-                    "segment_index": s_idx,
-                    "subject": "Foley",
-                    "action_verb": action_verb,
-                    "object_material": material,
-                    "anchor_word": anchor_tag,
-                    "target_gain_dbfs": -14.0,
-                    "azimuth_pan": 0.0,
-                })
+            sfx_list = seg.get("sfx_cues", [])
+            is_action = (seg.get("type") == "action") or (seg.get("speaker") == "Foley")
+
+            # 1. Parse explicit sfx_cues provided by the LLM or screenplay
+            if sfx_list:
+                for sfx in sfx_list:
+                    tag = sfx.get("tag", "") if isinstance(sfx, dict) else str(sfx)
+                    if not tag:
+                        continue
+                    parts = tag.split("_")
+                    action_verb = parts[0]
+                    material = parts[1] if len(parts) >= 2 else "wood"
+                    candidates.append({
+                        "segment_index": s_idx,
+                        "subject": seg.get("speaker", "Foley"),
+                        "action_verb": action_verb,
+                        "object_material": material,
+                        "anchor_word": sfx.get("anchor_word", f"[{tag.upper()}]") if isinstance(sfx, dict) else f"[{tag.upper()}]",
+                        "target_gain_dbfs": float(sfx.get("gain_dbfs", -16.0)) if isinstance(sfx, dict) else -16.0,
+                        "azimuth_pan": float(sfx.get("pan", 0.0)) if isinstance(sfx, dict) else 0.0,
+                    })
                 continue
 
-            text = seg.get("text", "")
-            tokens = [t.strip(".,!?;:\"'()[]{}—–").lower() for t in text.split()]
-
-            found_action = None
-            found_anchor = ""
-            canonical_verb = ""
-            material = ""
-
-            for tok in tokens:
-                for verb_token, meta in action_verb_semantics.items():
-                    if verb_token.lower() in tok:
-                        found_action = verb_token
-                        found_anchor = tok
-                        canonical_verb = meta["canonical"]
-                        # Check associated materials in segment
-                        for mat in meta["materials"]:
-                            if mat.lower() in text.lower():
-                                material = mat
-                                break
-                        break
-                if found_action:
-                    break
-
-            if found_action:
-                if not material:
-                    if canonical_verb in ("draw", "clash"):
-                        material = "steel"
-                    elif canonical_verb in ("pour",):
-                        material = "liquid"
-                    elif canonical_verb in ("creak",):
-                        material = "wood"
-                    elif canonical_verb in ("tableware",):
-                        material = "plate"
-                    elif canonical_verb in ("snap",):
-                        material = "bone"
-                    elif canonical_verb in ("ignite",):
-                        material = "torch"
-                    elif canonical_verb in ("impact",):
-                        material = "wood" if any(w in text.lower() for w in ("दरवाजा", "door", "table", "मेज")) else "body"
-                    else:
-                        material = "wood"
-
-                candidates.append({
-                    "segment_index": s_idx,
-                    "subject": seg.get("speaker", "Character"),
-                    "action_verb": canonical_verb,
-                    "object_material": material,
-                    "anchor_word": found_anchor,
-                    "target_gain_dbfs": -15.0,
-                    "azimuth_pan": 0.0,
-                })
+            # 2. If dedicated action segment without explicit sfx list, inspect text for grounded physical actions
+            if is_action:
+                text_clean = seg.get("text", "").lower()
+                # Check for subtle everyday domestic/suburban actions
+                if any(w in text_clean for w in ("door", "दरवाजा", "gate", "किवाड़")):
+                    candidates.append({
+                        "segment_index": s_idx,
+                        "subject": "Foley",
+                        "action_verb": "creak" if any(w in text_clean for w in ("creak", "चूं")) else "slam",
+                        "object_material": "door",
+                        "anchor_word": "[ACTION]",
+                        "target_gain_dbfs": -16.0,
+                        "azimuth_pan": 0.0,
+                    })
+                elif any(w in text_clean for w in ("cup", "tea", "प्याला", "चाय", "plate", "थाली")):
+                    candidates.append({
+                        "segment_index": s_idx,
+                        "subject": "Foley",
+                        "action_verb": "tableware",
+                        "object_material": "cup",
+                        "anchor_word": "[ACTION]",
+                        "target_gain_dbfs": -18.0,
+                        "azimuth_pan": 0.0,
+                    })
 
         return candidates
 
     def _compute_word_level_offset(
-        self, text: str, anchor_word: str, seg_dur_ms: int, action_verb: str = ""
+        self, text: str, anchor_word: str, seg_dur_ms: int, action_verb: str = "", word_alignments: Optional[List[Dict[str, Any]]] = None
     ) -> int:
         """Computes speech timeline offset of the anchor word within a dialogue segment with bilingual normalization."""
-        words = [w.strip(".,!?;:\"'()[]{}—–") for w in text.split() if w.strip(".,!?;:\"'()[]{}—–")]
-        if not words:
-            return 150
-
         anchor_lower = (anchor_word or "").lower().strip()
         verb_lower = (action_verb or "").lower().strip()
 
@@ -943,7 +1001,6 @@ Output STRICT JSON schema:
             "fire": ["आग", "ज्वाला", "fire"],
         }
 
-        # Expand search targets
         search_targets = {anchor_lower} if anchor_lower else set()
         if anchor_lower in BILINGUAL_ANCHOR_MAP:
             search_targets.update(BILINGUAL_ANCHOR_MAP[anchor_lower])
@@ -953,6 +1010,20 @@ Output STRICT JSON schema:
             if anchor_lower in hindi_list:
                 search_targets.add(eng)
                 search_targets.update(hindi_list)
+
+        # 1. Precise Aligner Mode
+        if word_alignments:
+            for word_data in word_alignments:
+                w_norm = str(word_data.get("normalized_token", "")).lower()
+                w_raw = str(word_data.get("token", "")).lower()
+                if any(t and (t == w_norm or t == w_raw or t in w_raw) for t in search_targets):
+                    # Return exact exact alignment timestamp in MS
+                    return int(word_data.get("start_ms", 0))
+
+        # 2. Fallback Linear Math Mode (If forced aligner data is missing)
+        words = [w.strip(".,!?;:\"'()[]{}—–") for w in text.split() if w.strip(".,!?;:\"'()[]{}—–")]
+        if not words:
+            return 150
 
         word_idx = -1
         for i, w in enumerate(words):
@@ -965,100 +1036,48 @@ Output STRICT JSON schema:
             word_ratio = (word_idx + 0.5) / max(1, len(words))
             return int(seg_dur_ms * max(0.08, min(0.92, word_ratio)))
 
-        # Zero Dead-Center Trap: Action/intro beats land early (~15%), impacts/resolutions land late (~75%)
         impact_actions = {"clash", "slam", "fall", "impact", "break", "bone", "पटक", "गिरा", "टकरा"}
         if anchor_lower in impact_actions or verb_lower in impact_actions:
             return int(seg_dur_ms * 0.75)
         return int(seg_dur_ms * 0.15)
 
     def _resolve_foley_asset(self, action_verb: str, object_material: str) -> Optional[Path]:
-        """Resolves sound asset from sound bank using strict taxonomy matching and context filters."""
-        act_clean = (action_verb or "").lower().strip()
-        mat_clean = (object_material or "").lower().strip()
-
-        # 1. Domestic Tableware & Dining Isolation
-        domestic_materials = {"plate", "dish", "bowl", "cup", "tankard", "tray", "tableware", "थाली", "कटोरा", "चम्मच", "बर्तन", "प्याला"}
-        is_domestic = (mat_clean in domestic_materials) or (act_clean in ("tableware", "pour", "drink", "eat"))
-
-        if is_domestic:
-            cand_p = (
-                self.sound_bank.resolve_sound("ceramic_dish", category="FOL") or
-                self.sound_bank.resolve_sound("plate_clatter", category="FOL") or
-                self.sound_bank.resolve_sound("dish", category="FOL") or
-                self.sound_bank.resolve_sound("wood_tankard", category="FOL")
-            )
-            if cand_p and cand_p.exists():
-                return cand_p
-            matches = self.sound_bank.search("dish plate ceramic tableware", category="foley", limit=2)
-            if not matches:
-                matches = self.sound_bank.search("tankard wood", category="foley", limit=2)
-            if matches and matches[0].get("filepath"):
-                cand = Path(matches[0]["filepath"])
-                # CATEGORY GUARD: Prohibit sword/weapon files for domestic dining!
-                if not any(w in cand.name.lower() for w in ("sword", "blade", "clash", "scabbard", "parry", "axe", "dagger")):
-                    if cand.exists():
-                        return cand
-            # If no domestic sound exists, return None (silence) - NEVER play sword clash during a banquet!
+        """Resolves sound asset from sound bank using Sonic Intelligence Engine semantic intent queries."""
+        intent = f"{action_verb} {object_material}".strip()
+        if not intent:
             return None
 
-        # 2. Organic / Anatomical (Bone, Flesh)
-        organic_materials = {"bone", "flesh", "cartilage", "हड्डी", "मांस"}
-        is_organic = (mat_clean in organic_materials) or (act_clean in ("snap", "squelch", "tear"))
-        if is_organic:
-            matches = self.sound_bank.search("bone snap body fall flesh", category="foley", limit=2)
-            if matches and matches[0].get("filepath"):
-                cand = Path(matches[0]["filepath"])
-                # CATEGORY GUARD: Prohibit chimes, rattles, metal
-                if not any(w in cand.name.lower() for w in ("chime", "bell", "metal", "sword", "wood-rattle")):
-                    if cand.exists():
-                        return cand
-            return None
+        try:
+            # Engage hybrid intelligence FTS/Vector query
+            result = self.sound_bank.search_intelligence(intent=intent, limit=3)
+            if result and hasattr(result, "ranked_cards") and result.ranked_cards:
+                for card in result.ranked_cards:
+                    if card and getattr(card, "file_path", None):
+                        cand = Path(card.file_path)
+                        # CATEGORY GUARD: Prohibit weapon/combat assets for non-combat intents
+                        is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
+                        banned_non_combat = ("sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor", "clash")
+                        if not is_combat_intent and any(b in cand.name.lower() for b in banned_non_combat):
+                            continue
+                        if cand.exists():
+                            return cand
+        except Exception as e:
+            # Fallback to basic search if intelligence engine fails
+            pass
 
-        # 3. Direct sound bank name lookup
-        p = self.sound_bank.resolve_sound(f"{action_verb}_{object_material}", category="FOL")
-        if p and p.exists():
-            return p
-
-        p = self.sound_bank.resolve_sound(action_verb, category="FOL")
-        if p and p.exists():
-            return p
-
-        # 4. Sound bank search by action_type (strictly confined to foley/sfx category)
-        matches = self.sound_bank.search(f"{action_verb} {object_material}".strip(), category="foley", limit=2)
+        # 2. Basic fallback search if Intelligence didn't yield a valid local path
+        matches = self.sound_bank.search(intent, category="foley", limit=3)
         if not matches:
             matches = self.sound_bank.search(action_verb, category="foley", limit=2)
-        if not matches and object_material:
-            matches = self.sound_bank.search(object_material, category="foley", limit=2)
-
-        # 5. Acoustic taxonomy synonym expansion (without "plate" -> "metal"!)
-        if not matches:
-            mat_map = {
-                "iron": "metal",
-                "steel": "metal",
-                "armor": "metal",
-                "gauntlet": "metal",
-                "shield": "metal",
-                "wood": "wood",
-                "stone": "stone",
-                "door": "door",
-            }
-            act_map = {
-                "slam": "hit",
-                "crash": "hit",
-                "strike": "hit",
-                "throw": "hit",
-                "shut": "doorClose",
-                "close": "doorClose",
-            }
-            exp_mat = mat_map.get(mat_clean, mat_clean)
-            exp_act = act_map.get(act_clean, act_clean)
-            if exp_mat or exp_act:
-                matches = self.sound_bank.search(f"{exp_act} {exp_mat}".strip(), category="foley", limit=2)
-
-        if matches and matches[0].get("filepath"):
-            cand = Path(matches[0]["filepath"])
-            if cand.exists():
-                return cand
+        for m in matches:
+            if m.get("filepath"):
+                cand = Path(m["filepath"])
+                is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
+                banned_non_combat = ("sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor", "clash")
+                if not is_combat_intent and any(b in cand.name.lower() for b in banned_non_combat):
+                    continue
+                if cand.exists():
+                    return cand
 
         return None
 
@@ -1248,17 +1267,26 @@ Output STRICT JSON schema:
 
         theme_str = str(dramaturgy_plan.get("dramatic_theme", "")).lower()
 
+        from audiobook_factory.sound_design.environment_profiles import get_environment_registry
+        env_reg = get_environment_registry()
+
         if not scene_manifest.scenes and len(blocks) > 1:
             for idx, (env_name, b_start, b_end) in enumerate(blocks):
                 layers: List[AmbienceLayer] = []
+                comb_str = f"{env_name} {theme_str}".lower()
+                env_prof = env_reg.get_profile(env_name) or env_reg.resolve_from_text(comb_str)
+
+                # 1. Base Room Tone from canonical profile
+                base_asset_name = env_prof.typical_ambience_layers[0] if env_prof.typical_ambience_layers else env_name
                 base_res = (
+                    self.sound_bank.resolve_sound(base_asset_name, category="AMB") or
                     self.sound_bank.resolve_sound(f"{env_name}.ogg", category="AMB") or
                     self.sound_bank.resolve_sound(f"{env_name}.wav", category="AMB") or
                     self.sound_bank.resolve_sound(env_name, category="AMB") or
                     self.sound_bank.resolve_sound("room_tone", category="AMB") or
                     self.sound_bank.resolve_sound("amb_castle_hall_hearth.wav", category="AMB")
                 )
-                base_path = base_res.name if base_res else "room_tone"
+                base_path = base_res.name if base_res else base_asset_name
                 layers.append(
                     AmbienceLayer(
                         layer_type="base_room_tone",
@@ -1269,16 +1297,22 @@ Output STRICT JSON schema:
                     )
                 )
 
-                comb_str = f"{env_name} {theme_str}".lower()
+                # 2. Weather Elements
                 weather_path = None
-                if "rain" in comb_str or "storm" in comb_str:
-                    weather_path = "rain_thunder.ogg"
-                elif any(k in comb_str for k in ("wind", "snow", "blizzard", "mountain")):
-                    weather_path = "amb_blizzard_mountain_gale.wav"
-                elif any(k in comb_str for k in ("swamp", "bog")):
-                    weather_path = "amb_bog_swamp_night.wav"
-                elif any(k in comb_str for k in ("crypt", "tomb")):
-                    weather_path = "amb_crypt_tomb_drips.wav"
+                if len(env_prof.typical_ambience_layers) > 1:
+                    w_cand = env_prof.typical_ambience_layers[1]
+                    w_res = self.sound_bank.resolve_sound(w_cand, category="AMB") or self.sound_bank.resolve_sound(w_cand)
+                    if w_res:
+                        weather_path = w_res.name
+                if not weather_path:
+                    if "rain" in comb_str or "storm" in comb_str:
+                        weather_path = "rain_thunder.ogg"
+                    elif any(k in comb_str for k in ("wind", "snow", "blizzard", "mountain")):
+                        weather_path = "amb_blizzard_mountain_gale.wav"
+                    elif any(k in comb_str for k in ("swamp", "bog")):
+                        weather_path = "amb_bog_swamp_night.wav"
+                    elif any(k in comb_str for k in ("crypt", "tomb")):
+                        weather_path = "amb_crypt_tomb_drips.wav"
 
                 if weather_path:
                     layers.append(
@@ -1291,20 +1325,32 @@ Output STRICT JSON schema:
                         )
                     )
 
-                if any(k in comb_str for k in ("tavern", "crowd", "brawl", "hall", "market")):
+                # 3. Crowd Walla
+                if env_prof.typical_walla or any(k in comb_str for k in ("tavern", "crowd", "brawl", "hall", "market", "whisper", "people", "street", "office")):
+                    w_asset = env_prof.typical_walla or "tavern_crowd_murmur.ogg"
+                    if any(k in comb_str for k in ("whisper", "office", "street", "privet", "people")):
+                        w_asset = "07039098.mp3"  # Crowd Whispering in Large Room
+                    w_res = self.sound_bank.resolve_sound(w_asset, category="AMB") or self.sound_bank.resolve_sound(w_asset)
                     layers.append(
                         AmbienceLayer(
                             layer_type="crowd_wallah",
-                            asset_path="tavern_crowd_murmur.ogg",
+                            asset_path=w_res.name if w_res else w_asset,
                             target_lufs=-30.0,
                             stereo_width=1.30,
                             loop=True,
                         )
                     )
 
-                stoch_asset = "tiny_floor-creak-01.wav"
-                if any(k in comb_str for k in ("fire", "torch", "hearth", "bath")):
-                    stoch_asset = "dry_grass_fireplace_raw.ogg"
+                # 4. Spot Stochastic (Gentle occasional atmospheric transients)
+                stoch_asset = "dry_grass_fireplace_raw.ogg"
+                if env_prof.typical_foley:
+                    for tf in env_prof.typical_foley:
+                        tf_res = self.sound_bank.resolve_sound(tf, category="FX") or self.sound_bank.resolve_sound(tf)
+                        if tf_res and not any(b in tf_res.name.lower() for b in ("jump", "boot", "sword", "blade")):
+                            stoch_asset = tf_res.name
+                            break
+                if any(k in comb_str for k in ("night", "street", "privet", "suburban")):
+                    stoch_asset = "07042032.mp3"  # Tawny Owl with crickets
                 elif any(k in comb_str for k in ("water", "dungeon", "crypt")):
                     stoch_asset = "tiny_water-drop-01.wav"
 
@@ -1312,20 +1358,21 @@ Output STRICT JSON schema:
                     AmbienceLayer(
                         layer_type="spot_stochastic",
                         asset_path=stoch_asset,
-                        target_lufs=-24.0,
-                        stochastic_interval_sec=35.0,
+                        target_lufs=-26.0,
+                        stochastic_interval_sec=120.0,
                         loop=False,
                     )
                 )
 
-                occ_cutoff = 1400 if any(k in comb_str for k in ("castle", "tavern", "room", "crypt", "indoor", "bath", "hall")) else 18000
+                occ_cutoff = env_prof.occlusion_barrier_hz
+                ir_preset = "hall" if env_prof.estimated_rt60_ms > 1800 else "room"
                 scene_manifest.add_scene(
                     SceneAcousticProfile(
                         scene_id=f"sc_{idx+1:03d}_{chapter_id}",
                         act_index=idx + 1,
                         start_ms=b_start,
                         end_ms=b_end,
-                        ir_preset="room",
+                        ir_preset=ir_preset,
                         layers=layers,
                         occlusion_cutoff_hz=occ_cutoff,
                     )
@@ -1334,15 +1381,18 @@ Output STRICT JSON schema:
         if not scene_manifest.scenes:
             amb_list = dramaturgy_plan.get("ambience", [])
             primary_name = amb_list[0].get("name", "room_tone") if amb_list else "room_tone"
+            env_prof = env_reg.get_profile(primary_name) or env_reg.resolve_from_text(f"{primary_name} {theme_str}")
             layers = []
 
+            base_asset_name = env_prof.typical_ambience_layers[0] if env_prof.typical_ambience_layers else primary_name
             base_res = (
+                self.sound_bank.resolve_sound(base_asset_name, category="AMB") or
                 self.sound_bank.resolve_sound(f"{primary_name}.ogg", category="AMB") or
                 self.sound_bank.resolve_sound(primary_name, category="AMB") or
                 self.sound_bank.resolve_sound("room_tone", category="AMB") or
                 self.sound_bank.resolve_sound("amb_castle_hall_hearth.wav", category="AMB")
             )
-            base_path = base_res.name if base_res else "room_tone"
+            base_path = base_res.name if base_res else base_asset_name
             layers.append(
                 AmbienceLayer(
                     layer_type="base_room_tone",
@@ -1354,14 +1404,20 @@ Output STRICT JSON schema:
             )
 
             weather_path = None
-            if "rain" in theme_str or "storm" in theme_str:
-                weather_path = "rain_thunder.ogg"
-            elif "wind" in theme_str or "snow" in theme_str or "blizzard" in theme_str or "mountain" in theme_str:
-                weather_path = "amb_blizzard_mountain_gale.wav"
-            elif "swamp" in theme_str or "bog" in theme_str:
-                weather_path = "amb_bog_swamp_night.wav"
-            elif "crypt" in theme_str or "tomb" in theme_str:
-                weather_path = "amb_crypt_tomb_drips.wav"
+            if len(env_prof.typical_ambience_layers) > 1:
+                w_cand = env_prof.typical_ambience_layers[1]
+                w_res = self.sound_bank.resolve_sound(w_cand, category="AMB") or self.sound_bank.resolve_sound(w_cand)
+                if w_res:
+                    weather_path = w_res.name
+            if not weather_path:
+                if "rain" in theme_str or "storm" in theme_str:
+                    weather_path = "rain_thunder.ogg"
+                elif any(k in theme_str for k in ("wind", "snow", "blizzard", "mountain")):
+                    weather_path = "amb_blizzard_mountain_gale.wav"
+                elif "swamp" in theme_str or "bog" in theme_str:
+                    weather_path = "amb_bog_swamp_night.wav"
+                elif "crypt" in theme_str or "tomb" in theme_str:
+                    weather_path = "amb_crypt_tomb_drips.wav"
 
             if weather_path:
                 layers.append(
@@ -1374,11 +1430,13 @@ Output STRICT JSON schema:
                     )
                 )
 
-            if "tavern" in theme_str or "crowd" in theme_str or "brawl" in theme_str or "hall" in theme_str:
+            if env_prof.typical_walla or any(k in theme_str for k in ("tavern", "crowd", "brawl", "hall")):
+                w_asset = env_prof.typical_walla or "tavern_crowd_murmur.ogg"
+                w_res = self.sound_bank.resolve_sound(w_asset, category="AMB") or self.sound_bank.resolve_sound(w_asset)
                 layers.append(
                     AmbienceLayer(
                         layer_type="crowd_wallah",
-                        asset_path="tavern_crowd_murmur.ogg",
+                        asset_path=w_res.name if w_res else "tavern_crowd_murmur.ogg",
                         target_lufs=-30.0,
                         stereo_width=1.30,
                         loop=True,
@@ -1386,10 +1444,17 @@ Output STRICT JSON schema:
                 )
 
             stoch_asset = "tiny_floor-creak-01.wav"
-            if "fire" in theme_str or "torch" in theme_str or "hearth" in theme_str:
-                stoch_asset = "dry_grass_fireplace_raw.ogg"
-            elif "water" in theme_str or "dungeon" in theme_str:
-                stoch_asset = "tiny_water-drop-01.wav"
+            if env_prof.typical_foley:
+                for tf in env_prof.typical_foley:
+                    tf_res = self.sound_bank.resolve_sound(tf, category="FX") or self.sound_bank.resolve_sound(tf)
+                    if tf_res:
+                        stoch_asset = tf_res.name
+                        break
+            if stoch_asset == "tiny_floor-creak-01.wav":
+                if "fire" in theme_str or "torch" in theme_str or "hearth" in theme_str:
+                    stoch_asset = "dry_grass_fireplace_raw.ogg"
+                elif "water" in theme_str or "dungeon" in theme_str:
+                    stoch_asset = "tiny_water-drop-01.wav"
 
             layers.append(
                 AmbienceLayer(
@@ -1401,7 +1466,8 @@ Output STRICT JSON schema:
                 )
             )
 
-            occ_cutoff = 1400 if any(k in theme_str for k in ("castle", "tavern", "room", "crypt", "indoor")) else 18000
+            occ_cutoff = env_prof.occlusion_barrier_hz
+            ir_preset = "hall" if env_prof.estimated_rt60_ms > 1800 else "room"
 
             scene_manifest.add_scene(
                 SceneAcousticProfile(
@@ -1409,7 +1475,7 @@ Output STRICT JSON schema:
                     act_index=1,
                     start_ms=0,
                     end_ms=max(1000, total_duration_ms),
-                    ir_preset="room",
+                    ir_preset=ir_preset,
                     layers=layers,
                     occlusion_cutoff_hz=occ_cutoff,
                 )

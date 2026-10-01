@@ -36,7 +36,7 @@ class DuckingProfile(BaseModel):
 DUCKING_PRESETS: Dict[str, DuckingProfile] = {
     "intimate_dialogue": DuckingProfile(
         profile_name="intimate_dialogue",
-        attenuation_db=-10.0,
+        attenuation_db=-6.0,
         attack_ms=30,
         release_ms=600,
         spectral_carve_hz=2200,
@@ -44,7 +44,7 @@ DUCKING_PRESETS: Dict[str, DuckingProfile] = {
     ),
     "standard_speech": DuckingProfile(
         profile_name="standard_speech",
-        attenuation_db=-16.0,
+        attenuation_db=-7.5,
         attack_ms=15,
         release_ms=350,
         spectral_carve_hz=2400,

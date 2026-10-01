@@ -9,6 +9,7 @@ import os
 import re
 import time
 import json
+import hashlib
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
@@ -52,7 +53,6 @@ def normalize_speech_text(text: str, is_hindi: bool = False) -> str:
             text = re.sub(pat, repl, text, flags=re.IGNORECASE)
 
     # Strip formatting artifacts
-    text = re.sub(r"[\*\_~`]", "", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -156,12 +156,16 @@ def _parse_dramatized_chunk_llm(
 
     pool = get_persistent_key_pool()
 
+    model_candidates = [model] if model else []
+    for m in ("gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-flash-lite-latest"):
+        if m not in model_candidates:
+            model_candidates.append(m)
+
     sys_prompt = (
         "You are a Hollywood Audio Drama Director (GraphicAudio / BBC Radio 4 / HBO standard). "
         "Convert this book chapter scene into an annotated multi-cast screenplay with deep cinematic audio direction.\n\n"
         "Core Dramaturgy Invariants:\n"
-        "1. UNFILTERED ADULT DIALOGUE & DIRTY BANTER MANDATE: Never sanitize, soften, or omit coarse curses ('गांड', 'भोसड़ीके', 'लंड', 'रांड', 'मादरचोद'), "
-        "tavern obscenities, or raw intimate bedroom dirty talk ('चोदना', 'मसलना', 'लंड', 'चूत', 'गांड'). Preserve 100% of explicit dramatic truth.\n"
+        "1. DRAMATIC FIDELITY MANDATE: Faithfully preserve 100% of the author's dialogue, character relationships, and emotional intensity as written. Never sanitize, soften, or omit character speech.\n"
         "2. MULTI-CAST ATTRIBUTION & CANONICAL SPEAKER MANDATE: Split into narration segments and character dialogue segments. "
         "Attribute each dialogue to the correct canonical character by their English canonical name from Known Canon Characters (e.g. 'Hero', NOT transliterations or nicknames). "
         "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('उसने', 'वह', 'he', 'she') as the speaker name. "
@@ -174,14 +178,12 @@ def _parse_dramatized_chunk_llm(
         "prepend `[growl] हूँ...` or `[sighs] हम्म...` to enforce the iconic pregnant pause prosody.\n"
         "5. DURAANGI ZUBAAN (INNER MONOLOGUES): When a character thinks an unfiltered thought or aside (contrasting with polite outward speech), "
         "tag the text with `[whispers] (मन में: ...)` and set spatial.proximity: 'intimate_close' and acoustic_env: 'binaural_whisper'.\n"
-        "6. INTIMATE SCENES & ASMR STAGING: For romantic, sensual, erotic, or dirty bedroom scenes, pair raw passion with "
-        "`[whispers]` or `[intimate, breathy]` tags, spatial.proximity: 'intimate_close', and intensity_level: 'low'. Use ellipses ('...') for breathless pauses. "
-        "Never censor dirty talk or physical passion during explicit encounters.\n"
-        "7. TAVERN SHOCK BEAT & COMBAT CHOREOGRAPHY: When a climactic death threat or filthy curse drops in a tavern, "
-        "add a solitary coin_clink or tankard_slam cue for an acoustic shock drop. "
-        "For physical combat (sword parries, shield bashes, bone crunches, body slams), emit dedicated segments with type: 'action', speaker: 'Foley', text: '[ACTION]' "
-        "to allocate speech-free acoustic real estate for the 3-layer combat impact. "
-        "Set intensity_level: 'explosive' for heavy lethal strikes or concussion shockwaves.\n"
+        "6. INTIMATE SCENES & ASMR STAGING: For romantic, sentimental, or whispered bedroom scenes, pair gentle delivery with "
+        "`[whispers]` or `[intimate, breathy]` tags, spatial.proximity: 'intimate_close', and intensity_level: 'low'. Use ellipses ('...') for breathless pauses.\n"
+        "7. DRAMATIC SHOCK BEATS & PHYSICAL ACTION: When a climactic revelation drops or a major physical action occurs "
+        "(door slam, vehicle arrival/screech, lighter click, weapon clash, explosion, heavy blow), emit dedicated segments with type: 'action', speaker: 'Foley', text: '[ACTION]' "
+        "to allocate speech-free acoustic real estate for the impact. "
+        "IMPORTANT: NEVER invent weapons, combat, or fantasy sounds in peaceful, domestic, or modern scenes!\n"
         "8. For EVERY segment, assign audio direction: acting delivery style, proximity, acoustic environment, inline Foley SFX cues, and musical mood."
     )
 
@@ -239,10 +241,10 @@ Output JSON: A list of objects where each object has:
 - "spatial": {{
     "proximity": "intimate_close" | "normal_room" | "distant"
   }}
-- "acoustic_env": "tavern_interior" | "stone_crypt" | "royal_hall" | "damp_dungeon" | "dense_forest_night" | "quiet_chamber" | "open_road"
+- "acoustic_env": string identifying acoustic environment of the scene (e.g. "suburban_street_day", "suburban_street_night", "domestic_room", "office_commercial", "quiet_chamber", "tavern_interior", "dense_forest_night", "stone_crypt", "open_road")
 - "sfx_cues": [
     {{
-      "tag": "sword_draw" | "sword_clash" | "body_fall" | "blood_impact" | "beer_pour" | "tankard_slam" | "coin_clink" | "chair_scrape" | "door_creak" | "footsteps_wood" | "boots_gravel" | "cloak_rustle" | "sign_magic" | "fire_crackle" | "horse_gallop",
+      "tag": string identifying the REAL physical sound explicitly described in the scene text (e.g. "car_door", "car_engine", "footsteps_pavement", "cup_clink", "chair_scrape", "paper_rustle", "typewriter_key", "deluminator_click", "cat_purr", "cat_meow", "cloak_rustle", "motorcycle_roar", "motorcycle_engine", "baby_breath", "door_creak", "door_close", "clock_tick"). IMPORTANT: NEVER emit weapons, swords, shields, horses, or combat impacts unless weapons or combat are explicitly present in the text!
       "timing": "before" | "under" | "after",
       "offset_ms": int (-200 to 600),
       "volume": float (0.25 to 0.55),
@@ -260,6 +262,41 @@ Output JSON: A list of objects where each object has:
         "generationConfig": {
             "temperature": 0.2,
             "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "index": {"type": "INTEGER"},
+                        "type": {"type": "STRING"},
+                        "speaker": {"type": "STRING"},
+                        "text": {"type": "STRING"},
+                        "emotion": {"type": "STRING"},
+                        "actioning": {"type": "STRING"},
+                        "subtext": {"type": "STRING"},
+                        "underlying_emotion": {"type": "STRING"},
+                        "intensity_level": {"type": "STRING"},
+                        "acting": {"type": "OBJECT", "properties": {"delivery_style": {"type": "STRING"}}},
+                        "spatial": {"type": "OBJECT", "properties": {"proximity": {"type": "STRING"}}},
+                        "acoustic_env": {"type": "STRING"},
+                        "sfx_cues": {
+                            "type": "ARRAY",
+                            "items": {
+                                "type": "OBJECT",
+                                "properties": {
+                                    "tag": {"type": "STRING"},
+                                    "timing": {"type": "STRING"},
+                                    "offset_ms": {"type": "INTEGER"},
+                                    "volume": {"type": "NUMBER"},
+                                    "description": {"type": "STRING"}
+                                }
+                            }
+                        },
+                        "music": {"type": "OBJECT", "properties": {"mood": {"type": "STRING"}}}
+                    },
+                    "required": ["index", "type", "speaker", "text"]
+                }
+            },
             "maxOutputTokens": 8192,
         },
         "safetySettings": [
@@ -273,10 +310,11 @@ Output JSON: A list of objects where each object has:
     data_bytes = json.dumps(payload).encode("utf-8")
     from audiobook_factory.logger import logger
 
-    max_retries = max(max_retries, 4)
+    max_retries = max(max_retries, 5)
     for attempt in range(max_retries):
         curr_key = pool.get_key(service="text") if (attempt > 0 or not api_key) else api_key
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={curr_key}"
+        curr_model = model_candidates[attempt % len(model_candidates)]
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent?key={curr_key}"
         headers = get_stealth_sdk_headers(curr_key)
         req = urllib.request.Request(
             url,
@@ -297,14 +335,6 @@ Output JSON: A list of objects where each object has:
                     continue
                 text_parts = [p.get("text", "") for p in parts if "text" in p]
                 raw_json = "".join(text_parts).strip()
-
-                # Strip markdown code blocks ```json ... ```
-                match = re.search(r"```(?:json)?\s*(.*?)```", raw_json, re.DOTALL)
-                if match:
-                    raw_json = match.group(1).strip()
-                elif raw_json.startswith("```"):
-                    raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
-                    raw_json = re.sub(r"\s*```$", "", raw_json).strip()
 
                 parsed = None
                 try:
@@ -432,7 +462,7 @@ def build_dramatized_script_llm(
             return cleaned, dramatic_plan, val_res
         return cleaned
 
-    model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-lite-latest")
+    model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.1-flash-lite")
     memory_prompt_str = (
         memory_context.get_prompt_context()
         if memory_context is not None and hasattr(memory_context, "get_prompt_context")
@@ -983,12 +1013,18 @@ def generate_project_scripts(
             try:
                 d_plan.save_to_file(dramaturgy_dir / f"{chap_file.stem}_dramatic_plan.json")
                 val_res.save_to_file(dramaturgy_dir / f"{chap_file.stem}_validation.json")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"  [!] Failed to save dramatic plan/validation for {chap_file.stem}: {e}")
         else:
             script = build_narrator_script(content, is_hindi=use_hindi)
             if mem_ctx is not None:
                 script = [mem_ctx.apply_performance_guidance_to_segment(seg) for seg in script]
+
+        # Attach source provenance hash to screenplay segments
+        content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+        for seg in script:
+            if isinstance(seg, dict) and "source_hash" not in seg:
+                seg["source_hash"] = content_hash
 
         # Commit extracted screenplay events to MemoryStore if not already committed
         if memory_store is not None and memory_store_path is not None:

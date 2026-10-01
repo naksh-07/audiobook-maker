@@ -28,6 +28,7 @@ from .repair import PronunciationRepairEngine
 from .consistency import CrossChapterConsistencyAuditor
 from .provenance import PronunciationProvenanceTracker
 from .golden_set import GOLDEN_PRONUNCIATION_CASES, run_golden_pronunciation_suite
+from .calibration import LanguageDialogueCalibrationCorpus, LanguageDialogueCalibrationItem
 
 __all__ = [
     "PronunciationStatus",
@@ -53,4 +54,6 @@ __all__ = [
     "PronunciationProvenanceTracker",
     "GOLDEN_PRONUNCIATION_CASES",
     "run_golden_pronunciation_suite",
+    "LanguageDialogueCalibrationCorpus",
+    "LanguageDialogueCalibrationItem",
 ]

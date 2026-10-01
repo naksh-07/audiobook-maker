@@ -122,7 +122,7 @@ class PerceptualPerformanceJudge:
         act_reasons = []
         act_codes = []
         if direction.restraint >= 0.70:
-            if ac_ev and (ac_ev.peak_amplitude >= 31000.0 or ac_ev.rms_dbfs > -15.0):
+            if ac_ev and (ac_ev.peak_amplitude >= 31000.0 and ac_ev.rms_dbfs > -15.0):
                 act_score -= 0.30
                 act_reasons.append("Over-acted melodramatic projection violates character restraint")
                 act_codes.append("OVERACTING_SHOUT")

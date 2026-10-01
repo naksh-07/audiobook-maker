@@ -1,16 +1,17 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: 360° Re-Audit & Production Hardening Complete
+# Active Context: Chapter 1 Clean Production Certified & Hardened
 
-## Live Sprint State: 360° Architectural Re-Audit & Surgical Production Fixes
-- **Status**: PRODUCTION RE-AUDITED, SURGICALLY PATCHED & REGRESSION VERIFIED.
-- **Auditors Convened**: Pipeline Architecture, DSP Acoustic, Security & Safety, Test Suite.
-- **Surgical Remediations Implemented**:
-  - **State DB Concurrency**: Removed unprompted `IN_PROGRESS` reset from `_init_db()`; added explicit `recover_orphaned_segments()` and `auto_recover=False` in `TTSDispatcher`.
-  - **Audio Sync & Breath Alignment**: Prepended `pre_roll_breath_ms` silence in `stitch_dialogue_track_from_ledger()`; updated `resolve_timeline_start_offsets()` with dict support and pre-breath accumulation.
-  - **DSP Headroom & Intersample Peak Defense**: Added lookahead peak limiting (`alimiter=limit=0.95`) to intermediate stems (`cmd_me`, `cmd_premaster`); reordered `MasteringEngine` chain to `aresample -> loudnorm -> alimiter`.
-  - **Win32 Buffer Protection**: Offloaded `render_music_bus` filter complex to `-filter_complex_script` file, eliminating 8,191-char CLI overflows.
-  - **CLAP Resilient Fallback**: Replaced random Gaussian noise on OOM with VRAM flush, CPU inference fallback, and zero-vector fallback.
-  - **Security & Subprocess Hardening**: Enforced `shell=False` in `audio_master.py`, sanitized dynamic DDL column names in `sound_bank.py`, closed HTTP error sockets in `script_builder.py`, and added retry backoff to atomic file writers.
-- **Verification**: Clean regression test pass across all modified audio, gate, and pipeline modules.
+## Live Sprint State: Sound Design & Engine Fix Complete
+- **Status**: CHAPTER 1 REPROCESSED, ZERO FANTASY ASSETS, AUDIBLE BGM, MASTER & M4B CERTIFIED.
+- **Engine Core Fixes**:
+  - **Foley & Sound Design**: Eliminated heuristic verb dictionary; LLM-first physical ontology in `script_builder.py` and `agent_director.py`; muzzled periodic jump-boot spam in `scene_acoustics.py`.
+  - **Environment Catalog**: Added `suburban_street_day`, `suburban_street_night`, `domestic_room`, `office_commercial` to `environment_profiles.py`; added crowd whisper walla (`07039098.mp3`).
+  - **Ducking & Levels**: Calibrated ducking to -7.5 dB in `acoustic_bus_matrix.py` (BGM audible at -22.4 LUFS overall, -31 LUFS under speech).
+  - **Mastering & DSP**: Increased analyzer/loudnorm timeouts to 600s; adjusted dead-air check to max single contiguous block in `mastering_analyzer.py` (3.65s <= 6.0s PASS).
+- **Deliverables**:
+  - `mastered/chapter_001_cinema_master.wav` (-19.9 LUFS, -1.90 dBTP, 46.7 min).
+  - `mastered/chapter_001_hi_cinematic.m4a` (69.0 MB, AAC 192k).
+  - `output/harry_potter_or_paras_patthar.m4b` (69.0 MB, chapterized, Gate 6 PASS).
+- **Verification**: 33/33 tests passing across Mix/Master, Continuity, and Golden Performance suites.

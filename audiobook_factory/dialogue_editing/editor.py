@@ -406,9 +406,10 @@ class DialogueEditor:
         elevated_threshold = self.config.boundary_elevated_noise_floor_db
         for plan, n_db in zip(plans, noise_floors_db):
             if n_db > elevated_threshold:
-                # Expand micro-fades to 15ms Hann tapers to prevent vocoder noise drop click
+                # Expand micro-fades to 15ms Hann tapers to prevent vocoder noise drop click (except crisp abrupt cuts)
                 plan.crossfade_in_ms = max(plan.crossfade_in_ms, 15.0)
-                plan.crossfade_out_ms = max(plan.crossfade_out_ms, 15.0)
+                if plan.interruption_mode != "abrupt_cut":
+                    plan.crossfade_out_ms = max(plan.crossfade_out_ms, 15.0)
                 plan.metadata["room_match_required"] = True
                 plan.decision_reason += f"; Elevated noise floor ({n_db:.1f} dBFS); expanded boundary micro-fades to 15ms"
 
@@ -476,15 +477,18 @@ class DialogueEditor:
                     break
 
             script_info = script_segments[i] if (script_segments and i < len(script_segments)) else {}
-            speaker = script_info.get("speaker", "Narrator")
-            text = script_info.get("text", "")
-            seg_uid = script_info.get("uid", f"seg_{s_idx}")
+            speaker = script_info.get("speaker", "Narrator") if isinstance(script_info, dict) else getattr(script_info, "speaker", "Narrator")
+            spoken_text = script_info.get("spoken_text") if isinstance(script_info, dict) else getattr(script_info, "spoken_text", None)
+            literary_text = script_info.get("text", "") if isinstance(script_info, dict) else getattr(script_info, "text", "")
+            text = spoken_text or literary_text
+            seg_uid = script_info.get("uid", f"seg_{s_idx}") if isinstance(script_info, dict) else getattr(script_info, "uid", f"seg_{s_idx}")
 
             # Next speaker and direction for conversational turn latency & interruption context
             next_spk = None
             next_dir = None
             if script_segments and i + 1 < len(script_segments):
-                next_spk = script_segments[i + 1].get("speaker", None)
+                next_info = script_segments[i + 1]
+                next_spk = next_info.get("speaker", None) if isinstance(next_info, dict) else getattr(next_info, "speaker", None)
 
             next_s_idx = s_idx + 1
             if next_s_idx in dir_by_idx:
@@ -506,6 +510,8 @@ class DialogueEditor:
                 matched_take = takes_by_uid[seg_uid]
                 if matched_take.direction:
                     direction = matched_take.direction
+                    if getattr(direction, "spoken_text", None):
+                        text = direction.spoken_text
                 if matched_take.evaluation and matched_take.evaluation.evidence:
                     evidence = matched_take.evaluation.evidence
                 if matched_take.alignment_result:

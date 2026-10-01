@@ -61,6 +61,8 @@ class PerformanceEvaluator:
         signature: Optional[Any] = None,
         voice_dna: Optional[Any] = None,
         alignment_result: Optional[Any] = None,
+        scene_context: Optional[Dict[str, Any]] = None,
+        prev_take: Optional[Any] = None,
     ) -> PerformanceEvaluationResult:
         """
         Evaluates a candidate audio take against PerformanceDirection using real audio evidence.
@@ -179,7 +181,7 @@ class PerformanceEvaluator:
         diagnostics: List[str] = []
 
         # Dimension 1: Naturalness
-        dimensions["naturalness"] = self._evaluate_naturalness(acoustic_ev, direction)
+        dimensions["naturalness"] = self._evaluate_naturalness(acoustic_ev, direction, prosody_ev)
 
         # Dimension 2: Pacing
         dimensions["pacing"] = self._evaluate_pacing(pacing_ev, direction)
@@ -236,9 +238,20 @@ class PerformanceEvaluator:
                     take=None,
                     direction=direction,
                     text=text,
+                    scene_context=scene_context,
+                    prev_take=prev_take,
                     evidence=evidence,
                 )
                 evidence.perceptual = perceptual_ev
+
+                # Incorporate acting believability into subtext and restraint dimensions
+                if perceptual_ev.acting_believability.score < 0.70 or "OVERACTING_SHOUT" in perceptual_ev.reason_codes:
+                    dimensions["subtext"].score = min(dimensions["subtext"].score, perceptual_ev.acting_believability.score)
+                    for diag in perceptual_ev.diagnostics:
+                        if "OVERACT" in diag or "RESTRAINT" in diag or "SUBTEXT" in diag:
+                            diagnostics.append(diag)
+                if perceptual_ev.emotional_fidelity.score < 0.70:
+                    dimensions["emotional_match"].score = min(dimensions["emotional_match"].score, perceptual_ev.emotional_fidelity.score)
             except Exception as e:
                 logger.warning(f"Perceptual judge evaluation failed for take {take_id}: {e}")
 
@@ -286,12 +299,17 @@ class PerformanceEvaluator:
         # Hard Gate & Passing Logic
         is_hard_gate = v_ident_ev.is_hard_gate_violation if v_ident_ev else False
         naturalness_score = dimensions["naturalness"].score
+        is_acting_collapse = (
+            evidence.perceptual is not None
+            and evidence.perceptual.acting_believability.score < 0.50
+        )
         passed = (
             (overall >= 0.70)
             and (naturalness_score >= 0.65)
             and (not v_drift)
             and (not is_hard_gate)
             and (not align_hard_gate_failure)
+            and (not is_acting_collapse)
         )
 
         rec = "accept"
@@ -690,8 +708,13 @@ class PerformanceEvaluator:
     # -------------------------------------------------------------------------
     # Dimensional Evaluation Methods (Evidence-Grounded)
     # -------------------------------------------------------------------------
-    def _evaluate_naturalness(self, ev: AcousticEvidence, direction: Optional[PerformanceDirection] = None) -> EvaluationDimensionScore:
-        """Evaluates waveform hygiene: clipping, DC offset, dead air, and vocoder hiss."""
+    def _evaluate_naturalness(
+        self,
+        ev: AcousticEvidence,
+        direction: Optional[PerformanceDirection] = None,
+        pr_ev: Optional[ProsodyEvidence] = None,
+    ) -> EvaluationDimensionScore:
+        """Evaluates waveform hygiene: clipping, DC offset, dead air, vocoder hiss, and organic prosodic phonation."""
         score = 1.0
         reasons = []
         reason_codes = []
@@ -711,8 +734,12 @@ class PerformanceEvaluator:
             direction is not None
             and direction.silence_type in ("dramatic_silence", "emotional_freeze", "reaction_silence", "hesitation")
         )
+        max_allowed_pause = 2.2
+        if direction is not None and getattr(direction, "pause_after_ms", 0) > 1500:
+            max_allowed_pause = max(max_allowed_pause, (direction.pause_after_ms / 1000.0) + 0.5)
+
         if ev.dead_air_sec > self.config.dead_air_threshold_sec:
-            if is_dramatic_silence and ev.dead_air_sec <= 2.2:
+            if is_dramatic_silence and ev.dead_air_sec <= max_allowed_pause:
                 reasons.append(f"Dramatic silence preserved ({ev.dead_air_sec:.2f}s)")
                 reason_codes.append("BETTER_DRAMATIC_PAUSE")
             else:
@@ -726,6 +753,17 @@ class PerformanceEvaluator:
             score -= 0.20
             reasons.append("Elevated white-noise vocoder static")
             reason_codes.append("VOCODER_STATIC_DEFECT")
+
+        # Organic phonation vs robotic pitch lock
+        if pr_ev is not None:
+            if pr_ev.is_monotonic_pitch_locked:
+                score -= 0.15
+                reasons.append(f"Unnatural robotic pitch lock (F0 variance {pr_ev.f0_variance:.1f}Hz < {self.config.monotonic_f0_var_threshold:.1f}Hz)")
+                reason_codes.append("PITCH_LOCK_DEFECT")
+            elif pr_ev.has_pitch_rupture:
+                score -= 0.25
+                reasons.append("Unnatural pitch rupture / octave glitch")
+                reason_codes.append("PITCH_RUPTURE_DEFECT")
 
         if not reason_codes:
             reason_codes.append("CLEAN_WAVEFORM")

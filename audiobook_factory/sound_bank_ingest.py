@@ -27,31 +27,9 @@ DEFAULT_DB_PATH = DEFAULT_BANK_DIR / "sound_bank.db"
 SUPPORTED_EXTENSIONS = {".wav", ".flac", ".ogg", ".mp3"}
 
 # Rule-based Foley & Sound Design Taxonomy Maps
-ACTION_TYPE_KEYWORDS: Dict[str, List[str]] = {
-    "footstep": ["step", "footstep", "walk", "stride", "soil_step", "mud_step", "boot"],
-    "impact": ["hit", "punch", "smash", "slam", "strike", "blunt", "body_fall", "drop", "collapse"],
-    "clash": ["clash", "sword_clash", "parry", "deflect", "blade_hit", "metal_hit"],
-    "draw": ["unsheathe", "draw", "drawknife", "blade_draw", "seax_unsheathe"],
-    "sheathe": ["sheathe", "sheath", "holster"],
-    "scrape": ["scrape", "knife_scrape", "grind", "drag"],
-    "swing": ["whoosh", "swoosh", "swing", "blade_swing", "moulinet", "whistle"],
-    "pour": ["pour", "water_pour", "fill", "drink", "tankard"],
-    "splash": ["splash", "drip", "water_drop", "fountain"],
-    "ignite": ["ignite", "light", "match", "lighter", "torch", "burn", "fire", "crackle"],
-    "creak": ["creak", "door_creak", "floor_creak", "wood_creak", "groan"],
-    "open": ["open", "door_open", "unlock", "uncork"],
-    "close": ["close", "door_close", "shut", "slam"],
-    "rustle": ["rustle", "cloth", "leather", "quiver", "pouch", "armor", "belt"],
-    "clink": ["coin", "coins", "clink", "jingle", "shake", "flip"],
-    "snap": ["snap", "break", "twigs_break", "branch"],
-    "rumble": ["thunder", "earthquake", "rumble", "drone", "tremor"],
-    "howl": ["wind", "howl", "gust", "breeze", "storm"],
-    "gallop": ["gallop", "horse_chase", "horses", "hoof", "hooves", "trot", "clatter"],
-    "cut": ["cut", "slice", "chop", "impale", "stab"],
-    "chime": ["bell", "chime", "ring", "whistle"],
-    "ambient_bed": ["ambience", "ambient", "background", "loop", "room_tone", "weather"],
-    "musical_cue": ["music", "theme", "ost", "orchestral", "strings", "score", "drone_bed"],
-}
+# Deprecated: Replaced by Semantic Search via SonicIntelligenceEngine
+ACTION_TYPE_KEYWORDS: Dict[str, List[str]] = {}
+
 
 EXCITER_KEYWORDS: Dict[str, List[str]] = {
     "steel": ["sword", "blade", "knife", "dagger", "steel", "seax", "iron", "metal"],

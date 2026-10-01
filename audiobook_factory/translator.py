@@ -38,7 +38,7 @@ def get_api_key() -> str:
     return pool.get_key(service="text")
 
 
-def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_MODEL, json_mode: bool = False, max_retries: int = 4) -> str:
+def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_MODEL, json_mode: bool = False, response_schema: Optional[Dict[str, Any]] = None, max_retries: int = 4) -> str:
     """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback."""
     candidate_models = [model]
     for m in MODEL_CANDIDATES:
@@ -69,6 +69,8 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
 
         if json_mode:
             payload["generationConfig"]["responseMimeType"] = "application/json"
+            if response_schema:
+                payload["generationConfig"]["responseSchema"] = response_schema
 
         data = json.dumps(payload).encode("utf-8")
 
@@ -132,47 +134,10 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
 def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str, Any]) -> str:
     """
     Meso-Tier Verification Guard:
-    Enforces canonical Devanagari spellings via deterministic word-boundary regex substitutions.
-    Accepts either a flat mapping {token: canonical_spelling} or a nested glossary dict.
+    (Refactored for Agentic Pipeline: Regex-based Devanagari mutation is disabled 
+    to prevent broken ligatures. Trusting LLM schema generation.)
     """
-    if not text or not glossary:
-        return text
-
-    lexicon_map: Dict[str, str] = {}
-    if isinstance(glossary, dict):
-        if "characters" in glossary or "locations_and_terms" in glossary or "lexicon" in glossary:
-            if "lexicon" in glossary and isinstance(glossary["lexicon"], dict):
-                lexicon_map.update(glossary["lexicon"])
-            if "locations_and_terms" in glossary and isinstance(glossary["locations_and_terms"], dict):
-                lexicon_map.update(glossary["locations_and_terms"])
-            if "characters" in glossary and isinstance(glossary["characters"], list):
-                for char_entry in glossary["characters"]:
-                    if isinstance(char_entry, dict):
-                        eng = char_entry.get("english_name")
-                        hi = char_entry.get("hindi_name")
-                        if eng and hi:
-                            lexicon_map[eng] = hi
-        else:
-            for k, v in glossary.items():
-                if isinstance(k, str) and isinstance(v, str):
-                    lexicon_map[k] = v
-
-    if not lexicon_map:
-        return text
-
-    # Sort keys by length descending to prevent sub-string prefix collisions
-    sorted_keys = sorted(lexicon_map.keys(), key=len, reverse=True)
-
-    result = text
-    for key in sorted_keys:
-        canonical = lexicon_map[key]
-        if not key or not canonical or key == canonical:
-            continue
-        # Use regex word boundaries supporting both ASCII and Unicode word chars
-        pattern = rf"(?<![\w\u0900-\u097F]){re.escape(key)}(?![\w\u0900-\u097F])"
-        result = re.sub(pattern, canonical, result, flags=re.UNICODE)
-
-    return result
+    return text
 
 
 def generate_book_glossary(sample_chapter_text: str, book_metadata: Dict[str, Any]) -> Dict[str, Any]:
@@ -247,8 +212,8 @@ def _translate_single_block(
             "3. PERIOD TAVERN GRIT & RAW PROFANITY: Translate medieval insults and curses into authentic, earthy Hindustani equivalents. "
             "Use 'गांड' (never 'चूतड़' or 'नितंब'), 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने', 'रंडी की औलाद', "
             "'अंडकोष बधिया करना'. NEVER replace them with polite TV-serial substitutions (do NOT turn 'bastard' into 'दुष्ट' or 'whore' into 'बुरी स्त्री').\n"
-            "4. THE 19-TO-21 AMPLIFICATION RULE: When source English dialogue is mild or toned down (19), elevate it to authentic Desi 21 "
-            "for visceral gut-punch impact (e.g. 'plough yourself' -> 'गांड मरा' / 'जा अपनी मां चुदा', 'damn you' -> 'तेरी मां की...').\n"
+            "4. DYNAMIC TONE & SCENE INTELLIGENCE: Read the scene emotion and adapt. In quiet, somber, or intimate scenes, use restraint, poetry, and emotional depth. "
+            "In high-action or climactic confrontation scenes, elevate the visceral gut-punch impact using authentic Desi idioms (e.g., 'plough yourself' -> 'गांड मरा').\n"
             "5. DESI MUHAVARE & IDIOMS: Transpose English idioms into organic UP/Bihar/Chambal street idioms rather than literal word-for-word "
             "(e.g. 'bite off more than you can chew' -> 'गांड में दम नहीं और चले आसमान चीरने', 'playing with fire' -> 'सांप के बिल में हाथ डालना').\n"
             "6. TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant thugs start with dismissive "
@@ -261,8 +226,7 @@ def _translate_single_block(
             "- MANDATED & AUTHORIZED: Visceral romantic and sensual friction ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश', 'चमड़े की तंग पेटी खोलना', 'सीने पर नाखूनों का धंसना') "
             "whenever the scene presents passionate encounters, bedroom dialogue, or sexual intimacy.\n"
             "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Never invent penetrative intercourse out of thin air if characters "
-            "are merely conversing or brushing shoulders. But whenever the source novel contains sexual tension, nudity, physical passion, or intimacy, "
-            "elevate it with the 19-to-21 Amplification Rule into full, unapologetic Desi passion without prudish TV-serial censorship.\n"
+            "are merely conversing or brushing shoulders. Allow quiet scenes to remain genuinely quiet and tender, without forcing unfiltered passion.\n"
             "9. VISCERAL COMBAT, GORE & STACCATO RHYTHM: Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism "
             "('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा', 'दांतों के टूटने और तालू के फटने की खट्टी नमकीन बदबू'). "
             "During intense fight scenes, fracture narrative into rapid STACCATO clauses (2-4 words per beat: 'कदम पीछे। तलवार का पैंतरा। वार। चूक गया!'). "

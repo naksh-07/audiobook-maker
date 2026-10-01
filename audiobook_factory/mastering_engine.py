@@ -127,7 +127,7 @@ class MasteringEngineV2:
             ),
             "-f", "null", "-",
         ]
-        proc = subprocess.run(cmd_pass1, capture_output=True, text=True, errors="ignore", timeout=90.0)
+        proc = subprocess.run(cmd_pass1, capture_output=True, text=True, errors="ignore", timeout=600.0)
         if proc.returncode != 0:
             raise RuntimeError(f"Pass 1 loudnorm execution failed on {audio_path.name} (code {proc.returncode}): {proc.stderr[-300:]}")
 
@@ -178,15 +178,6 @@ class MasteringEngineV2:
 
         filter_chain_parts = [f"highpass=f={profile.subsonic_highpass_hz}"]
 
-        if dither_method == "none":
-            filter_chain_parts.append(
-                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser"
-            )
-        else:
-            filter_chain_parts.append(
-                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser:dither_method={dither_method}"
-            )
-
         if profile.enable_dual_pass_linear and not is_silent:
             loudnorm_filter = (
                 f"loudnorm=I={target_lufs:.1f}:TP={profile.true_peak_ceiling_dbtp:.1f}:"
@@ -211,6 +202,15 @@ class MasteringEngineV2:
             f"alimiter=limit={lim_linear:.4f}:attack=5:release={profile.limiter_release_ms}:asc=0:level=0"
         )
 
+        if dither_method == "none":
+            filter_chain_parts.append(
+                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser"
+            )
+        else:
+            filter_chain_parts.append(
+                f"aresample=osr={profile.output_sample_rate}:filter_type=kaiser:dither_method={dither_method}"
+            )
+
         filter_chain = ",".join(filter_chain_parts)
 
         cmd_pass2 = [
@@ -218,11 +218,12 @@ class MasteringEngineV2:
             "-i", str(premaster_path.resolve()),
             "-af", filter_chain,
             "-ac", str(profile.output_channels),
+            "-ar", str(profile.output_sample_rate),
             "-c:a", "pcm_s16le",
             str(output_path.resolve()),
         ]
 
-        proc = subprocess.run(cmd_pass2, capture_output=True, text=True, errors="ignore", timeout=120.0)
+        proc = subprocess.run(cmd_pass2, capture_output=True, text=True, errors="ignore", timeout=600.0)
         if proc.returncode != 0:
             raise RuntimeError(f"FFmpeg master pass 2 failed (code {proc.returncode}): {proc.stderr[-400:]}")
 

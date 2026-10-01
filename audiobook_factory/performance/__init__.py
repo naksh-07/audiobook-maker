@@ -48,6 +48,13 @@ from .continuity import PerformanceContinuityTracker, CharacterPerformanceTeleme
 from .gate import PerformanceFidelityGate
 from .evidence_fusion import EvidenceFusionEngine
 from .perceptual_judge import PerceptualPerformanceJudge, PerceptualJudgeConfig
+from .calibration import PerformanceCalibrationCorpus, CalibrationCorpusEntry
+from .golden_suite import (
+    GoldenPerformanceSuite,
+    GoldenSceneDefinition,
+    GoldenSceneEvaluationResult,
+    GoldenSuiteReport,
+)
 
 __all__ = [
     "PerformanceDirection",
@@ -96,4 +103,10 @@ __all__ = [
     "EvidenceFusionEngine",
     "PerceptualPerformanceJudge",
     "PerceptualJudgeConfig",
+    "PerformanceCalibrationCorpus",
+    "CalibrationCorpusEntry",
+    "GoldenPerformanceSuite",
+    "GoldenSceneDefinition",
+    "GoldenSceneEvaluationResult",
+    "GoldenSuiteReport",
 ]

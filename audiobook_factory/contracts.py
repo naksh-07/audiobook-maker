@@ -341,6 +341,7 @@ class TimelineSegment(BaseModel):
     sfx_cues: List[str] = Field(default_factory=list, description="Associated physical Foley tags")
     music_mood: str = Field(default="neutral", description="Underlying musical mood")
     pre_roll_breath_ms: int = Field(default=0, ge=0, description="Organic breath intake Foley duration before speech")
+    word_alignments: List[Dict[str, Any]] = Field(default_factory=list, description="Serialized WordAlignment objects containing exact start/end ms for every spoken token")
 
     @field_validator("sfx_cues", mode="before")
     @classmethod

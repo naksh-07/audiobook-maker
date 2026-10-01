@@ -248,3 +248,380 @@ class CalibrationMetricCalculator:
             diagnostics=diagnostics,
             passed_calibration=passed,
         )
+
+
+class CalibrationCorpusEntry(BaseModel):
+    """A representative dramatic calibration segment across dramatic modes."""
+    model_config = ConfigDict(extra="ignore")
+
+    mode_id: str = Field(..., description="Unique mode identifier")
+    title: str = Field(..., description="Descriptive dramatic category title")
+    speaker: str = Field(..., description="Speaker name")
+    text: str = Field(..., description="Canonical representative text")
+    direction: Dict[str, Any] = Field(..., description="PerformanceDirection parameter dictionary")
+    expected_acoustic_markers: Dict[str, Any] = Field(..., description="Forensic acoustic target ranges")
+    known_failure_modes: List[str] = Field(default_factory=list, description="Specific acoustic and dramatic failure patterns")
+    expected_outcome: str = Field(default="ACCEPT", description="Expected qualification status (ACCEPT / REGENERATE)")
+
+
+class PerformanceCalibrationCorpus:
+    """
+    Forensic Performance Calibration Corpus across 12 dramatic modes.
+    Establishes empirical acoustic boundaries and gating expectations
+    for human-grade audio drama performance evaluation.
+    """
+
+    @classmethod
+    def get_standard_corpus(cls) -> List[CalibrationCorpusEntry]:
+        """Returns 12 canonical representative segments across dramatic modes."""
+        return [
+            # 1. Whisper / Close-Mic Intimate
+            CalibrationCorpusEntry(
+                mode_id="whisper_intimate",
+                title="Intimate Confession",
+                speaker="Yennefer",
+                text="Listen to me. If we don't move now, neither of us survives the dawn.",
+                direction={
+                    "surface_emotion": "whisper_intimate",
+                    "intensity": "low",
+                    "restraint": 0.85,
+                    "proximity": "close_mic",
+                    "resonance": "whisper_air",
+                    "pace": 0.90,
+                    "energy": 0.35,
+                    "actioning": "whisper_secret_urgency",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-40.0, -18.0),
+                    "f0_variance_min": 2.0,
+                    "wps_range": (1.8, 3.2),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 1.2,
+                },
+                known_failure_modes=[
+                    "Blown-out volume (RMS > -18 dBFS violating intimate proximity)",
+                    "Vocoder static hiss in unvoiced fricatives",
+                    "Lack of breath presence on close-mic onset",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 2. Restrained Grief / Held-Back Sorrow
+            CalibrationCorpusEntry(
+                mode_id="restrained_grief",
+                title="Restrained Grief",
+                speaker="Geralt",
+                text="I couldn't reach her in time. The fire was already inside the tower.",
+                direction={
+                    "surface_emotion": "grief",
+                    "intensity": "medium",
+                    "restraint": 0.88,
+                    "vulnerability": 0.90,
+                    "pace": 0.85,
+                    "energy": 0.50,
+                    "actioning": "confess_tragic_failure_with_suppression",
+                    "subtext": "overwhelming guilt buried behind stone facade",
+                    "subtext_confidence": 0.90,
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-32.0, -16.0),
+                    "f0_variance_min": 6.0,
+                    "wps_range": (1.8, 3.0),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 1.5,
+                },
+                known_failure_modes=[
+                    "Overacted melodramatic weeping or sobbing breaking character restraint",
+                    "Unsuppressed shouting at peak > 31000",
+                    "Flat reading lacking subtextual vocal compression",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 3. Explosive Rage / Battle Cry
+            CalibrationCorpusEntry(
+                mode_id="explosive_rage",
+                title="Explosive Battle Rage",
+                speaker="Dijkstra",
+                text="Treason! Every man on the ramparts—draw steel and butcher them all!",
+                direction={
+                    "surface_emotion": "bellowing_rage",
+                    "intensity": "explosive",
+                    "restraint": 0.15,
+                    "pace": 1.25,
+                    "energy": 0.95,
+                    "actioning": "command_immediate_slaughter",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-22.0, -10.0),
+                    "f0_variance_min": 25.0,
+                    "wps_range": (3.0, 4.8),
+                    "max_clipping_pinned": 5,
+                    "max_dead_air_sec": 0.8,
+                },
+                known_failure_modes=[
+                    "Underpowered energy (RMS < -24 dBFS for explosive scene)",
+                    "Digital rail clipping exceeding 6 pinned samples",
+                    "Premature emotional climax without vocal projection",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 4. Calm Exposition / Narrator
+            CalibrationCorpusEntry(
+                mode_id="calm_exposition",
+                title="Epic Worldbuilding Exposition",
+                speaker="Narrator",
+                text="The pass of Kaer Morhen lay blanketed in three feet of bitter November snow.",
+                direction={
+                    "surface_emotion": "neutral",
+                    "intensity": "medium",
+                    "narrative_mode": "narrator_exposition",
+                    "pace": 1.00,
+                    "energy": 0.65,
+                    "actioning": "paint_bleak_atmosphere",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-26.0, -16.0),
+                    "f0_variance_min": 12.0,
+                    "wps_range": (2.6, 3.5),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 1.2,
+                },
+                known_failure_modes=[
+                    "Robotic monotonic pitch lock (F0 variance < 5 Hz)",
+                    "Pacing drift rushing (> 4.2 wps) or dragging (< 2.0 wps)",
+                    "Excessive trailing dead air (> 1.5s)",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 5. Intimate Dialogue
+            CalibrationCorpusEntry(
+                mode_id="intimate_dialogue",
+                title="Tender Romantic Dialogue",
+                speaker="Yennefer",
+                text="You always look at me as though I might vanish into the mist.",
+                direction={
+                    "surface_emotion": "tender_affection",
+                    "intensity": "low",
+                    "intimacy_level": "intimate",
+                    "proximity": "close_mic",
+                    "restraint": 0.65,
+                    "pace": 0.95,
+                    "energy": 0.45,
+                    "actioning": "reassure_lover_with_gentle_irony",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-34.0, -18.0),
+                    "f0_variance_min": 8.0,
+                    "wps_range": (2.2, 3.3),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 1.0,
+                },
+                known_failure_modes=[
+                    "Aggressive volume projection (RMS > -16 dBFS)",
+                    "Harsh or brittle articulation violating tender intimacy",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 6. Fast Rally / Rapid Banter
+            CalibrationCorpusEntry(
+                mode_id="fast_rally",
+                title="Rapid Combat Sparring Dialogue",
+                speaker="Jaskier",
+                text="Quick! The window or the stairs? Decide before the guard breaks the latch!",
+                direction={
+                    "surface_emotion": "frantic_urgency",
+                    "intensity": "high",
+                    "pace": 1.35,
+                    "energy": 0.85,
+                    "turn_taking_behavior": "immediate",
+                    "actioning": "force_split_second_decision",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-24.0, -12.0),
+                    "f0_variance_min": 18.0,
+                    "wps_range": (3.6, 5.0),
+                    "max_clipping_pinned": 2,
+                    "max_dead_air_sec": 0.5,
+                },
+                known_failure_modes=[
+                    "Sluggish tempo ratio (< 0.70x target WPS)",
+                    "Unmotivated dead air between turn onset",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 7. Cold Sarcasm / Irony
+            CalibrationCorpusEntry(
+                mode_id="cold_sarcasm",
+                title="Cold Venomous Sarcasm",
+                speaker="Philippa",
+                text="How marvelous of you to arrive precisely when all the danger has passed.",
+                direction={
+                    "surface_emotion": "cold_condescension",
+                    "intensity": "medium",
+                    "restraint": 0.85,
+                    "subtext": "contempt disguised as formal greeting",
+                    "subtext_confidence": 0.95,
+                    "pace": 0.90,
+                    "energy": 0.60,
+                    "actioning": "undermine_with_scathing_politeness",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-28.0, -15.0),
+                    "f0_variance_min": 10.0,
+                    "wps_range": (2.2, 3.2),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 1.0,
+                },
+                known_failure_modes=[
+                    "Direct reading without subtextual inflection",
+                    "Unrestrained shouting destroying condescending poise",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 8. Breathless Panic / Physical Strain
+            CalibrationCorpusEntry(
+                mode_id="breathless_panic",
+                title="Wounded Combat Strain",
+                speaker="Cahir",
+                text="The... the blade was poisoned. Bind it tight, before it reaches the vein.",
+                direction={
+                    "surface_emotion": "pain_panic",
+                    "intensity": "high",
+                    "physical_state": "wounded",
+                    "breath_behavior": "labored",
+                    "pre_roll_breath_ms": 350,
+                    "pace": 0.80,
+                    "energy": 0.70,
+                    "actioning": "beg_for_survival_through_agony",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-30.0, -14.0),
+                    "f0_variance_min": 12.0,
+                    "wps_range": (1.5, 2.8),
+                    "max_clipping_pinned": 1,
+                    "max_dead_air_sec": 1.5,
+                },
+                known_failure_modes=[
+                    "Missing directed breath intake in pre-roll",
+                    "Brisk, healthy articulation inconsistent with wounded state",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 9. Authoritative Command
+            CalibrationCorpusEntry(
+                mode_id="authoritative_command",
+                title="Royal Imperial Command",
+                speaker="Emhyr",
+                text="Bow, Witcher. Or leave your head upon my carpet.",
+                direction={
+                    "surface_emotion": "stone_authority",
+                    "intensity": "high",
+                    "power_position": "dominant",
+                    "leverage": "commanding",
+                    "restraint": 0.90,
+                    "resonance": "chest",
+                    "pace": 0.85,
+                    "energy": 0.75,
+                    "actioning": "demand_unconditional_submission",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-24.0, -12.0),
+                    "f0_variance_min": 8.0,
+                    "wps_range": (2.0, 3.0),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 1.2,
+                },
+                known_failure_modes=[
+                    "Under-projected command authority (RMS < -28 dBFS)",
+                    "Submissive vocal yielding or pitch insecurity",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 10. Submissive Plea / Yielded Leverage
+            CalibrationCorpusEntry(
+                mode_id="submissive_plea",
+                title="Desperate Submissive Plea",
+                speaker="Dudu",
+                text="Please, don't turn me over to them. I have nowhere left to run.",
+                direction={
+                    "surface_emotion": "desperate_fear",
+                    "intensity": "medium",
+                    "power_position": "submissive",
+                    "leverage": "vulnerable",
+                    "vulnerability": 0.95,
+                    "pace": 1.05,
+                    "energy": 0.55,
+                    "actioning": "plead_for_mercy",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-32.0, -18.0),
+                    "f0_variance_min": 14.0,
+                    "wps_range": (2.6, 3.8),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 0.8,
+                },
+                known_failure_modes=[
+                    "Unmotivated aggressive projection exceeding partner volume",
+                    "Failure to yield turn leverage",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 11. Hesitant Confession
+            CalibrationCorpusEntry(
+                mode_id="hesitant_confession",
+                title="Hesitant Reluctant Truth",
+                speaker="Triss",
+                text="I... I knew about the lodge's plan all along. I should have told you.",
+                direction={
+                    "surface_emotion": "shame_hesitation",
+                    "intensity": "low",
+                    "silence_type": "hesitation",
+                    "hesitation_ms": 600,
+                    "restraint": 0.75,
+                    "pace": 0.85,
+                    "energy": 0.45,
+                    "actioning": "admit_betrayal_with_shame",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-36.0, -20.0),
+                    "f0_variance_min": 6.0,
+                    "wps_range": (1.8, 2.9),
+                    "max_clipping_pinned": 0,
+                    "max_dead_air_sec": 1.8,
+                },
+                known_failure_modes=[
+                    "Rushing through hesitation silence (< 200ms)",
+                    "Over-confident assertion inconsistent with shame",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+            # 12. Formal Ceremonial Exposition
+            CalibrationCorpusEntry(
+                mode_id="formal_exposition",
+                title="Grand Court Announcement",
+                speaker="Herald",
+                text="Hear ye all! By royal decree of King Foltest, the tournament of arms begins.",
+                direction={
+                    "surface_emotion": "formal_grandeur",
+                    "intensity": "high",
+                    "intimacy_level": "formal",
+                    "articulation": "crisp",
+                    "resonance": "throat",
+                    "pace": 1.05,
+                    "energy": 0.85,
+                    "actioning": "proclaim_royal_decree",
+                },
+                expected_acoustic_markers={
+                    "rms_dbfs_range": (-22.0, -12.0),
+                    "f0_variance_min": 15.0,
+                    "wps_range": (2.8, 3.8),
+                    "max_clipping_pinned": 1,
+                    "max_dead_air_sec": 0.8,
+                },
+                known_failure_modes=[
+                    "Slurred or colloquial articulation",
+                    "Underpowered projection for court herald",
+                ],
+                expected_outcome="ACCEPT",
+            ),
+        ]
+

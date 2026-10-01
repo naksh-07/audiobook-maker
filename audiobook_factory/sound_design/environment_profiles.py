@@ -205,6 +205,83 @@ STANDARD_ENVIRONMENTS: Dict[str, EnvironmentProfile] = {
         occlusion_barrier_hz=1400,
         default_absorption=0.75,
     ),
+
+    # 5. Modern & Suburban Environments
+    "suburban_street_day": EnvironmentProfile(
+        env_id="suburban_street_day",
+        display_name="Suburban Street (Day)",
+        category="settlement",
+        default_surfaces=["asphalt", "pavement", "brick", "lawn"],
+        typical_ambience_layers=["wind_howl.ogg"],
+        distant_sounds=["distant_car_hum", "distant_dog_bark", "gentle_breeze"],
+        typical_foley=["car_door", "footsteps_pavement", "gate_latch"],
+        typical_walla=None,
+        typical_weather="clear_day",
+        typical_creatures=["suburban_birds"],
+        estimated_rt60_ms=250,
+        occlusion_barrier_hz=16000,
+        default_absorption=0.85,
+    ),
+    "suburban_street_night": EnvironmentProfile(
+        env_id="suburban_street_night",
+        display_name="Quiet Suburban Street (Night)",
+        category="settlement",
+        default_surfaces=["asphalt", "pavement", "hedgerow", "brick"],
+        typical_ambience_layers=["07042032.mp3", "forest_night_crickets.ogg"],
+        distant_sounds=["distant_owl", "night_breeze", "distant_motorcycle"],
+        typical_foley=["lighter_click", "cat_purr", "soft_footsteps"],
+        typical_walla=None,
+        typical_weather="night_breeze",
+        typical_creatures=["owl", "cat"],
+        estimated_rt60_ms=200,
+        occlusion_barrier_hz=18000,
+        default_absorption=0.90,
+    ),
+    "domestic_room": EnvironmentProfile(
+        env_id="domestic_room",
+        display_name="Domestic Living Room / Kitchen",
+        category="indoor",
+        default_surfaces=["carpet", "plaster_wall", "wood_table", "curtains"],
+        typical_ambience_layers=["amb_castle_hall_hearth.wav"],
+        distant_sounds=["clock_tick", "refrigerator_hum"],
+        typical_foley=["cup_clink", "newspaper_rustle", "chair_shift", "door_open"],
+        typical_walla=None,
+        typical_weather="indoor_cozy",
+        typical_creatures=[],
+        estimated_rt60_ms=400,
+        occlusion_barrier_hz=800,
+        default_absorption=0.75,
+    ),
+    "office_commercial": EnvironmentProfile(
+        env_id="office_commercial",
+        display_name="Commercial Office / Busy Workplace",
+        category="indoor",
+        default_surfaces=["carpet_tile", "acoustic_tile_ceiling", "drywall", "glass"],
+        typical_ambience_layers=["07039098.mp3"],
+        distant_sounds=["typewriter_click", "phone_ring", "office_murmur"],
+        typical_foley=["paper_shuffle", "chair_swivel", "door_shut"],
+        typical_walla="office_whisper_walla",
+        typical_weather="indoor_conditioned",
+        typical_creatures=[],
+        estimated_rt60_ms=550,
+        occlusion_barrier_hz=1200,
+        default_absorption=0.65,
+    ),
+    "room_tone": EnvironmentProfile(
+        env_id="room_tone",
+        display_name="Neutral Room Tone",
+        category="indoor",
+        default_surfaces=["wood", "plaster", "carpet"],
+        typical_ambience_layers=[],
+        distant_sounds=[],
+        typical_foley=["wood_creak", "cloth_rustle"],
+        typical_walla=None,
+        typical_weather="sheltered",
+        typical_creatures=[],
+        estimated_rt60_ms=450,
+        occlusion_barrier_hz=1000,
+        default_absorption=0.70,
+    ),
 }
 
 
@@ -244,7 +321,17 @@ class EnvironmentProfileRegistry:
         """
         raw = text_or_tags.lower()
 
-        # Keyword mapping rules
+        # Modern / Suburban / Domestic keyword mapping rules
+        if any(w in raw for w in ("privet", "suburban", "driveway", "pavement", "outside", "sidewalk", "street", "road", "drive")):
+            if any(nw in raw for nw in ("night", "dark", "midnight", "dumbledore", "mcgonagall", "lamp", "cat", "evening", "रास्ता", "रात")):
+                return self._profiles["suburban_street_night"]
+            return self._profiles["suburban_street_day"]
+        if any(w in raw for w in ("office", "desk", "building", "drill", "boss", "grunnings", "workplace", "दफ्तर")):
+            return self._profiles["office_commercial"]
+        if any(w in raw for w in ("living room", "kitchen", "breakfast", "table", "chair", "house", "home", "bedroom", "कमरा", "घर", "मेज")):
+            return self._profiles["domestic_room"]
+
+        # Fantasy / Classic keyword mapping rules
         if any(w in raw for w in ("tavern", "inn", "pub", "bar", "tankard")):
             return self._profiles["tavern_interior"]
         if any(w in raw for w in ("crypt", "catacomb", "tomb", "sarcophagus", "necropolis")):
@@ -270,12 +357,12 @@ class EnvironmentProfileRegistry:
         if any(w in raw for w in ("carriage", "coach", "wagon", "cart")):
             return self._profiles["horse_carriage_road"]
 
-        # Default fallback
-        return self._profiles["castle_stone_corridor"]
+        # Default fallback - neutral domestic room or room tone
+        return self._profiles.get("domestic_room", self._profiles["room_tone"])
 
     def to_world_acoustic_profile(self, env_id: str) -> WorldAcousticProfile:
         """Converts an EnvironmentProfile into a WorldAcousticProfile for SonicBible interoperability."""
-        prof = self.get_profile(env_id) or self._profiles["castle_stone_corridor"]
+        prof = self.get_profile(env_id) or self._profiles.get("domestic_room", self._profiles["room_tone"])
         space_type = "indoor_large" if prof.category == "indoor" else ("subterranean" if prof.category == "subterranean" else "outdoor_open")
         return WorldAcousticProfile(
             env_id=prof.env_id,

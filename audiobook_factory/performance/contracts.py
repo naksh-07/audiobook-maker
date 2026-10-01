@@ -386,10 +386,11 @@ class PerformanceDirection(BaseModel):
     proximity: str = Field(default="normal_room", description="Microphone proximity zone")
     pan: float = Field(default=0.0, ge=-1.0, le=1.0, description="Stereo azimuth pan")
 
-    # 6. Priority & Take Requirements
     performance_priority: PerformancePriority = Field(default="standard", description="Performance focus priority")
     required_takes: int = Field(default=1, ge=1, le=4, description="Number of candidate takes to generate")
     delivery_intent_summary: str = Field(default="", description="Explainable 1-line actor directive")
+    spoken_text: Optional[str] = Field(default=None, description="Resolved spoken representation for TTS synthesis")
+    pronunciation_metadata: Optional[List[Dict[str, Any]]] = Field(default=None, description="Traceable pronunciation resolution metadata")
 
     @model_validator(mode="before")
     @classmethod

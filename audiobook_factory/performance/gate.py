@@ -77,6 +77,7 @@ class PerformanceFidelityGate:
         # 2. Selected Take Evaluation & Quality Audit
         eval_scores: List[float] = []
         dim_accum: Dict[str, List[float]] = {}
+        critical_defects: List[str] = []
 
         take_by_seg = {t.segment_uid: t for t in selected_takes if t.is_selected}
         unselected_by_seg = {t.segment_uid: t for t in selected_takes if not t.is_selected}
@@ -88,12 +89,16 @@ class PerformanceFidelityGate:
                 if unselected:
                     sel_res = getattr(unselected, "selection_result", None)
                     status_str = getattr(sel_res, "status", "NO_ACCEPTABLE_TAKE") if sel_res else "NO_ACCEPTABLE_TAKE"
-                    issues.append(
+                    msg = (
                         f"Segment {d.index} ({d.speaker}): Critical defect - NO ACCEPTABLE TAKE selected "
                         f"(status: {status_str}, take_id: {unselected.take_id})."
                     )
+                    issues.append(msg)
+                    critical_defects.append(f"[CRITICAL] {msg}")
                 else:
-                    issues.append(f"Segment {d.index} ({d.speaker}): No selected take found in take registry.")
+                    msg = f"Segment {d.index} ({d.speaker}): No selected take found in take registry."
+                    issues.append(msg)
+                    critical_defects.append(f"[CRITICAL] {msg}")
                 continue
 
             ev = take.evaluation
@@ -105,13 +110,15 @@ class PerformanceFidelityGate:
                     dim_accum[dim_name].append(dim_val.score)
 
                 if ev.overall_score < 0.65:
-                    issues.append(
-                        f"Take {take.take_id} score ({ev.overall_score:.2f}) below critical threshold (0.65)."
-                    )
+                    msg = f"Take {take.take_id} score ({ev.overall_score:.2f}) below critical threshold (0.65)."
+                    issues.append(msg)
+                    critical_defects.append(f"[CRITICAL] {msg}")
                 if ev.voice_drift_detected:
-                    issues.append(
-                        f"Take {take.take_id} ({d.speaker}): Voice drift detected against reference acoustic signature."
-                    )
+                    msg = f"Take {take.take_id} ({d.speaker}): Voice drift detected against reference acoustic signature."
+                    issues.append(msg)
+                    is_catastrophic = getattr(ev.evidence.voice_identity, "is_hard_gate_violation", False) if (ev.evidence and ev.evidence.voice_identity) else False
+                    if is_catastrophic:
+                        critical_defects.append(f"[CRITICAL] Catastrophic voice drift on take {take.take_id} ({d.speaker})")
                 if not take.selection_reason:
                     issues.append(f"Take {take.take_id} lacks explainable selection rationale.")
 
@@ -120,17 +127,19 @@ class PerformanceFidelityGate:
                 sel_res = take.selection_result
                 sel_status = getattr(sel_res, "status", "")
                 if sel_status == "NO_ACCEPTABLE_TAKE":
-                    issues.append(
-                        f"Take {take.take_id} ({d.speaker}): Critical defect - NO ACCEPTABLE TAKE available."
-                    )
+                    msg = f"Take {take.take_id} ({d.speaker}): Critical defect - NO ACCEPTABLE TAKE available."
+                    issues.append(msg)
+                    critical_defects.append(f"[CRITICAL] {msg}")
                 elif sel_status == "REGENERATE":
-                    issues.append(
-                        f"Take {take.take_id} ({d.speaker}): Take marked for regeneration."
-                    )
+                    msg = f"Take {take.take_id} ({d.speaker}): Take marked for regeneration."
+                    issues.append(msg)
+                    critical_defects.append(f"[CRITICAL] {msg}")
                 fusion = getattr(sel_res, "fusion_result", None)
                 if fusion and getattr(fusion, "hard_gate_reasons", []):
                     for hgr in fusion.hard_gate_reasons:
-                        issues.append(f"Take {take.take_id} ({d.speaker}): Hard gate defect - {hgr}")
+                        msg = f"Take {take.take_id} ({d.speaker}): Hard gate defect - {hgr}"
+                        issues.append(msg)
+                        critical_defects.append(f"[CRITICAL] {msg}")
 
         avg_score = float(sum(eval_scores) / len(eval_scores)) if eval_scores else 0.0
         dim_averages = {
@@ -138,14 +147,24 @@ class PerformanceFidelityGate:
             for k, v in dim_accum.items()
         }
 
-        # Gate decision
-        passed = (teleportation_violations == 0) and (avg_score >= 0.70 or not eval_scores) and (len(issues) == 0 or allow_warnings)
+        # Gate decision: Fail closed if ANY critical defect exists, regardless of allow_warnings
+        has_critical = len(critical_defects) > 0
+        passed = (
+            (not has_critical)
+            and (teleportation_violations == 0)
+            and (avg_score >= 0.70 or not eval_scores)
+            and (len(issues) == 0 or allow_warnings)
+        )
 
         # Critical fails: teleportation or missing takes
         if teleportation_violations > 0:
             passed = False
-        if len(take_by_seg) < len(directions) * 0.90 and selected_takes:
+            critical_defects.append(f"[CRITICAL] Chapter has {teleportation_violations} emotional teleportation violations")
+        if len(take_by_seg) < len(directions) * 0.95 and selected_takes:
             passed = False
+            critical_defects.append(f"[CRITICAL] Incomplete segment coverage: {len(take_by_seg)}/{len(directions)} segments selected")
+
+        all_unresolved = critical_defects + [i for i in issues if f"[CRITICAL] {i}" not in critical_defects]
 
         report = PerformanceFidelityReport(
             chapter_id=chapter_id,
@@ -155,7 +174,7 @@ class PerformanceFidelityGate:
             avg_evaluation_score=round(avg_score, 2),
             dimension_averages=dim_averages,
             teleportation_violations=teleportation_violations,
-            unresolved_issues=issues,
+            unresolved_issues=all_unresolved,
             created_at=datetime.datetime.now().isoformat(),
         )
 

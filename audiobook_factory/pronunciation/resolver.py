@@ -246,7 +246,8 @@ class PronunciationResolver:
         # Tier 7: Unresolved Fallback (Review Required)
         # -------------------------------------------------------------
         # If an unknown English/foreign name appears in Hindi context, flag REVIEW_REQUIRED
-        is_unknown_foreign = (detected_lang == SpokenLanguage.ENGLISH and len(stripped) >= 3)
+        is_english_sentence = bool(sentence_context and not any('\u0900' <= c <= '\u097f' for c in sentence_context) and len(sentence_context.split()) >= 3)
+        is_unknown_foreign = (detected_lang == SpokenLanguage.ENGLISH and len(stripped) >= 3 and not is_english_sentence)
         return PronunciationResolutionResult(
             original_token=token,
             resolved_spoken=clean_token,

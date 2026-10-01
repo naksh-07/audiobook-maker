@@ -1,0 +1,1194 @@
+<USER_REQUEST>
+You are continuing work inside the existing `audiobook-maker` repository.
+
+This is PROMPT 8 of the Premium Cinematic Audiobook execution plan.
+
+PROMPT 1 established the canonical production path.
+
+PROMPT 2 integrated the real production path.
+
+PROMPT 3 hardened Performance + Voice QC.
+
+PROMPT 4 hardened Pronunciation + Dialogue.
+
+PROMPT 5 established the Golden Performance Suite.
+
+PROMPT 6 hardened Cinematic Continuity.
+
+PROMPT 7 validated Mix + Master.
+
+Your mission now is:
+
+> RUN A REAL 45–90 MINUTE END-TO-END AUDIOBOOK PRODUCTION TRIAL THROUGH THE ACTUAL PRODUCTION PIPELINE, FIND THE FAILURES THAT ONLY APPEAR AT LONG-FORM SCALE, FIX ONLY THE NECESSARY PRODUCTION DEFECTS, AND PROVE THAT THE SYSTEM CAN SUSTAIN PREMIUM QUALITY OVER A CONTINUOUS LISTENING EXPERIENCE.
+
+This is the first time the entire system is being judged as ONE PRODUCTION SYSTEM.
+
+This is NOT another architecture project.
+
+This is NOT another feature sprint.
+
+This is NOT a benchmark-only exercise.
+
+This is NOT permission to redesign the pipeline.
+
+This is a:
+
+PRODUCTION REHEARSAL
++
+LONG-FORM STABILITY TEST
++
+PERCEPTUAL QUALITY TEST
++
+FAILURE DISCOVERY
++
+REMEDIATION
++
+RE-RUN
+
+==================================================
+CORE QUESTION
+==================================================
+
+The question is no longer:
+
+"Does each subsystem work?"
+
+P1–P7 already addressed that.
+
+The question is:
+
+> "Can the complete system produce 45–90 minutes of coherent, emotionally directed, technically reliable audiobook audio without accumulating quality failures?"
+
+The final listener should experience:
+
+ONE BOOK
+
+not:
+
+100 individually successful AI-generated clips.
+
+==================================================
+CRITICAL ARCHITECTURAL RULE
+==================================================
+
+P8 MUST use the actual canonical production path.
+
+Do NOT construct a special "trial pipeline".
+
+Do NOT bypass normal production stages.
+
+Do NOT manually assemble the final audiobook outside the normal system unless required for controlled diagnosis.
+
+The trial must exercise the real path:
+
+NOVEL
+↓
+TRANSLATION / ADAPTATION
+↓
+WORLD + CHARACTER STATE
+↓
+SCREENPLAY
+↓
+SCENE STATE
+↓
+PERFORMANCE DIRECTION
+↓
+PRONUNCIATION / LANGUAGE QA
+↓
+TTS
+↓
+TAKE BANK
+↓
+TAKE SELECTION
+↓
+ALIGNMENT
+↓
+PERFORMANCE QC
+↓
+VOICE QC
+↓
+DIALOGUE EDITING
+↓
+FOLEY / AMBIENCE / MUSIC
+↓
+SPATIAL / SCENE AUDIO
+↓
+CINEMATIC MIX
+↓
+MASTERING
+↓
+FINAL QC
+↓
+FINAL AUDIO / M4B
+
+The repository blueprint explicitly requires the final system to reach this complete listener-facing chain.
+
+==================================================
+FIRST ACTION — READ THE PREVIOUS RESULTS
+==================================================
+
+Before generating anything:
+
+Read:
+
+P1 audit
+
+P2 integration report
+
+P3 performance/voice report
+
+P4 pronunciation/dialogue report
+
+P5 Golden Performance Suite documentation
+
+P6 cinematic continuity report
+
+P7 mix/master validation report
+
+engineering blueprint
+
+repository/project architecture documentation
+
+Then inspect actual current code.
+
+Do NOT trust old reports if the implementation has changed.
+
+Verify the current state.
+
+==================================================
+PHASE 1 — SELECT THE TRIAL MATERIAL
+==================================================
+
+Select a real contiguous audiobook section producing approximately:
+
+45–90 MINUTES
+
+of final listening time.
+
+Preferred:
+
+ONE CONTIGUOUS STORY ARC
+
+rather than unrelated samples.
+
+The trial should contain enough narrative variation to exercise the system.
+
+Target coverage:
+
+- narration
+- normal dialogue
+- multi-speaker dialogue
+- emotional dialogue
+- character transitions
+- scene transitions
+- quiet scenes
+- high-intensity scenes
+- environmental scenes
+- music opportunities
+- Foley opportunities
+- silence
+- recurring characters
+- recurring locations
+- difficult names
+- pronunciation-sensitive terms
+- Hindi-heavy prose where applicable
+- Hindi-English code switching where applicable
+
+Do not artificially stuff every possible feature into the trial.
+
+Use naturally occurring story material.
+
+==================================================
+PHASE 2 — TRIAL CONTRACT
+==================================================
+
+Create a reproducible production-trial manifest.
+
+The manifest should identify:
+
+- source material
+- chapter/section range
+- source text version
+- translation version
+- screenplay version
+- character-state version
+- pronunciation dictionary version
+- TTS model/version
+- voice configuration
+- performance configuration
+- sound-design version
+- mix version
+- mastering version
+- trial version
+- generation timestamp
+- production configuration
+
+Use existing provenance contracts.
+
+Do NOT create a parallel provenance system.
+
+The repository blueprint already requires lineage involving segment UID, source text hash, script version, and generation version. Preserve that model.
+
+==================================================
+PHASE 3 — CLEAN PRODUCTION RUN
+==================================================
+
+Run the complete trial from a clean/reproducible state.
+
+Do NOT manually repair output while generation is running.
+
+If a failure occurs:
+
+record it.
+
+Classify it.
+
+Then determine whether the system:
+
+- correctly retries;
+- correctly falls back;
+- correctly sends to review;
+- incorrectly silently succeeds;
+- incorrectly loses provenance;
+- incorrectly produces degraded output.
+
+The production failure policy must prevent important failures from silently becoming successful output.
+
+==================================================
+PHASE 4 — PRODUCTION OBSERVABILITY
+==================================================
+
+During the run capture production-level evidence.
+
+At minimum:
+
+- stage completion
+- stage failures
+- retries
+- fallback events
+- review events
+- regeneration events
+- take-selection decisions
+- QC failures
+- voice-drift events
+- pronunciation failures
+- alignment failures
+- sound-design failures
+- mix failures
+- mastering failures
+- final-QC failures
+- processing time
+- output duration
+- artifact counts
+
+Do not build a new observability platform.
+
+Use existing logs, manifests, reports, metrics, or state systems.
+
+==================================================
+PHASE 5 — FAILURE ACCOUNTING
+==================================================
+
+Every non-trivial failure must have:
+
+FAILURE
+↓
+DETECTION
+↓
+CLASSIFICATION
+↓
+RECOVERY
+↓
+FINAL STATUS
+
+Do not count:
+
+"pipeline completed"
+
+as success if the pipeline silently produced degraded output.
+
+Create a trial failure ledger.
+
+Classify failures as:
+
+### P0 — Production blocker
+
+Examples:
+
+- missing audio
+- wrong speaker
+- unrecoverable corruption
+- severe pronunciation failure
+- broken chapter
+- silent fallback
+- lost provenance
+- severe alignment failure
+- catastrophic mix/master defect
+
+### P1 — Major quality defect
+
+Examples:
+
+- noticeable voice drift
+- bad emotional delivery
+- poor dialogue timing
+- major continuity error
+- distracting Foley
+- music masking
+- significant loudness discontinuity
+
+### P2 — Minor quality issue
+
+Examples:
+
+- small timing issue
+- minor ambience discontinuity
+- small artifact
+- minor transition imperfection
+
+### P3 — Cosmetic / future improvement
+
+Do not let P3 issues derail the trial.
+
+==================================================
+PHASE 6 — LONG-FORM ACCUMULATION TEST
+==================================================
+
+This is one of the most important purposes of P8.
+
+Look for problems that do not appear in 2-minute tests.
+
+Inspect:
+
+- voice drift over time
+- character identity drift
+- emotional fatigue
+- repetitive performance patterns
+- pronunciation consistency
+- terminology consistency
+- ambience continuity
+- music repetition
+- Foley repetition
+- loudness drift
+- noise-floor drift
+- tonal drift
+- accumulated artifacts
+- timing drift
+- metadata/provenance drift
+- state corruption
+- memory/resource problems
+- output size problems
+
+The system must remain coherent from:
+
+MINUTE 1
+
+through:
+
+MINUTE 45–90.
+
+==================================================
+PHASE 7 — CHARACTER CONTINUITY
+==================================================
+
+Select recurring characters appearing throughout the trial.
+
+Check:
+
+- voice identity
+- speaking rhythm
+- emotional behavior
+- pronunciation
+- personality
+- relationship dynamics
+- performance consistency
+
+The character must not sound like:
+
+Character A at minute 5
+→ different actor at minute 42.
+
+Do not require identical delivery.
+
+Natural variation is expected.
+
+The requirement is:
+
+RECOGNIZABLE IDENTITY
++
+CONTEXT-APPROPRIATE VARIATION.
+
+==================================================
+PHASE 8 — DIALOGUE CONTINUITY
+==================================================
+
+Review multi-speaker sequences as continuous conversations.
+
+Check:
+
+- response timing
+- interruptions
+- pauses
+- emotional escalation
+- emotional de-escalation
+- reaction timing
+- conversational rhythm
+- speaker energy
+- scene context
+
+The target is:
+
+CHARACTERS RESPONDING TO EACH OTHER
+
+not:
+
+TTS CLIPS PLAYING ONE AFTER ANOTHER.
+
+The blueprint explicitly treats dialogue continuity this way.
+
+==================================================
+PHASE 9 — PRONUNCIATION CONSISTENCY
+==================================================
+
+Across the full trial, identify recurring:
+
+- character names
+- locations
+- fantasy terms
+- foreign words
+- proper nouns
+- Hindi terms
+- English terms
+- code-switched terms
+
+Verify that pronunciation remains stable.
+
+Look specifically for:
+
+first occurrence correct
+→ later occurrence wrong.
+
+That is a long-form production defect.
+
+Do not manually patch individual files without updating the canonical pronunciation source.
+
+==================================================
+PHASE 10 — PERFORMANCE CONSISTENCY
+==================================================
+
+Review the emotional arc across the trial.
+
+Check whether:
+
+- tension builds;
+- calm scenes remain calm;
+- emotional peaks feel earned;
+- characters change emotional state appropriately;
+- intensity does not remain permanently high;
+- narration does not become monotonous;
+- dramatic scenes do not all sound identical.
+
+Avoid:
+
+"everything sounds cinematic"
+
+because that often means:
+
+"everything sounds equally dramatic."
+
+The audiobook needs contrast.
+
+==================================================
+PHASE 11 — CINEMATIC CONTINUITY
+==================================================
+
+Evaluate continuous soundscape behavior.
+
+Check:
+
+- recurring locations
+- ambience
+- music
+- Foley
+- silence
+- spatial placement
+- transitions
+- environmental consistency
+
+Watch for:
+
+FOREST
+→ generic ambience
+→ forest
+→ completely different forest
+
+or:
+
+MUSIC
+→ abrupt stop
+→ music
+→ abrupt restart.
+
+Sound should behave like one continuous world.
+
+==================================================
+PHASE 12 — MIX / MASTER LONG-FORM STABILITY
+==================================================
+
+Analyze the complete trial for:
+
+- integrated loudness
+- true peak
+- clipping
+- dynamic behavior
+- tonal consistency
+- dialogue intelligibility
+- channel integrity
+- noise floor
+- silence
+- transition artifacts
+- encoding integrity
+
+Look for drift across the entire 45–90 minute output.
+
+A scene passing individually is not enough.
+
+Check:
+
+SCENE → SCENE → SCENE → CHAPTER/SECTION
+
+continuity.
+
+==================================================
+PHASE 13 — TECHNICAL INTEGRITY
+==================================================
+
+Verify:
+
+- no missing segments
+- no duplicated segments
+- correct segment ordering
+- correct chapter ordering
+- correct durations
+- no corrupted files
+- no orphaned references
+- no broken assets
+- no broken manifests
+- no stale audio
+- no incorrect cache reuse
+- provenance intact
+
+The final output must be traceable back to its source and processing state.
+
+==================================================
+PHASE 14 — FINAL AUDIO ASSEMBLY
+==================================================
+
+Assemble the actual 45–90 minute final listening artifact through the normal production path.
+
+Prefer the repository's existing final output mechanism.
+
+If the project supports M4B/final audiobook packaging:
+
+exercise it.
+
+Validate:
+
+- chapter boundaries
+- metadata
+- duration
+- cover/artwork where supported
+- language
+- author/title
+- container integrity
+- seekability
+- chapter navigation
+- audio continuity
+
+Do not redesign packaging.
+
+==================================================
+PHASE 15 — LISTEN LIKE A REAL USER
+==================================================
+
+This is mandatory.
+
+Do NOT review only reports.
+
+Listen to the full trial as a listener.
+
+Ideally:
+
+ONE CONTINUOUS SESSION
+
+or the closest practical approximation.
+
+Do not stop every 20 seconds to inspect waveforms.
+
+The purpose is to experience:
+
+"Would I actually want to keep listening?"
+
+Take notes at meaningful timestamps.
+
+Mark:
+
+- immersion breaks
+- unnatural performances
+- distracting sound design
+- pronunciation failures
+- dialogue chemistry failures
+- loudness problems
+- transition problems
+- obvious AI artifacts
+- emotional failures
+- continuity failures
+
+==================================================
+PHASE 16 — BLIND LISTENING
+==================================================
+
+Where practical, perform a blind review.
+
+Do not look at:
+
+- model
+- generation settings
+- internal scores
+- QC result
+
+before listening.
+
+Evaluate the listener experience first.
+
+This helps prevent:
+
+"the metrics said 94, so my ears must be wrong."
+
+Human perception remains important.
+
+==================================================
+PHASE 17 — HUMAN REVIEW RUBRIC
+==================================================
+
+Score the trial across:
+
+1. narration naturalness
+2. character identity
+3. emotional performance
+4. dialogue chemistry
+5. pronunciation
+6. pacing
+7. scene immersion
+8. ambience
+9. Foley
+10. music
+11. silence
+12. transitions
+13. dialogue intelligibility
+14. loudness comfort
+15. dynamic range
+16. overall cinematic coherence
+17. long-listening comfort
+
+Use 1–5 where useful.
+
+Do NOT collapse everything into one number.
+
+==================================================
+PHASE 18 — GOLDEN SUITE COMPARISON
+==================================================
+
+Run P5 Golden Performance Suite after the production changes.
+
+Confirm:
+
+- no regression
+- intentional changes are understood
+- benchmark remains valid
+
+The Golden Suite remains the permanent regression safety net.
+
+Do not modify golden baselines simply because the production trial exposed a defect.
+
+Fix the defect first.
+
+Only re-baseline if a deliberate quality change is actually intended.
+
+==================================================
+PHASE 19 — TARGETED REMEDIATION
+==================================================
+
+After the first full run:
+
+DO NOT immediately start rewriting architecture.
+
+For each P0/P1/P2 issue ask:
+
+1. Is it a real production defect?
+2. Which existing stage owns it?
+3. Can the existing component fix it?
+4. Is the issue caused by bad configuration?
+5. Is the issue caused by missing validation?
+6. Is the issue caused by cross-stage interaction?
+7. Is a new component genuinely necessary?
+
+Prefer:
+
+CONFIGURATION FIX
+or
+EXISTING COMPONENT FIX
+or
+VALIDATION FIX
+
+over:
+
+NEW ARCHITECTURE.
+
+==================================================
+PHASE 20 — SECOND PRODUCTION RUN
+==================================================
+
+After targeted remediation:
+
+RUN THE FULL TRIAL AGAIN.
+
+Use the same trial contract wherever possible.
+
+Compare:
+
+RUN 1
+vs
+RUN 2
+
+Track:
+
+- fixed defects
+- new defects
+- regressions
+- changed performance
+- changed runtime
+- changed artifact count
+
+Do not declare success merely because the second run completes.
+
+==================================================
+PHASE 21 — FAILURE REPLAY
+==================================================
+
+For representative failures discovered during Run 1:
+
+verify that the corresponding fix actually prevents recurrence.
+
+Examples:
+
+Run 1:
+pronunciation failure
+
+Run 2:
+same condition
+
+→ must remain fixed.
+
+Run 1:
+voice drift
+
+Run 2:
+same character
+
+→ must remain within expected tolerance.
+
+Run 1:
+mix discontinuity
+
+Run 2:
+must remain fixed.
+
+==================================================
+PHASE 22 — RECOVERY TESTING
+==================================================
+
+Test selected failure-recovery paths where practical.
+
+Examples:
+
+- TTS generation failure
+- alignment failure
+- pronunciation failure
+- performance QC failure
+- voice drift
+- asset failure
+- mix failure
+
+Verify that the system:
+
+FAILS LOUDLY
+or
+RECOVERS CORRECTLY.
+
+Never:
+
+FAILS SILENTLY.
+
+==================================================
+PHASE 23 — RESOURCE / STABILITY TEST
+==================================================
+
+Observe the long run for:
+
+- memory growth
+- disk growth
+- leaked temporary files
+- orphaned artifacts
+- runaway processes
+- cache corruption
+- repeated computation
+- unexpected slowdown
+- output accumulation
+
+The system must survive long-form production without degrading operationally.
+
+Do not optimize speculative bottlenecks.
+
+Fix only demonstrated issues.
+
+==================================================
+PHASE 24 — COST / RUNTIME ACCOUNTING
+==================================================
+
+Measure:
+
+- total runtime
+- TTS generation time
+- QC time
+- alignment time
+- sound-design time
+- mix time
+- mastering time
+- total output size
+- retry/regeneration count
+
+Where possible estimate:
+
+COST PER FINISHED AUDIO HOUR
+
+This is important for future real-book production.
+
+Do not optimize quality away merely to reduce runtime.
+
+But identify obvious waste.
+
+==================================================
+PHASE 25 — PRODUCTION TRIAL REPORT
+==================================================
+
+Create:
+
+`docs/trials/full-production-trial-report.md`
+
+Include:
+
+1. trial objective
+2. trial material
+3. duration
+4. configuration
+5. pipeline version
+6. provenance
+7. run 1 results
+8. failure ledger
+9. human listening findings
+10. technical QC
+11. linguistic QC
+12. performance QC
+13. cinematic QC
+14. mix/master QC
+15. resource stability
+16. runtime
+17. cost estimate
+18. remediation performed
+19. run 2 results
+20. regression comparison
+21. remaining defects
+22. P0/P1/P2/P3 breakdown
+23. production readiness assessment
+24. P9 prerequisites
+
+==================================================
+PHASE 26 — PRODUCTION READINESS MATRIX
+==================================================
+
+Create a matrix:
+
+CATEGORY | RUN 1 | RUN 2 | STATUS
+
+Categories:
+
+- literary/translation
+- screenplay
+- character continuity
+- performance direction
+- TTS generation
+- take selection
+- pronunciation
+- alignment
+- performance QC
+- voice QC
+- dialogue editing
+- Foley
+- ambience
+- music
+- silence
+- spatial continuity
+- mix
+- mastering
+- technical QC
+- linguistic QC
+- cinematic QC
+- packaging
+- provenance
+- reproducibility
+- long-form stability
+
+Status values:
+
+PASS
+PASS WITH MINOR ISSUES
+REVIEW
+FAIL
+
+Do not hide unresolved failures behind an aggregate score.
+
+==================================================
+PHASE 27 — P8 EXIT CRITERIA
+==================================================
+
+P8 may be considered successful only when:
+
+### TECHNICAL
+
+- complete trial renders successfully;
+- no missing/corrupt segments;
+- ordering is correct;
+- final artifact is valid;
+- packaging is valid;
+- provenance is intact;
+- no critical technical QC failures remain.
+
+### LINGUISTIC
+
+- no unresolved critical pronunciation errors;
+- no systematic missing/repeated/wrong words;
+- terminology remains consistent;
+- character attribution remains correct.
+
+### PERFORMANCE
+
+- characters remain recognizable;
+- emotional delivery remains context-appropriate;
+- dialogue chemistry remains convincing;
+- performance quality does not degrade materially over time.
+
+### CINEMATIC
+
+- scene transitions remain coherent;
+- ambience remains continuous;
+- Foley remains purposeful;
+- music remains controlled;
+- silence remains intentional;
+- sound does not overwhelm dialogue.
+
+### MIX / MASTER
+
+- no critical clipping;
+- loudness remains controlled;
+- dialogue remains intelligible;
+- no major tonal drift;
+- no major transition artifacts;
+- output remains comfortable for long listening.
+
+### REGRESSION
+
+- Golden Suite passes;
+- previous P1–P7 protections remain active;
+- no major regression introduced by trial fixes.
+
+### HUMAN LISTENING
+
+The full trial must pass a serious human listening review.
+
+==================================================
+WHAT DOES NOT COUNT AS SUCCESS
+==================================================
+
+These are NOT sufficient:
+
+"Pipeline completed."
+
+"All Python tests pass."
+
+"Audio files were generated."
+
+"LUFS is correct."
+
+"Golden Suite passed."
+
+"AI evaluator scored 95."
+
+"45 minutes of WAV exists."
+
+None of these prove a good audiobook.
+
+The actual success condition is:
+
+TECHNICAL VALIDITY
++
+LINGUISTIC CORRECTNESS
++
+PERFORMANCE QUALITY
++
+CINEMATIC CONTINUITY
++
+MIX/MASTER QUALITY
++
+LONG-FORM LISTENABILITY.
+
+==================================================
+ANTI-OVERENGINEERING STOP RULE
+==================================================
+
+If the trial exposes a problem:
+
+FIRST:
+
+fix the smallest responsible component.
+
+SECOND:
+
+rerun the affected validation.
+
+THIRD:
+
+rerun the production trial.
+
+ONLY if the same structural problem persists should architecture change be considered.
+
+Do NOT respond to every failure by creating:
+
+V2
+V3
+new engine
+new orchestrator
+new abstraction
+new database
+new framework.
+
+P8 is specifically intended to expose whether the current architecture is sufficient.
+
+==================================================
+DO NOT DO P9
+==================================================
+
+Do NOT:
+
+- certify the system permanently;
+- declare commercial production readiness;
+- create final certification;
+- freeze architecture;
+- claim "Harry Potter level achieved";
+- close the project.
+
+Those belong to P9.
+
+P8 proves whether the system survives real production.
+
+P9 decides whether the evidence is sufficient for certification.
+
+==================================================
+FINAL RESPONSE
+==================================================
+
+Report exactly:
+
+1. TRIAL MATERIAL
+2. TRIAL DURATION
+3. TRIAL CONFIGURATION
+4. CANONICAL PATH VERIFIED
+5. RUN 1 RESULT
+6. RUN 1 FAILURE LEDGER
+7. LONG-FORM FAILURES DISCOVERED
+8. TECHNICAL QC RESULTS
+9. LINGUISTIC QC RESULTS
+10. PERFORMANCE QC RESULTS
+11. CHARACTER CONTINUITY RESULTS
+12. DIALOGUE CONTINUITY RESULTS
+13. PRONUNCIATION CONSISTENCY RESULTS
+14. CINEMATIC CONTINUITY RESULTS
+15. MIX / MASTER RESULTS
+16. PACKAGING RESULTS
+17. PROVENANCE / REPRODUCIBILITY RESULTS
+18. RESOURCE / STABILITY RESULTS
+19. RUNTIME / COST RESULTS
+20. HUMAN LISTENING RESULTS
+21. REMEDIATION PERFORMED
+22. RUN 2 RESULT
+23. RUN 1 → RUN 2 COMPARISON
+24. REMAINING P0 ISSUES
+25. REMAINING P1 ISSUES
+26. REMAINING P2 ISSUES
+27. P3 / FUTURE IMPROVEMENTS
+28. GOLDEN SUITE STATUS
+29. PRODUCTION READINESS MATRIX
+30. P9 PREREQUISITES
+31. FILES CREATED/CHANGED
+
+==================================================
+FINAL PRINCIPLE
+==================================================
+
+P8 is where the system stops being judged as software components.
+
+It is judged as an audiobook production machine.
+
+The listener does not care that:
+
+PerformanceDirector passed.
+
+TakeSelector passed.
+
+PronunciationEngine passed.
+
+MixJudge passed.
+
+Mastering passed.
+
+The listener hears ONE CONTINUOUS EXPERIENCE.
+
+Therefore the final question is:
+
+> "After 45–90 minutes, does this still feel like one deliberately produced audiobook?"
+
+Not:
+
+"Did every subsystem technically execute?"
+
+If the answer is YES, and the remaining issues are genuinely non-critical:
+
+STOP.
+
+P8 is complete.
+
+If the answer is NO:
+
+do not hide the problem.
+
+Find the smallest responsible layer.
+
+Fix it.
+
+Run again.
+
+Then stop only when the complete experience holds together.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-01T10:19:49+05:30.
+</ADDITIONAL_METADATA>

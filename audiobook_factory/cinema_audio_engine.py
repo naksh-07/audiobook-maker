@@ -182,7 +182,7 @@ def measure_audio_metrics(audio_file: Path, ffmpeg: str = "ffmpeg") -> Dict[str,
         "-f", "null", "-"
     ]
     try:
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60)
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=600)
         output = proc.stderr
         import re
         i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
@@ -529,8 +529,8 @@ def render_discrete_stems(
         "-i", str(dx_file),
         "-i", str(me_file),
         "-filter_complex",
-        f"[1:a][0:a]sidechaincompress=threshold=0.018:knee=3.0:ratio=4:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
-        f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000,alimiter=limit=0.95:attack=5:release=50[premaster_out]",
+        f"[1:a][0:a]sidechaincompress=threshold=0.030:knee=2.5:ratio=2.2:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
+        f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000,volume=-1.5dB,alimiter=limit=0.85:attack=5:release=50[premaster_out]",
         "-map", "[premaster_out]",
         "-c:a", "pcm_s16le",
         str(premaster_file),

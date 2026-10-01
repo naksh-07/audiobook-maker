@@ -1,0 +1,118 @@
+{
+  "trial_version": "TRIAL-P8-HP01",
+  "trial_name": "45-90 Minute Long-Form Audiobook Production Trial (Harry Potter Ch. 1)",
+  "timestamp": "2026-10-01T05:01:53.452409+00:00",
+  "source_material": {
+    "book_id": "harry_potter_or_paras_patthar",
+    "title": "हैरी पॉटर और पारस पत्थर",
+    "raw_source": "audiobooks\\projects\\harry_potter_or_paras_patthar\\raw\\source_original.pdf",
+    "chapter_range": [
+      1
+    ],
+    "chapter_title": "अध्याय - एक: वह लड़का जो जिंदा बच गया",
+    "source_text_file": "audiobooks\\projects\\harry_potter_or_paras_patthar\\extracted\\chapter_001.md",
+    "source_text_sha256": "ec93094e7f66b3652872d5518e3d914aea14d15556f65ad0a84f6673123b3591",
+    "total_words": 5941,
+    "estimated_audio_duration_min": 48.5
+  },
+  "contracts": {
+    "translation_version": "Authorized Literary Hindi Translation (Devanagari)",
+    "translation_hash": "ec93094e7f66b3652872d5518e3d914aea14d15556f65ad0a84f6673123b3591",
+    "screenplay_schema": "ScreenplayScript v2.0 (Pydantic v2)",
+    "character_state_version": "BookBible v2.0 + CharacterRoster v1.0",
+    "character_state_hash": "c84502c2489ac6dad6575454adaaea570d41c7c3998c0803052a3a7e0b2ddba4",
+    "pronunciation_dictionary_version": "PronunciationLexicon v1.0 (27 canonical entities)",
+    "tts_model": "gemini-3.8-flash-tts",
+    "default_voice": "Aoede",
+    "voice_registry": {
+      "Narrator": {
+        "voice": "Aoede",
+        "pitch": 1.0,
+        "speed": 1.0
+      },
+      "Mr. Dursley": {
+        "voice": "Charon",
+        "pitch": 0.95,
+        "speed": 1.02
+      },
+      "Mrs. Dursley": {
+        "voice": "Kore",
+        "pitch": 1.05,
+        "speed": 1.05
+      },
+      "Albus Dumbledore": {
+        "voice": "Fenrir",
+        "pitch": 0.9,
+        "speed": 0.95
+      },
+      "Professor McGonagall": {
+        "voice": "Leda",
+        "pitch": 1.0,
+        "speed": 1.0
+      },
+      "Rubeus Hagrid": {
+        "voice": "Zeus",
+        "pitch": 0.85,
+        "speed": 0.9
+      },
+      "Jim McGuffin": {
+        "voice": "Puck",
+        "pitch": 1.0,
+        "speed": 1.05
+      },
+      "Ted": {
+        "voice": "Orpheus",
+        "pitch": 1.0,
+        "speed": 1.0
+      },
+      "Whispering Wizard": {
+        "voice": "Achilles",
+        "pitch": 0.95,
+        "speed": 0.95
+      }
+    },
+    "performance_director": {
+      "framework": "DramaticPlan + PerformanceDirector v2.0",
+      "gates": [
+        "Gate 2.5 Dramatic Fidelity",
+        "Gate 2.8 Pre-Mix Performance Fidelity"
+      ],
+      "take_selector": "IntelligentTakeSelector (ConversationalChemistry + Pitch Stability)"
+    },
+    "sound_design": {
+      "manifest_schema": "CinemaAudioManifest v1.0 (5-Track Discrete DME)",
+      "tracks": [
+        "DX (Dialogue)",
+        "MX (Music)",
+        "FX (Foley)",
+        "AMB (Ambience)",
+        "ME (Music & Effects)"
+      ]
+    },
+    "mixing_engine": {
+      "stage": "Stage 11 Discrete Stem Engine",
+      "ducking_attenuation_db": -16.0,
+      "spectral_carve_hz": 2200,
+      "spectral_carve_gain_db": -5.5,
+      "mix_judge": "AcousticMixJudge with fail-closed remix controller"
+    },
+    "mastering_engine": {
+      "stage": "Stage 12 MasteringEngineV2",
+      "subsonic_highpass_hz": 25,
+      "loudness_standard": "EBU R128 (-19.0 LUFS +/- 1.0 LU)",
+      "true_peak_ceiling_dbtp": -1.4,
+      "resample_algorithm": "48kHz Kaiser Sinc Filter (alimiter -> aresample)",
+      "dither": "TPDF (Triangular Probability Density Function)"
+    }
+  },
+  "production_specifications": {
+    "target_lufs": -19.0,
+    "max_true_peak_dbtp": -1.4,
+    "sample_rate_hz": 48000,
+    "bit_depth": 24,
+    "audio_channels": 2,
+    "workers": 1,
+    "stealth_cadence_enforced": true,
+    "packaging_format": "M4B (AAC-LC 192kbps) with Chapter Navigation"
+  }
+}

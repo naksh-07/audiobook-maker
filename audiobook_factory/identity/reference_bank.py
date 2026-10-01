@@ -112,6 +112,40 @@ class ReferenceVoiceBank:
         if not src.exists() or src.stat().st_size <= 44:
             raise FileNotFoundError(f"Reference audio missing or invalid: {src}")
 
+        # Validate audio technical hygiene before registering as character reference
+        try:
+            with wave.open(str(src), "rb") as wf:
+                fr = wf.getframerate()
+                n_frames = wf.getnframes()
+                if fr <= 0 or n_frames <= 0:
+                    raise ValueError(f"Invalid WAV frames ({n_frames}) or framerate ({fr})")
+                dur = n_frames / float(fr)
+                if dur < 0.4:
+                    raise ValueError(f"Reference audio too short ({dur:.2f}s < 0.40s)")
+                raw = wf.readframes(n_frames)
+            samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32)
+            rms = float(np.sqrt(np.mean(samples ** 2))) if len(samples) > 0 else 0.0
+            rms_db = 20.0 * math.log10(max(rms, 1e-5) / 32768.0)
+            if rms_db < -55.0:
+                raise ValueError(f"Reference audio too quiet (RMS {rms_db:.1f} dBFS < -55 dBFS)")
+
+            # Check consecutive rail clipping
+            consec_rail = 0
+            max_consec = 0
+            for s in samples:
+                if abs(s) >= 32760:
+                    consec_rail += 1
+                    if consec_rail > max_consec:
+                        max_consec = consec_rail
+                else:
+                    consec_rail = 0
+            if max_consec >= 6:
+                raise ValueError(f"Reference audio hard clipped ({max_consec} consecutive pinned samples)")
+        except ValueError:
+            raise
+        except Exception as e:
+            raise ValueError(f"Reference audio corrupt or unreadable: {e}")
+
         char_dir = self.get_character_dir(character_id)
         target = char_dir / f"{mode}.wav"
         shutil.copy2(src, target)

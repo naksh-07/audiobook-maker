@@ -62,6 +62,8 @@ from audiobook_factory.gate_auditor import (
     audit_gate0_translation,
     audit_gate1_roster,
     audit_gate2_script,
+    audit_gate2_5_dramatic_fidelity,
+    audit_gate2_8_performance_fidelity,
     audit_gate3_5_acoustic_feasibility,
     audit_gate5_2_spectral_masking,
     audit_gate5_3_stereo_phase,
@@ -342,6 +344,25 @@ class PipelineOrchestrator:
         except Exception as e:
             logger.warning(f"[!] Gate 2 Script Audit notice for Chapter {chapter_num:02d}: {e}")
 
+        # Gate 2.5: Dramatic Beat Fidelity & Character Arc Validator
+        dramatic_plan_file = project_dir / "dramaturgy" / f"{chap_stem}_dramatic_plan.json"
+        source_chap_file = project_dir / "translated" / f"{chap_stem}.md"
+        if not source_chap_file.exists():
+            source_chap_file = project_dir / "extracted" / f"{chap_stem}.md"
+        try:
+            gate2_5_res = audit_gate2_5_dramatic_fidelity(
+                script_file=script_file,
+                dramatic_plan_file=dramatic_plan_file if dramatic_plan_file.exists() else None,
+                source_file=source_chap_file if source_chap_file.exists() else None,
+                project_dir=project_dir,
+            )
+            logger.info(f"[*] Gate 2.5 Dramatic Fidelity: PASSED for Chapter {chapter_num:02d} (Status: {gate2_5_res.get('status')})")
+        except GateAuditError as e:
+            logger.error(f"\n[!] 🛑 GATE 2.5 DRAMATIC FIDELITY FAILED for Chapter {chapter_num:02d}: {e}")
+            raise
+        except Exception as e:
+            logger.warning(f"[!] Gate 2.5 Dramatic Fidelity notice for Chapter {chapter_num:02d}: {e}")
+
         # 1. Synthesize speech segments via Gemini TTS (Token Bucket & Graceful Key Halting)
         logger.info(f"[*] Synthesizing Chapter {chapter_num:02d} speech segments (Workers: {workers})...")
         from audiobook_factory.key_manager import AllKeysExhaustedTodayError
@@ -359,7 +380,7 @@ class PipelineOrchestrator:
                 logger.info("[*] The system will gracefully halt now. Run the script again tomorrow after 12:30 PM IST (Midnight PT) to automatically resume.")
                 sys.exit(0)
 
-        # Gate 2.8: Pre-Mix Performance Fidelity Gate
+        # Gate 2.8: Pre-Mix Performance Fidelity Gate (Fail-Closed)
         perf_report_file = manifests_dir / f"chapter_{chapter_num:03d}_performance_report.json"
         if not perf_report_file.exists():
             perf_report_file = manifests_dir / f"{chap_stem}_performance_report.json"
@@ -372,7 +393,16 @@ class PipelineOrchestrator:
                 if rep.passed:
                     logger.info(f"[*] Gate 2.8 Performance Fidelity: PASSED for Chapter {chapter_num:02d} (Avg Score: {rep.avg_evaluation_score:.2f})")
                 else:
-                    logger.warning(f"[!] Gate 2.8 Performance Fidelity notice for Chapter {chapter_num:02d}: {rep.unresolved_issues}")
+                    force_perf = os.environ.get("FORCE_PERFORMANCE_GATE", "false").lower() in ("true", "1", "yes")
+                    if force_perf:
+                        logger.warning(f"[!] Gate 2.8 Performance Fidelity FORCED for Chapter {chapter_num:02d}: {rep.unresolved_issues}")
+                    else:
+                        raise GateAuditError(
+                            f"Gate 2.8 Performance Fidelity Failed for Chapter {chapter_num:02d}: "
+                            f"{'; '.join(rep.unresolved_issues[:3]) if rep.unresolved_issues else 'Low evaluation score'}"
+                        )
+            except GateAuditError:
+                raise
             except Exception as e:
                 logger.warning(f"[!] Gate 2.8 Performance Fidelity notice for Chapter {chapter_num:02d}: {e}")
 
@@ -392,6 +422,18 @@ class PipelineOrchestrator:
                 script_segments=script_data,
             )
             if not qc_rep.passed or qc_rep.has_hard_failures:
+                # Check for fatal acoustic corruption in the audio samples themselves
+                acoustic_fatal_codes = {
+                    "NUMERICAL_INSTABILITY_NAN_INF",
+                    "SEVERE_CLIPPING_DETECTED",
+                    "EMPTY_AUDIO_SAMPLES",
+                }
+                fatal_issues = [f for f in qc_rep.hard_failures if f.code in acoustic_fatal_codes]
+                if fatal_issues:
+                    raise RuntimeError(
+                        f"Dialogue Editorial QC detected critical acoustic defect in Chapter {chapter_num:02d}: "
+                        f"{fatal_issues[0].code} - {fatal_issues[0].message}. Halting to prevent defective master."
+                    )
                 logger.warning(f"[!] Dialogue Editorial QC notice for Chapter {chapter_num:02d}: using unedited fallback.")
                 edited_segments = segments
                 edit_plans = None
@@ -416,10 +458,23 @@ class PipelineOrchestrator:
             # Match directly against the files passed to mastering to guarantee perfect DME stem sync
             matched = [s for s in edited_segments if f"_s{s_idx:04d}_" in s.name]
             if matched:
-                seg_durations[s_idx] = get_audio_duration(matched[0])
+                chunk_path = matched[0]
+                seg_durations[s_idx] = get_audio_duration(chunk_path)
+                words_json = chunk_path.with_suffix(".words.json")
+                if words_json.exists():
+                    with open(words_json, "r", encoding="utf-8") as wf:
+                        seg["word_alignments"] = json.load(wf)
             else:
                 seg_matches = sorted(audio_dir.glob(f"c{chapter_num:03d}_s{s_idx:04d}_*.wav"))
-                seg_durations[s_idx] = get_audio_duration(seg_matches[0]) if seg_matches else 4.0
+                if seg_matches:
+                    chunk_path = seg_matches[0]
+                    seg_durations[s_idx] = get_audio_duration(chunk_path)
+                    words_json = chunk_path.with_suffix(".words.json")
+                    if words_json.exists():
+                        with open(words_json, "r", encoding="utf-8") as wf:
+                            seg["word_alignments"] = json.load(wf)
+                else:
+                    seg_durations[s_idx] = 4.0
 
         # 4. Agentic Directing Layer: Produce validated CreativeManifest via AgentDirector
         manifest_file = manifests_dir / f"{chap_stem}_manifest.json"
@@ -467,6 +522,7 @@ class PipelineOrchestrator:
             dialogue_wav=vocal_wav,
             output_dir=mastered_dir,
             sound_bank=get_sound_bank(),
+            enable_remix=True,
         )
 
         judge_status = stem_ledger.metadata.get("mix_judge_status", "UNKNOWN")

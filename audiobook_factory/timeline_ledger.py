@@ -103,6 +103,16 @@ def build_audio_transcript_ledger(
 
         pause_after = seg.pause_after_ms if seg.pause_after_ms is not None else default_pause_ms
 
+        words_json_path = audio_chunk.with_suffix(".words.json")
+        word_alignments = []
+        if words_json_path.exists():
+            import json
+            try:
+                with open(words_json_path, "r", encoding="utf-8") as wf:
+                    word_alignments = json.load(wf)
+            except Exception as e:
+                logger.warning(f"Failed to load word alignments for {audio_chunk.name}: {e}")
+
         t_seg = TimelineSegment(
             uid=seg.uid,
             segment_index=idx,
@@ -116,6 +126,7 @@ def build_audio_transcript_ledger(
             emotion=seg.emotion,
             delivery_style=seg.acting.delivery_style if seg.acting else "neutral",
             spatial_pan=seg.spatial.pan if seg.spatial else 0.0,
+            word_alignments=word_alignments,
             acoustic_env=seg.acoustic_env,
             sfx_cues=list(seg.sfx_cues),
             music_mood=seg.music.mood if seg.music else "neutral",

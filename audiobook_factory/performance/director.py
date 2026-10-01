@@ -99,6 +99,8 @@ class PerformanceDirector:
             s_dynamic = segment.get("conversational_dynamic")
             s_silence_intent = segment.get("silence_intent")
             s_hesitation = segment.get("hesitation_pause_ms")
+            s_spoken_text = segment.get("spoken_text")
+            s_pron_meta = segment.get("pronunciation_metadata")
             s_spatial = segment.get("spatial", {})
             s_pan = float(s_spatial.get("pan", 0.0) if isinstance(s_spatial, dict) else getattr(s_spatial, "pan", 0.0))
             s_prox = str(s_spatial.get("proximity", "normal_room") if isinstance(s_spatial, dict) else getattr(s_spatial, "proximity", "normal_room"))
@@ -130,6 +132,8 @@ class PerformanceDirector:
             s_dynamic = getattr(segment, "conversational_dynamic", None)
             s_silence_intent = getattr(segment, "silence_intent", None)
             s_hesitation = getattr(segment, "hesitation_pause_ms", None)
+            s_spoken_text = getattr(segment, "spoken_text", None)
+            s_pron_meta = getattr(segment, "pronunciation_metadata", None)
             spatial = getattr(segment, "spatial", None)
             s_pan = getattr(spatial, "pan", 0.0) if spatial else 0.0
             s_prox = getattr(spatial, "proximity", "normal_room") if spatial else "normal_room"
@@ -431,6 +435,8 @@ class PerformanceDirector:
             performance_priority=prio_typed,
             required_takes=req_takes,
             delivery_intent_summary=delivery_intent_summary,
+            spoken_text=s_spoken_text,
+            pronunciation_metadata=s_pron_meta,
         )
 
     def direct_chapter_script(

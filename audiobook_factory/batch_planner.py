@@ -25,7 +25,7 @@ from audiobook_factory.logger import logger
 
 
 DEFAULT_MAX_BATCH_WORDS = int(os.environ.get("TTS_BATCH_MAX_WORDS", "600"))
-DEFAULT_BATCHING_ENABLED = os.environ.get("TTS_BATCHING_ENABLED", "true").lower() in ("true", "1", "yes")
+DEFAULT_BATCHING_ENABLED = os.environ.get("TTS_BATCHING_ENABLED", "false").lower() in ("true", "1", "yes")
 
 
 def _clean_token(s: str) -> str:

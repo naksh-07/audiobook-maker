@@ -1107,7 +1107,7 @@ def audit_gate5_2_spectral_masking(
         cmd = [
             ff, "-y",
             "-i", str(fpath),
-            "-af", "bandpass=f=1900:w=3200,ebur128=framelog=quiet",
+            "-af", "highpass=f=300,lowpass=f=3500,ebur128=framelog=quiet",
             "-f", "null", "-"
         ]
         try:
@@ -1321,7 +1321,7 @@ def audit_gate6a_voice_continuity(
             script = ScreenplayScript.from_file(sf)
             for seg in script.segments:
                 sp = seg.speaker
-                if sp.lower() == "narrator":
+                if sp.lower() in ("narrator", "foley", "sfx"):
                     continue
                 speaker_chapter_map.setdefault(sp, set()).add(ch_name)
                 assigned = canonical_voices.get(sp)
