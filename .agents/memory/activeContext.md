@@ -1,15 +1,18 @@
 <!-- schema_version: 1.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
-# Active Context: 10-Subsystem Architecture Audit & Remediation Certified
+# Active Context: Dynamic Model Intelligence & Strict Production Halt Enforced
 
-## Live Sprint State: Multi-Expert Audit Remediations Deployed (98.0% Platform PASS)
-- **Status**: ALL REMEDIATIONS COMPLETE & 100% PASSING (9 PASS, 1 WARN, 0 FAIL).
-- **Remediations Deployed**:
-  - **P0 Indic Orthography**: `normalizer.py` preserves ZWNJ/ZWJ (`\u200c`, `\u200d`) for Indic conjuncts, eyelash-ra (`र्‍`), and halants.
-  - **P0 Faux-Bold Stutter Elimination**: `pdf_engine.py` deduplicates multi-stroke sub-pixel overprints (`ggggSSSS` stutter eliminated).
-  - **P0 Speech Normalizer "%" Glitch**: `script_builder.py` constrains `%` to numbers (`r"(\d+)\s*%"` -> ` प्रतिशत`), standalone `%` to em-dash.
-  - **P1 24-Bit Studio Audio**: `mastering_engine.py` & `cinema_audio_engine.py` upgraded to `pcm_s24le` (48kHz/24-bit) with 20ms ducking lookahead pre-delay.
-  - **P1 SQLite Relational Governance**: `state.py` & `telemetry.py` enforce `PRAGMA foreign_keys = ON;`, auto-reconciling orphan segments & runs (0 violations).
-  - **P2 Packaging & Hardening**: `gate_auditor.py` Gate 6D validates cover art 1:1 square ratio; `krutidev_transcoder.py` provides zero-dependency 8-bit Indic transcoding.
-- **Verification**: 4/4 audit tests pass, 23/23 macro guards pass, 18/18 editorial tests pass, 10/10 pdf engine tests pass, 6/6 normalizer tests pass.
+## Live Sprint State: Zero Hardcoded Models & Fail-Closed Halts
+- **Status**: COMPLETE & VERIFIED (13/13 New Tests Passed, 4/4 Zero Hardcoding Contracts Passed).
+- **Core Architecture (`ModelManager`)**:
+  - Live Gemini API model discovery with semantic capability tiers (Tier 1 Flagship, Tier 2 Balanced, Tier 3 Utility).
+  - Non-general model exclusion (`-tts`, `deep-research`, `robotics`, `lyria`, `computer-use`, etc.).
+  - Concurrent 2-3 candidate health pings via `ThreadPoolExecutor` (latency & availability evaluated simultaneously).
+  - Minimum quality floor gates (`TASK_MINIMUM_TIERS`) raising `ModelTierFloorBreachError`.
+  - Fail-closed halts (`LLMUnavailableError`): zero silent script fallbacks in `script_builder`, `beat_planner`, `agent_director`, `soundscape`, `translator`.
+- **Zero Hardcoding Invariant**:
+  - AST verification confirms zero hardcoded model strings in `audiobook_factory/` (strictly exempting TTS dispatcher & pronunciation contracts).
+- **Test Certification**:
+  - `tests/test_model_manager_and_strict_halt.py`: 13/13 OK.
+  - `tests/test_zero_hardcoding_contracts.py`: 4/4 OK.

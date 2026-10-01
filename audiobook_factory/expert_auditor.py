@@ -233,7 +233,7 @@ class MultiExpertArchitectureAuditor:
                 files.append(f"raw/{rf.name}")
 
         score = 100.0
-        if valid_chapters == 0:
+        if valid_chapters < 1:
             score = 30.0
             anomalies.append("Zero valid chapters found.")
         elif ctrl_chars_found > 0:

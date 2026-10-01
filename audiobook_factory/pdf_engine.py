@@ -1161,7 +1161,8 @@ class GeminiVisionPDFExtractor(PDFEscalationEngine):
 
         # Call Gemini API with single page PDF
         b64_data = base64.b64encode(page_bytes).decode("utf-8")
-        model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
+        from audiobook_factory.model_manager import get_model_manager, TaskType
+        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.EXTRACTION, api_key=self.api_key)
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
 
         prompt = (

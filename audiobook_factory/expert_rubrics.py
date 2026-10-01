@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Audiobook Factory - Multi-Expert Evaluation Rubrics & Prompt Harness.
 Defines domain expert auditor profiles, quantitative/qualitative rubrics,

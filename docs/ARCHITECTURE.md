@@ -251,6 +251,74 @@ flowchart TB
 
 ---
 
+### 2.5 Dynamic Model Intelligence & Zero-Hardcoded-Model Protocol (ADR-043)
+*Purpose: Runtime model discovery, concurrent latency/health benchmarking, capability floors, and fail-closed production halts.*
+
+*(Implemented in [`audiobook_factory/model_manager.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/model_manager.py))*
+
+#### 1. Zero-Hardcoding & Anti-Degradation Mandate
+Legacy audiobook pipelines suffered from two architectural vulnerabilities:
+1. **Fragile Hardcoded Strings:** Static model names (e.g. `gemini-3.8-flash`, `gemini-flash-latest`) hardcoded across disparate scripts caused immediate crashes or unhandled 8-second timeouts when Google Gemini rolled out model deprecations or experienced temporary server outages.
+2. **Silent Degradation Antipattern:** When external LLM APIs became unavailable or rate-limited, modules silently defaulted to flat, non-dramatized heuristic fallbacks (e.g., `script_builder` silently degrading to flat single-speaker narrator mode, `beat_planner` silently falling back to static templates, `soundscape` silently applying generic static chords). This masked severe runtime failures and produced compromised, flat audiobooks without human operator awareness.
+
+Under **ADR-043**, all text LLM strings are permanently purged outside dedicated speech synthesis models, replaced by the centralized `ModelManager`. Silent heuristics are strictly banned; all creative failures trigger fail-closed halts.
+
+```mermaid
+flowchart TD
+    TaskReq["Task Model Request<br/>(TaskType: Translation, Screenplay, Directing, etc.)"] --> MM["ModelManager Singleton"]
+    MM --> CacheCheck{"Active Cached Model<br/>Within 300s TTL?"}
+    CacheCheck -->|Yes| ActiveModel["Active Model Returned"]
+    CacheCheck -->|No| Discover["Dynamic API Discovery<br/>(v1beta/models)"]
+    Discover --> Filter["Filter Excluded Models<br/>(-tts, deep-research, robotics, lyria, computer-use)"]
+    Filter --> TierMap["Semantic Capability Classification<br/>(Tier 1 Flagship, Tier 2 Balanced, Tier 3 Utility)"]
+    TierMap --> FloorGate{"Eligible Models Meet<br/>Task Minimum Quality Floor?"}
+    FloorGate -->|No| FloorBreach["STRICT HALT:<br/>ModelTierFloorBreachError"]
+    FloorGate -->|Yes| ConcurrentPing["Concurrent Health & Latency Probes<br/>(Batch of 2-3 Candidates in ThreadPoolExecutor)"]
+    ConcurrentPing --> HealthEval{"Any Candidate<br/>Healthy & 200 OK?"}
+    HealthEval -->|Yes| PickFastest["Select Highest Tier + Lowest Latency Candidate"]
+    PickFastest --> CacheCommit["Commit to In-Memory Cache (TTL 300s)"]
+    CacheCommit --> ActiveModel
+    HealthEval -->|No, All Failed| StrictHalt["STRICT HALT:<br/>LLMUnavailableError"]
+```
+
+#### 2. Semantic Capability Tier Taxonomy
+`ModelManager` categorizes all discovered Gemini models into three structured capability tiers (`ModelTier`):
+- **Tier 1 Flagship (`ModelTier.TIER_1_FLAGSHIP` = 1):** Flagship reasoning and deep contextual models (`gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-2.5-pro`, `gemini-pro-preview`). Utilized for high-subtext Stanislavski dramaturgy, intricate dialectical nuances, and multi-turn conversational tension.
+- **Tier 2 Balanced (`ModelTier.TIER_2_BALANCED` = 2):** High-speed, nuanced production workhorses (`gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-2.5-flash`, `gemini-flash-latest`). Balance dramatic fidelity with rapid token streaming.
+- **Tier 3 Utility (`ModelTier.TIER_3_UTILITY` = 3):** Lightweight parameter models (`gemini-3.1-flash-lite`, `gemini-flash-lite-latest`, `gemma-2-9b-it`). Restricted strictly to utility token normalization and mechanical parsing.
+
+#### 3. Task-Specific Minimum Quality Floors (`TASK_MINIMUM_TIERS`)
+To prevent degraded creative generation, every production task enforces an absolute capability floor:
+```python
+TASK_MINIMUM_TIERS = {
+    TaskType.TRANSLATION: ModelTier.TIER_2_BALANCED,
+    TaskType.SCREENPLAY: ModelTier.TIER_2_BALANCED,
+    TaskType.DRAMATURGY: ModelTier.TIER_2_BALANCED,
+    TaskType.DIRECTING: ModelTier.TIER_2_BALANCED,
+    TaskType.SOUND_DESIGN: ModelTier.TIER_2_BALANCED,
+    TaskType.AUDITING: ModelTier.TIER_2_BALANCED,
+    TaskType.EXTRACTION: ModelTier.TIER_2_BALANCED,
+    TaskType.UTILITY: ModelTier.TIER_3_UTILITY,
+}
+```
+If available live models drop below the required floor (e.g. only Tier 3 utility models exist during an outage), `ModelManager` immediately raises `ModelTierFloorBreachError`.
+
+#### 4. Concurrent Multi-Model Health Pings & Latency Scoring
+Rather than waiting for sequential model timeouts, `ModelManager` probes top candidates concurrently:
+- Batches the top 2–3 favorable eligible candidates.
+- Dispatches concurrent minimal dry-run payloads (`{"contents": [{"parts": [{"text": "ping"}]}]}`) across a `ThreadPoolExecutor`.
+- Measures real-time latency and HTTP responses. If a leading model (e.g. `3.8-flash`) returns HTTP 503 or times out, the system instantly selects the healthy candidate (e.g. `3.6-flash` responding in ~120ms) without interrupting production.
+
+#### 5. Fail-Closed Production Halts Across Creative Modules
+All creative modules enforce strict fail-closed exceptions when LLM intelligence is unavailable:
+- **`script_builder.py`**: Screenplay chunk generation failures immediately raise `LLMUnavailableError`. Silent fallback to `build_narrator_script` is strictly eliminated.
+- **`dramaturgy/beat_planner.py`**: Beat-planning LLM failures immediately raise `LLMUnavailableError`. Silent fallback to `_plan_scene_beats_heuristic` is eliminated.
+- **`agent_director.py`**: Pass 1 Dramaturgy failures immediately raise `LLMUnavailableError`. Generic acoustic templates are permanently prohibited.
+- **`soundscape.py`**: Chapter mood detection and soundscape plan failures raise `LLMUnavailableError`. Default ambient profile heuristics are eliminated.
+- **`translator.py`**: Exhausted translation retries raise `LLMUnavailableError`.
+
+---
+
 ### 3. Room 3: Acoustic Compositor & DSP Mastering
 *Purpose: Surgical multitrack assembly, sidechain ducking, acoustic impulse response, and EBU R128 mastering.*
 

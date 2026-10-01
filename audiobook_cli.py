@@ -767,7 +767,8 @@ def cmd_audit(args):
         print(f"  Gate 0 (Translation): {report['gate_0']['status']} ({report['gate_0']['translation_chars']:,} chars)")
         print(f"  Gate 1 (Voice Roster): {report['gate_1']['status']} ({report['gate_1']['active_roles']} roles, 0 collisions)")
         print(f"  Gate 2 (Screenplay):   {report['gate_2']['status']} ({report['gate_2']['total_segments']} segments)")
-        print(f"  Gate 3 (Scenes Source): {report['gate_3']['status']} ({report['gate_3']['total_acts']} acts, 100% continuous)")
+        acts_label = report['gate_3'].get('total_acts') or report['gate_3'].get('notice') or 'verified'
+        print(f"  Gate 3 (Scenes Source): {report['gate_3']['status']} ({acts_label})")
         if "gate_4_ledger" in report:
             print(f"  Gate 4.5 (Timeline):   {report['gate_4_ledger']['status']} ({report['gate_4_ledger']['total_segments']} segments, {report['gate_4_ledger']['total_timeline_sec']}s, pause silence: {report['gate_4_ledger']['silence_percentage']}%)")
         print("=" * 60)

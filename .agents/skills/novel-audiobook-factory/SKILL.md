@@ -57,15 +57,18 @@ flowchart TD
 - **Gate 0.1 Ingestion Gatekeeper**: Independent fail-closed quality audit evaluating word floors, empty chapters, suspicious page ratios ($< 25\%$), and fallback chunk telemetry (`quality_report.json`).
 
 ### Stage 2: Sense-for-Sense Translation & Epistemic Continuity ([`translator.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py) & [`translation/`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/))
+- **Dynamic Model Resolution (ADR-043)**: Dynamically resolves active model via `ModelManager.resolve_active_model(TaskType.TRANSLATION)` with concurrent health pings and minimum Tier 2 quality floor. Strictly halts (`LLMUnavailableError`) on failure without silent fallback.
 - **BookBible & Memory 2.0 Integration**: Persistent canonical BookBible (`book_bible.json`) paired with World + Character Memory 2.0 (`memory_store.json`). Tracks character knowledge (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`), enforces epistemic isolation (`MUST_NOT_KNOW`), isolates flashbacks, and audits honorific continuity via Gate `T6_relationship_memory`.
 - **Sense-for-Sense Dramatic Hindustani**: Contextual register engine ("Aate mein Namak jitni Urdu") with zero clinical calques and natural interpersonal dynamics (*Aap/Tum/Tu*).
 
 ### Stage 3: Screenplay Attribution & Performance Guidance ([`script_builder.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))
+- **Dynamic Model Resolution (ADR-043)**: Resolves active model via `TaskType.SCREENPLAY`. Strictly halts (`LLMUnavailableError`) on failure; silent fallback to flat narrator mode is permanently eliminated.
 - **Sliding-Window Parsing**: Chunks chapters into 1,200-word blocks with rolling context. Eliminates text truncation for long chapters.
 - **Multi-Cast Speaker Attribution**: Attributes character dialogue vs narrator, removes redundant speech tags, and tags acting emotions (`whispering`, `growl`, `calm_raspy`, `angry`).
 - **Memory 2.0 Vocal Constraint Propagation**: Automatically propagates physical states from Memory 2.0 (`memory_vocal_constraint`: `strained_breath`, `fatigued_low_energy`) to dialogue segments while preserving explicit director delivery styles, rendered natively into speechMetadata by the TTS dispatcher.
 
 ### Stage 4: Autonomous Directing Layer ([`agent_director.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)) & Sonic Intelligence Engine ([`docs/SOUND_BANK.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/SOUND_BANK.md))
+- **Dynamic Directing Resolution & Strict Halts (ADR-043)**: Resolves active directing model via `TaskType.DIRECTING`. Strictly halts (`LLMUnavailableError`) if director LLM fails; generic acoustic templates are prohibited.
 - **3-Pass Dramaturgy & Multi-Scene Partitioning (ADR-018 & ADR-022)**:
   - *Pass 1*: Carves acoustic silence ($\ge 60\%$).
   - *Pass 1.5*: Partitions chapters dynamically into distinct scene blocks based on `acoustic_env` shifts (`_partition_script_ambience_scenes`).

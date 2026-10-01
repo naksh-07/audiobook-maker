@@ -46,13 +46,14 @@ class AgentDirector:
     def __init__(
         self,
         sound_bank: Optional[SoundBank] = None,
-        model: str = "gemini-2.5-flash",
+        model: Optional[str] = None,
         sonic_bible: Optional[Any] = None,
         project_dir: Optional[Path] = None,
     ):
         self.sound_bank = sound_bank or get_sound_bank()
-        self.model = os.environ.get("GEMINI_TEXT_MODEL", model)
         self.pool = get_persistent_key_pool()
+        from audiobook_factory.model_manager import get_model_manager, TaskType
+        self.model = model or os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.DIRECTING)
         self.project_dir = Path(project_dir) if project_dir else None
         self.sonic_bible = sonic_bible
         if not self.sonic_bible and self.project_dir:
@@ -372,7 +373,13 @@ Output STRICT JSON schema:
   ]
 }}"""
 
-        candidate_models = [self.model, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
+        model_mgr = get_model_manager()
+        candidate_models = [self.model] if self.model else []
+        for m in model_mgr.get_candidate_models_for_task(TaskType.DIRECTING):
+            if m not in candidate_models:
+                candidate_models.append(m)
+
         # Deduplicate preserving order
         seen_models = set()
         models_to_try = [m for m in candidate_models if not (m in seen_models or seen_models.add(m))]
@@ -430,9 +437,12 @@ Output STRICT JSON schema:
                 logger.warning(f"  [!] Pass 1 Dramaturge attempt {attempt+1} ({current_model}) warning: {e}")
                 time.sleep(1.0 * (attempt + 1))
 
-        # Deterministic Pass 1 fallback guaranteeing 70-75% silence
-        logger.warning("  [!] LLM API unavailable. Activating calibrated 75% silence dramatic template.")
-        return self._build_deterministic_dramaturgy_plan(script_segments, total_duration_sec, sonic_bible=sonic_bible)
+        # Strict Fail-Closed Halt: Refuse to invent acoustic directing templates silently
+        logger.error("  [!] LLM API unavailable. STRICT HALT: Refusing to silently apply generic acoustic templates.")
+        raise LLMUnavailableError(
+            "STRICT HALT: Audio Drama Director LLM is unavailable or exhausted after retries. "
+            "Production strictly halted to prevent un-directed acoustic assembly."
+        )
 
     def _enforce_silence_carving(self, plan: Dict[str, Any], total_duration_sec: float) -> Dict[str, Any]:
         """

@@ -73,6 +73,7 @@ from audiobook_factory.gate_auditor import (
     GateAuditError,
 )
 from audiobook_factory.telemetry import get_telemetry_ledger
+from audiobook_factory.model_manager import LLMUnavailableError, ModelTierFloorBreachError
 
 
 class PipelineOrchestrator:

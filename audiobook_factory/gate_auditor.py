@@ -648,7 +648,7 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
 def audit_gate1_anticensorship_agent(
     english_text: str,
     hindi_text: str,
-    model: str = "gemini-flash-latest",
+    model: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Audit Gate 1 (Adversarial Anti-Censorship & Translation Fidelity Agent):
@@ -666,6 +666,7 @@ def audit_gate1_anticensorship_agent(
     import urllib.error
     from audiobook_factory.key_manager import get_persistent_key_pool
     from audiobook_factory.cadence import get_stealth_sdk_headers
+    from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
 
     sys_prompt = (
         "You are an Adversarial Literary Anti-Censorship and Authenticity Auditor for mature fiction and dark fantasy "
@@ -704,8 +705,12 @@ Output a JSON object with:
     parsed_result = None
     try:
         pool = get_persistent_key_pool()
+        model_mgr = get_model_manager()
+        if not model:
+            model = model_mgr.resolve_active_model(TaskType.AUDITING)
+
         candidate_models = [model]
-        for m in ("gemini-flash-latest", "gemini-3.6-flash", "gemini-flash-lite-latest"):
+        for m in model_mgr.get_candidate_models_for_task(TaskType.AUDITING):
             if m not in candidate_models:
                 candidate_models.append(m)
 

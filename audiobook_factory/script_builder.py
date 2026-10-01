@@ -150,7 +150,7 @@ def _parse_dramatized_chunk_llm(
     is_hindi: bool = False,
     character_roster: Optional[Dict[str, Any]] = None,
     api_key: str = "",
-    model: str = "gemini-flash-lite-latest",
+    model: Optional[str] = None,
     max_retries: int = 3,
     dramatic_context: str = "",
 ) -> List[Dict[str, Any]]:
@@ -161,11 +161,16 @@ def _parse_dramatized_chunk_llm(
     import urllib.error
     from audiobook_factory.key_manager import get_persistent_key_pool
     from audiobook_factory.cadence import get_stealth_sdk_headers
+    from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
 
     pool = get_persistent_key_pool()
+    model_mgr = get_model_manager()
 
-    model_candidates = [model] if model else []
-    for m in ("gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-flash-lite-latest"):
+    if not model:
+        model = model_mgr.resolve_active_model(TaskType.SCREENPLAY, api_key=api_key or None)
+
+    model_candidates = [model]
+    for m in model_mgr.get_candidate_models_for_task(TaskType.SCREENPLAY):
         if m not in model_candidates:
             model_candidates.append(m)
 
@@ -388,9 +393,11 @@ Output JSON: A list of objects where each object has:
             time.sleep(1.5)
             continue
 
-    logger.warning("  [!] All screenplay retries exhausted. Falling back to narrator chunks.")
-    # Guaranteed Zero Text Drop: Fall back to narrator script for this chunk instead of returning []
-    return build_narrator_script(chunk_text, is_hindi)
+    logger.error("  [!] All screenplay retries exhausted. STRICT HALT: Refusing to silently degrade to flat narrator.")
+    raise LLMUnavailableError(
+        "Screenplay LLM is unavailable or exhausted after retries. "
+        "Production strictly halted to prevent un-dramatized script generation."
+    )
 
 
 def build_dramatized_script_llm(
@@ -449,28 +456,11 @@ def build_dramatized_script_llm(
     pool = get_persistent_key_pool()
     api_key = pool.get_key(service="text")
     if not api_key:
-        script = build_narrator_script(chapter_text, is_hindi)
-        if memory_context is not None and hasattr(memory_context, "apply_performance_guidance_to_segment"):
-            script = [memory_context.apply_performance_guidance_to_segment(seg) for seg in script]
-        cleaned = clean_screenplay_pass2(
-            script,
-            is_hindi=is_hindi,
-            character_roster=character_roster,
-            memory_context=memory_context,
-            dramatic_plan=dramatic_plan,
-        )
-        val_res = DramaticValidator.validate_screenplay_and_plan(
-            segments=cleaned,
-            dramatic_plan=dramatic_plan,
-            source_text=chapter_text,
-            known_characters=known_chars,
-            memory_context=memory_context,
-        )
-        if return_dramatic_plan:
-            return cleaned, dramatic_plan, val_res
-        return cleaned
+        logger.error("  [!] STRICT HALT: No text API key available for dramatized screenplay attribution.")
+        raise LLMUnavailableError("API key pool exhausted for screenplay attribution. Production strictly halted.")
 
-    model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.1-flash-lite")
+    from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
+    model = get_model_manager().resolve_active_model(TaskType.SCREENPLAY, api_key=api_key)
     memory_prompt_str = (
         memory_context.get_prompt_context()
         if memory_context is not None and hasattr(memory_context, "get_prompt_context")
@@ -510,24 +500,8 @@ def build_dramatized_script_llm(
             dramatic_context=dramatic_context_str,
         )
         if not raw_items:
-            fallback = build_narrator_script(chapter_text, is_hindi)
-            cleaned = clean_screenplay_pass2(
-                fallback,
-                is_hindi=is_hindi,
-                character_roster=character_roster,
-                memory_context=memory_context,
-                dramatic_plan=dramatic_plan,
-            )
-            val_res = DramaticValidator.validate_screenplay_and_plan(
-                segments=cleaned,
-                dramatic_plan=dramatic_plan,
-                source_text=chapter_text,
-                known_characters=known_chars,
-                memory_context=memory_context,
-            )
-            if return_dramatic_plan:
-                return cleaned, dramatic_plan, val_res
-            return cleaned
+            logger.error("  [!] STRICT HALT: Screenplay LLM returned no segments. Refusing to degrade to flat narrator.")
+            raise LLMUnavailableError("Screenplay LLM returned empty segments. Production strictly halted.")
     else:
         # 3. Novel-Scale Beat-Aligned Chunking (Confirmed /grill-me Solution)
         chunks = BeatPlanner.slice_chapter_by_beats(
@@ -586,28 +560,12 @@ def build_dramatized_script_llm(
                     f"and pronouns (e.g. 'उसने', 'वह', 'he', 'she') to the correct character."
                 )
             else:
-                fallback_chunk = build_narrator_script(c_text, is_hindi)
-                raw_items.extend(fallback_chunk)
+                logger.error(f"  [!] STRICT HALT: Chunk {c_idx} parsing returned empty segments. Halting to preserve dramatization.")
+                raise LLMUnavailableError(f"Screenplay LLM returned empty segments for chunk {c_idx}. Production strictly halted.")
 
     if not raw_items:
-        fallback = build_narrator_script(chapter_text, is_hindi)
-        cleaned = clean_screenplay_pass2(
-            fallback,
-            is_hindi=is_hindi,
-            character_roster=character_roster,
-            memory_context=memory_context,
-            dramatic_plan=dramatic_plan,
-        )
-        val_res = DramaticValidator.validate_screenplay_and_plan(
-            segments=cleaned,
-            dramatic_plan=dramatic_plan,
-            source_text=chapter_text,
-            known_characters=known_chars,
-            memory_context=memory_context,
-        )
-        if return_dramatic_plan:
-            return cleaned, dramatic_plan, val_res
-        return cleaned
+        logger.error("  [!] STRICT HALT: Screenplay LLM returned no segments. Refusing to degrade to flat narrator.")
+        raise LLMUnavailableError("Screenplay LLM returned empty segments. Production strictly halted.")
 
     cleaned = clean_screenplay_pass2(
         raw_items,

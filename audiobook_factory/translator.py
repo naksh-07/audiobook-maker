@@ -14,9 +14,13 @@ import urllib.error
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
+from audiobook_factory.model_manager import (
+    get_model_manager,
+    TaskType,
+    LLMUnavailableError,
+    ModelTierFloorBreachError,
+)
 
-DEFAULT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-3.8-flash")
-MODEL_CANDIDATES = ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite")
 ADULT_LITERARY_MODE = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 TRANSLATOR_VERSION = "2.0"
 PROMPT_VERSION = "2.0.0"
@@ -38,10 +42,21 @@ def get_api_key() -> str:
     return pool.get_key(service="text")
 
 
-def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_MODEL, json_mode: bool = False, response_schema: Optional[Dict[str, Any]] = None, max_retries: int = 4) -> str:
+def call_gemini(
+    prompt: str,
+    system_instruction: str = "",
+    model: Optional[str] = None,
+    json_mode: bool = False,
+    response_schema: Optional[Dict[str, Any]] = None,
+    max_retries: int = 4,
+) -> str:
     """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback."""
+    model_mgr = get_model_manager()
+    if not model:
+        model = os.environ.get("GEMINI_TEXT_MODEL") or model_mgr.resolve_active_model(TaskType.TRANSLATION)
+
     candidate_models = [model]
-    for m in MODEL_CANDIDATES:
+    for m in model_mgr.get_candidate_models_for_task(TaskType.TRANSLATION):
         if m not in candidate_models:
             candidate_models.append(m)
 
@@ -128,7 +143,7 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
                     continue
                 break
 
-    raise RuntimeError(f"Gemini API request failed on {candidate_models}: {last_error}")
+    raise LLMUnavailableError(f"STRICT HALT: Gemini API request failed on {candidate_models}: {last_error}")
 
 
 def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str, Any]) -> str:
@@ -217,9 +232,11 @@ def _translate_single_block(
     glossary: Dict[str, Any],
     block_title: str = "",
     preceding_context: str = "",
-    model: str = DEFAULT_MODEL,
+    model: Optional[str] = None,
     adult_mode: Optional[bool] = None,
 ) -> str:
+    if not model:
+        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     if adult_mode is None:
         adult_mode = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
@@ -351,7 +368,7 @@ def _commit_chapter_memory_in_translator(
     source_text: str,
     block_label: str,
     glossary: Optional[Dict[str, Any]] = None,
-    model: str = DEFAULT_MODEL,
+    model: Optional[str] = None,
     call_llm_fn: Optional[Any] = None,
 ) -> None:
     """
@@ -450,10 +467,12 @@ def translate_chapter(
     glossary: Dict[str, Any],
     chapter_title: str = "",
     preceding_context: str = "",
-    model: str = DEFAULT_MODEL,
+    model: Optional[str] = None,
     project_dir: Optional[Path] = None,
 ) -> str:
     """Pass 2: Sense-for-sense literary translation of a single chapter into spoken Hindustani."""
+    if not model:
+        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     from audiobook_factory.sanitizer import validate_and_sanitize_translation
     cache_dir = None
     effective_context = preceding_context
@@ -584,7 +603,7 @@ def translate_chapter(
 
 def translate_book_project(
     project_dir: Path,
-    model: str = DEFAULT_MODEL,
+    model: Optional[str] = None,
     use_intelligent_pipeline: bool = True,
     force_gate: bool = False,
 ) -> Path:
@@ -593,6 +612,8 @@ def translate_book_project(
     Defaults to IntelligentTranslationPipeline (Pillar 2 Intelligence) with
     automatic fail-safe gate certification and full artifact persistence.
     """
+    if not model:
+        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     extracted_dir = project_dir / "extracted"
     if not extracted_dir.exists() and (project_dir / "chapters").exists():
         extracted_dir = project_dir / "chapters"
@@ -736,7 +757,7 @@ def translate_chapter_intelligent(
     project_dir: Path,
     chapter_num: int = 1,
     chapter_title: str = "Chapter",
-    model: str = DEFAULT_MODEL,
+    model: Optional[str] = None,
     use_cache: bool = True,
 ) -> Tuple[str, List[Any]]:
     """
@@ -744,6 +765,8 @@ def translate_chapter_intelligent(
     Integrates Book Bible, Entity Discovery, Transition-Driven Scene Planning,
     Dedicated Evaluators (Gates T0-T11), and Tiered Self-Healing Repair.
     """
+    if not model:
+        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     from audiobook_factory.translation import IntelligentTranslationPipeline
     pipeline = IntelligentTranslationPipeline(project_dir=project_dir, model=model)
     return pipeline.translate_chapter(

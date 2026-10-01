@@ -151,7 +151,9 @@ class BeatPlanner:
                 ],
             }
 
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={api_key}"
+            from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
+            model = get_model_manager().resolve_active_model(TaskType.DRAMATURGY, api_key=api_key)
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
             headers = get_stealth_sdk_headers(api_key)
             req = urllib.request.Request(
                 url,
@@ -270,12 +272,12 @@ class BeatPlanner:
             )
             if llm_beats:
                 return llm_beats
-
-        return cls._plan_scene_beats_heuristic(
-            scene=scene,
-            known_characters=known_characters,
-            memory_context=memory_context,
-        )
+            logger.error(f"  [!] STRICT HALT: LLM dramatic beat planning failed for scene {scene.scene_id}.")
+            from audiobook_factory.model_manager import LLMUnavailableError
+            raise LLMUnavailableError(
+                f"STRICT HALT: Dramatic beat planning LLM failed for scene {scene.scene_id}. "
+                "Production halted to preserve Stanislavski psychological subtext fidelity."
+            )
 
     @classmethod
     def _plan_scene_beats_heuristic(

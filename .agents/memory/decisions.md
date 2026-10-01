@@ -884,5 +884,37 @@
      - `MasteringCertifier`: 5-pillar conservative hierarchy (`CERTIFIED`, `WARNINGS`, `REVIEW_REQUIRED`, `REJECTED`) where technical QC failure always forces `REJECTED`. Packages actionable `HumanReviewItem` lists for sound engineers.
 - **Rationale:** Establishes a commercial-grade, multi-stage mastering pipeline matching Audible and BBC Radio 4 standards, verified with 109/109 green tests across Stage 11 and Stage 12.
 
+## ADR-043: Dynamic Model Intelligence, Concurrent Health Pings, Semantic Capability Tiers, and Fail-Closed Production Halts
+- **Status:** Accepted
+- **Date:** 2026-10-02
+- **Context:**
+  1. Previously, generative text LLM model names were hardcoded across multiple disparate modules (`script_builder.py`, `dramaturgy/beat_planner.py`, `agent_director.py`, `soundscape.py`, `translator.py`, `gate_auditor.py`, `pdf_engine.py`, etc.).
+  2. Sequential trial of hardcoded models suffered from long HTTP timeouts (8s+) and sporadic 503/429 errors from Google Gemini API when specific models experienced temporary server outages.
+  3. When LLM calls failed or timed out, multiple modules silently fell back to crude deterministic scripts or flat narrator heuristics (e.g. `script_builder` falling back to flat single-speaker narration, `beat_planner` silently falling back to generic heuristic templates, `soundscape` using generic fallback ambient chords), masking model outages and producing un-dramatized, low-fidelity audiobooks without developer awareness.
+  4. There was no capability quality floor: any accessible model, including lightweight tokenizers or low-parameter open weights, could be picked regardless of task complexity.
+- **Decision:**
+  1. **Global Dynamic Model Intelligence Manager (`audiobook_factory/model_manager.py`):**
+     - Discovers available models dynamically from Google Gemini API (`v1beta/models`).
+     - Excludes specialized and non-generative models (`-tts`, `-image`, `deep-research`, `robotics`, `lyria`, `computer-use`, `customtools`).
+     - Classifies models into 3 semantic capability tiers:
+       - **Tier 1 Flagship** (`ModelTier.TIER_1_FLAGSHIP`): Deep reasoning models (`gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-2.5-pro`).
+       - **Tier 2 Balanced** (`ModelTier.TIER_2_BALANCED`): Standard production models (`gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-2.5-flash`, `gemini-flash-latest`).
+       - **Tier 3 Utility** (`ModelTier.TIER_3_UTILITY`): Fast lightweight models (`gemini-3.1-flash-lite`, `gemma-2-9b-it`).
+  2. **Concurrent Multi-Model Health Pings:**
+     - Probes top favorable candidates in parallel batches (2–3 candidates at a time) via `ThreadPoolExecutor` with minimal dry-run payloads.
+     - Selects the healthiest model with the lowest real-time latency (e.g. instantly bypassing 503s on `3.8-flash` in favor of healthy ~120ms `3.6-flash`).
+     - Features in-memory TTL caching with explicit error invalidation (`report_failure`).
+  3. **Strict Minimum Quality Floors (`ModelTierFloorBreachError`):**
+     - Enforces `TASK_MINIMUM_TIERS`: Creative tasks (`Translation`, `Screenplay`, `Dramaturgy`, `Directing`, `Sound Design`, `Auditing`, `Extraction`) require at least **Tier 2 Balanced**.
+     - Refuses to compromise production fidelity: if only Tier 3 models are available, immediately raises `ModelTierFloorBreachError` and halts production.
+  4. **Strict Fail-Closed Production Halts (`LLMUnavailableError`):**
+     - Completely eliminated silent script heuristics across all creative pipelines.
+     - When an LLM service is unavailable or retries are exhausted, `script_builder.py`, `dramaturgy/beat_planner.py`, `agent_director.py`, `soundscape.py`, and `translator.py` strictly raise `LLMUnavailableError`.
+  5. **Zero Hardcoded Model Invariant:**
+     - Purged all hardcoded model strings from production logic outside exempt speech synthesis models (`tts_dispatcher.py` and `pronunciation/contracts.py`).
+     - Enforced via AST verification test suite (`tests/test_model_manager_and_strict_halt.py`, 13/13 passing).
+- **Rationale:** Guarantees uncompromised dramatic production quality by eradicating fake silent fallbacks, dynamically selecting the healthiest available Gemini model via concurrent latency checks, and failing closed if quality standards cannot be met.
+
+
 
 

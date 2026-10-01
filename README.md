@@ -352,6 +352,17 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 - **Resilient CLAP GPU Fallback:** Graceful VRAM recovery and CPU inference fallback during PyTorch CUDA memory pressure, preventing pipeline termination or corrupted dummy embeddings.
 - **Security & Integrity:** Zero API keys or secrets in repository; `shell=False` enforced across subprocess calls, dynamic SQLite DDL column sanitization, and HTTP error socket lifecycle management.
 
+### 20. Dynamic Model Intelligence, Concurrent Health Pings & Fail-Closed Halts (ADR-043)
+- **Central Dynamic Model Manager ([`audiobook_factory/model_manager.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/model_manager.py)):** Eliminates all hardcoded generative model strings across the engine. Dynamically queries the Google Gemini `v1beta/models` API at runtime, filtering out specialized non-generative models (`-tts`, `deep-research`, `robotics`, `lyria`, `computer-use`, `customtools`).
+- **3-Tier Semantic Capability Taxonomy:**
+  - *Tier 1 Flagship (`ModelTier.TIER_1_FLAGSHIP`):* Deep reasoning models (`gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-2.5-pro`) for high-subtext Stanislavski dramaturgy, dialectical nuance, and multi-turn conversational tension.
+  - *Tier 2 Balanced (`ModelTier.TIER_2_BALANCED`):* High-speed production models (`gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-2.5-flash`, `gemini-flash-latest`) for balanced speed and nuanced scene acoustics.
+  - *Tier 3 Utility (`ModelTier.TIER_3_UTILITY`):* Lightweight parameter models (`gemini-3.1-flash-lite`, `gemma-2-9b-it`) reserved strictly for mechanical normalization and utility formatting.
+- **Strict Minimum Quality Floors (`ModelTierFloorBreachError`):** Creative production tasks (`Translation`, `Screenplay`, `Dramaturgy`, `Directing`, `Sound Design`, `Auditing`, `Extraction`) strictly require at least **Tier 2 Balanced**. If available healthy models drop below the required floor during an outage, the engine refuses to produce degraded output and raises `ModelTierFloorBreachError`.
+- **Concurrent Multi-Model Health Pings:** Rather than suffering sequential HTTP timeouts, `ModelManager` batches top favorable candidates (2–3 at a time) and fires parallel dry-run probes via `ThreadPoolExecutor`. Measures latency and HTTP response status, instantly routing to the healthiest, lowest-latency model (e.g. bypassing 503s on `3.8-flash` in favor of healthy ~120ms `3.6-flash`).
+- **Strict Fail-Closed Production Halts (`LLMUnavailableError`):** Completely purges silent script heuristics across all creative pipelines. Screenplay parsing, dramatic beat planning, agentic directing, soundscape planning, and chapter translation strictly raise `LLMUnavailableError` on failure rather than producing un-dramatized flat audio.
+- **AST Zero-Hardcoding Invariant:** Verified by automated AST parser test suite (`tests/test_model_manager_and_strict_halt.py`, 13/13 passing) asserting 0 hardcoded model strings outside speech synthesis TTS models.
+
 ---
 
 ## 📚 Complete Documentation Hub
@@ -485,6 +496,9 @@ python -m unittest discover tests/translation/memory -p "test_*.py"
 
 # Run Literary Translation Intelligence & Memory 2.0 suites (Pillar 2)
 python -m unittest discover tests/translation -p "test_*.py"
+
+# Run Dynamic Model Intelligence & Strict Production Halt Suite (ADR-043, 13 tests)
+python -m unittest tests/test_model_manager_and_strict_halt.py -v
 
 # Run Multi-Script (Latin + Devanagari) Zero-Hardcoding AST Contract suite
 python -m unittest tests/test_zero_hardcoding_contracts.py

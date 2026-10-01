@@ -51,10 +51,13 @@ class IntelligentTranslationPipeline:
     def __init__(
         self,
         project_dir: Path,
-        model: str = "gemini-3.8-flash",
+        model: Optional[str] = None,
         policy: Optional[TranslationPolicyConfig] = None,
     ):
         self.project_dir = Path(project_dir).resolve()
+        if not model:
+            from audiobook_factory.model_manager import get_model_manager, TaskType
+            model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
         self.model = model
         self.policy = policy or get_default_translation_policy()
         self.book_bible = BookBible.load_from_project(self.project_dir)

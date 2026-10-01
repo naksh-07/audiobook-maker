@@ -109,18 +109,19 @@ def resolve_timeline_start_offsets(
 
 def detect_chapter_mood(chapter_text: str, model: str | None = None) -> Dict[str, Any]:
     """
-    Use Gemini Flash to analyze the emotional narrative and tone of a chapter/scene.
+    Use Gemini to analyze the emotional narrative and tone of a chapter/scene.
     Returns recommended mood profile, intensity, and music generation prompts.
     """
     from audiobook_factory.tts_dispatcher import global_key_pool
+    from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
     api_key = global_key_pool.get_key(service="text")
     if not api_key:
-        return {"primary_mood": "default", "intensity": 0.5, "musicgen_prompt": "subtle warm ambient bed, soft lo-fi cinematic texture"}
+        raise LLMUnavailableError("STRICT HALT: No text API key available for chapter mood detection.")
 
     from audiobook_factory.cadence import get_stealth_sdk_headers
 
     if not model:
-        model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
+        model = get_model_manager().resolve_active_model(TaskType.DIRECTING, api_key=api_key)
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
@@ -155,8 +156,8 @@ def detect_chapter_mood(chapter_text: str, model: str | None = None) -> Dict[str
             content = data["candidates"][0]["content"]["parts"][0]["text"]
             return json.loads(content)
     except Exception as e:
-        print(f"[!] Mood detection failed ({e}), using default ambient profile.")
-        return {"primary_mood": "default", "intensity": 0.5, "musicgen_prompt": "subtle warm ambient bed, soft lo-fi cinematic texture"}
+        logger.error(f"[!] Mood detection failed ({e}). STRICT HALT.")
+        raise LLMUnavailableError(f"Chapter mood detection LLM failed: {e}. Production halted.")
 
 
 STEMS_DIR = Path(__file__).resolve().parent.parent / "audiobooks" / "soundscapes" / "stems"
@@ -471,32 +472,18 @@ def generate_chapter_soundscape_plan(
     Maps screenplay segment index ranges to scene moods, audio stems, and SFX cues.
     """
     from audiobook_factory.key_manager import get_persistent_key_pool
+    from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
     pool = get_persistent_key_pool()
     api_key = pool.get_key(service="text")
     total_segs = len(script_data) if script_data else 1
 
     if not api_key:
-        return {
-            "primary_mood": "default",
-            "ducking_attenuation_db": -16.0,
-            "scenes": [
-                {
-                    "scene_id": 1,
-                    "segment_start": 1,
-                    "segment_end": total_segs,
-                    "mood": "default",
-                    "stem": "default",
-                    "ambient_volume": 0.25,
-                    "description": "Default storytelling bed",
-                }
-            ],
-            "sfx_cues": [],
-        }
+        raise LLMUnavailableError("STRICT HALT: No text API key available for soundscape plan generation.")
 
     from audiobook_factory.cadence import get_stealth_sdk_headers
 
     if not model:
-        model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
+        model = get_model_manager().resolve_active_model(TaskType.SOUND_DESIGN, api_key=api_key)
 
     # Sample screenplay segments for prompt context (compact)
     seg_summary = [
@@ -587,28 +574,14 @@ Return ONLY valid JSON.
                 time.sleep(wait_sec)
                 api_key = pool.get_key(service="text")
                 continue
-            print(f"[!] Soundscape plan generation HTTP error ({e.code}), using default profile.")
-            break
+            logger.error(f"  [!] Soundscape plan generation HTTP error ({e.code}). STRICT HALT.")
+            raise LLMUnavailableError(f"Soundscape plan generation HTTP {e.code} error: {e}. Production strictly halted.")
         except Exception as e:
-            print(f"[!] Soundscape plan generation failed ({e}), using default profile.")
-            break
+            logger.error(f"  [!] Soundscape plan generation failed ({e}). STRICT HALT.")
+            raise LLMUnavailableError(f"Soundscape plan generation failed: {e}. Production strictly halted.")
 
-    return {
-        "primary_mood": "default",
-        "ducking_attenuation_db": -16.0,
-        "scenes": [
-            {
-                "scene_id": 1,
-                "segment_start": 1,
-                "segment_end": total_segs,
-                "mood": "default",
-                "stem": "default",
-                "ambient_volume": 0.25,
-                "description": "Fallback ambient bed",
-            }
-        ],
-        "sfx_cues": [],
-    }
+    logger.error("  [!] STRICT HALT: Soundscape plan generation exhausted all retries.")
+    raise LLMUnavailableError("Soundscape plan generation exhausted all retries. Production strictly halted.")
 
 
 def render_chapter_soundscape(
