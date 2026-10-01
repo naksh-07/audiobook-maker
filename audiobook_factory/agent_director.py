@@ -137,57 +137,126 @@ class AgentDirector:
         )
 
         # =====================================================================
-        # PASS 1: Dramaturgy & Silence Carving (Enforcing >= 60-75% silence)
+        # PASS 1: Specialist Multi-Agent Sound Spotting Engine (SoundSpotter)
         # =====================================================================
-        dramaturgy_plan = self._pass1_dramaturgy_and_silence_carving(
-            chapter_id=chapter_id,
-            script_segments=script_segments,
-            total_duration_sec=total_duration_sec,
-            max_retries=max_retries,
-            sonic_bible=active_bible,
-        )
+        check_pdir = project_dir or self.project_dir
+        sound_script_data = None
+        if check_pdir:
+            manifests_dir = Path(check_pdir) / "manifests"
+            sound_script_file = manifests_dir / f"{chapter_id}_sound_script.json"
+            if sound_script_file.exists():
+                try:
+                    with open(sound_script_file, "r", encoding="utf-8") as sf:
+                        sound_script_data = json.load(sf)
+                    logger.info(f"[*] Agent Director: Ingested pre-spotted Audio Cue Sheet from {sound_script_file.name}")
+                except Exception as e:
+                    logger.warning(f"  [!] Failed to read sound script {sound_script_file}: {e}")
 
-        # Ambience Bed Resolution (Environmental room tone, -32 LUFS)
-        ambience_scenes = self._resolve_ambience_scenes(
-            dramaturgy_plan.get("ambience", []),
-            total_duration_ms=total_duration_ms,
-            script_segments=script_segments,
-            seg_starts_ms=seg_starts_ms,
-            segment_durations_sec=segment_durations_sec,
-        )
+        use_spotter = os.environ.get("USE_SOUND_SPOTTER", "true").lower() in ("true", "1", "yes")
+        if not sound_script_data and use_spotter:
+            try:
+                from audiobook_factory.sound_spotter import SoundSpotter
+                spotter = SoundSpotter(sound_bank=self.sound_bank)
+                era = os.environ.get("STORY_ERA", "MODERN")
+                sound_script_data = spotter.spot_chapter(
+                    chapter_id=chapter_id,
+                    script_segments=script_segments,
+                    segment_durations_sec=segment_durations_sec,
+                    seg_starts_ms=seg_starts_ms,
+                    total_duration_sec=total_duration_sec,
+                    era=era,
+                    project_dir=check_pdir,
+                )
+            except Exception as e:
+                logger.warning(f"  [!] SoundSpotter multi-agent run encountered error, falling back to legacy passes: {e}")
 
-        # =====================================================================
-        # PASS 1.5: 4-Stem Decoupled Scene Acoustics Manifest (Idea 1 & 2)
-        # =====================================================================
-        scene_acoustics = self._resolve_scene_acoustics(
-            chapter_id=chapter_id,
-            dramaturgy_plan=dramaturgy_plan,
-            total_duration_ms=total_duration_ms,
-            sonic_bible=active_bible,
-            script_segments=script_segments,
-            seg_starts_ms=seg_starts_ms,
-            segment_durations_sec=segment_durations_sec,
-        )
+        if sound_script_data:
+            dramaturgy_plan = {
+                "chapter_id": chapter_id,
+                "dramatic_theme": "Modern Audio Drama",
+                "era": sound_script_data.get("era", "MODERN"),
+                "ambience": sound_script_data.get("ambience_scenes", []),
+                "foley_events": sound_script_data.get("foley_cues", []),
+                "music_cues": sound_script_data.get("music_cues", []),
+            }
 
-        # =====================================================================
-        # PASS 2: Music Director (Dynamic FTS5 queries, graceful fallback to silence)
-        # =====================================================================
-        music_cues = self._pass2_music_director(
-            cues_plan=dramaturgy_plan.get("music_cues", []),
-            seg_starts_ms=seg_starts_ms,
-            total_duration_ms=total_duration_ms,
-            sonic_bible=active_bible,
-        )
+            foley_cues = []
+            for fc in sound_script_data.get("foley_cues", []):
+                try:
+                    foley_cues.append(FoleyCue.model_validate(fc))
+                except Exception as ex:
+                    logger.debug(f"Foley cue validation notice: {ex}")
+            logger.info(f"  [+] Ingested {len(foley_cues)} Foley cues from SoundSpotter")
 
-        # =====================================================================
-        # PASS 3: Acoustic Foley (Grammatical dependency parsing, word-level alignment)
-        # =====================================================================
-        foley_cues = self._pass3_acoustic_foley(
-            script_segments=script_segments,
-            foley_events_plan=dramaturgy_plan.get("foley_events", []),
-            seg_starts_ms=seg_starts_ms,
-            segment_durations_sec=segment_durations_sec,
-        )
+            ambience_scenes = []
+            for ac in sound_script_data.get("ambience_scenes", []):
+                try:
+                    ambience_scenes.append(AmbienceScene.model_validate(ac))
+                except Exception as ex:
+                    logger.debug(f"Ambience scene validation notice: {ex}")
+            logger.info(f"  [+] Ingested {len(ambience_scenes)} Ambience beds from SoundSpotter")
+
+            music_cues = []
+            for mc in sound_script_data.get("music_cues", []):
+                try:
+                    music_cues.append(MusicCue.model_validate(mc))
+                except Exception as ex:
+                    logger.debug(f"Music cue validation notice: {ex}")
+            logger.info(f"  [+] Ingested {len(music_cues)} Music cues from SoundSpotter")
+
+            scene_acoustics = self._resolve_scene_acoustics(
+                chapter_id=chapter_id,
+                dramaturgy_plan=dramaturgy_plan,
+                total_duration_ms=total_duration_ms,
+                sonic_bible=active_bible,
+                script_segments=script_segments,
+                seg_starts_ms=seg_starts_ms,
+                segment_durations_sec=segment_durations_sec,
+            )
+        else:
+            # =====================================================================
+            # LEGACY PASS 1: Dramaturgy & Silence Carving (Fallback Heuristic)
+            # =====================================================================
+            dramaturgy_plan = self._pass1_dramaturgy_and_silence_carving(
+                chapter_id=chapter_id,
+                script_segments=script_segments,
+                total_duration_sec=total_duration_sec,
+                max_retries=max_retries,
+                sonic_bible=active_bible,
+            )
+
+            # Ambience Bed Resolution (Environmental room tone, -32 LUFS)
+            ambience_scenes = self._resolve_ambience_scenes(
+                dramaturgy_plan.get("ambience", []),
+                total_duration_ms=total_duration_ms,
+                script_segments=script_segments,
+                seg_starts_ms=seg_starts_ms,
+                segment_durations_sec=segment_durations_sec,
+            )
+
+            scene_acoustics = self._resolve_scene_acoustics(
+                chapter_id=chapter_id,
+                dramaturgy_plan=dramaturgy_plan,
+                total_duration_ms=total_duration_ms,
+                sonic_bible=active_bible,
+                script_segments=script_segments,
+                seg_starts_ms=seg_starts_ms,
+                segment_durations_sec=segment_durations_sec,
+            )
+
+            music_cues = self._pass2_music_director(
+                cues_plan=dramaturgy_plan.get("music_cues", []),
+                seg_starts_ms=seg_starts_ms,
+                total_duration_ms=total_duration_ms,
+                sonic_bible=active_bible,
+            )
+
+            foley_cues = self._pass3_acoustic_foley(
+                script_segments=script_segments,
+                foley_events_plan=dramaturgy_plan.get("foley_events", []),
+                seg_starts_ms=seg_starts_ms,
+                segment_durations_sec=segment_durations_sec,
+            )
 
         # Merge procedural Layer 4 stochastic spot transients into foley cues
         if scene_acoustics and hasattr(scene_acoustics, "generate_stochastic_cues"):
@@ -375,7 +444,12 @@ Output STRICT JSON schema:
 
         from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
         model_mgr = get_model_manager()
-        candidate_models = [self.model] if self.model else []
+        try:
+            active_model = self.model or model_mgr.resolve_active_model(TaskType.DIRECTING)
+            candidate_models = [active_model]
+        except Exception:
+            candidate_models = [self.model] if self.model else []
+
         for m in model_mgr.get_candidate_models_for_task(TaskType.DIRECTING):
             if m not in candidate_models:
                 candidate_models.append(m)
@@ -384,58 +458,29 @@ Output STRICT JSON schema:
         seen_models = set()
         models_to_try = [m for m in candidate_models if not (m in seen_models or seen_models.add(m))]
 
-        for attempt in range(max_retries):
-            api_key = self.pool.get_key(service="text")
-            if not api_key:
-                break
+        from audiobook_factory.llm_client import call_gemini
 
-            current_model = models_to_try[attempt % len(models_to_try)]
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": 0.25,
-                    "responseMimeType": "application/json",
-                },
-                "safetySettings": [
-                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-                ],
-            }
-            data_bytes = json.dumps(payload).encode("utf-8")
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
-            req = urllib.request.Request(
-                url,
-                data=data_bytes,
-                headers=get_stealth_sdk_headers(api_key),
-                method="POST",
+        try:
+            parsed = call_gemini(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                task_type=TaskType.DIRECTING,
+                response_mime_type="application/json",
+                temperature=0.25,
+                max_retries=max_retries,
             )
-            try:
-                with urllib.request.urlopen(req, timeout=40.0) as resp:
-                    res = json.loads(resp.read().decode("utf-8"))
-                    candidates = res.get("candidates", [])
-                    if candidates:
-                        raw_text = candidates[0]["content"]["parts"][0]["text"].strip()
-                        # Clean potential markdown fences
-                        if raw_text.startswith("```"):
-                            lines = raw_text.splitlines()
-                            raw_text = "\n".join(lines[1:-1] if lines[-1].startswith("```") else lines[1:])
-                        parsed = json.loads(raw_text)
-                        if parsed and "music_cues" in parsed:
-                            logger.info(
-                                f"  [+] Pass 1 Dramaturgy (model {current_model}): {len(parsed['music_cues'])} cues planned, "
-                                f"{len(parsed.get('foley_events', []))} foley events."
-                            )
-                            # Enforce silence carving math
-                            return self._enforce_silence_carving(parsed, total_duration_sec)
-            except urllib.error.HTTPError as e:
-                if e.code == 429:
-                    self.pool.mark_temporary_backoff(api_key, 15.0, error_msg=str(e))
-                time.sleep(0.5 * (attempt + 1))
-            except Exception as e:
-                logger.warning(f"  [!] Pass 1 Dramaturge attempt {attempt+1} ({current_model}) warning: {e}")
-                time.sleep(1.0 * (attempt + 1))
+            if parsed and "music_cues" in parsed:
+                logger.info(
+                    f"  [+] Pass 1 Dramaturgy: {len(parsed['music_cues'])} cues planned, "
+                    f"{len(parsed.get('foley_events', []))} foley events."
+                )
+                return self._enforce_silence_carving(parsed, total_duration_sec)
+        except Exception as e:
+            logger.error(f"  [!] Audio Drama Director LLM failed: {e}")
+            raise LLMUnavailableError(
+                f"STRICT HALT: Audio Drama Director LLM is unavailable or exhausted: {e}. "
+                "Production strictly halted to prevent un-directed acoustic assembly."
+            )
 
         # Strict Fail-Closed Halt: Refuse to invent acoustic directing templates silently
         logger.error("  [!] LLM API unavailable. STRICT HALT: Refusing to silently apply generic acoustic templates.")
@@ -530,7 +575,7 @@ Output STRICT JSON schema:
                 "energy": "RISING_TENSION",
                 "query": "tension suspense subtle strings intrigue",
                 "volume_db": -7.5,
-                "justification": "Curious and strange occurrences in ordinary daylight",
+                "justification": "Subtle dramatic tension and situational discovery",
             },
             {
                 "id": "cue_03_nocturnal",
@@ -544,7 +589,7 @@ Output STRICT JSON schema:
                 "energy": "INTRO_BED",
                 "query": "ambient cello mystery atmospheric calm",
                 "volume_db": -7.0,
-                "justification": "Evening transition as darkness settles",
+                "justification": "Atmospheric transition as scene stakes evolve",
             },
             {
                 "id": "cue_04_destiny",
@@ -556,9 +601,9 @@ Output STRICT JSON schema:
                 "tempo": "slow",
                 "timbre": "ethereal choir",
                 "energy": "RISING_TENSION",
-                "query": "ethereal magic destiny wonder atmospheric",
+                "query": "ethereal wonder atmospheric tension",
                 "volume_db": -7.0,
-                "justification": "Arrival of legendary figures in the dead of night",
+                "justification": "Dramatic peak and revelation turning point",
             },
             {
                 "id": "cue_05_parting",
@@ -572,7 +617,7 @@ Output STRICT JSON schema:
                 "energy": "CLIMAX_DROP",
                 "query": "emotional solo cello bittersweet solemn parting",
                 "volume_db": -6.5,
-                "justification": "Bittersweet farewell and momentous handover",
+                "justification": "Bittersweet aftermath and solemn reflection",
             },
             {
                 "id": "cue_06_legacy",
@@ -966,30 +1011,17 @@ Output STRICT JSON schema:
                     })
                 continue
 
-            # 2. If dedicated action segment without explicit sfx list, inspect text for grounded physical actions
-            if is_action:
-                text_clean = seg.get("text", "").lower()
-                # Check for subtle everyday domestic/suburban actions
-                if any(w in text_clean for w in ("door", "दरवाजा", "gate", "किवाड़")):
-                    candidates.append({
-                        "segment_index": s_idx,
-                        "subject": "Foley",
-                        "action_verb": "creak" if any(w in text_clean for w in ("creak", "चूं")) else "slam",
-                        "object_material": "door",
-                        "anchor_word": "[ACTION]",
-                        "target_gain_dbfs": -16.0,
-                        "azimuth_pan": 0.0,
-                    })
-                elif any(w in text_clean for w in ("cup", "tea", "प्याला", "चाय", "plate", "थाली")):
-                    candidates.append({
-                        "segment_index": s_idx,
-                        "subject": "Foley",
-                        "action_verb": "tableware",
-                        "object_material": "cup",
-                        "anchor_word": "[ACTION]",
-                        "target_gain_dbfs": -18.0,
-                        "azimuth_pan": 0.0,
-                    })
+            # 2. If dedicated action segment has explicit action_verb metadata, preserve it
+            if is_action and seg.get("action_verb"):
+                candidates.append({
+                    "segment_index": s_idx,
+                    "subject": "Foley",
+                    "action_verb": seg.get("action_verb"),
+                    "object_material": seg.get("object_material", "physical"),
+                    "anchor_word": seg.get("anchor_word", "[ACTION]"),
+                    "target_gain_dbfs": float(seg.get("gain_dbfs", -16.0)),
+                    "azimuth_pan": float(seg.get("pan", 0.0)),
+                })
 
         return candidates
 

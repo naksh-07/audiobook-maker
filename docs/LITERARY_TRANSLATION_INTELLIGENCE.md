@@ -211,6 +211,24 @@ Key architectural invariants of `BookBible`:
 - **Stopword Defense (`ENGLISH_NON_ENTITY_STOPWORDS`)**: Filters out 130+ common sentence-starter pronouns, conjunctions, adverbs, and interjections (*However, Suddenly, Outside, Silence, Chapter, Meanwhile*) so ordinary English words are never polluted into `book_bible.json`.
 - **Positional Confidence Scoring**: Proper nouns appearing mid-sentence or as multi-word phrases receive `confidence = 0.85` (eligible for auto-commit when coupled with a Devanagari transliteration), whereas ambiguous sentence-initial single words receive `confidence = 0.50` and are held back from auto-commit.
 
+### 4.3 Concurrent Specialist Glossary Discovery & Context-Calibrated Scene Routing (ADR-045)
+
+#### 1. Three-Agent Concurrent Pre-Production Discovery
+Legacy glossary extraction overloaded a single prompt with identifying character names, extracting socioeconomic registers, and inventing world lore definitions simultaneously. `audiobook_factory/translator.py#generate_book_glossary` deconstructs this into three concurrent specialist sub-agents operating via `ThreadPoolExecutor(max_workers=3)` across the 100+ rotating API key pool:
+- **Agent A (Character Lexicographer):** Focuses solely on discovering character names, gender assignments, aliases, and authentic Devanagari transliterations.
+- **Agent B (Sociolect & Honorific Dramaturge):** Analyzes interpersonal authority dynamics, dialect registers, and default `आप` vs `तुम` vs `तू` honorific baselines.
+- **Agent C (World Lore & Terminology Translator):** Extracts geographic kingdoms, organizations, military ranks, weapons, and spell taxonomy, mapping them into `book_bible.json`.
+
+#### 2. Context-Calibrated Scene Prompt Router
+In `_translate_single_block()`, input text is analyzed for active dramatic modality, dynamically injecting specialized stylistic directives:
+- **`COMBAT` Mode:** Fractures sentences into rapid staccato clauses (2–4 words per beat: *'कदम पीछे। तलवार का पैंतरा। वार। चूक गया!'*), visceral anatomical gore, and raw battlefield profanity.
+- **`INTIMATE` Mode (Manto Standard):** Renders passionate, sensual, or erotic encounters with somatic friction (*'मसलना'*, *'तपती कमर'*, *'भीगी प्यास'*, *'बेकाबू सांसें'*), while strictly banning clinical biology-textbook words (*'योनि'*, *'लिंग'*) that resemble hospital autopsy reports.
+- **`DIALOGUE` Mode:** Translates medieval curses into earthy Hindustani equivalents (*'गांड'*, *'चूतड़'*, *'बकचोदी'*, *'सूअर का पेशाब'*), enforces the **19-to-21 Amplification Rule**, and models dynamic power shifts (*तू* $\leftrightarrow$ *माई-बाप / सरकार*).
+- **`LORE` Mode:** Infuses atmospheric, noir Urdu seasoning (*'जिस्म'*, *'हवस'*, *'क़यामत'*, *'वहशी'*, *'रूह'*, *'सन्नाटा'*, *'ख़ंजर'*, *'ख़ौफ़'*) to give dark-fantasy worldbuilding existential weight.
+
+#### 3. Centralized Non-Hammering KeyPool Client Integration
+All translation prompts route through [`audiobook_factory/llm_client.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/llm_client.py) using `PersistentKeyPool.get_key(service="text")`. True round-robin scheduling (`ORDER BY last_used ASC NULLS FIRST`), 100–350ms pacing jitter, and categorized error cooldowns prevent server hammering across 100+ API keys.
+
 ---
 
 ## 5. Literary Register, Character Voice & Dynamic Relationships

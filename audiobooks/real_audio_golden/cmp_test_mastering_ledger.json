@@ -1,8 +1,8 @@
 {
-  "chapter_id": "real_01_narration",
-  "created_at": "2026-10-01T21:58:45.652190+00:00",
+  "chapter_id": "cmp_test",
+  "created_at": "2026-10-01T21:58:31.640161+00:00",
   "request": {
-    "chapter_id": "real_01_narration",
+    "chapter_id": "cmp_test",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_01_narration.wav",
     "output_master_path": null,
     "dialogue_stem_path": null,
@@ -32,9 +32,9 @@
   },
   "result": {
     "status": "SUCCESS",
-    "chapter_id": "real_01_narration",
+    "chapter_id": "cmp_test",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_01_narration.wav",
-    "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_01_narration_cinema_master.wav",
+    "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\cmp_test_cinema_master.wav",
     "profile": {
       "profile_name": "commercial_audiobook_standard",
       "target_lufs": -17.5,
@@ -77,7 +77,7 @@
       "is_valid_audio": true
     },
     "analysis_after": {
-      "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_01_narration_cinema_master.wav",
+      "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\cmp_test_cinema_master.wav",
       "duration_sec": 10.3,
       "sample_rate": 48000,
       "channels": 2,
@@ -129,7 +129,7 @@
       }
     },
     "action_plan": {
-      "chapter_id": "real_01_narration",
+      "chapter_id": "cmp_test",
       "issues": [
         {
           "issue_type": "premaster_loudness_drift",
@@ -167,7 +167,7 @@
       "explanation": "Generated bounded profile adjustments for 1 issue(s): ['premaster_loudness_drift']"
     },
     "dialogue_protection": {
-      "chapter_id": "real_01_narration",
+      "chapter_id": "cmp_test",
       "dialogue_lufs": -70.0,
       "mix_lufs": -17.5,
       "dialogue_anchor_ratio_db": 0.0,
@@ -218,7 +218,7 @@
     "reference_comparison": null,
     "certification_report": {
       "certification": "CERTIFIED",
-      "chapter_id": "real_01_narration",
+      "chapter_id": "cmp_test",
       "technical_qc": {
         "status": "PASS",
         "passed": true,
@@ -251,7 +251,7 @@
         "details": "Closed-loop DSP verified within bounds"
       },
       "dialogue_protection": {
-        "chapter_id": "real_01_narration",
+        "chapter_id": "cmp_test",
         "dialogue_lufs": -70.0,
         "mix_lufs": -17.5,
         "dialogue_anchor_ratio_db": 0.0,
@@ -288,7 +288,7 @@
       },
       "reference_comparison": null,
       "artifact_info": {
-        "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_01_narration_cinema_master.wav",
+        "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\cmp_test_cinema_master.wav",
         "sha256": "42704aeae922e8ceceb1e430434164a9769f26ea3f69ad4f67099517a05849db",
         "size_bytes": 2966502,
         "duration_sec": 10.3,
@@ -311,17 +311,17 @@
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
         "effective_profile_sha256": "0ccaee90b95aa732b8455afba56c9e92a1204008d2f76c06d585c51b09426627"
       },
-      "certified_at": "2026-10-01T21:58:45.652150+00:00"
+      "certified_at": "2026-10-01T21:58:31.640113+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-10-01T21:58:45.652167+00:00",
+      "timestamp": "2026-10-01T21:58:31.640135+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_01_narration.wav",
       "premaster_sha256": "0c9cfe54b99b4cc27f671be2ecc4e1b452f66b0976b241f5640264858e666c99",
-      "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_01_narration_cinema_master.wav",
+      "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\cmp_test_cinema_master.wav",
       "master_sha256": "42704aeae922e8ceceb1e430434164a9769f26ea3f69ad4f67099517a05849db",
       "profile_name": "commercial_audiobook_standard",
       "profile_sha256": "0ccaee90b95aa732b8455afba56c9e92a1204008d2f76c06d585c51b09426627",

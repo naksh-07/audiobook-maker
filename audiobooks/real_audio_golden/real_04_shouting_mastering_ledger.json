@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_04_shouting",
-  "created_at": "2026-09-30T17:14:05.929097+00:00",
+  "created_at": "2026-10-01T21:58:48.981059+00:00",
   "request": {
     "chapter_id": "real_04_shouting",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_04_shouting.wav",
@@ -93,7 +93,7 @@
       "spectral_centroid_hz": 733.0,
       "spectral_rolloff_hz": 1125.0,
       "spectral_flatness": 0.0002,
-      "phase_correlation": 0.864,
+      "phase_correlation": 0.935,
       "mono_compatible": true,
       "silence_ratio": 0.335,
       "dead_air_sec": 0.0,
@@ -124,7 +124,7 @@
         "loudness_error_lu": 0.45,
         "measured_true_peak_dbtp": -3.2,
         "true_peak_ceiling_dbtp": -1.5,
-        "phase_correlation": 0.864,
+        "phase_correlation": 0.935,
         "dead_air_sec": 0.0
       }
     },
@@ -197,7 +197,7 @@
         "tonal_balance_score=1.00",
         "dynamic_integrity_score=1.00",
         "emotional_preservation_score=1.00",
-        "solid_stereo_coherence (r=0.864)",
+        "solid_stereo_coherence (r=0.935)",
         "fatigue_risk_score=1.00"
       ],
       "critic_version": "1.0.0"
@@ -242,7 +242,7 @@
           "loudness_error_lu": 0.45,
           "measured_true_peak_dbtp": -3.2,
           "true_peak_ceiling_dbtp": -1.5,
-          "phase_correlation": 0.864,
+          "phase_correlation": 0.935,
           "dead_air_sec": 0.0
         }
       },
@@ -281,7 +281,7 @@
           "tonal_balance_score=1.00",
           "dynamic_integrity_score=1.00",
           "emotional_preservation_score=1.00",
-          "solid_stereo_coherence (r=0.864)",
+          "solid_stereo_coherence (r=0.935)",
           "fatigue_risk_score=1.00"
         ],
         "critic_version": "1.0.0"
@@ -289,8 +289,8 @@
       "reference_comparison": null,
       "artifact_info": {
         "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_04_shouting_cinema_master.wav",
-        "sha256": "6a844a815ab580eab9aadbe52f20dff66bd388d576b595d0de1d13588ffda459",
-        "size_bytes": 1033038,
+        "sha256": "75fbc463565b2966aaf77c68f2e88bc4292588451e358a15ee92ee7db0db925b",
+        "size_bytes": 1549542,
         "duration_sec": 5.38,
         "sample_rate": 48000,
         "channels": 2,
@@ -307,22 +307,22 @@
         "engine_version": "2.2.0",
         "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
         "premaster_sha256": "f8d126b675a04e0cbe7338b4193d276351a66c3cbac1a4a9fe7ff6e3fed0ef73",
-        "master_sha256": "6a844a815ab580eab9aadbe52f20dff66bd388d576b595d0de1d13588ffda459",
+        "master_sha256": "75fbc463565b2966aaf77c68f2e88bc4292588451e358a15ee92ee7db0db925b",
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
         "effective_profile_sha256": "953e7367f5fd187e3a435523422c7ba18d6d2d8e9261bbca5c3b45cc7fb70893"
       },
-      "certified_at": "2026-09-30T17:14:05.929016+00:00"
+      "certified_at": "2026-10-01T21:58:48.981020+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T17:14:05.929050+00:00",
+      "timestamp": "2026-10-01T21:58:48.981038+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_04_shouting.wav",
       "premaster_sha256": "f8d126b675a04e0cbe7338b4193d276351a66c3cbac1a4a9fe7ff6e3fed0ef73",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_04_shouting_cinema_master.wav",
-      "master_sha256": "6a844a815ab580eab9aadbe52f20dff66bd388d576b595d0de1d13588ffda459",
+      "master_sha256": "75fbc463565b2966aaf77c68f2e88bc4292588451e358a15ee92ee7db0db925b",
       "profile_name": "commercial_audiobook_standard",
       "profile_sha256": "953e7367f5fd187e3a435523422c7ba18d6d2d8e9261bbca5c3b45cc7fb70893",
       "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",

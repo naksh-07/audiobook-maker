@@ -339,8 +339,9 @@ class IntelligentTranslationPipeline:
             # E. Sanitize
             is_valid, cleaned_target, reason = validate_and_sanitize_translation(raw_target, is_hindi=True)
             if not is_valid:
-                print(f"    [!] Warning: Sanitizer note: {reason}")
-                cleaned_target = raw_target
+                print(f"    [!] Translation Sanitizer Alert: {reason}. Applying deterministic correction.")
+                # Do NOT silently proceed with corrupt raw text; use cleaned candidate if available
+                cleaned_target = cleaned_target if cleaned_target else raw_target
 
             # F. Deterministic Level 1 Repair
             cleaned_target, rep_actions = TieredRepairEngine.apply_deterministic_repair(

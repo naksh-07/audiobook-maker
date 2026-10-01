@@ -915,6 +915,59 @@
      - Enforced via AST verification test suite (`tests/test_model_manager_and_strict_halt.py`, 13/13 passing).
 - **Rationale:** Guarantees uncompromised dramatic production quality by eradicating fake silent fallbacks, dynamically selecting the healthiest available Gemini model via concurrent latency checks, and failing closed if quality standards cannot be met.
 
+## ADR-044: Decoupled Specialist Multi-Agent Sound Spotting, Fail-Closed Anti-Swallow Dialogue Guard, and Era-Filtered Acoustics
+- **Status:** Accepted
+- **Date:** 2026-10-02
+- **Context:**
+  1. **Monolithic Screenplay Prompt Fatigue:** In legacy Stage 3, `script_builder.py` sent ~1,200-word blocks into a single Gemini prompt instructed to parse characters, write spoken prose, format emotion/subtext, AND spot sound cues (`sfx_cues` / `music`). Due to token fatigue, Gemini regularly swallowed short dialogue turns into single narration paragraphs (performed by Narrator `Aoede`) and returned empty sound cue arrays (`sfx_cues: []`), completely bypassing the 27,456 sound assets available on disk.
+  2. **Acoustic Anachronisms & Unfiltered Retrieval:** Sound bank searches lacked era/world grounding, occasionally pulling medieval tags (`swamp`, `crypt`, `sword`, `armor`) into 20th-century modern domestic scenes (e.g. Dursleys' house in Little Whinging).
+  3. **Untracked Voice Collisions:** Secondary characters without explicit upfront casting defaulted to narrator or drifted dynamically between scenes.
+- **Decision:**
+  1. **Autonomous Character Caster (`audiobook_factory/character_caster.py`):**
+     - Executes a pre-production discovery pass parsing book chapters to allocate non-colliding Gemini voice personas (`Puck`, `Fenrir`, `Charon`, `Kore`, `Aoede`, etc.) into `character_roster.json` and `cast_lock.json` before screenplay generation.
+  2. **Micro-Chunking (~350-Word Ceiling) & Pure Dialogue Focus (`audiobook_factory/script_builder.py`):**
+     - Slices screenplay generation into ~350-word micro-chunks on natural beat/paragraph boundaries.
+     - Strips `sfx_cues` and `music` bloat from screenplay generation prompts, allowing 100% LLM attention on line attribution, emotional subtext, and acting notes.
+     - Implements a 5-layer context preservation stack (rolling 3-turn context, BeatPlanner boundary alignment, macro scene context, project character roster hint, Pass 2 pronoun disambiguation).
+     - Injects deterministic double-safety quote auto-slicing in `clean_screenplay_pass2` separating dialogue from narration.
+  3. **Fail-Closed Gate 2 Anti-Swallow Assertion (`audiobook_factory/gate_auditor.py`):**
+     - In `audit_gate2_script()`, scans all narration segments for spoken quote marks (`"` or `“`). Raises `GateAuditError` if direct dialogue quotes remain swallowed in narration.
+  4. **Era-Aware Negative Keyword Sound Bank Filtering (`audiobook_factory/sound_bank.py`):**
+     - Added `era` and `negative_tags` filters in `search()`.
+     - `MODERN` scenes ban medieval tags (`swamp`, `bog`, `crypt`, `sword`, `armor`, `tavern_brawl`). Falls back to pure acoustic silence if a modern asset is missing rather than substituting wrong-genre assets.
+  5. **Specialist Multi-Agent Sound Spotting Engine (`audiobook_factory/sound_spotter.py`):**
+     - In Stage 3.5, `SoundSpotter` runs 3 parallel specialist LLM agents across the 100+ rotating API key pool:
+       1. Foley & Prop Specialist (character physical actions, props, door/car/footsteps).
+       2. Ambience Bed Designer (architectural room tone, exterior weather, continuous beds).
+       3. Music Scoring Director (scene underscoring, tension motifs, silence preservation).
+     - Emits clean, inspectable `chapter_XXX_sound_script.json` (Audio Cue Sheet).
+  6. **AgentDirector Direct Ingestion (`audiobook_factory/agent_director.py`):**
+     - Prioritizes ingesting `chapter_XXX_sound_script.json` directly into `CreativeManifest`, bypassing redundant monolithic prompt passes.
+- **Rationale:** Permanently eradicates character dialogue swallowing, unlocks authentic acoustic spotting across the 27k+ sound bank leveraging parallel API keys, and ensures genre-accurate domestic soundscapes without medieval noise bleed.
 
-
-
+## ADR-045: Overloaded LLM Prompt Decomposition, Pure Single-Responsibility Passes, Centralized Round-Robin Key Management, and Anti-Fake Creative Rigor
+- **Status:** Accepted
+- **Date:** 2026-10-02
+- **Context:**
+  1. **Monolithic Prompt Fatigue Across Stages:** Several pipeline stages overloaded generative LLMs with simultaneous conflicting tasks (e.g. Stage 3 asking for 12 distinct attributes including dialogue parsing, acting notes, subtext, and sound spotting; Stage 2 asking for character names, sociolects, and world terminology in a single glossary prompt).
+  2. **Fake Creative Work in Fallbacks:** When LLMs were bypassed or errored, scripts fell back to canned Stanislavski psychological templates (`underlying_desire`, `core_fear`, `strategy`), 4-word domestic Foley regexes (`door`, `gate`, `cup`, `tea`), or fake 1.0 PASS audit fallbacks, creating the illusion of comprehension while degrading artistic quality.
+  3. **Uneven Key Pool Consumption & Server Hammering:** Modules created ad-hoc HTTP clients without pacing jitter, leading to rate spikes, uncoordinated retries, and occasional API hammering across the 100+ rotating API key pool.
+- **Decision:**
+  1. **Centralized Non-Hammering Client (`audiobook_factory/llm_client.py`):**
+     - Routes all Gemini LLM requests strictly through `PersistentKeyPool.get_key(service="text")` with usage tracking (`ORDER BY last_used ASC NULLS FIRST`).
+     - Injects 100ms–350ms pacing jitter and exponential backoff to eliminate server hammering.
+     - Classifies errors (`DAILY_QUOTA_EXHAUSTED`, `RPM_RATE_LIMIT`, `TRANSIENT_SERVER_ERROR`) with appropriate key cooldowns.
+     - Enforces permissive `BLOCK_NONE` safety settings for dramatic fiction and deterministic `json_repair`.
+  2. **Two-Pass Decoupled Screenplay Parser (`audiobook_factory/script_builder.py`):**
+     - *Pass 1 (`_parse_dialogue_turns_llm`)*: 100% focused on dialogue turn isolation, canonical character attribution, clean text, and neural vocal tags.
+     - *Pass 2 (`_enrich_performance_and_staging_llm`)*: 100% focused on Stanislavski subtext, actioning verbs, dynamic headroom intensity, delivery styles, and spatial audio panning (-0.8 to +0.8).
+  3. **Concurrent Specialist Glossary Discovery (`audiobook_factory/translator.py`):**
+     - Deconstructs `generate_book_glossary()` into 3 concurrent agents: Character Lexicographer, Sociolect/Honorific Dramaturge, and World Lore Translator via `ThreadPoolExecutor(max_workers=3)`.
+  4. **Context-Calibrated Scene Prompt Routing (`audiobook_factory/translator.py`):**
+     - Injects specialized scene directives based on content detection (`COMBAT` staccato rhythm, `INTIMATE` somatic passion, `DIALOGUE` street idioms, `LORE` atmospheric Urdu flavor).
+  5. **Purge of Canned Creative Heuristics & Fail-Closed Invariant:**
+     - Purged canned Stanislavski templates from `dramaturgy/beat_planner.py` and `scene_analyzer.py`.
+     - Purged domestic Foley guessing from `agent_director.py`; cues strictly sourced from `SoundSpotter`.
+     - Purged fake 1.0 PASS audit fallbacks from `gate_auditor.py`; deconstructed Gate 1 into 3 parallel specialist checkers (Profanity, Combat, Intimacy).
+     - Strict fail-closed halts (`LLMUnavailableError`) across all creative tasks in production.
+- **Rationale:** Leverages the high compute capacity of 100+ rotating API keys without hammering, eliminates prompt fatigue and character dialogue swallowing, and guarantees uncompromised dramatic production quality with zero fake creative shortcuts.

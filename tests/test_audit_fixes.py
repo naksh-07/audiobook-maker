@@ -98,7 +98,7 @@ class TestAuditFixes(unittest.TestCase):
             self.assertEqual(len(script), 1)
             self.assertEqual(script[0]["text"], "The journey began.")
 
-        # Test 2: Malformed JSON falls back to build_narrator_script (Zero Content Loss!)
+        # Test 2: Malformed LLM response strictly fails closed (ADR-043)
         malformed_response = MagicMock()
         malformed_response.__enter__.return_value = malformed_response
         malformed_response.read.return_value = json.dumps({
@@ -107,11 +107,9 @@ class TestAuditFixes(unittest.TestCase):
 
         with patch("urllib.request.urlopen", return_value=malformed_response):
             sample_text = "He walked into the room. 'Hello,' he said."
-            script = _parse_dramatized_chunk_llm(sample_text, api_key="fake_key", max_retries=1)
-            # Must NOT return empty list!
-            self.assertGreater(len(script), 0)
-            self.assertEqual(script[0]["speaker"], "Narrator")
-            self.assertIn("He walked into the room", script[0]["text"])
+            from audiobook_factory.model_manager import LLMUnavailableError
+            with self.assertRaises(LLMUnavailableError):
+                _parse_dramatized_chunk_llm(sample_text, api_key="fake_key", max_retries=1)
 
     def test_04_state_ledger_crash_recovery(self):
         """Verify get_pending_segments includes IN_PROGRESS and auto-resets on startup."""

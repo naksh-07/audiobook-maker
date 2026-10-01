@@ -9,9 +9,13 @@ import os
 import re
 import time
 import json
-import hashlib
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+
+from audiobook_factory.model_manager import LLMUnavailableError
+
+logger = logging.getLogger("AudiobookFactory")
 
 
 def normalize_speech_text(text: str, is_hindi: bool = False) -> str:
@@ -144,60 +148,31 @@ def build_narrator_script(chapter_text: str, is_hindi: bool = False) -> List[Dic
     return script
 
 
-def _parse_dramatized_chunk_llm(
+def _parse_dialogue_turns_llm(
     chunk_text: str,
     preceding_context: str = "",
     is_hindi: bool = False,
     character_roster: Optional[Dict[str, Any]] = None,
-    api_key: str = "",
-    model: Optional[str] = None,
-    max_retries: int = 3,
-    dramatic_context: str = "",
 ) -> List[Dict[str, Any]]:
-    """Helper to parse a single chunk of chapter text into screenplay JSON."""
-    import json
-    import time
-    import urllib.request
-    import urllib.error
-    from audiobook_factory.key_manager import get_persistent_key_pool
-    from audiobook_factory.cadence import get_stealth_sdk_headers
-    from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
-
-    pool = get_persistent_key_pool()
-    model_mgr = get_model_manager()
-
-    if not model:
-        model = model_mgr.resolve_active_model(TaskType.SCREENPLAY, api_key=api_key or None)
-
-    model_candidates = [model]
-    for m in model_mgr.get_candidate_models_for_task(TaskType.SCREENPLAY):
-        if m not in model_candidates:
-            model_candidates.append(m)
-
+    """
+    Pass 1: Pure Dialogue Isolation & Speaker Attribution.
+    Focuses 100% on isolating spoken dialogue into discrete segments, attributing
+    speakers from the canonical character roster, and adding neural vocal tags.
+    """
     sys_prompt = (
-        "You are a Hollywood Audio Drama Director (GraphicAudio / BBC Radio 4 / HBO standard). "
-        "Convert this book chapter scene into an annotated multi-cast screenplay with deep cinematic audio direction.\n\n"
-        "Core Dramaturgy Invariants:\n"
-        "1. DRAMATIC FIDELITY MANDATE: Faithfully preserve 100% of the author's dialogue, character relationships, and emotional intensity as written. Never sanitize, soften, or omit character speech.\n"
-        "2. MULTI-CAST ATTRIBUTION & CANONICAL SPEAKER MANDATE: Split into narration segments and character dialogue segments. "
-        "Attribute each dialogue to the correct canonical character by their English canonical name from Known Canon Characters (e.g. 'Hero', NOT transliterations or nicknames). "
-        "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('उसने', 'वह', 'he', 'she') as the speaker name. "
-        "Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' when spoken by the character.\n"
-        "3. NEURAL VOCAL TAGS: Gemini 3.1 Flash TTS is steered using inline English audio tags in square brackets. Prepend vocal tags directly inside the 'text' field "
-        "when dialogue or dramatic narration demands it: `[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, "
-        "`[gasp]`, `[growl]`, `[groan]`, `[spits]`, `[bellowing rage]`, `[bellowing battlecry]`, `[combat strain]`, `[guttural grunt on blade deflect]`, "
-        "`[choked gasp]`, `[ragged heaving pant]`, `[breathless_exhaustion]`, `[slow motion]`, `[mocking chuckle]`. Do NOT emit non-vocal action tags in text.\n"
-        "4. CYNICAL PROTAGONIST GRUNT ENGINE & PROSODY: When a brooding, cynical protagonist reacts with skepticism, weary resignation, or menacing brevity, "
-        "prepend `[growl] हूँ...` or `[sighs] हम्म...` to enforce the iconic pregnant pause prosody.\n"
-        "5. DURAANGI ZUBAAN (INNER MONOLOGUES): When a character thinks an unfiltered thought or aside (contrasting with polite outward speech), "
-        "tag the text with `[whispers] (मन में: ...)` and set spatial.proximity: 'intimate_close' and acoustic_env: 'binaural_whisper'.\n"
-        "6. INTIMATE SCENES & ASMR STAGING: For romantic, sentimental, or whispered bedroom scenes, pair gentle delivery with "
-        "`[whispers]` or `[intimate, breathy]` tags, spatial.proximity: 'intimate_close', and intensity_level: 'low'. Use ellipses ('...') for breathless pauses.\n"
-        "7. DRAMATIC SHOCK BEATS & PHYSICAL ACTION: When a climactic revelation drops or a major physical action occurs "
-        "(door slam, vehicle arrival/screech, lighter click, weapon clash, explosion, heavy blow), emit dedicated segments with type: 'action', speaker: 'Foley', text: '[ACTION]' "
-        "to allocate speech-free acoustic real estate for the impact. "
-        "IMPORTANT: NEVER invent weapons, combat, or fantasy sounds in peaceful, domestic, or modern scenes!\n"
-        "8. For EVERY segment, assign audio direction: acting delivery style, proximity, acoustic environment, inline Foley SFX cues, and musical mood."
+        "You are a Hollywood Audio Drama Dialogue Supervisor. "
+        "Your sole responsibility is absolute dialogue turn isolation and character attribution.\n\n"
+        "Core Mandates:\n"
+        "1. ABSOLUTE DIALOGUE TURN ISOLATION:\n"
+        "   - EVERY spoken dialogue line (anything inside quotation marks \"...\", “...”, ‘...’ or dialogue dashes) MUST be its own discrete segment with type: 'dialogue' and the canonical speaker name.\n"
+        "   - NEVER, under any circumstance, merge spoken dialogue into a 'narration' segment. Even a 1-word reply (e.g. 'Yes', 'हाँ', 'Little tyke') MUST be isolated as a character dialogue.\n"
+        "   - Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' completely from character spoken text.\n"
+        "   - Surrounding narrative actions and exposition MUST be placed in separate 'narration' segments for the Narrator.\n"
+        "2. CANONICAL SPEAKER ASSIGNMENT: Attribute dialogue strictly to the canonical character from Known Canon Characters. "
+        "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('he', 'she', 'उसने', 'वह') as the speaker name.\n"
+        "3. NEURAL VOCAL TAGS: Prepend vocal tags directly inside the 'text' field when dialogue demands it: "
+        "`[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, `[gasp]`, `[growl]`, `[bellowing rage]`, `[combat strain]`, `[mocking chuckle]`.\n"
+        "4. PHYSICAL ACTION BEATS: When a major physical hit occurs (door slam, gunshot, blade clash, explosion), emit type: 'action', speaker: 'Foley', text: '[ACTION]'.\n"
     )
 
     roster_hint = ""
@@ -228,11 +203,10 @@ def _parse_dramatized_chunk_llm(
                 + "\n"
             )
 
-    dramatic_section = f"Dramatic Scene & Beat Context:\n{dramatic_context}\n" if dramatic_context else ""
     prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 Preceding Scene Context / Characters Speaking:
 {preceding_context if preceding_context else "Beginning of scene."}
-{dramatic_section}{roster_hint}
+{roster_hint}
 Current Scene Text:
 \"\"\"
 {chunk_text}
@@ -240,164 +214,179 @@ Current Scene Text:
 
 Output JSON: A list of objects where each object has:
 - "index": int (1-based relative to this chunk)
-- "type": "narration" | "dialogue" | "action" (MANDATORY: emit dedicated "action" segments for major physical beats — weapon draw/clash, door kick/slam, tankard slam, heavy fall/blow, explosion — DO NOT layer heavy impacts directly on top of speech; isolate them with speaker: "Foley", text: "[ACTION]")
-- "speaker": character name (e.g. "Alice", "Bob"), "Narrator", or "Foley" (for action segments)
-- "text": speech text (clean spoken content in {"Devanagari Hindi" if is_hindi else "English"}, with optional inline vocal tags like [whispers], [shouting], [cold menace] where emotionally appropriate, or "[ACTION]" for action segments)
+- "type": "narration" | "dialogue" | "action" (isolate every spoken quote into a dedicated "dialogue" segment)
+- "speaker": canonical character name, "Narrator", or "Foley"
+- "text": spoken dialogue or narrative text with optional inline vocal tags like [whispers], [shouting], or "[ACTION]"
 - "emotion": "neutral" | "angry" | "whispering" | "sad" | "excited" | "growl" | "calm_raspy"
-- "actioning": "threaten" | "deflect" | "reassure" | "confess" | "plead" | "probe" | "comfort" | "test" | "intimidate" | "negotiate" | "challenge" | "mock" | "persuade" (transitive dramatic intent)
-- "subtext": string (optional unsaid psychological subtext if strongly justified by context, else "")
-- "underlying_emotion": string (optional concealed emotional state, else "")
-- "intensity_level": "low" | "medium" | "high" | "explosive" (DSP dynamic headroom: "low" for whispered/intimate, "medium" for standard dialogue/narration, "high" for intense confrontation/shouts, "explosive" for climactic battle cries and fatal strikes)
-- "acting": {{
-    "delivery_style": "whispering_fear" | "cold_menace" | "breathless_exhaustion" | "ironic_mockery" | "bellowing_rage" | "combat_strain" | "slow_motion" | "calm_authoritative" | "gentle_tender" | "neutral"
-  }}
-- "spatial": {{
-    "proximity": "intimate_close" | "normal_room" | "distant"
-  }}
-- "acoustic_env": string identifying acoustic environment of the scene (e.g. "suburban_street_day", "suburban_street_night", "domestic_room", "office_commercial", "quiet_chamber", "tavern_interior", "dense_forest_night", "stone_crypt", "open_road")
-- "sfx_cues": [
-    {{
-      "tag": string identifying the REAL physical sound explicitly described in the scene text (e.g. "car_door", "car_engine", "footsteps_pavement", "cup_clink", "chair_scrape", "paper_rustle", "typewriter_key", "deluminator_click", "cat_purr", "cat_meow", "cloak_rustle", "motorcycle_roar", "motorcycle_engine", "baby_breath", "door_creak", "door_close", "clock_tick"). IMPORTANT: NEVER emit weapons, swords, shields, horses, or combat impacts unless weapons or combat are explicitly present in the text!
-      "timing": "before" | "under" | "after",
-      "offset_ms": int (-200 to 600),
-      "volume": float (0.25 to 0.55),
-      "description": "Short explanation of physical sound"
-    }}
-  ]
-- "music": {{
-    "mood": "peaceful" | "mysterious" | "tense" | "emotional" | "epic"
-  }}
 """
 
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "systemInstruction": {"parts": [{"text": sys_prompt}]},
-        "generationConfig": {
-            "temperature": 0.2,
-            "responseMimeType": "application/json",
-            "responseSchema": {
-                "type": "ARRAY",
-                "items": {
-                    "type": "OBJECT",
-                    "properties": {
-                        "index": {"type": "INTEGER"},
-                        "type": {"type": "STRING"},
-                        "speaker": {"type": "STRING"},
-                        "text": {"type": "STRING"},
-                        "emotion": {"type": "STRING"},
-                        "actioning": {"type": "STRING"},
-                        "subtext": {"type": "STRING"},
-                        "underlying_emotion": {"type": "STRING"},
-                        "intensity_level": {"type": "STRING"},
-                        "acting": {"type": "OBJECT", "properties": {"delivery_style": {"type": "STRING"}}},
-                        "spatial": {"type": "OBJECT", "properties": {"proximity": {"type": "STRING"}}},
-                        "acoustic_env": {"type": "STRING"},
-                        "sfx_cues": {
-                            "type": "ARRAY",
-                            "items": {
-                                "type": "OBJECT",
-                                "properties": {
-                                    "tag": {"type": "STRING"},
-                                    "timing": {"type": "STRING"},
-                                    "offset_ms": {"type": "INTEGER"},
-                                    "volume": {"type": "NUMBER"},
-                                    "description": {"type": "STRING"}
-                                }
-                            }
-                        },
-                        "music": {"type": "OBJECT", "properties": {"mood": {"type": "STRING"}}}
-                    },
-                    "required": ["index", "type", "speaker", "text"]
-                }
-            },
-            "maxOutputTokens": 8192,
-        },
-        "safetySettings": [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ],
-    }
+    from audiobook_factory.llm_client import call_gemini
+    from audiobook_factory.model_manager import TaskType
 
-    data_bytes = json.dumps(payload).encode("utf-8")
-    from audiobook_factory.logger import logger
-
-    max_retries = max(max_retries, 5)
-    for attempt in range(max_retries):
-        curr_key = pool.get_key(service="text") if (attempt > 0 or not api_key) else api_key
-        curr_model = model_candidates[attempt % len(model_candidates)]
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent?key={curr_key}"
-        headers = get_stealth_sdk_headers(curr_key)
-        req = urllib.request.Request(
-            url,
-            data=data_bytes,
-            headers=headers,
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=90.0) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                candidates = data.get("candidates", [])
-                if not candidates:
-                    logger.warning(f"  [!] Screenplay LLM returned no candidates: {data.get('promptFeedback', {})}")
-                    continue
-                candidate = candidates[0]
-                parts = candidate.get("content", {}).get("parts", [])
-                if not parts:
-                    continue
-                text_parts = [p.get("text", "") for p in parts if "text" in p]
-                raw_json = "".join(text_parts).strip()
-
-                parsed = None
-                try:
-                    parsed = json.loads(raw_json)
-                except json.JSONDecodeError:
-                    # Deterministic JSON repair (eliminates secondary network call and hallucinations)
-                    try:
-                        import json_repair
-                        parsed = json_repair.loads(raw_json)
-                        logger.info("  [+] Deterministic json_repair successfully restored JSON payload.")
-                    except Exception as jr_err:
-                        logger.warning(f"  [!] json_repair fallback error: {jr_err}. Attempting brace closure.")
-                        repaired = raw_json.strip()
-                        last_brace = repaired.rfind("}")
-                        if last_brace != -1 and repaired.startswith("[") and not repaired.endswith("]"):
-                            candidate_str = repaired[:last_brace + 1].rstrip() + "\n]"
-                            parsed = json.loads(candidate_str)
-                        else:
-                            raise
-
-                if isinstance(parsed, list):
-                    return parsed
-                elif isinstance(parsed, dict) and "script" in parsed and isinstance(parsed["script"], list):
-                    return parsed["script"]
-                elif isinstance(parsed, dict) and "segments" in parsed and isinstance(parsed["segments"], list):
-                    return parsed["segments"]
-                else:
-                    raise ValueError(f"Unexpected JSON structure: {type(parsed)}")
-
-        except urllib.error.HTTPError as e:
-            try:
-                err_body = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
-            finally:
-                if hasattr(e, "close"):
-                    e.close()
-            logger.warning(f"  [!] Screenplay LLM HTTP {e.code} on key ...{curr_key[-6:]}: {err_body[:120]}")
-            if e.code == 429:
-                pool.mark_temporary_backoff(curr_key, 12.0, "RPM rate limit in script parsing")
-            time.sleep(1.5)
-            continue
-        except Exception as ex:
-            logger.warning(f"  [!] Screenplay LLM parse error: {ex}")
-            time.sleep(1.5)
-            continue
-
-    logger.error("  [!] All screenplay retries exhausted. STRICT HALT: Refusing to silently degrade to flat narrator.")
-    raise LLMUnavailableError(
-        "Screenplay LLM is unavailable or exhausted after retries. "
-        "Production strictly halted to prevent un-dramatized script generation."
+    res = call_gemini(
+        prompt=prompt,
+        system_instruction=sys_prompt,
+        task_type=TaskType.SCREENPLAY,
+        response_mime_type="application/json",
+        temperature=0.2,
+        max_retries=4,
     )
+    if isinstance(res, list):
+        return res
+    if isinstance(res, dict):
+        for k in ("script", "segments", "turns", "dialogue"):
+            if k in res and isinstance(res[k], list):
+                return res[k]
+        return [res]
+    return []
+
+
+def _enrich_performance_and_staging_llm(
+    segments: List[Dict[str, Any]],
+    dramatic_context: str = "",
+    is_hindi: bool = False,
+) -> List[Dict[str, Any]]:
+    """
+    Pass 2: Performance Director & Spatial Audio Staging.
+    Focuses 100% on Stanislavski subtext, actioning verbs, dynamic headroom intensity,
+    delivery styles, spatial proximity, and azimuth panning (-0.8 to +0.8).
+    """
+    if not segments:
+        return segments
+
+    # Prepare compact turn manifest for Pass 2 LLM
+    compact_turns = []
+    for s in segments:
+        compact_turns.append({
+            "index": s.get("index", 1),
+            "speaker": s.get("speaker", "Narrator"),
+            "type": s.get("type", "narration"),
+            "text": s.get("text", "")[:300],
+        })
+
+    sys_prompt = (
+        "You are an Academy-Award winning Audio Drama Director and Stanislavski Performance Coach. "
+        "Enrich each dialogue turn with deep psychological subtext, transitive actioning verbs, "
+        "concealed inner emotions, dynamic intensity headroom, acting delivery style, and spatial audio staging.\n\n"
+        "Guidelines:\n"
+        "- 'actioning': transitive dramatic intent verb (e.g. 'threaten', 'deflect', 'reassure', 'confess', 'probe', 'comfort', 'intimidate', 'negotiate', 'mock', 'persuade').\n"
+        "- 'subtext': unsaid psychological motivation or truth beneath the dialogue.\n"
+        "- 'underlying_emotion': concealed emotional state conflicting with surface presentation.\n"
+        "- 'intensity_level': 'low' (whispered/intimate), 'medium' (standard), 'high' (confrontation), 'explosive' (climactic screams/battle cries).\n"
+        "- 'acting': {'delivery_style': 'whispering_fear' | 'cold_menace' | 'breathless_exhaustion' | 'ironic_mockery' | 'bellowing_rage' | 'combat_strain' | 'calm_authoritative' | 'gentle_tender' | 'neutral'}.\n"
+        "- 'spatial': {'proximity': 'intimate_close' | 'normal_room' | 'distant', 'azimuth_pan': float between -0.8 and +0.8 (e.g. speaker A at -0.3, speaker B at +0.3)}.\n"
+        "- 'acoustic_env': environmental tone (e.g. 'domestic_room', 'suburban_street_day', 'dense_forest_night', 'stone_crypt')."
+    )
+
+    prompt = f"""Dramatic Scene & Beat Context:
+{dramatic_context if dramatic_context else "Standard narrative encounter."}
+
+Dialogue Turns to Enrich (JSON):
+```json
+{json.dumps(compact_turns, ensure_ascii=False, indent=2)}
+```
+
+Output JSON: A list of objects where each object corresponds by "index" to the input turns:
+[
+  {{
+    "index": int,
+    "actioning": string,
+    "subtext": string,
+    "underlying_emotion": string,
+    "intensity_level": "low" | "medium" | "high" | "explosive",
+    "acting": {{"delivery_style": string}},
+    "spatial": {{"proximity": string, "azimuth_pan": float}},
+    "acoustic_env": string
+  }}
+]
+"""
+
+    from audiobook_factory.llm_client import call_gemini
+    from audiobook_factory.model_manager import TaskType
+
+    try:
+        enriched_list = call_gemini(
+            prompt=prompt,
+            system_instruction=sys_prompt,
+            task_type=TaskType.SCREENPLAY,
+            response_mime_type="application/json",
+            temperature=0.2,
+            max_retries=4,
+        )
+    except Exception as e:
+        logger.warning(f"  [!] Pass 2 performance enrichment notice: {e}. Preserving Pass 1 baseline.")
+        return segments
+
+    if isinstance(enriched_list, dict):
+        for k in ("turns", "enriched", "segments", "items"):
+            if k in enriched_list and isinstance(enriched_list[k], list):
+                enriched_list = enriched_list[k]
+                break
+
+    if not isinstance(enriched_list, list):
+        return segments
+
+    # Merge by index
+    enrich_map = {item.get("index"): item for item in enriched_list if isinstance(item, dict) and "index" in item}
+    for seg in segments:
+        s_idx = seg.get("index")
+        if s_idx in enrich_map:
+            e = enrich_map[s_idx]
+            if e.get("actioning"):
+                seg["actioning"] = e["actioning"]
+            if e.get("subtext"):
+                seg["subtext"] = e["subtext"]
+            if e.get("underlying_emotion"):
+                seg["underlying_emotion"] = e["underlying_emotion"]
+            if e.get("intensity_level"):
+                seg["intensity_level"] = e["intensity_level"]
+            if isinstance(e.get("acting"), dict):
+                seg["acting"] = e["acting"]
+            if isinstance(e.get("spatial"), dict):
+                seg["spatial"] = e["spatial"]
+            if e.get("acoustic_env"):
+                seg["acoustic_env"] = e["acoustic_env"]
+
+    return segments
+
+
+def _parse_dramatized_chunk_llm(
+    chunk_text: str,
+    preceding_context: str = "",
+    is_hindi: bool = False,
+    character_roster: Optional[Dict[str, Any]] = None,
+    api_key: str = "",
+    model: str = "",
+    max_retries: int = 3,
+    dramatic_context: str = "",
+) -> List[Dict[str, Any]]:
+    """
+    Two-Pass Decoupled Screenplay Parser:
+    Pass 1: Pure Dialogue Isolation & Speaker Attribution.
+    Pass 2: Performance Director & Spatial Audio Staging.
+    """
+    # Pass 1: Dialogue isolation and speaker attribution
+    pass1_turns = _parse_dialogue_turns_llm(
+        chunk_text=chunk_text,
+        preceding_context=preceding_context,
+        is_hindi=is_hindi,
+        character_roster=character_roster,
+    )
+    if not pass1_turns:
+        if chunk_text.strip():
+            logger.error("  [!] STRICT HALT: Pass 1 Dialogue Parsing failed to return valid turns.")
+            raise LLMUnavailableError(
+                "STRICT HALT: Screenplay generation LLM failed to produce valid dialogue turns for chunk."
+            )
+        return []
+
+    # Pass 2: Performance Director & Spatial Staging enrichment
+    enriched_turns = _enrich_performance_and_staging_llm(
+        segments=pass1_turns,
+        dramatic_context=dramatic_context,
+        is_hindi=is_hindi,
+    )
+    return enriched_turns
 
 
 def build_dramatized_script_llm(
@@ -467,8 +456,11 @@ def build_dramatized_script_llm(
         else ""
     )
 
-    # 2. Process within safe token budget (~7,500 chars) directly
-    if len(chapter_text) <= 7500:
+    # 2. Granular Micro-Chunking (~350 words ceiling) to eliminate token fatigue & ensure turn-level attribution
+    max_chunk_words = 350
+    words_count = len(chapter_text.split())
+
+    if words_count <= max_chunk_words:
         dramatic_context_str = ""
         if scenes:
             primary_scene = scenes[0]
@@ -503,11 +495,11 @@ def build_dramatized_script_llm(
             logger.error("  [!] STRICT HALT: Screenplay LLM returned no segments. Refusing to degrade to flat narrator.")
             raise LLMUnavailableError("Screenplay LLM returned empty segments. Production strictly halted.")
     else:
-        # 3. Novel-Scale Beat-Aligned Chunking (Confirmed /grill-me Solution)
+        # 3. Novel-Scale Beat-Aligned Chunking (~350 words ceiling)
         chunks = BeatPlanner.slice_chapter_by_beats(
             chapter_text=chapter_text,
             dramatic_plan=dramatic_plan,
-            max_words=1200,
+            max_words=max_chunk_words,
         )
 
         raw_items = []
@@ -715,6 +707,65 @@ def clean_screenplay_pass2(
 
         cleaned_text = normalize_speech_text(sanitized_item.get("text", ""), is_hindi)
         if not cleaned_text:
+            continue
+
+        # Double-Safety Invariant: Auto-split any direct dialogue mistakenly retained in narration
+        quote_matches = list(re.finditer(r'["“]([^"”]+)["”]', cleaned_text))
+        if quote_matches and speaker == "Narrator":
+            last_end = 0
+            for qm in quote_matches:
+                q_start, q_end = qm.span()
+                pre_part = cleaned_text[last_end:q_start].strip()
+                quote_val = qm.group(1).strip()
+                post_snip = cleaned_text[q_end:q_end + 120]
+
+                target_speaker = last_active_character if last_active_character != "Narrator" else "Narrator"
+                for al, cn in alias_map.items():
+                    if al in pre_part.lower() or al in post_snip.lower():
+                        target_speaker = cn
+                        break
+
+                if pre_part:
+                    final_script.append({
+                        "index": len(final_script) + 1,
+                        "type": "narration",
+                        "speaker": "Narrator",
+                        "text": pre_part,
+                        "emotion": sanitized_item.get("emotion", "neutral"),
+                        "pause_after_ms": 400,
+                        "acoustic_env": sanitized_item.get("acoustic_env", "domestic_room"),
+                    })
+
+                final_script.append({
+                    "index": len(final_script) + 1,
+                    "type": "dialogue",
+                    "speaker": target_speaker,
+                    "text": quote_val,
+                    "emotion": sanitized_item.get("emotion", "neutral"),
+                    "pause_after_ms": 600,
+                    "acting": sanitized_item.get("acting", {}),
+                    "spatial": sanitized_item.get("spatial", {}),
+                    "acoustic_env": sanitized_item.get("acoustic_env", "domestic_room"),
+                })
+                last_end = q_end
+
+            remaining_txt = cleaned_text[last_end:].strip()
+            tag_regexes = [
+                r"^(?:,\s*)?(?:मिस्टर|मिसेज़|उसने|उन्होंने|वह)?[^।!?\.\n]+?(?:ने\s+(?:कहा|पूछा|बोला|लाड़ से कहा|हँसकर कहा)|said|replied|asked|muttered)[,\.\s।]*",
+            ]
+            for tr in tag_regexes:
+                remaining_txt = re.sub(tr, "", remaining_txt, flags=re.IGNORECASE).strip()
+
+            if remaining_txt:
+                final_script.append({
+                    "index": len(final_script) + 1,
+                    "type": "narration",
+                    "speaker": "Narrator",
+                    "text": remaining_txt,
+                    "emotion": sanitized_item.get("emotion", "neutral"),
+                    "pause_after_ms": int(sanitized_item.get("pause_after_ms", 600)),
+                    "acoustic_env": sanitized_item.get("acoustic_env", "domestic_room"),
+                })
             continue
 
         seg_type = "action" if is_action_beat else sanitized_item.get("type", "narration")

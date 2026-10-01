@@ -19,10 +19,10 @@ flowchart TB
         Extractor --> AST["Canonical AST Model<br/>(canonical/book.json & quality_report.json)"]
         AST --> Gate01{"Gate 0.1:<br/>Ingestion Quality Gate<br/>(Fail-Closed on REVIEW)"}
         Gate01 -->|PASS / WARN| Chapters["Projected Chapter Markdown<br/>(extracted/chapter_XXX.md)"]
-        Chapters --> Translator["Literary Translation Intelligence Engine (Hardening v2.0)<br/>(audiobook_factory/translation/ & translator.py)<br/>• BookBible v2.0 + EntityDiscoveryEngine<br/>• SourceSemanticMap v2.0 & TargetSemanticMap Alignment<br/>• Contextual Hindustani & 7D Calibrated Intensity<br/>• World & Character Memory 2.0 (Epistemic Continuity)"]
+        Chapters --> Translator["Literary Translation Intelligence Engine (Hardening v2.0)<br/>(audiobook_factory/translation/ & translator.py)<br/>• BookBible v2.0 + EntityDiscoveryEngine<br/>• 3 Concurrent Glossary Agents (ADR-045)<br/>• Context-Calibrated Scene Routing (COMBAT/INTIMATE/DIALOGUE/LORE)<br/>• Contextual Hindustani & 7D Calibrated Intensity<br/>• World & Character Memory 2.0 (Epistemic Continuity)"]
         Translator --> Certifier{"Gates T0–T15:<br/>4-Tier Certification State Machine &<br/>TieredRepairEngine (L1/L2/L3)"}
         Certifier -->|Certified + 11-Dim Provenance Seal| Sanitizer["Linguistic Sanitizer & Literary Register Guardrail<br/>(audiobook_factory/sanitizer.py & advisory_lexicon.py)<br/>• Non-Destructive Rustic Voice Preservation"]
-        Sanitizer --> Dramaturgy["Stage 3: Dramaturgy & Screenplay Engine<br/>(audiobook_factory/dramaturgy/ & script_builder.py)<br/>• Organic SceneAnalyzer & Actioning BeatPlanner<br/>• Beat-Aligned Chunk Slicer (Zero Cut Boundary Flaw)<br/>• PerformanceBibleGenerator (Sociolect Archetypes)"]
+        Sanitizer --> Dramaturgy["Stage 3: Dramaturgy & Screenplay Engine<br/>(audiobook_factory/dramaturgy/ & script_builder.py)<br/>• Two-Pass Decoupled Screenplay Parser (ADR-045)<br/>• Micro-Chunking (~350 Words) & 5-Layer Context Stack<br/>• Organic SceneAnalyzer & Actioning BeatPlanner<br/>• Gate 2 Anti-Swallow Guard & Fail-Closed Halts"]
         Dramaturgy --> Gate25{"Gate 2.5:<br/>Dramatic Fidelity Audit<br/>(Fail-Closed 8 Pillars)"}
         Gate25 -->|PASS| Scripts["Standardized Screenplay Script JSON<br/>(Speaker, Emotion, Spatial Pan, Intensity, Breath)"]
         Scripts --> PerfRealization["Dramatic Performance Realization Layer (ADR-032)<br/>(audiobook_factory/performance/)<br/>• PerformanceDirector & TimingRealizer<br/>• ConversationalChemistry Turn Coupling<br/>• Priority Multi-Take Synthesis (TakeBank)<br/>• 8D Evaluator & Intelligent Take Selector"]
@@ -35,12 +35,12 @@ flowchart TB
 
     subgraph Room2["🚪 Room 2: Agentic Directing Layer (Strict Agent Mandate)"]
         direction TB
-        Bible["Global Lore & Sonic Bible<br/>(sound_bible.json)"] --> Director["AgentDirector 3-Pass Workflow<br/>(audiobook_factory/agent_director.py)<br/>• No Script Overrides"]
+        Bible["Global Lore & Sonic Bible<br/>(sound_bible.json)"] --> Director["AgentDirector Directing Engine<br/>(audiobook_factory/agent_director.py)<br/>• Foley Strictly from SoundSpotter Cue Sheet<br/>• Domestic Regex Guessing Purged (ADR-045)"]
         Scripts --> Director
         EditedChunks --> Director
         Director --> Pass1["Pass 1: Dramaturgy & Silence Carving<br/>(>= 60.0% Silence Mandate)"]
         Pass1 --> Pass2["Pass 2: Music Director<br/>(FTS5 Search & Character Leitmotifs)"]
-        Pass2 --> Pass3["Pass 3: Acoustic Foley Miner<br/>(Word Alignment & -6dB Whisper Attenuation)"]
+        Pass2 --> Pass3["Pass 3: Acoustic Foley Ingestion<br/>(Cue Sheet Synchronization & -6dB Whisper Attenuation)"]
         Pass3 --> Manifest["CreativeManifest v3.0 / CinemaAudioManifest"]
     end
 
@@ -114,6 +114,11 @@ flowchart TB
   - **Default Pipeline Orchestration:** [`translate_book_project`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py) defaults directly to [`IntelligentTranslationPipeline`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/orchestrator.py), invoked automatically during Stage 2.
   - **Adult Literary Mode & HBO/Manto Intimacy Framework (`ADULT_LITERARY_MODE=True`):**
     - **Anti-Bowdlerization & 70/30 Anti-Parody Invariant:** Preserves 70% canon lore alongside 30% visceral Hindustani sensory amplification without sanitizing combat, tavern curses, or somatic intimacy (`Rule 8` & `Rule 9`, **"Nothing Above Source"** principle).
+  - **3-Agent Concurrent Book Glossary Discovery & Scene Prompt Routing (ADR-045):** Deconstructs pre-production glossary discovery in [`generate_book_glossary()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py) into 3 concurrent specialist sub-agents running via `ThreadPoolExecutor(max_workers=3)`:
+    1. *Character Lexicographer:* Extracts names, aliases, titles, epithets, and gender markers.
+    2. *Sociolect & Honorific Dramaturge:* Maps pronoun registers (*Aap / Tum / Tu*), social address dynamics, and swearing severity.
+    3. *World Lore & Toponymy Translator:* Translates geographical locations, magical artifacts, factions, and flora/fauna.
+    Scene translation employs a **Context-Calibrated Scene Prompt Router** (`COMBAT`, `INTIMATE`, `DIALOGUE`, `LORE`) to dispatch focused instructions, preventing prompt bloat and instruction loss. All calls route through [`llm_client.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/llm_client.py) with round-robin key pool rotation and anti-hammering pacing jitter.
 - **Non-Destructive Linguistic Sanitizer & Literary Register Guardrail ([`audiobook_factory/sanitizer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sanitizer.py) & [`audiobook_factory/advisory_lexicon.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/advisory_lexicon.py))**:
   - **Non-Destructive Sanitizer Separation:** Unambiguous calques and clinical loanwords (`डिप्रेशन` $\rightarrow$ `उदासी का साया`, `ट्रॉमा` $\rightarrow$ `गहरा सदमा`, `स्ट्रेस` $\rightarrow$ `तनाव`, `सुनहरी लड़की` $\rightarrow$ `गोरी-चिट्टी लड़की`, `कुंवारी चोटी` $\rightarrow$ `कमसिन लड़की की चोटी`) are normalized in Tier 1 (`apply_substitutions=True`), while authentic rustic vocabulary and greetings (`नमस्ते`, `राम-राम`, `नमस्कार`, `दारू`, `सोने की लड़की`) are preserved unconditionally for character voice under `CONTEXTUAL_REGISTER_ADVISORIES`.
   - **Raw Profanity & Intimacy Preservation:** Zero-loss preservation of earthy Hindustani vocabulary, slang, and somatic erotic textures—never misclassifying raw literary realism as harmful content.
@@ -142,6 +147,10 @@ flowchart TB
   - **ASMR Intimacy Staging:** Automatically assigns `spatial.proximity: "intimate_close"`, dead-center `spatial.pan: 0.0`, dynamic intensity `low`, `pre_roll_breath_ms: 200-250`, and music sidechain attenuation of `-22.0 dB` ("The Erotic Silence").
   - **Combat Action-Beat Splitting & Dual-Perspective Staging (ADR-017):** Splits major kinetic strikes into dedicated 800ms – 1500ms speech-free intervals (`speaker: "Foley"`, `text: "[ACTION]"`), staging Attacker actions Left ($-0.6$), Defender parries Right ($+0.6$), and Fatal Clashes Center ($0.0$).
   - **Zero-Voice-Drift Hardening & Two-Pass Attribution (ADR-021):** Direct roster injection with explicit gender markers, and two-pass pronoun disambiguation ([`clean_screenplay_pass2()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py#L629-L853)) resolving both English (`he`, `she`, `the man`, `the woman`) and Hindi (`उसने`, `वह`, `आदमी`, `लड़की`, `महिला`) pronouns to the most recently active matching character, stripping parenthetical annotations (`Geralt (Witcher)` $\rightarrow$ `Geralt`), normalizing alias variants, and enriching segments with dramatic plan metadata.
+  - **Two-Pass Decoupled Screenplay Parser (ADR-045):** Splits monolithic screenplay generation in [`script_builder.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py) into two single-responsibility passes:
+    1. *Pass 1 (`_parse_dialogue_turns_llm`):* Focuses strictly on structural dialogue turn isolation, canonical character roster attribution, clean spoken prose, and neural vocal tags (`[whispers]`, `[gasp]`).
+    2. *Pass 2 (`_enrich_performance_and_staging_llm`):* Focuses strictly on Stanislavski performance enrichment (actioning verbs, subtext, surface emotion, dynamic headroom intensity `low`/`medium`/`explosive`, delivery styles, and stereo azimuth panning).
+  - **Micro-Chunking (~350 Words Ceiling) & 5-Layer Context Stack:** Reduces chunk size from 1,200 words to ~350 words bounded strictly by quotation marks and sentence boundaries. Surrounds each micro-chunk with a 5-layer context stack (Chapter Synopsis, Scene Dramatic Plan, Active Character Roster, Immediate Beat Intent, Recent Dialogue History), eliminating context amnesia while strictly enforcing Gate 2 Anti-Swallow (`assert len(turns) > 0`).
 - **Stage 3.5: Dramatic Performance Realization Layer & Gate 2.8 ([`audiobook_factory/performance/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/))** *(ADR-032; see authoritative manual: [`docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md))*:
   - **First-Class PerformanceDirection Contract ([`PerformanceDirection`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/contracts.py#L59-L154)):** Strongly typed Pydantic v2 contract decoupling author dialogue and dramatic intent from provider-specific TTS engines. Encapsulates 6 operational domains: Identity/Provenance, Dramatic State (objective, actioning, surface/underlying emotion, subtext), Relationship Dynamics (power position, leverage, vulnerability, social mask, intimacy), Vocal Behavior (pace, energy, pitch contour, resonance, texture, restraint), Timing & Respiration (pauses, breaths, hesitation, turn-taking), and Priority Take Allocation.
   - **Commercial Studio Voice Casting & Cast Lock Engine ([`audiobook_factory/casting/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/casting/))** *(ADR-023 / Waves 1-2)*:
@@ -229,7 +238,8 @@ flowchart TB
     - Resolves rich, decoupled environmental soundscapes through [`_resolve_scene_acoustics()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py), building a `SceneSoundscapeManifest` with Base Room Tone, Weather Elements, Crowd Wallah, and Stochastic Spots.
     - Persists the scene acoustics model automatically to disk as `{chapter_id}_scene_acoustics.json`.
   - **Pass 2 (Music Director & Scene-Bound Underscore - ADR-022)**: Dynamically formulates FTS5 queries against the sound catalog for valence, arousal, tempo, and timbre. Supports `until_segment` duration calculation, allowing musical cues to span full narrative scenes (25s to 240s) rather than arbitrary 30s chops, bounded by a strict 40% chapter music budget. Injects character leitmotifs bound to the Sonic Bible.
-  - **Pass 3 (Acoustic Foley, Bilingual Anchoring & Dead-Center Elimination - ADR-022)**: Analyzes dialogue verbs and objects using [`BILINGUAL_ANCHOR_MAP`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py). Unmatched preparatory actions land early ($\sim 15\%$), while physical impacts land on climax windows ($\sim 75\%$), eliminating the 50% dead-center trap. Calls `attenuate_foley_whisper_collisions` to apply $-6\text{ dBFS}$ attenuation to Foley cues coinciding with whispered dialogue.
+  - **Pass 3 (Acoustic Foley Ingestion & Cue Sheet Synchronization - ADR-022 & ADR-045)**: Synchronizes Foley and SFX cues strictly from the Stage 3.5 `SoundSpotter` Audio Cue Sheet (`chapter_XXX_sound_script.json`). Unmatched preparatory actions land early ($\sim 15\%$), while physical impacts land on climax windows ($\sim 75\%$), eliminating the 50% dead-center trap. Calls `attenuate_foley_whisper_collisions` to apply $-6\text{ dBFS}$ attenuation to Foley cues coinciding with whispered dialogue.
+  - **Purge of Domestic Foley Regex Guessing (ADR-045)**: Eradicated legacy domestic Foley regex guessing (`door`, `gate`, `cup`, `tea`). Foley cues are strictly sourced from the `SoundSpotter` Audio Cue Sheet. If no authentic cue is spotted, the scene maintains pure acoustic silence rather than synthesizing fake heuristic SFX.
   - **Domestic Tableware vs. Combat Foley Taxonomy Isolation (ADR-022)**: Universal Category System (UCS) lookup strictly classifies domestic tableware (`DOMETabl`: plate, dish, bowl, tableware, थाली, कटोरा) separately from combat weapons (`WEAPSwd`), prohibiting sword clash audio during banquets.
   - **Stochastic Spot Transient Merging (ADR-018)**: Calls `scene_acoustics.generate_stochastic_cues` to insert non-repetitive micro-events (`anchor_word="[STOCHASTIC]"`) into pause gaps ($\ge 600\text{ ms}$).
   - **Commercial Cinematic Sound Design Subsystem ([`audiobook_factory/sound_design/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/) - ADR-034, ADR-035 & ADR-036)**:
@@ -316,6 +326,39 @@ All creative modules enforce strict fail-closed exceptions when LLM intelligence
 - **`agent_director.py`**: Pass 1 Dramaturgy failures immediately raise `LLMUnavailableError`. Generic acoustic templates are permanently prohibited.
 - **`soundscape.py`**: Chapter mood detection and soundscape plan failures raise `LLMUnavailableError`. Default ambient profile heuristics are eliminated.
 - **`translator.py`**: Exhausted translation retries raise `LLMUnavailableError`.
+
+---
+
+### 2.6 Single-Responsibility LLM Deconstruction & Non-Hammering Key Pool (ADR-045)
+*Purpose: Deconstructing overloaded multi-task prompts into single-responsibility sub-agents, purging fake creative fallbacks, and routing all Gemini API calls through a non-hammering rotating key pool.*
+
+*(Implemented in [`audiobook_factory/llm_client.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/llm_client.py))*
+
+#### 1. Centralized Non-Hammering Client (`call_gemini`)
+To eliminate duplicate HTTP logic and API rate-limiting spikes across disparate modules:
+- **Round-Robin Key Pool:** Routes every non-TTS prompt strictly through `PersistentKeyPool.get_key(service="text")`, scheduling keys via `ORDER BY last_used ASC NULLS FIRST` across 100+ rotating API keys.
+- **Anti-Hammering Pacing Jitter:** Injects random 100ms–350ms delays and exponential backoff prior to API dispatch, preventing simultaneous burst hammering on Google Gemini endpoints.
+- **Permissive Safety Configuration (`BLOCK_NONE`):** Unconditionally sets `BLOCK_NONE` across all 4 harm categories, preventing false-positive truncation of legitimate adult literature, combat choreography, and rustic dialogue.
+- **Dynamic Model Resolution:** Seamlessly invokes `ModelManager.resolve_active_model(task_type)` with **zero hardcoded model strings** (verified by AST contracts).
+- **Deterministic JSON Healing & Fail-Closed Halts:** Employs `json_repair` for robust structural JSON decoding; raises typed `LLMUnavailableError` upon connection failure or schema collapse, strictly halting production rather than silently faking output.
+
+#### 2. Pipeline-Wide Prompt Deconstruction & Specialist Agents
+Rather than overloading single prompts with multi-dimensional creative tasks, the pipeline decomposes creative generation across dedicated specialist sub-agents:
+
+| Stage | Legacy Overloaded Approach | ADR-045 Deconstructed Multi-Agent Pipeline |
+|---|---|---|
+| **Stage 2: Glossary Discovery** | Monolithic prompt attempting character names, social honorifics, and world lore simultaneously. | **3 Concurrent Specialist Sub-Agents** (`Character Lexicographer`, `Sociolect/Honorific Dramaturge`, `World Lore Translator`) running via `ThreadPoolExecutor(max_workers=3)`. |
+| **Stage 2: Scene Translation** | Single prompt with massive monolithic guidelines. | **Context-Calibrated Scene Prompt Router** (`COMBAT`, `INTIMATE`, `DIALOGUE`, `LORE`) dispatching focused prompts. |
+| **Stage 3: Screenplay Generation** | Single prompt forced to parse dialogue turns, characters, emotions, Stanislavski subtext, delivery, and spatial pan in 1,200-word chunks. | **Two-Pass Decoupled Screenplay Parser**: Pass 1 for pure structural attribution + Pass 2 for Stanislavski performance enrichment, operating on ~350-word micro-chunks with a 5-layer context stack. |
+| **Stage 3.5: Sound Spotting** | Folded into screenplay prompt (resulting in dropped `sfx_cues: []`). | **3 Specialist Sound Spotters** (Foley, Ambience, Music) generating `chapter_XXX_sound_script.json`. Purged domestic Foley regex guessing in `AgentDirector`. |
+| **Gate 1: Anti-Censorship Audit** | Single auditor with fake 1.0 PASS fallback on API error. | **3 Parallel Specialist Audit Checkers** (Profanity, Combat, Intimacy). Purged fake passes; strict fail-closed halt on API failure. |
+
+#### 3. Strict Purge of Canned Creative Heuristics & Fake Fallbacks
+All instances where scripts attempted to simulate creative writing or sound design when LLMs failed were purged:
+1. **Dramaturgy Beat Planning (`beat_planner.py`):** Canned Stanislavski templates (`underlying_desire`, `core_fear`, `strategy`) purged. Authentic LLM intent only; fails closed with `LLMUnavailableError`.
+2. **Scene Analysis (`scene_analyzer.py`):** Heuristic keyword counting replaced with authentic LLM scene dramaturgy mapped to canonical literals (`close_third_person`, `first_person_intimate`, `objective_detached`, `omniscient_editorial`).
+3. **Sound Spotting (`agent_director.py`):** 4-word domestic Foley guessing (`door`, `gate`, `cup`, `tea`) purged. Foley cues strictly sourced from `SoundSpotter` Audio Cue Sheet.
+4. **Quality Gates (`gate_auditor.py`):** Fake 1.0 PASS fallback purged. Production code strictly marks `status="DILUTED"` or halts.
 
 ---
 

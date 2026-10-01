@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_11_silence",
-  "created_at": "2026-09-30T17:14:24.487094+00:00",
+  "created_at": "2026-10-01T21:58:57.091471+00:00",
   "request": {
     "chapter_id": "real_11_silence",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_11_silence.wav",
@@ -37,7 +37,7 @@
     "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_11_silence_cinema_master.wav",
     "profile": {
       "profile_name": "commercial_audiobook_standard",
-      "target_lufs": -19.0,
+      "target_lufs": -17.5,
       "tolerance_lu": 0.5,
       "true_peak_ceiling_dbtp": -1.5,
       "target_lra": 8.5,
@@ -81,19 +81,19 @@
       "duration_sec": 4.0,
       "sample_rate": 48000,
       "channels": 2,
-      "integrated_lufs": -19.2,
+      "integrated_lufs": -17.7,
       "short_term_max_lufs": null,
       "momentary_max_lufs": null,
       "loudness_range_lra": 0.0,
-      "true_peak_dbtp": -11.4,
-      "sample_peak_dbfs": -12.0,
-      "rms_level_dbfs": -25.33,
+      "true_peak_dbtp": -9.9,
+      "sample_peak_dbfs": -10.5,
+      "rms_level_dbfs": -23.83,
       "dynamic_range_db": 13.33,
       "crest_factor_db": 13.33,
       "spectral_centroid_hz": 11112.2,
       "spectral_rolloff_hz": 18820.3,
       "spectral_flatness": 0.9162,
-      "phase_correlation": 0.999,
+      "phase_correlation": 1.0,
       "mono_compatible": true,
       "silence_ratio": 0.0,
       "dead_air_sec": 0.0,
@@ -119,12 +119,12 @@
         "duration_delta_sec": 0.0,
         "sample_rate": 48000,
         "channels": 2,
-        "measured_integrated_lufs": -19.2,
-        "target_lufs": -19.0,
+        "measured_integrated_lufs": -17.7,
+        "target_lufs": -17.5,
         "loudness_error_lu": 0.2,
-        "measured_true_peak_dbtp": -11.4,
+        "measured_true_peak_dbtp": -9.9,
         "true_peak_ceiling_dbtp": -1.5,
-        "phase_correlation": 0.999,
+        "phase_correlation": 1.0,
         "dead_air_sec": 0.0
       }
     },
@@ -150,20 +150,20 @@
           "confidence": 0.95,
           "evidence": {
             "measured_lufs": -55.8,
-            "target_lufs": -20.5,
-            "delta_lu": 35.3,
+            "target_lufs": -19.0,
+            "delta_lu": 36.8,
             "direction": "cold"
           },
-          "recommended_action": "Premaster is cold by 35.30 LU; linear loudnorm pass 2 will normalize.",
+          "recommended_action": "Premaster is cold by 36.80 LU; linear loudnorm pass 2 will normalize.",
           "bounded_parameters": {
-            "target_lufs_adjust": -2.85
+            "target_lufs_adjust": -0.6
           }
         }
       ],
       "overall_verdict": "ADJUST",
       "adjusted_profile": {
         "profile_name": "commercial_audiobook_standard",
-        "target_lufs": -19.0,
+        "target_lufs": -17.5,
         "tolerance_lu": 0.5,
         "true_peak_ceiling_dbtp": -1.5,
         "target_lra": 8.5,
@@ -182,7 +182,7 @@
     "dialogue_protection": {
       "chapter_id": "real_11_silence",
       "dialogue_lufs": -70.0,
-      "mix_lufs": -19.2,
+      "mix_lufs": -17.7,
       "dialogue_anchor_ratio_db": 0.0,
       "masking_risk": "NONE",
       "clarity_score": 1.0,
@@ -231,26 +231,24 @@
         "tonal_balance_score=0.70",
         "dynamic_integrity_score=0.75",
         "emotional_preservation_score=1.00",
-        "solid_stereo_coherence (r=0.999)",
+        "solid_stereo_coherence (r=1.000)",
         "fatigue_risk_harsh_hf=11112.2Hz",
         "fatigue_risk_score=0.80"
       ],
       "critic_version": "1.0.0"
     },
     "scene_decision": {
-      "scene_type": "QUIET",
-      "primary_element": "ambience",
-      "context_confidence": 0.7,
+      "scene_type": "NORMAL",
+      "primary_element": "dialogue",
+      "context_confidence": 0.6,
       "perceptual_findings": [
-        "Quiet/suspenseful scene detected: subdued energy and room-tone stillness."
+        "Standard narrative dialogue: balanced broadcast delivery."
       ],
-      "recommended_action": "Allow softer target loudness (-20.5 LUFS) to maintain tension.",
+      "recommended_action": null,
       "risk": "LOW",
-      "expected_effect": "Preserves dramatic pause without audible gain pumping.",
+      "expected_effect": "Transparent commercial audiobook loudness (-19.0 LUFS) and -1.5 dBTP true peak.",
       "requires_review": false,
-      "bounded_adjustments": {
-        "target_lufs_offset": 1.5
-      }
+      "bounded_adjustments": {}
     },
     "reference_comparison": null,
     "certification_report": {
@@ -274,12 +272,12 @@
           "duration_delta_sec": 0.0,
           "sample_rate": 48000,
           "channels": 2,
-          "measured_integrated_lufs": -19.2,
-          "target_lufs": -19.0,
+          "measured_integrated_lufs": -17.7,
+          "target_lufs": -17.5,
           "loudness_error_lu": 0.2,
-          "measured_true_peak_dbtp": -11.4,
+          "measured_true_peak_dbtp": -9.9,
           "true_peak_ceiling_dbtp": -1.5,
-          "phase_correlation": 0.999,
+          "phase_correlation": 1.0,
           "dead_air_sec": 0.0
         }
       },
@@ -290,7 +288,7 @@
       "dialogue_protection": {
         "chapter_id": "real_11_silence",
         "dialogue_lufs": -70.0,
-        "mix_lufs": -19.2,
+        "mix_lufs": -17.7,
         "dialogue_anchor_ratio_db": 0.0,
         "masking_risk": "NONE",
         "clarity_score": 1.0,
@@ -339,7 +337,7 @@
           "tonal_balance_score=0.70",
           "dynamic_integrity_score=0.75",
           "emotional_preservation_score=1.00",
-          "solid_stereo_coherence (r=0.999)",
+          "solid_stereo_coherence (r=1.000)",
           "fatigue_risk_harsh_hf=11112.2Hz",
           "fatigue_risk_score=0.80"
         ],
@@ -348,8 +346,8 @@
       "reference_comparison": null,
       "artifact_info": {
         "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_11_silence_cinema_master.wav",
-        "sha256": "d6abb96eb97a01f8868cb7bac7d552794c31fd2464701fcf2305aeccb4237133",
-        "size_bytes": 768078,
+        "sha256": "23604a420aa763e10d3bc20928d98317195e3ffaf2d8987dd12185926d6d8f4c",
+        "size_bytes": 1152102,
         "duration_sec": 4.0,
         "sample_rate": 48000,
         "channels": 2,
@@ -369,37 +367,37 @@
         "engine_version": "2.2.0",
         "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
         "premaster_sha256": "dbf39f1213af70d6c3fceac625e075ae38951f24b696bd564e03d30ddb7f5e32",
-        "master_sha256": "d6abb96eb97a01f8868cb7bac7d552794c31fd2464701fcf2305aeccb4237133",
+        "master_sha256": "23604a420aa763e10d3bc20928d98317195e3ffaf2d8987dd12185926d6d8f4c",
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
-        "effective_profile_sha256": "10584cc0b63493af686dba24cf9799d8acdc0c6623263f499a9ddfbda9ad3e7c"
+        "effective_profile_sha256": "e0839aea2c35a71f262ec0885efb40d75d4337acce1507e500f3dc02b950aae7"
       },
-      "certified_at": "2026-09-30T17:14:24.487040+00:00"
+      "certified_at": "2026-10-01T21:58:57.091433+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T17:14:24.487062+00:00",
+      "timestamp": "2026-10-01T21:58:57.091449+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_11_silence.wav",
       "premaster_sha256": "dbf39f1213af70d6c3fceac625e075ae38951f24b696bd564e03d30ddb7f5e32",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_11_silence_cinema_master.wav",
-      "master_sha256": "d6abb96eb97a01f8868cb7bac7d552794c31fd2464701fcf2305aeccb4237133",
+      "master_sha256": "23604a420aa763e10d3bc20928d98317195e3ffaf2d8987dd12185926d6d8f4c",
       "profile_name": "commercial_audiobook_standard",
-      "profile_sha256": "10584cc0b63493af686dba24cf9799d8acdc0c6623263f499a9ddfbda9ad3e7c",
+      "profile_sha256": "e0839aea2c35a71f262ec0885efb40d75d4337acce1507e500f3dc02b950aae7",
       "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
-      "effective_profile_sha256": "10584cc0b63493af686dba24cf9799d8acdc0c6623263f499a9ddfbda9ad3e7c",
+      "effective_profile_sha256": "e0839aea2c35a71f262ec0885efb40d75d4337acce1507e500f3dc02b950aae7",
       "iteration_count": 1,
       "winning_attempt": 1,
       "attempts_history": [
         {
           "attempt": 1,
-          "target_lufs": -19.0,
+          "target_lufs": -17.5,
           "limiter_ceiling_db": -1.9,
           "qc_passed": true,
           "qc_status": "PASS",
-          "integrated_lufs": -19.2,
-          "true_peak_dbtp": -11.4,
+          "integrated_lufs": -17.7,
+          "true_peak_dbtp": -9.9,
           "failures": []
         }
       ],
@@ -407,7 +405,7 @@
       "judge_verdict": "ADJUST",
       "dialogue_protection_status": "PASS",
       "consistency_status": "UNSPECIFIED",
-      "scene_type": "QUIET",
+      "scene_type": "NORMAL",
       "perceptual_status": "WARN",
       "certification": "WARNINGS",
       "reference_match": "NONE"
@@ -420,7 +418,7 @@
     "judge_verdict": "ADJUST",
     "dialogue_protection_status": "PASS",
     "consistency_status": "UNSPECIFIED",
-    "scene_type": "QUIET",
+    "scene_type": "NORMAL",
     "perceptual_status": "WARN",
     "certification": "WARNINGS"
   }

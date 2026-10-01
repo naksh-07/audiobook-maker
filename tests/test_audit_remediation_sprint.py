@@ -91,12 +91,13 @@ class TestAuditRemediationSprint(unittest.TestCase):
             self.assertEqual(os.environ.get("TEST_SINGLE_QUOTE"), "val_456")
 
     def test_soundscape_mood_service_type(self):
-        """Verifies that detect_chapter_mood calls get_key with service='text'."""
+        """Verifies that detect_chapter_mood calls get_key with service='text' and fails closed when None."""
+        from audiobook_factory.model_manager import LLMUnavailableError
         with patch("audiobook_factory.tts_dispatcher.global_key_pool.get_key") as mock_get_key:
-            mock_get_key.return_value = None  # Returns None to trigger early return
-            res = detect_chapter_mood("Test chapter prose")
+            mock_get_key.return_value = None
+            with self.assertRaises(LLMUnavailableError):
+                detect_chapter_mood("Test chapter prose")
             mock_get_key.assert_called_with(service="text")
-            self.assertIn("primary_mood", res)
 
     def test_cli_chapter_regex_parsing(self):
         """Verifies that script files extract genuine chapter number rather than sequential enumerate."""

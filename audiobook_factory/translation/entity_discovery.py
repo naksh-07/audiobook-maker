@@ -75,10 +75,61 @@ class EntityDiscoveryEngine:
 
                 candidates.append(DiscoveredEntity(
                     name=name,
-                    category="location" if any(w in name.lower() for w in ("of", "mountain", "valley", "city", "river")) else "character",
+                    category="location" if any(w in name.lower() for w in ("mountain", "valley", "city", "river")) else "character",
                     frequency=count,
                     confidence=conf,
                 ))
+
+        # Refine candidate classification and Devanagari transliteration using LLM
+        import os
+        is_mock_offline = os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1")
+        if candidates and not is_mock_offline:
+            try:
+                candidate_names = [c.name for c in candidates]
+                prompt = (
+                    f"Book Chapter Context (excerpt):\n\"\"\"\n{text[:4000]}\n\"\"\"\n\n"
+                    f"Candidate Entities to Classify and Transliterate into Devanagari Hindi:\n"
+                    f"{json.dumps(candidate_names, ensure_ascii=False)}\n\n"
+                    "For each candidate entity, output a JSON array of objects:\n"
+                    "- \"name\": string (exact match to input candidate)\n"
+                    "- \"category\": 'character' | 'location' | 'faction' | 'creature' | 'artifact'\n"
+                    "- \"suggested_devanagari\": string (phonetically accurate Hindi Devanagari spelling)\n"
+                    "- \"confidence\": float (0.5 to 1.0)\n"
+                )
+                sys_prompt = (
+                    "You are a Master Literary Lexicographer and Translation Director. "
+                    "Classify discovered entities into accurate categories (character, location, faction, creature, artifact) "
+                    "and provide standard phonetically faithful Devanagari Hindi transliterations."
+                )
+
+                if call_llm_fn:
+                    llm_results = call_llm_fn(prompt, sys_prompt)
+                else:
+                    from audiobook_factory.llm_client import call_gemini
+                    from audiobook_factory.model_manager import TaskType
+                    llm_results = call_gemini(
+                        prompt=prompt,
+                        system_instruction=sys_prompt,
+                        task_type=TaskType.TRANSLATION,
+                        response_mime_type="application/json",
+                        temperature=0.1,
+                        max_retries=3,
+                    )
+
+                if isinstance(llm_results, list):
+                    res_map = {item.get("name"): item for item in llm_results if isinstance(item, dict) and "name" in item}
+                    for cand in candidates:
+                        if cand.name in res_map:
+                            entry = res_map[cand.name]
+                            if entry.get("category"):
+                                cand.category = entry["category"]
+                            if entry.get("suggested_devanagari"):
+                                cand.suggested_devanagari = entry["suggested_devanagari"]
+                            if entry.get("confidence") is not None:
+                                cand.confidence = float(entry["confidence"])
+            except Exception as e:
+                from audiobook_factory.logger import logger
+                logger.warning(f"  [!] Entity discovery LLM refinement notice: {e}")
 
         return candidates
 

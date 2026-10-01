@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_10_action",
-  "created_at": "2026-09-30T17:14:21.927881+00:00",
+  "created_at": "2026-10-01T21:58:55.889351+00:00",
   "request": {
     "chapter_id": "real_10_action",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_10_action.wav",
@@ -289,8 +289,8 @@
       "reference_comparison": null,
       "artifact_info": {
         "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_10_action_cinema_master.wav",
-        "sha256": "c1b7b366bceb37e3f5fd2c95fa2cb96e9829cb2e33616d3c4051867853f82c33",
-        "size_bytes": 1152078,
+        "sha256": "c5deeccc83abdb3bbe59adeb095da9801e4f39c1997d1c5e3e5a4a8e80d8b41d",
+        "size_bytes": 1728102,
         "duration_sec": 6.0,
         "sample_rate": 48000,
         "channels": 2,
@@ -307,22 +307,22 @@
         "engine_version": "2.2.0",
         "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
         "premaster_sha256": "d83060de246f5f75fcf2abcb56d1f25b537213cec52a8968c7cae38aa4eb71e7",
-        "master_sha256": "c1b7b366bceb37e3f5fd2c95fa2cb96e9829cb2e33616d3c4051867853f82c33",
+        "master_sha256": "c5deeccc83abdb3bbe59adeb095da9801e4f39c1997d1c5e3e5a4a8e80d8b41d",
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
         "effective_profile_sha256": "3677a8dcdb6018041557d6a1800faceb71908b0ad039b67482cbf3370d6333cc"
       },
-      "certified_at": "2026-09-30T17:14:21.927789+00:00"
+      "certified_at": "2026-10-01T21:58:55.889313+00:00"
     },
     "iteration_count": 2,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T17:14:21.927828+00:00",
+      "timestamp": "2026-10-01T21:58:55.889330+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_10_action.wav",
       "premaster_sha256": "d83060de246f5f75fcf2abcb56d1f25b537213cec52a8968c7cae38aa4eb71e7",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_10_action_cinema_master.wav",
-      "master_sha256": "c1b7b366bceb37e3f5fd2c95fa2cb96e9829cb2e33616d3c4051867853f82c33",
+      "master_sha256": "c5deeccc83abdb3bbe59adeb095da9801e4f39c1997d1c5e3e5a4a8e80d8b41d",
       "profile_name": "commercial_audiobook_standard",
       "profile_sha256": "3677a8dcdb6018041557d6a1800faceb71908b0ad039b67482cbf3370d6333cc",
       "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",

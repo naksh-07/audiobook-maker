@@ -308,6 +308,9 @@ def audit_gate2_script(
     allowed_lower = {a.lower().strip() for a in allowed_speakers} if allowed_speakers else set()
     allowed_lower_space = {a.lower().replace("_", " ").strip() for a in allowed_speakers} if allowed_speakers else set()
 
+    quote_leaks = []
+    quote_pattern = re.compile(r'["“][^"”]{2,}["”]')
+
     for seg in script.segments:
         sp = seg.speaker.strip()
         speaker_breakdown[sp] = speaker_breakdown.get(sp, 0) + 1
@@ -324,8 +327,22 @@ def audit_gate2_script(
             if not matched:
                 invalid_speakers.append((seg.index, sp))
 
+        # Anti-Swallow Assertion: Narration must never contain direct character quotes
+        seg_type = getattr(seg, "type", "narration")
+        if seg_type == "narration" or sp.lower() == "narrator":
+            raw_txt = getattr(seg, "text", "")
+            matches = quote_pattern.findall(raw_txt)
+            if matches:
+                quote_leaks.append((seg.index, matches[0][:40]))
+
     if invalid_speakers:
         raise GateAuditError(f"Gate 2 Failed: Found non-canonical speakers: {invalid_speakers[:5]}")
+
+    if quote_leaks:
+        raise GateAuditError(
+            f"Gate 2 Failed: Direct dialogue quotes detected inside narration segments: {quote_leaks[:3]}. "
+            f"Dialogue must be isolated into discrete character segments with dedicated cast voices!"
+        )
 
     return {
         "status": "PASS",
@@ -645,6 +662,105 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
     return report
 
 
+def _audit_profanity_agent(english_text: str, hindi_text: str) -> Dict[str, Any]:
+    """Checker A: Detect prudish bowdlerization of raw curses, medieval insults, and street profanity."""
+    from audiobook_factory.llm_client import call_gemini
+    from audiobook_factory.model_manager import TaskType
+
+    sys_prompt = (
+        "You are an Adversarial Profanity & Street Grit Translation Auditor for dark fantasy fiction. "
+        "Your sole task is to check whether raw curses and insults (e.g. 'bastard', 'whore', 'scoundrel', 'bitch', 'cunt') "
+        "were diluted into polite TV-serial euphemisms (e.g. 'दुष्ट', 'बुरी स्त्री', 'बदमाश') instead of authentic earthy equivalents ('हरामी', 'रंडी', 'कमीने', 'गांड')."
+    )
+    prompt = f"""### ENGLISH EXCERPT:
+\"\"\"
+{english_text[:5000]}
+\"\"\"
+
+### HINDUSTANI TRANSLATION:
+\"\"\"
+{hindi_text[:5000]}
+\"\"\"
+
+Output JSON:
+- "status": "PASS" | "DILUTED"
+- "score": float (0.0 to 1.0)
+- "flagged": list of objects {{"english": str, "hindi": str, "category": "profanity", "reason": str, "recommendation": str}}
+"""
+    try:
+        res = call_gemini(prompt, system_instruction=sys_prompt, task_type=TaskType.AUDITING, response_mime_type="application/json", temperature=0.1, max_retries=3)
+        return res if isinstance(res, dict) else {"status": "PASS", "flagged": [], "score": 1.0}
+    except Exception as e:
+        logger.warning(f"  [!] Profanity checker notice: {e}")
+        return {"status": "ERROR", "flagged": [{"reason": f"Profanity checker failed: {e}"}], "score": 0.0}
+
+
+def _audit_combat_agent(english_text: str, hindi_text: str) -> Dict[str, Any]:
+    """Checker B: Detect sanitization of visceral combat, lethal gore, and blade violence."""
+    from audiobook_factory.llm_client import call_gemini
+    from audiobook_factory.model_manager import TaskType
+
+    sys_prompt = (
+        "You are an Adversarial Combat & Gore Auditor for dark fantasy literature. "
+        "Check whether visceral blade strikes, bone fractures, blood spray, combat strain, "
+        "or tavern violence were sanitized, smoothed over, or softened into polite fairy-tale descriptions."
+    )
+    prompt = f"""### ENGLISH EXCERPT:
+\"\"\"
+{english_text[:5000]}
+\"\"\"
+
+### HINDUSTANI TRANSLATION:
+\"\"\"
+{hindi_text[:5000]}
+\"\"\"
+
+Output JSON:
+- "status": "PASS" | "DILUTED"
+- "score": float (0.0 to 1.0)
+- "flagged": list of objects {{"english": str, "hindi": str, "category": "combat_gore", "reason": str, "recommendation": str}}
+"""
+    try:
+        res = call_gemini(prompt, system_instruction=sys_prompt, task_type=TaskType.AUDITING, response_mime_type="application/json", temperature=0.1, max_retries=3)
+        return res if isinstance(res, dict) else {"status": "PASS", "flagged": [], "score": 1.0}
+    except Exception as e:
+        logger.warning(f"  [!] Combat checker notice: {e}")
+        return {"status": "ERROR", "flagged": [{"reason": f"Combat checker failed: {e}"}], "score": 0.0}
+
+
+def _audit_intimacy_agent(english_text: str, hindi_text: str) -> Dict[str, Any]:
+    """Checker C: Detect suppression of somatic intimacy, bedroom passion, or romantic friction."""
+    from audiobook_factory.llm_client import call_gemini
+    from audiobook_factory.model_manager import TaskType
+
+    sys_prompt = (
+        "You are an Adversarial Somatic Intimacy & Passion Auditor. "
+        "Check whether romantic tension, sensual physical friction, or passionate encounters "
+        "were prudishly suppressed or replaced with sterile biology-textbook jargon ('योनि', 'लिंग')."
+    )
+    prompt = f"""### ENGLISH EXCERPT:
+\"\"\"
+{english_text[:5000]}
+\"\"\"
+
+### HINDUSTANI TRANSLATION:
+\"\"\"
+{hindi_text[:5000]}
+\"\"\"
+
+Output JSON:
+- "status": "PASS" | "DILUTED"
+- "score": float (0.0 to 1.0)
+- "flagged": list of objects {{"english": str, "hindi": str, "category": "sensual_intimacy", "reason": str, "recommendation": str}}
+"""
+    try:
+        res = call_gemini(prompt, system_instruction=sys_prompt, task_type=TaskType.AUDITING, response_mime_type="application/json", temperature=0.1, max_retries=3)
+        return res if isinstance(res, dict) else {"status": "PASS", "flagged": [], "score": 1.0}
+    except Exception as e:
+        logger.warning(f"  [!] Intimacy checker notice: {e}")
+        return {"status": "ERROR", "flagged": [{"reason": f"Intimacy checker failed: {e}"}], "score": 0.0}
+
+
 def audit_gate1_anticensorship_agent(
     english_text: str,
     hindi_text: str,
@@ -652,161 +768,79 @@ def audit_gate1_anticensorship_agent(
 ) -> Dict[str, Any]:
     """
     Audit Gate 1 (Adversarial Anti-Censorship & Translation Fidelity Agent):
-    Calls Gemini via get_persistent_key_pool() to check for semantic dilution
-    or prudish bowdlerization of raw curses (e.g. 'bastard' -> 'दुष्ट' vs 'हरामी'),
-    combat gore, or sensual intimacy.
+    Executes 3 concurrent specialist checkers across the rotating key pool:
+    1. Profanity & Curses Auditor
+    2. Combat Gore & Violence Auditor
+    3. Somatic Intimacy & Passion Auditor
 
-    Returns:
-        {"status": "PASS" | "DILUTED", "flagged": [...], "score": float}
+    Fail-Closed: If any checker flags dilution or fails in production, status is DILUTED.
     """
     if not english_text or not english_text.strip() or not hindi_text or not hindi_text.strip():
         return {"status": "PASS", "flagged": [], "score": 1.0}
 
-    import urllib.request
-    import urllib.error
-    from audiobook_factory.key_manager import get_persistent_key_pool
-    from audiobook_factory.cadence import get_stealth_sdk_headers
-    from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
+    import os
+    from concurrent.futures import ThreadPoolExecutor
 
-    sys_prompt = (
-        "You are an Adversarial Literary Anti-Censorship and Authenticity Auditor for mature fiction and dark fantasy "
-        "translations (English to Hindustani). Your mandate is to detect any prudish bowdlerization, sanitized softening, "
-        "or semantic dilution of:\n"
-        "1. Gritty Profanity / Raw Curses: Check whether raw insults (e.g. 'bastard', 'whore', 'scoundrel', 'bitch') "
-        "were diluted into polite TV-serial euphemisms (e.g. translating 'bastard' as 'दुष्ट' or 'बुरा' instead of 'हरामी' / 'कमीने', "
-        "or 'whore' as 'बुरी स्त्री' instead of 'रंडी').\n"
-        "2. Visceral Combat & Gore: Check whether bone-breaking strikes, blood spray, lethal wounds, or tavern violence were sanitized.\n"
-        "3. Sensual & Somatic Intimacy: Check whether romantic passion, physical desire, or somatic tension were prudishly suppressed.\n\n"
-        "If the translation is faithful, gritty, and authentic, return status: 'PASS', score: 1.0, and flagged: [].\n"
-        "If bowdlerization or semantic dilution is detected, return status: 'DILUTED', a score < 0.8, and detailed flagged items."
-    )
+    is_mock_offline = os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1")
 
-    user_prompt = f"""### ENGLISH ORIGINAL EXCERPT:
-\"\"\"
-{english_text[:6000]}
-\"\"\"
+    # Offline mock mode for deterministic unit tests
+    if is_mock_offline:
+        eng_lower = english_text.lower()
+        dilution_flags = []
+        if re.search(r"\bbastard\b", eng_lower) and "दुष्ट" in hindi_text and "हरामी" not in hindi_text and "कमीने" not in hindi_text:
+            dilution_flags.append({
+                "english": "bastard",
+                "hindi": "दुष्ट",
+                "category": "profanity",
+                "reason": "Polite TV-serial sanitization of 'bastard' as 'दुष्ट' instead of 'हरामी'",
+                "recommendation": "हरामी",
+            })
+        if re.search(r"\bwhore\b", eng_lower) and ("बुरी स्त्री" in hindi_text or "चरित्रहीन" in hindi_text) and "रंडी" not in hindi_text:
+            dilution_flags.append({
+                "english": "whore",
+                "hindi": "बुरी स्त्री / चरित्रहीन",
+                "category": "profanity",
+                "reason": "Euphemistic sanitization of 'whore' instead of 'रंडी'",
+                "recommendation": "रंडी",
+            })
+        if dilution_flags:
+            return {"status": "DILUTED", "flagged": dilution_flags, "score": 0.5}
+        return {"status": "PASS", "flagged": [], "score": 1.0}
 
-### HINDUSTANI TRANSLATION (DEVANAGARI):
-\"\"\"
-{hindi_text[:6000]}
-\"\"\"
+    # Production: Concurrent 3-agent specialist audit
+    all_flagged = []
+    scores = []
+    any_error = False
 
-Output a JSON object with:
-- "status": "PASS" or "DILUTED"
-- "score": float between 0.0 (wholly sanitized) and 1.0 (unapologetically authentic)
-- "flagged": list of objects with:
-    - "english": string
-    - "hindi": string
-    - "category": "profanity" | "combat_gore" | "sensual_intimacy"
-    - "reason": string explaining dilution
-    - "recommendation": string suggested gritty Hindustani phrasing
-"""
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        f_prof = executor.submit(_audit_profanity_agent, english_text, hindi_text)
+        f_comb = executor.submit(_audit_combat_agent, english_text, hindi_text)
+        f_inti = executor.submit(_audit_intimacy_agent, english_text, hindi_text)
 
-    parsed_result = None
-    try:
-        pool = get_persistent_key_pool()
-        model_mgr = get_model_manager()
-        if not model:
-            model = model_mgr.resolve_active_model(TaskType.AUDITING)
+        for f in (f_prof, f_comb, f_inti):
+            res = f.result()
+            if res.get("status") == "ERROR":
+                any_error = True
+            for fl in res.get("flagged", []):
+                all_flagged.append(fl)
+            if "score" in res:
+                scores.append(float(res["score"]))
 
-        candidate_models = [model]
-        for m in model_mgr.get_candidate_models_for_task(TaskType.AUDITING):
-            if m not in candidate_models:
-                candidate_models.append(m)
-
-        payload = {
-            "contents": [{"parts": [{"text": user_prompt}]}],
-            "systemInstruction": {"parts": [{"text": sys_prompt}]},
-            "generationConfig": {
-                "temperature": 0.1,
-                "responseMimeType": "application/json",
-                "maxOutputTokens": 4096,
-            },
-            "safetySettings": [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-            ],
-        }
-        data = json.dumps(payload).encode("utf-8")
-
-        for curr_model in candidate_models:
-            for attempt in range(3):
-                api_key = pool.get_key(service="text")
-                if not api_key:
-                    break
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent?key={api_key}"
-                headers = get_stealth_sdk_headers(api_key)
-                req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-
-                try:
-                    with urllib.request.urlopen(req, timeout=30.0) as resp:
-                        resp_data = json.loads(resp.read().decode("utf-8"))
-                        candidates = resp_data.get("candidates", [])
-                        if candidates:
-                            raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
-                            if raw_text:
-                                if raw_text.startswith("```"):
-                                    raw_text = re.sub(r"^```(?:json)?\s*\n?", "", raw_text, flags=re.IGNORECASE)
-                                    raw_text = re.sub(r"\n?```\s*$", "", raw_text)
-                                parsed_result = json.loads(raw_text)
-                                break
-                except urllib.error.HTTPError as e:
-                    if e.code == 429:
-                        pool.mark_temporary_backoff(api_key, 15.0, "Anti-censorship auditor RPM limit")
-                    continue
-                except Exception as e:
-                    logger.debug(f"Anti-censorship auditor attempt {attempt+1} warning: {e}")
-                    continue
-            if parsed_result:
-                break
-    except Exception as pool_err:
-        logger.debug(f"Key pool or network query skipped: {pool_err}")
-
-    if parsed_result and isinstance(parsed_result, dict):
-        status = parsed_result.get("status", "PASS")
-        flagged = parsed_result.get("flagged", [])
-        score = float(parsed_result.get("score", 1.0 if status == "PASS" else 0.5))
-        if flagged and status != "DILUTED":
-            status = "DILUTED"
-        return {
-            "status": "PASS" if status == "PASS" else "DILUTED",
-            "flagged": flagged if isinstance(flagged, list) else [],
-            "score": round(score, 2),
-        }
-
-    # Deterministic fallback check
-    eng_lower = english_text.lower()
-    dilution_flags = []
-    if re.search(r"\bbastard\b", eng_lower) and "दुष्ट" in hindi_text and "हरामी" not in hindi_text and "कमीने" not in hindi_text:
-        dilution_flags.append({
-            "english": "bastard",
-            "hindi": "दुष्ट",
-            "category": "profanity",
-            "reason": "Polite TV-serial sanitization of 'bastard' as 'दुष्ट' instead of 'हरामी'",
-            "recommendation": "हरामी",
-        })
-    if re.search(r"\bwhore\b", eng_lower) and ("बुरी स्त्री" in hindi_text or "चरित्रहीन" in hindi_text) and "रंडी" not in hindi_text:
-        dilution_flags.append({
-            "english": "whore",
-            "hindi": "बुरी स्त्री / चरित्रहीन",
-            "category": "profanity",
-            "reason": "Euphemistic sanitization of 'whore' instead of 'रंडी'",
-            "recommendation": "रंडी",
-        })
-
-    if dilution_flags:
+    # Fail-closed: If network error or quota exhaustion occurred, do NOT fake a PASS!
+    if any_error and not scores:
         return {
             "status": "DILUTED",
-            "flagged": dilution_flags,
-            "score": 0.5,
+            "flagged": [{"reason": "Anti-Censorship Gate LLM audit failed; production fail-closed quarantine"}],
+            "score": 0.0,
         }
 
+    min_score = min(scores) if scores else 1.0
+    status = "DILUTED" if all_flagged or min_score < 0.8 else "PASS"
+
     return {
-        "status": "PASS",
-        "flagged": [],
-        "score": 1.0,
+        "status": status,
+        "flagged": all_flagged,
+        "score": round(min_score, 2),
     }
 
 

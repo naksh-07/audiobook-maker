@@ -4,22 +4,21 @@
   "filename": "rain_thunder.ogg",
   "filepath": "C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/sound_bank/ambience/rain_thunder.ogg",
   "source_and_catalog_metadata": {
-    "title": "rain_thunder.ogg",
-    "description": "",
+    "title": "Rain Thunder",
+    "description": "Rain Thunder",
     "category": "AMB",
-    "subcategory": "Weather",
-    "source_collection": "",
-    "license": "Royalty-Free",
-    "creator_attribution": "",
+    "subcategory": "Ambience",
+    "source_collection": "Curated_Ambience",
+    "license": "Public Domain / CC0",
+    "creator_attribution": "Open Community Sound Archives",
     "source_url": null,
     "source_page_url": null,
     "mirror_url": null,
     "is_downloaded": true,
     "raw_tags": [
+      "amb",
       "ambience",
-      "bank",
       "rain",
-      "sound",
       "thunder"
     ],
     "created_at": "2026-09-20 19:38:29",
@@ -963,18 +962,18 @@
   "agent_sound_card": {
     "card_dict": {
       "asset_id": 67,
-      "title": "rain_thunder.ogg",
+      "title": "Rain Thunder",
       "filename": "rain_thunder.ogg",
-      "source_collection": "SoundBank",
-      "license": "Royalty-Free",
+      "source_collection": "Curated_Ambience",
+      "license": "Public Domain / CC0",
       "category": "AMB",
-      "subcategory": "Weather",
+      "subcategory": "Ambience",
       "physical_action": "unspecified",
       "exciter": "unspecified",
       "resonator": "unspecified",
       "surface": "unspecified",
       "environment": "unspecified",
-      "duration_sec": 18.9036,
+      "duration_sec": 18.903583,
       "integrated_lufs": -24.8,
       "true_peak_dbtp": -0.3,
       "spectral_centroid_hz": 331.5,
@@ -983,10 +982,9 @@
       "energy_profile": "medium",
       "speech_corridor_density": 0.25,
       "tags": [
+        "amb",
         "ambience",
-        "bank",
         "rain",
-        "sound",
         "thunder"
       ],
       "top_classifier_labels": [
@@ -1356,7 +1354,7 @@
       "key_tonality_str": "unavailable (unmeasured)",
       "time_signature_str": "unavailable (unmeasured)",
       "agent_interpretation": null,
-      "metadata_completeness_pct": 70,
+      "metadata_completeness_pct": 80,
       "analysis_status": "full_phase2",
       "provenance_summary": {
         "dsp": "1.0.0"
@@ -1369,7 +1367,7 @@
         "Direct asset lookup"
       ]
     },
-    "rendered_markdown": "### 🎵 Sound Card [ID: 67] rain_thunder.ogg\n- **File / Status [SOURCE_METADATA]**: `rain_thunder.ogg` | LOCAL (Cached) | **Duration [MEASURED]**: 18.90s\n- **Source [SOURCE_METADATA]**: SoundBank (Royalty-Free)\n- **Taxonomy [SOURCE METADATA]**:\n  - Category [SOURCE_METADATA]: `AMB` / `Weather`\n  - Physical [SOURCE_METADATA]: Exciter: `unspecified` | Resonator: `unspecified` | Action: `unspecified` | Surface: `unspecified`\n  - Source Pack Mood [SOURCE_METADATA]: `unspecified`\n- **Acoustics [MEASURED DSP]**:\n  - Loudness [MEASURED]: -24.8 LUFS | True Peak [MEASURED]: -0.3 dBTP\n  - Spectral [MEASURED]: Centroid 332 Hz (warm) | Dynamics [MEASURED]: `medium` (transient)\n  - Speech Corridor Density (1kHz–4kHz) [MEASURED]: 0.25\n- **Classifier Inferences [CLASSIFIER]**:\n  - AudioSet [CLASSIFIER]: `weather.thunderstorm` (conf: 0.75, rank #1), `weather.thunder` (conf: 0.60, rank #2), `weather.rain` (conf: 0.57, rank #3)\n  - Vocal Speech Probability [CLASSIFIER]: 0.00\n  - Classifier Mood Evidence [CLASSIFIER]: None\n- **Semantic Embedding [CLAP]**:\n  - Query Similarity [CLASSIFIER]: None\n- **Directorial Decisions & Mix Safety [AGENT_INTERPRETATION]**:\n  - Dramatic Role [AGENT_INTERPRETATION]: `UNASSIGNED [AWAITING_AGENT_EVALUATION]`\n  - Scene Purpose [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Emotional Suitability [AGENT_INTERPRETATION]: `UNINTERPRETED [AWAITING_AGENT_EVALUATION]`\n  - Voice-Masking Judgment [AGENT_INTERPRETATION]: `UNASSESSED (Speech Density: 0.25 [MEASURED], Vocal Presence: 0.00 [CLASSIFIER]) [AWAITING MIX AGENT]` (Whisper Compatibility: `NOT_CALIBRATED`)\n  - Dialogue Ducking Amount [AGENT_INTERPRETATION]: `SCENE_DEPENDENT (Deferred to Track 11 Mix Director)`\n  - Placement / Recommended Usage [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Final Taxonomy [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting creative interpretation]`\n- **Temporal Structure**: Active Region: 0.02s - 18.82s (Duration: 18.90s) [MEASURED DSP] | Window [0.00s - 10.00s] [OBSERVATION WINDOW]: weather.thunderstorm (0.74), weather.thunder (0.58) [CLASSIFIER INFERENCE] | Window [5.00s - 15.00s] [OBSERVATION WINDOW]: weather.thunderstorm (0.73), weather.rain (0.71) [CLASSIFIER INFERENCE] | ... and 1 more classifier observation windows | 5 transient onsets detected [MEASURED DSP]\n- **Music & Tonal [MEASURED / SOURCE METADATA]**:\n  - Tonal [MEASURED]: True (Pitch: 1520.7 Hz) [MEASURED DSP, autocorrelation peak > 0.55] | BPM [SOURCE_METADATA / MEASURED]: unavailable (unmeasured) | Key [SOURCE_METADATA]: unavailable (unmeasured) | Time Signature [SOURCE_METADATA]: unavailable (unmeasured)\n\n- **Agent Creative Interpretation**: None [AGENT_INTERPRETATION: Asset unassigned in catalog; dramatic role, scene purpose, emotional suitability, and dialogue ducking evaluated per scene by SoundDirector / Mix Director]\n- **Provenance & Quality**:\n  - Metadata Completeness: 70% | Status: `full_phase2`\n  - Provenance: DSP=`1.0.0`, AST=`AudioSet-527`, CLAP=`HTS-AT`\n- **Retrieval Evidence**:\n  - Direct asset lookup"
+    "rendered_markdown": "### 🎵 Sound Card [ID: 67] Rain Thunder\n- **File / Status [SOURCE_METADATA]**: `rain_thunder.ogg` | LOCAL (Cached) | **Duration [MEASURED]**: 18.90s\n- **Source [SOURCE_METADATA]**: Curated_Ambience (Public Domain / CC0)\n- **Taxonomy [SOURCE METADATA]**:\n  - Category [SOURCE_METADATA]: `AMB` / `Ambience`\n  - Physical [SOURCE_METADATA]: Exciter: `unspecified` | Resonator: `unspecified` | Action: `unspecified` | Surface: `unspecified`\n  - Source Pack Mood [SOURCE_METADATA]: `unspecified`\n- **Acoustics [MEASURED DSP]**:\n  - Loudness [MEASURED]: -24.8 LUFS | True Peak [MEASURED]: -0.3 dBTP\n  - Spectral [MEASURED]: Centroid 332 Hz (warm) | Dynamics [MEASURED]: `medium` (transient)\n  - Speech Corridor Density (1kHz–4kHz) [MEASURED]: 0.25\n- **Classifier Inferences [CLASSIFIER]**:\n  - AudioSet [CLASSIFIER]: `weather.thunderstorm` (conf: 0.75, rank #1), `weather.thunder` (conf: 0.60, rank #2), `weather.rain` (conf: 0.57, rank #3)\n  - Vocal Speech Probability [CLASSIFIER]: 0.00\n  - Classifier Mood Evidence [CLASSIFIER]: None\n- **Semantic Embedding [CLAP]**:\n  - Query Similarity [CLASSIFIER]: None\n- **Directorial Decisions & Mix Safety [AGENT_INTERPRETATION]**:\n  - Dramatic Role [AGENT_INTERPRETATION]: `UNASSIGNED [AWAITING_AGENT_EVALUATION]`\n  - Scene Purpose [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Emotional Suitability [AGENT_INTERPRETATION]: `UNINTERPRETED [AWAITING_AGENT_EVALUATION]`\n  - Voice-Masking Judgment [AGENT_INTERPRETATION]: `UNASSESSED (Speech Density: 0.25 [MEASURED], Vocal Presence: 0.00 [CLASSIFIER]) [AWAITING MIX AGENT]` (Whisper Compatibility: `NOT_CALIBRATED`)\n  - Dialogue Ducking Amount [AGENT_INTERPRETATION]: `SCENE_DEPENDENT (Deferred to Track 11 Mix Director)`\n  - Placement / Recommended Usage [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Final Taxonomy [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting creative interpretation]`\n- **Temporal Structure**: Active Region: 0.02s - 18.82s (Duration: 18.90s) [MEASURED DSP] | Window [0.00s - 10.00s] [OBSERVATION WINDOW]: weather.thunderstorm (0.74), weather.thunder (0.58) [CLASSIFIER INFERENCE] | Window [5.00s - 15.00s] [OBSERVATION WINDOW]: weather.thunderstorm (0.73), weather.rain (0.71) [CLASSIFIER INFERENCE] | ... and 1 more classifier observation windows | 5 transient onsets detected [MEASURED DSP]\n- **Music & Tonal [MEASURED / SOURCE METADATA]**:\n  - Tonal [MEASURED]: True (Pitch: 1520.7 Hz) [MEASURED DSP, autocorrelation peak > 0.55] | BPM [SOURCE_METADATA / MEASURED]: unavailable (unmeasured) | Key [SOURCE_METADATA]: unavailable (unmeasured) | Time Signature [SOURCE_METADATA]: unavailable (unmeasured)\n\n- **Agent Creative Interpretation**: None [AGENT_INTERPRETATION: Asset unassigned in catalog; dramatic role, scene purpose, emotional suitability, and dialogue ducking evaluated per scene by SoundDirector / Mix Director]\n- **Provenance & Quality**:\n  - Metadata Completeness: 80% | Status: `full_phase2`\n  - Provenance: DSP=`1.0.0`, AST=`AudioSet-527`, CLAP=`HTS-AT`\n- **Retrieval Evidence**:\n  - Direct asset lookup"
   },
   "canonical_sonic_genome_raw": {
     "version": "2.1",

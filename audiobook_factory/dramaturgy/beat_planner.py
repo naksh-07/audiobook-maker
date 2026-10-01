@@ -53,6 +53,7 @@ class BeatPlanner:
         known_characters: Optional[List[str]] = None,
         memory_context: Optional[Any] = None,
         use_llm_intent: bool = False,
+        use_offline_stub: bool = False,
     ) -> List[SceneDramaticPlan]:
         """
         Populates each SceneDramaticPlan with an ordered sequence of dramatic beats
@@ -66,6 +67,7 @@ class BeatPlanner:
                 known_characters=known_characters,
                 memory_context=memory_context,
                 use_llm_intent=use_llm_intent,
+                use_offline_stub=use_offline_stub,
             )
             scene.beats = scene_beats
 
@@ -86,18 +88,11 @@ class BeatPlanner:
     ) -> Optional[List[DramaticBeat]]:
         """
         Tier 1 (LLM Intent Pass): Derives authentic psychological subtext, transitive
-        actioning verbs, and dramatic objectives using Gemini with BLOCK_NONE safety thresholds.
+        actioning verbs, and dramatic objectives using round-robin Gemini pool.
         """
         try:
-            from audiobook_factory.key_manager import get_persistent_key_pool
-            from audiobook_factory.cadence import get_stealth_sdk_headers
-            import urllib.request
-            import json_repair
-
-            pool = get_persistent_key_pool()
-            api_key = pool.get_key(service="text")
-            if not api_key:
-                return None
+            from audiobook_factory.llm_client import call_gemini
+            from audiobook_factory.model_manager import TaskType
 
             target_beats_count = 2
             if scene.dramatic_complexity in ("HIGH", "CRITICAL"):
@@ -119,6 +114,9 @@ class BeatPlanner:
                 "- actioning: transitive action verb (e.g. 'threaten', 'deflect', 'reassure', 'confess', 'probe', 'intimidate', 'negotiate', 'challenge', 'mock')\n"
                 "- immediate_goal: what speaker wants right now\n"
                 "- obstacle: what stands in their way\n"
+                "- underlying_desire: character's deep psychological objective\n"
+                "- core_fear: what character is desperately trying to avoid\n"
+                "- strategy: dramatic tactic employed by the character\n"
                 "- surface_emotion: outward emotional expression\n"
                 "- underlying_emotion: concealed inner emotional state\n"
                 "- subtext: what remains unsaid beneath the dialogue\n"
@@ -127,127 +125,100 @@ class BeatPlanner:
                 "- tension_after: float 0.0 to 1.0\n"
             )
 
-            payload = {
-                "contents": [{"parts": [{"text": prompt_text}]}],
-                "systemInstruction": {
-                    "parts": [{
-                        "text": (
-                            "You are a master dramaturge and Stanislavski script supervisor. "
-                            "Analyze dramatic subtext and character objectives with uninhibited psychological truth. "
-                            "Output purely valid JSON array."
-                        )
-                    }]
-                },
-                "generationConfig": {
-                    "temperature": 0.2,
-                    "responseMimeType": "application/json",
-                    "maxOutputTokens": 2048,
-                },
-                "safetySettings": [
-                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-                ],
-            }
-
-            from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
-            model = get_model_manager().resolve_active_model(TaskType.DRAMATURGY, api_key=api_key)
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-            headers = get_stealth_sdk_headers(api_key)
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers=headers,
-                method="POST",
+            system_instruction = (
+                "You are a master dramaturge and Stanislavski script supervisor. "
+                "Analyze dramatic subtext and character objectives with uninhibited psychological truth. "
+                "Output purely valid JSON array."
             )
-            with urllib.request.urlopen(req, timeout=12.0) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                candidates = data.get("candidates", [])
-                if not candidates:
-                    return None
-                parts = candidates[0].get("content", {}).get("parts", [])
-                if not parts:
-                    return None
-                raw_text = "".join(p.get("text", "") for p in parts if "text" in p).strip()
-                try:
-                    parsed_beats = json.loads(raw_text)
-                except Exception:
-                    parsed_beats = json_repair.loads(raw_text)
 
-                if not isinstance(parsed_beats, list) or not parsed_beats:
-                    return None
+            parsed_beats = call_gemini(
+                prompt=prompt_text,
+                system_instruction=system_instruction,
+                task_type=TaskType.DRAMATURGY,
+                response_mime_type="application/json",
+                temperature=0.2,
+                max_retries=4,
+            )
 
-                beats: List[DramaticBeat] = []
-                prev_consequence: Optional[str] = None
-                for b_idx, b_data in enumerate(parsed_beats, 1):
-                    fn = b_data.get("dramatic_function", "escalation")
-                    speaker = b_data.get("primary_speaker") or (scene.participants[0] if scene.participants else "Protagonist")
-                    target = b_data.get("target_character") or (scene.participants[1] if len(scene.participants or []) > 1 else None)
-                    action_verb = b_data.get("actioning") or cls._derive_actioning(fn, scene.scene_type, speaker)
+            if isinstance(parsed_beats, dict):
+                for k in ("beats", "dramatic_beats", "items"):
+                    if k in parsed_beats and isinstance(parsed_beats[k], list):
+                        parsed_beats = parsed_beats[k]
+                        break
 
-                    obj = CharacterDramaticObjective(
-                        immediate_goal=b_data.get("immediate_goal") or cls._derive_immediate_goal(fn, speaker, target, scene.scene_type),
-                        obstacle=b_data.get("obstacle") or cls._derive_obstacle(fn, target, scene.scene_type),
-                        underlying_desire=f"Maintain autonomy and assert control in {scene.location}",
-                        core_fear=f"Loss of agency or exposure before {target or 'rivals'}",
-                        strategy=f"Deploy {action_verb} tactics to overcome resistance",
-                        actioning=action_verb,
-                    )
+            if not isinstance(parsed_beats, list) or not parsed_beats:
+                return None
 
-                    t_before = float(b_data.get("tension_before", 0.5))
-                    t_after = float(b_data.get("tension_after", 0.6))
-                    subtext_str = b_data.get("subtext", "")
-                    sub_class = b_data.get("subtext_classification", "CONTEXTUAL_INFERENCE" if subtext_str else "UNSUPPORTED")
-                    if sub_class not in ("SOURCE_SUPPORTED", "CONTEXTUAL_INFERENCE", "CREATIVE_INTERPRETATION", "UNSUPPORTED"):
-                        sub_class = "CONTEXTUAL_INFERENCE" if subtext_str else "UNSUPPORTED"
+            beats: List[DramaticBeat] = []
+            prev_consequence: Optional[str] = None
+            for b_idx, b_data in enumerate(parsed_beats, 1):
+                fn = b_data.get("dramatic_function", "escalation")
+                speaker = b_data.get("primary_speaker") or (scene.participants[0] if scene.participants else "Protagonist")
+                target = b_data.get("target_character") or (scene.participants[1] if len(scene.participants or []) > 1 else None)
+                action_verb = b_data.get("actioning") or cls._derive_actioning(fn, scene.scene_type, speaker)
 
-                    c_trigger, c_response, c_consequence, c_link = cls._derive_beat_causality(
-                        fn=fn, b_idx=b_idx, speaker=speaker, target=target,
-                        action_verb=action_verb, scene=scene, prev_consequence=prev_consequence,
-                    )
-                    prev_consequence = c_consequence
-                    rel_shift = cls._derive_relationship_shift(fn=fn, speaker=speaker, target=target, scene_type=scene.scene_type)
-                    lev_holder, vuln_char, irony = cls._derive_power_dynamics(fn=fn, speaker=speaker, target=target, scene=scene)
-                    blocking_act = cls._derive_physical_blocking(fn=fn, speaker=speaker, target=target, scene_type=scene.scene_type)
+                obj = CharacterDramaticObjective(
+                    immediate_goal=b_data.get("immediate_goal") or cls._derive_immediate_goal(fn, speaker, target, scene.scene_type),
+                    obstacle=b_data.get("obstacle") or cls._derive_obstacle(fn, target, scene.scene_type),
+                    underlying_desire=b_data.get("underlying_desire") or f"{speaker}'s core objective in {scene.location}",
+                    core_fear=b_data.get("core_fear") or f"{speaker}'s dread of vulnerability before {target or 'others'}",
+                    strategy=b_data.get("strategy") or f"Deploy {action_verb} tactics to achieve objective",
+                    actioning=action_verb,
+                )
 
-                    beat = DramaticBeat(
-                        beat_id=f"{scene.scene_id}_b{b_idx:03d}",
-                        scene_id=scene.scene_id,
-                        index=b_idx,
-                        dramatic_function=fn,
-                        summary=b_data.get("summary") or f"{speaker} attempts to {action_verb} during {fn}",
-                        active_characters=scene.participants,
-                        primary_speaker=speaker,
-                        target_character=target,
-                        objective=obj,
-                        surface_emotion=b_data.get("surface_emotion") or "neutral",
-                        underlying_emotion=b_data.get("underlying_emotion") or "guarded",
-                        subtext=subtext_str,
-                        subtext_confidence=0.85 if subtext_str else 0.0,
-                        subtext_classification=sub_class,
-                        tension_before=t_before,
-                        tension_after=t_after,
-                        intensity="high" if t_after >= 0.75 else ("low" if t_after <= 0.3 else "medium"),
-                        performance_priority="climactic" if fn in ("climax", "reversal", "threat") else "standard",
-                        causal_trigger=c_trigger,
-                        character_response=c_response,
-                        consequence=c_consequence,
-                        causal_link_type=c_link,
-                        relationship_shift=rel_shift,
-                        leverage_holder=lev_holder,
-                        vulnerable_character=vuln_char,
-                        dramatic_irony=irony,
-                        blocking=blocking_act,
-                        provenance_mode="INFERRED_PERFORMANCE",
-                        conversational_dynamic=cls._derive_conversational_dynamic(fn, speaker, target),
-                        silence_intent=cls._derive_silence_intent(fn, speaker, target),
-                    )
-                    beats.append(beat)
+                t_before = float(b_data.get("tension_before", 0.5))
+                t_after = float(b_data.get("tension_after", 0.6))
+                subtext_str = b_data.get("subtext", "")
+                sub_class = b_data.get("subtext_classification", "CONTEXTUAL_INFERENCE" if subtext_str else "UNSUPPORTED")
+                if sub_class not in ("SOURCE_SUPPORTED", "CONTEXTUAL_INFERENCE", "CREATIVE_INTERPRETATION", "UNSUPPORTED"):
+                    sub_class = "CONTEXTUAL_INFERENCE" if subtext_str else "UNSUPPORTED"
 
-                return beats if len(beats) >= target_beats_count else None
+                c_trigger, c_response, c_consequence, c_link = cls._derive_beat_causality(
+                    fn=fn, b_idx=b_idx, speaker=speaker, target=target,
+                    action_verb=action_verb, scene=scene, prev_consequence=prev_consequence,
+                )
+                prev_consequence = c_consequence
+                rel_shift = cls._derive_relationship_shift(fn=fn, speaker=speaker, target=target, scene_type=scene.scene_type)
+                lev_holder, vuln_char, irony = cls._derive_power_dynamics(fn=fn, speaker=speaker, target=target, scene=scene)
+                blocking_act = cls._derive_physical_blocking(fn=fn, speaker=speaker, target=target, scene_type=scene.scene_type)
+
+                beat = DramaticBeat(
+                    beat_id=f"{scene.scene_id}_b{b_idx:03d}",
+                    scene_id=scene.scene_id,
+                    index=b_idx,
+                    dramatic_function=fn,
+                    summary=b_data.get("summary") or f"{speaker} attempts to {action_verb} during {fn}",
+                    active_characters=scene.participants,
+                    primary_speaker=speaker,
+                    target_character=target,
+                    objective=obj,
+                    surface_emotion=b_data.get("surface_emotion") or "neutral",
+                    underlying_emotion=b_data.get("underlying_emotion") or "guarded",
+                    subtext=subtext_str,
+                    subtext_confidence=0.85 if subtext_str else 0.0,
+                    subtext_classification=sub_class,
+                    tension_before=t_before,
+                    tension_after=t_after,
+                    intensity="high" if t_after >= 0.75 else ("low" if t_after <= 0.3 else "medium"),
+                    performance_priority="climactic" if fn in ("climax", "reversal", "threat") else "standard",
+                    causal_trigger=c_trigger,
+                    character_response=c_response,
+                    consequence=c_consequence,
+                    causal_link_type=c_link,
+                    relationship_shift=rel_shift,
+                    leverage_holder=lev_holder,
+                    vulnerable_character=vuln_char,
+                    dramatic_irony=irony,
+                    blocking=blocking_act,
+                    provenance_mode="INFERRED_PERFORMANCE",
+                    conversational_dynamic=cls._derive_conversational_dynamic(fn, speaker, target),
+                    silence_intent=cls._derive_silence_intent(fn, speaker, target),
+                )
+                beats.append(beat)
+
+            return beats if len(beats) >= target_beats_count else None
         except Exception as e:
-            logger.debug(f"Tier 1 LLM intent pass bypassed ({e}), falling back to Tier 2 heuristic.")
+            logger.error(f"Tier 1 LLM intent pass error ({e}).")
             return None
 
     @classmethod
@@ -257,13 +228,16 @@ class BeatPlanner:
         known_characters: Optional[List[str]] = None,
         memory_context: Optional[Any] = None,
         use_llm_intent: bool = False,
+        use_offline_stub: bool = False,
     ) -> List[DramaticBeat]:
         """
-        Two-Tier Hybrid Dramaturgy:
-        Tier 1: LLM Intent Pass (Stanislavski actioning, uninhibited subtext, tension dynamics).
-        Tier 2: Static Heuristic Fallback (deterministic templates, offline fail-safe).
+        Dramaturgy Beat Planning:
+        Primary: LLM Intent Pass (Stanislavski actioning, uninhibited subtext, tension dynamics).
+        Offline Mock Mode: Enabled when use_offline_stub=True.
+        Fail-Closed: If LLM fails in production, strictly raises LLMUnavailableError.
         """
-        active_llm = use_llm_intent or (os.environ.get("ENABLE_LLM_DRAMATURGY", "").lower() in ("true", "1"))
+        active_llm = (use_llm_intent or (os.environ.get("ENABLE_LLM_DRAMATURGY", "").lower() in ("true", "1"))) and not use_offline_stub
+
         if active_llm:
             llm_beats = cls._plan_scene_beats_llm(
                 scene=scene,
@@ -278,6 +252,13 @@ class BeatPlanner:
                 f"STRICT HALT: Dramatic beat planning LLM failed for scene {scene.scene_id}. "
                 "Production halted to preserve Stanislavski psychological subtext fidelity."
             )
+
+        # Explicit offline stub mode for testing data structures and contracts
+        return cls._plan_scene_beats_heuristic(
+            scene=scene,
+            known_characters=known_characters,
+            memory_context=memory_context,
+        )
 
     @classmethod
     def _plan_scene_beats_heuristic(

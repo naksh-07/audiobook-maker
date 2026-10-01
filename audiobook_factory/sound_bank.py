@@ -1189,10 +1189,13 @@ class SoundBank:
         category: Optional[str] = None,
         mood: Optional[str] = None,
         limit: int = 5,
+        era: Optional[str] = None,
+        negative_tags: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Executes sub-millisecond FTS5 search against sound bank (local + virtual).
         First tries high-precision AND matching across terms; falls back to OR matching.
+        Enforces optional Era and negative tag filters to prevent cross-genre mismatches.
         """
         raw_words = re.findall(r"[a-zA-Z0-9]+", query.strip())
         if not raw_words:
@@ -1236,7 +1239,7 @@ class SoundBank:
                 params.append(mood.lower())
 
             sql += " ORDER BY c.is_downloaded DESC, rank LIMIT ?"
-            params.append(limit)
+            params.append(limit * 3 if (era or negative_tags) else limit)
 
             with self._get_conn() as conn:
                 cur = conn.execute(sql, params)
@@ -1247,6 +1250,29 @@ class SoundBank:
         if not results and len(search_words) > 1:
             # Broad-recall OR fallback
             results = _execute_fts(fts_query_or)
+
+        # Era & Negative Tag Filtering
+        banned = set(negative_tags or [])
+        if era and era.upper() == "MODERN":
+            banned.update({
+                "swamp", "bog", "crypt", "dungeon", "sword", "blade", "armor",
+                "scabbard", "drawbridge", "tavern", "tavern_brawl", "gore", "clash", "parry"
+            })
+        elif era and era.upper() == "MEDIEVAL_FANTASY":
+            banned.update({
+                "car", "automobile", "engine", "traffic", "gunshot", "phone", "telephone",
+                "siren", "computer"
+            })
+
+        if banned:
+            filtered = []
+            for r in results:
+                fname = (r.get("filename") or "").lower()
+                ftags = (r.get("tags") or "").lower()
+                fpath = (r.get("filepath") or "").lower()
+                if not any(b in fname or b in ftags or b in fpath for b in banned):
+                    filtered.append(r)
+            results = filtered[:limit]
 
         return results
 

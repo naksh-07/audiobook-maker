@@ -4,23 +4,22 @@
   "filename": "tavern_crowd_murmur.ogg",
   "filepath": "C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobooks/sound_bank/ambience/tavern_crowd_murmur.ogg",
   "source_and_catalog_metadata": {
-    "title": "tavern_crowd_murmur.ogg",
-    "description": "",
+    "title": "Tavern Crowd Murmur",
+    "description": "Tavern Crowd Murmur",
     "category": "AMB",
-    "subcategory": "Tavern",
-    "source_collection": "",
-    "license": "Royalty-Free",
-    "creator_attribution": "",
+    "subcategory": "Ambience",
+    "source_collection": "Curated_Ambience",
+    "license": "Public Domain / CC0",
+    "creator_attribution": "Open Community Sound Archives",
     "source_url": null,
     "source_page_url": null,
     "mirror_url": null,
     "is_downloaded": true,
     "raw_tags": [
+      "amb",
       "ambience",
-      "bank",
       "crowd",
       "murmur",
-      "sound",
       "tavern"
     ],
     "created_at": "2026-09-20 19:38:29",
@@ -1451,18 +1450,18 @@
   "agent_sound_card": {
     "card_dict": {
       "asset_id": 68,
-      "title": "tavern_crowd_murmur.ogg",
+      "title": "Tavern Crowd Murmur",
       "filename": "tavern_crowd_murmur.ogg",
-      "source_collection": "SoundBank",
-      "license": "Royalty-Free",
+      "source_collection": "Curated_Ambience",
+      "license": "Public Domain / CC0",
       "category": "AMB",
-      "subcategory": "Tavern",
+      "subcategory": "Ambience",
       "physical_action": "unspecified",
       "exciter": "unspecified",
       "resonator": "unspecified",
       "surface": "unspecified",
       "environment": "unspecified",
-      "duration_sec": 76.2514,
+      "duration_sec": 76.251429,
       "integrated_lufs": -19.3,
       "true_peak_dbtp": -0.7,
       "spectral_centroid_hz": 455.7,
@@ -1471,11 +1470,10 @@
       "energy_profile": "medium",
       "speech_corridor_density": 0.25,
       "tags": [
+        "amb",
         "ambience",
-        "bank",
         "crowd",
         "murmur",
-        "sound",
         "tavern"
       ],
       "top_classifier_labels": [
@@ -2181,7 +2179,7 @@
       "key_tonality_str": "unavailable (unmeasured)",
       "time_signature_str": "unavailable (unmeasured)",
       "agent_interpretation": null,
-      "metadata_completeness_pct": 70,
+      "metadata_completeness_pct": 80,
       "analysis_status": "full_phase2",
       "provenance_summary": {
         "dsp": "1.0.0"
@@ -2194,7 +2192,7 @@
         "Direct asset lookup"
       ]
     },
-    "rendered_markdown": "### 🎵 Sound Card [ID: 68] tavern_crowd_murmur.ogg\n- **File / Status [SOURCE_METADATA]**: `tavern_crowd_murmur.ogg` | LOCAL (Cached) | **Duration [MEASURED]**: 76.25s\n- **Source [SOURCE_METADATA]**: SoundBank (Royalty-Free)\n- **Taxonomy [SOURCE METADATA]**:\n  - Category [SOURCE_METADATA]: `AMB` / `Tavern`\n  - Physical [SOURCE_METADATA]: Exciter: `unspecified` | Resonator: `unspecified` | Action: `unspecified` | Surface: `unspecified`\n  - Source Pack Mood [SOURCE_METADATA]: `unspecified`\n- **Acoustics [MEASURED DSP]**:\n  - Loudness [MEASURED]: -19.3 LUFS | True Peak [MEASURED]: -0.7 dBTP\n  - Spectral [MEASURED]: Centroid 456 Hz (warm) | Dynamics [MEASURED]: `medium` (transient)\n  - Speech Corridor Density (1kHz–4kHz) [MEASURED]: 0.25\n- **Classifier Inferences [CLASSIFIER]**:\n  - AudioSet [CLASSIFIER]: `vocal.speech` (conf: 0.87, rank #1), `foley.tableware.dishes` (conf: 0.14, rank #2), `foley.tableware.clink` (conf: 0.12, rank #3)\n  - Vocal Speech Probability [CLASSIFIER]: 0.87\n  - Classifier Mood Evidence [CLASSIFIER]: None\n- **Semantic Embedding [CLAP]**:\n  - Query Similarity [CLASSIFIER]: None\n- **Directorial Decisions & Mix Safety [AGENT_INTERPRETATION]**:\n  - Dramatic Role [AGENT_INTERPRETATION]: `UNASSIGNED [AWAITING_AGENT_EVALUATION]`\n  - Scene Purpose [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Emotional Suitability [AGENT_INTERPRETATION]: `UNINTERPRETED [AWAITING_AGENT_EVALUATION]`\n  - Voice-Masking Judgment [AGENT_INTERPRETATION]: `UNASSESSED (Speech Density: 0.25 [MEASURED], Vocal Presence: 0.87 [CLASSIFIER]) [AWAITING MIX AGENT]` (Whisper Compatibility: `NOT_CALIBRATED`)\n  - Dialogue Ducking Amount [AGENT_INTERPRETATION]: `SCENE_DEPENDENT (Deferred to Track 11 Mix Director)`\n  - Placement / Recommended Usage [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Final Taxonomy [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting creative interpretation]`\n- **Temporal Structure**: Active Region: 0.00s - 60.00s [ANALYSIS WINDOW: First 60.0s analyzed of 76.25s total] | Window [0.00s - 10.00s] [OBSERVATION WINDOW]: vocal.speech (0.87) [CLASSIFIER INFERENCE] | Window [5.00s - 15.00s] [OBSERVATION WINDOW]: vocal.speech (0.82), music.instrumental (0.31) [CLASSIFIER INFERENCE] | ... and 13 more classifier observation windows | 5 transient onsets detected [MEASURED DSP]\n- **Music & Tonal [MEASURED / SOURCE METADATA]**:\n  - Tonal [MEASURED]: True (Pitch: 1500.0 Hz) [MEASURED DSP, autocorrelation peak > 0.55] | BPM [SOURCE_METADATA / MEASURED]: unavailable (unmeasured) | Key [SOURCE_METADATA]: unavailable (unmeasured) | Time Signature [SOURCE_METADATA]: unavailable (unmeasured)\n\n- **Agent Creative Interpretation**: None [AGENT_INTERPRETATION: Asset unassigned in catalog; dramatic role, scene purpose, emotional suitability, and dialogue ducking evaluated per scene by SoundDirector / Mix Director]\n- **Provenance & Quality**:\n  - Metadata Completeness: 70% | Status: `full_phase2`\n  - Provenance: DSP=`1.0.0`, AST=`AudioSet-527`, CLAP=`HTS-AT`\n- **Retrieval Evidence**:\n  - Direct asset lookup"
+    "rendered_markdown": "### 🎵 Sound Card [ID: 68] Tavern Crowd Murmur\n- **File / Status [SOURCE_METADATA]**: `tavern_crowd_murmur.ogg` | LOCAL (Cached) | **Duration [MEASURED]**: 76.25s\n- **Source [SOURCE_METADATA]**: Curated_Ambience (Public Domain / CC0)\n- **Taxonomy [SOURCE METADATA]**:\n  - Category [SOURCE_METADATA]: `AMB` / `Ambience`\n  - Physical [SOURCE_METADATA]: Exciter: `unspecified` | Resonator: `unspecified` | Action: `unspecified` | Surface: `unspecified`\n  - Source Pack Mood [SOURCE_METADATA]: `unspecified`\n- **Acoustics [MEASURED DSP]**:\n  - Loudness [MEASURED]: -19.3 LUFS | True Peak [MEASURED]: -0.7 dBTP\n  - Spectral [MEASURED]: Centroid 456 Hz (warm) | Dynamics [MEASURED]: `medium` (transient)\n  - Speech Corridor Density (1kHz–4kHz) [MEASURED]: 0.25\n- **Classifier Inferences [CLASSIFIER]**:\n  - AudioSet [CLASSIFIER]: `vocal.speech` (conf: 0.87, rank #1), `foley.tableware.dishes` (conf: 0.14, rank #2), `foley.tableware.clink` (conf: 0.12, rank #3)\n  - Vocal Speech Probability [CLASSIFIER]: 0.87\n  - Classifier Mood Evidence [CLASSIFIER]: None\n- **Semantic Embedding [CLAP]**:\n  - Query Similarity [CLASSIFIER]: None\n- **Directorial Decisions & Mix Safety [AGENT_INTERPRETATION]**:\n  - Dramatic Role [AGENT_INTERPRETATION]: `UNASSIGNED [AWAITING_AGENT_EVALUATION]`\n  - Scene Purpose [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Emotional Suitability [AGENT_INTERPRETATION]: `UNINTERPRETED [AWAITING_AGENT_EVALUATION]`\n  - Voice-Masking Judgment [AGENT_INTERPRETATION]: `UNASSESSED (Speech Density: 0.25 [MEASURED], Vocal Presence: 0.87 [CLASSIFIER]) [AWAITING MIX AGENT]` (Whisper Compatibility: `NOT_CALIBRATED`)\n  - Dialogue Ducking Amount [AGENT_INTERPRETATION]: `SCENE_DEPENDENT (Deferred to Track 11 Mix Director)`\n  - Placement / Recommended Usage [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting SoundDirector]`\n  - Final Taxonomy [AGENT_INTERPRETATION]: `UNASSIGNED [AGENT_INTERPRETATION: Awaiting creative interpretation]`\n- **Temporal Structure**: Active Region: 0.00s - 60.00s [ANALYSIS WINDOW: First 60.0s analyzed of 76.25s total] | Window [0.00s - 10.00s] [OBSERVATION WINDOW]: vocal.speech (0.87) [CLASSIFIER INFERENCE] | Window [5.00s - 15.00s] [OBSERVATION WINDOW]: vocal.speech (0.82), music.instrumental (0.31) [CLASSIFIER INFERENCE] | ... and 13 more classifier observation windows | 5 transient onsets detected [MEASURED DSP]\n- **Music & Tonal [MEASURED / SOURCE METADATA]**:\n  - Tonal [MEASURED]: True (Pitch: 1500.0 Hz) [MEASURED DSP, autocorrelation peak > 0.55] | BPM [SOURCE_METADATA / MEASURED]: unavailable (unmeasured) | Key [SOURCE_METADATA]: unavailable (unmeasured) | Time Signature [SOURCE_METADATA]: unavailable (unmeasured)\n\n- **Agent Creative Interpretation**: None [AGENT_INTERPRETATION: Asset unassigned in catalog; dramatic role, scene purpose, emotional suitability, and dialogue ducking evaluated per scene by SoundDirector / Mix Director]\n- **Provenance & Quality**:\n  - Metadata Completeness: 80% | Status: `full_phase2`\n  - Provenance: DSP=`1.0.0`, AST=`AudioSet-527`, CLAP=`HTS-AT`\n- **Retrieval Evidence**:\n  - Direct asset lookup"
   },
   "canonical_sonic_genome_raw": {
     "version": "2.1",

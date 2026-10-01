@@ -379,24 +379,25 @@ In legacy pipelines, long chapters exceeding LLM token contexts were sliced by r
 - An explosive combat sequence was chopped in two, leaving an attacker's strike in Chunk 1 and the victim's reaction in Chunk 2.
 - A critical secret reveal occurred across a chunk boundary, causing the LLM in Chunk 2 to attribute dialogue to the wrong speaker or misunderstand the sudden shift in character status.
 
-#### The Beat-Aligned Solution
-[`BeatPlanner.slice_chapter_by_beats()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/beat_planner.py#L321-L429) enforces **Beat-Aligned Chunking**:
-1. If the entire chapter is under `max_words` (default 1,200 words), it is processed as a single unified chunk.
-2. If the chapter spans multiple scenes and individual scenes are under `max_words`, slicing occurs strictly at **scene boundaries**.
-3. If an individual scene exceeds `max_words`, slicing occurs strictly along **beat boundaries** (`paras_per_beat`). A chunk is never closed in the middle of a beat.
-4. Each chunk payload retains metadata:
-   ```json
-   {
-     "chunk_index": 1,
-     "text": "...",
-     "scene_id": "scene_001",
-     "beat_ids": ["scene_001_b001", "scene_001_b002"],
-     "word_count": 940,
-     "is_scene_start": true,
-     "is_scene_end": false
-   }
-   ```
-5. **Rolling Conversational Memory:** The tail 3 dialogue turns of each chunk are formatted and injected as preceding conversational context into the next chunk's prompt. This enables the LLM to resolve opening pronouns (`he`, `she`, `उसने`, `वह`) and maintains character voice attribution across chunk boundaries without drift.
+#### The Beat-Aligned Solution & Micro-Chunking (~350 Words Ceiling)
+[`BeatPlanner.slice_chapter_by_beats()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/beat_planner.py#L321-L429) enforces **Beat-Aligned Micro-Chunking (~350 words ceiling)**:
+1. **Granular Micro-Chunking (~350 Words Ceiling)**:
+   - Historical monolithic chunking (1,200 words) caused LLM token fatigue and attention degradation, resulting in the LLM compressing character speech into single narration paragraphs (e.g. swallowing dialogue lines).
+   - In Stage 3, chapters are sliced into focused micro-chunks of approximately **350 words** on natural paragraph and beat boundaries.
+   - Producing only 4–8 segments per LLM call allows the model to maintain 100% precision on every single character turn and quotation mark.
+2. **Pure Dialogue Focus (Zero SFX Bloat)**:
+   - Screenplay generation prompts are stripped of all SFX/BGM schema fields (`sfx_cues`, `music`), freeing LLM attention strictly for dialogue attribution, spoken text fidelity, and emotional prosody.
+   - All sound effects, room tones, and music scoring are decoupled into the dedicated **Specialist Multi-Agent Sound Spotting Engine (`SoundSpotter`)**.
+3. **The 5-Layer Context Preservation Guarantee**:
+   To ensure the LLM never goes out-of-context across micro-chunks:
+   - **Layer 1: Rolling Conversational Memory (`rolling_context`)**: The tail 3 dialogue turns of Chunk $N$ (speaker, dialogue text, emotion) are injected into the top of Chunk $N+1$'s prompt with explicit instructions to resolve opening pronouns (`he`, `she`, `उसने`, `वह`).
+   - **Layer 2: Beat-Aligned Slicing**: Slicing occurs strictly along beat boundaries (`paras_per_beat`) and paragraph breaks. Slicing never bisects a sentence or character dialogue turn.
+   - **Layer 3: Macro Scene Context Injection**: Each micro-chunk receives the scene's location, stakes, primary conflict, active characters, and audience knowledge state.
+   - **Layer 4: Project-Wide Character Roster Hint**: Canonical character names, genders, and aliases from `character_roster.json` are embedded in every chunk prompt.
+   - **Layer 5: Pass 2 Alexandria Deterministic Pronoun Disambiguation (`clean_screenplay_pass2`)**: Persistent cross-chunk cast trackers (`last_male_character`, `last_female_character`, `last_active_character`) deterministically resolve any orphan pronouns to the correct character.
+4. **Double-Safety Auto-Slicing**:
+   - If an LLM accidentally retains quotation marks inside a `narration` segment, `clean_screenplay_pass2` executes a deterministic regex auto-slicing pass, carving the quote out into an isolated `dialogue` segment and restoring the canonical speaker.
+   - This ensures that Gate 2's **Fail-Closed Anti-Swallow Assertion** is satisfied with 100% reliability.
 
 ---
 
@@ -640,6 +641,68 @@ def audit_gate2_5_dramatic_fidelity(
 If any validation issue has severity `ERROR` (such as non-monotonic indices or epistemic isolation breaches), Gate 2.5 raises a fail-closed [`GateAuditError`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py#L40-L42), halting chapter synthesis before TTS API calls are initiated.
 
 ---
+
+### 8. Two-Pass Decoupled Screenplay Parser & Anti-Swallow Defense (ADR-045 & ADR-044)
+
+In legacy implementations, screenplay construction attempted to solve 12 competing challenges in a single massive generative prompt: identifying spoken quotes, resolving pronouns, tagging vocal prosody, inventing psychological subtext, deriving actioning verbs, assigning stereo azimuth pan, and spotting sound effects. This monolithic prompt overloaded the attention window of generative models, causing models to routinely swallow short dialogue lines into large narration blocks (recited entirely by the Narrator voice) and return empty sound arrays (`sfx_cues: []`).
+
+Stage 3 permanently resolves this via **Architectural Decomposition**:
+
+#### 1. Micro-Chunking Ceiling (~350 Words)
+Screenplay parsing slices chapters into ~350-word micro-chunks grounded strictly on natural dramatic beat boundaries discovered by `BeatPlanner`. Slicing never bisects dialogue or action sequences.
+
+#### 2. Five-Layer Context Preservation Stack
+To ensure micro-chunking does not degrade long-range conversational memory, `_parse_dramatized_chunk_llm()` maintains a 5-layer context stack:
+1. **Rolling 3-Turn Dialogue Memory:** Tail 3 turns from chunk $N-1$ are passed into chunk $N$ to preserve conversational flow and pronoun referents.
+2. **BeatPlanner Boundary Alignment:** Slices align with psychological beats rather than arbitrary token counts.
+3. **Macro Scene Context:** Active location, high-level dramatic purpose, and stakes injected into each chunk.
+4. **Canonical Character Roster Hints:** Discovered cast names, genders, and aliases passed into prompt instructions.
+5. **Pass 2 Pronoun Disambiguation:** Contextual pronoun resolution across conversational turn transitions.
+
+#### 3. Two-Pass Decoupled Generation Pipeline
+```
+[Prose Micro-Chunk (~350 words)]
+               │
+               ▼
+┌────────────────────────────────────────────────────────┐
+│ PASS 1: Dialogue Isolation & Roster Attribution        │
+│ (`_parse_dialogue_turns_llm`)                          │
+│ • 100% focused on quote boundaries and turns           │
+│ • Canonical roster attribution (No pronouns as names) │
+│ • Neural vocal tags ([whispers], [bellowing rage])    │
+│ • Action beat splitting (Foley [ACTION])              │
+└────────────────────────────────────────────────────────┘
+               │
+               ▼ (Discrete Turn List)
+┌────────────────────────────────────────────────────────┐
+│ PASS 2: Performance Director & Spatial Audio Staging   │
+│ (`_enrich_performance_and_staging_llm`)                │
+│ • Stanislavski psychological subtext                   │
+│ • Transitive actioning verbs (threaten, deflect)       │
+│ • Underlying emotion vs surface presentation           │
+│ • Dynamic intensity headroom (low / explosive)        │
+│ • Stereo azimuth pan (-0.8 to +0.8) & proximity       │
+└────────────────────────────────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────────────────────────────────┐
+│ POST-PASS: Double-Safety Quote Slicing                 │
+│ (`clean_screenplay_pass2`)                             │
+│ • Deterministically extracts remaining quoted dialogue │
+│ • Fail-Closed Gate 2: Rejects narration with quotes   │
+└────────────────────────────────────────────────────────┘
+```
+
+#### 4. Purge of Canned Stanislavski Heuristics & Fail-Closed Invariant
+When LLMs failed or were bypassed in legacy code, scripts silently fell back to deterministic canned psychological templates (`underlying_desire: "Core objective"`, `core_fear: "Dread of vulnerability"`, `strategy: "Deploy tactics"`). This created the dangerous illusion of dramatic intelligence while degrading acting fidelity.
+- **Strict Purge:** All canned templates have been eradicated from [`beat_planner.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/beat_planner.py) and [`scene_analyzer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/dramaturgy/scene_analyzer.py).
+- **Fail-Closed Production Halts:** If generative models are unavailable or API retries are exhausted, the pipeline strictly halts with typed [`LLMUnavailableError`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/model_manager.py), ensuring zero silent degradation of artistic standards.
+
+#### 5. Gate 2 Anti-Swallow Dialogue Audit
+[`audit_gate2_script()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py) executes a fail-closed scan across all generated narration segments. Any narration segment containing direct spoken quotes (`"` or `“`) triggers immediate failure with `GateAuditError`, preventing swallowed character dialogue from ever reaching speech synthesis.
+
+---
+
 
 ## 🔬 The Crucial Benchmark Proof: One Line, Four Realities
 

@@ -177,6 +177,18 @@ class PipelineOrchestrator:
             # -------------------------------------------------------------
             with telemetry.stage_timer(run_id, "Screenplay Attribution", 3):
                 logger.info("\n[Stage 3/6] Generating screenplay scripts with dialogue attribution...")
+                if dramatized:
+                    try:
+                        from audiobook_factory.character_caster import CharacterCaster
+                        logger.info("[*] Running Autonomous Character Discovery & Casting Director...")
+                        CharacterCaster.discover_and_cast_project(
+                            project_dir=project_dir,
+                            use_hindi=hindi,
+                            default_narrator_voice=voice,
+                        )
+                    except Exception as e:
+                        logger.warning(f"  [!] Character discovery notice: {e}")
+
                 scripts_dir = generate_project_scripts(
                     project_dir=project_dir,
                     use_hindi=hindi,

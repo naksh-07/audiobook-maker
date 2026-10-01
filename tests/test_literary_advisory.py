@@ -19,7 +19,7 @@ if str(WORKSPACE_DIR) not in sys.path:
 
 from audiobook_factory.advisory_lexicon import LiteraryAdvisoryDB, get_advisory_db
 from audiobook_factory.sanitizer import audit_literary_register
-from audiobook_factory.translator import DEFAULT_MODEL, MODEL_CANDIDATES
+from audiobook_factory.model_manager import get_model_manager, TaskType
 
 
 class TestLiteraryAdvisory(unittest.TestCase):
@@ -79,9 +79,10 @@ class TestLiteraryAdvisory(unittest.TestCase):
         self.assertEqual(cleaned, calibrated_text)
 
     def test_05_translator_model_hierarchy(self):
-        self.assertEqual(DEFAULT_MODEL, "gemini-3.8-flash")
-        self.assertIn("gemini-3.8-flash", MODEL_CANDIDATES)
-        self.assertIn("gemini-3.7-flash", MODEL_CANDIDATES)
+        mgr = get_model_manager()
+        candidates = mgr.get_candidate_models_for_task(TaskType.TRANSLATION)
+        self.assertGreater(len(candidates), 0)
+        self.assertIn("gemini-3.8-flash", candidates)
 
 
 if __name__ == "__main__":

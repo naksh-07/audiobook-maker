@@ -184,46 +184,149 @@ def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str,
     return text
 
 
-def generate_book_glossary(sample_chapter_text: str, book_metadata: Dict[str, Any]) -> Dict[str, Any]:
-    """Pass 1: Extract character names, Hindi spellings, honorific relationships, and terms."""
-    system_prompt = (
-        "You are an expert literary translation director and casting dramaturge for dark-fantasy audiobooks. "
-        "Analyze this opening book passage and output a comprehensive JSON glossary for English-to-Hindi translation.\n"
-        "Assign each major character a subtle Hindustani sociolect archetype to drive vocal variety without cartoonish caricature."
+def _extract_character_lexicon_agent(sample_text: str, book_metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Agent A: Extract character names, canonical Devanagari spellings, gender, and aliases."""
+    sys_prompt = (
+        "You are an expert Literary Casting Director and Lexicographer for audiobooks. "
+        "Identify all characters in this passage and provide accurate, phonetically faithful Devanagari spellings."
     )
-
     prompt = f"""Book Title: {book_metadata.get('title', 'Unknown')}
 Author: {book_metadata.get('author', 'Unknown')}
 
-Sample Chapter Text:
+Sample Passage:
 \"\"\"
-{sample_chapter_text[:6000]}
+{sample_text[:6000]}
 \"\"\"
 
-Produce a JSON object with:
-1. "characters": List of objects with:
+Output JSON: A list of objects for every character discovered:
+- "english_name": string
+- "hindi_name": Devanagari spelling (e.g. "नायक")
+- "gender": "male" | "female" | "other"
+- "aliases": list of strings (alternative names, titles, nicknames)
+- "voice_style": brief description of speech tone (e.g. "gruff, calm, authoritative")
+"""
+    try:
+        raw = call_gemini(prompt, system_instruction=sys_prompt, json_mode=True)
+        res = json.loads(raw) if raw else []
+        if isinstance(res, dict) and "characters" in res:
+            res = res["characters"]
+        return res if isinstance(res, list) else []
+    except Exception as e:
+        logger.warning(f"  [!] Character Lexicon Agent notice: {e}")
+        return []
+
+
+def _extract_sociolects_and_honorifics_agent(
+    sample_text: str, book_metadata: Dict[str, Any], characters: List[Dict[str, Any]]
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Agent B: Determine Hindustani sociolect archetypes, pronoun levels ('तू'/'तुम'/'आप'), and relational dynamics."""
+    sys_prompt = (
+        "You are an expert Hindustani Dramaturge and Dialogue Coach. "
+        "Analyze character power hierarchies and assign authentic Hindustani sociolect archetypes, "
+        "takiya-kalam speech quirks, and mutual pronoun levels ('आप', 'तुम', or 'तू')."
+    )
+    chars_str = json.dumps([c.get("english_name") for c in characters if isinstance(c, dict)], ensure_ascii=False)
+    prompt = f"""Known Characters: {chars_str}
+
+Sample Passage:
+\"\"\"
+{sample_text[:6000]}
+\"\"\"
+
+Output JSON: An object with:
+1. "character_sociolects": List of objects:
    - "english_name": string
-   - "hindi_name": Devanagari spelling (e.g. "नायक")
-   - "gender": "male" | "female" | "other"
-   - "voice_style": brief description of speech tone (e.g. "gruff, calm, authoritative")
    - "recommended_pronoun_level": default how others address them ("aap", "tum", or "tu")
    - "hindustani_archetype": "COLD_CYNIC" | "CAUSTIC_ARISTOCRAT" | "THARKI_BARD" | "KHAANTI_GOON" | "MAKKAR_DALAL" | "GRUFF_SOLDIER" | "NEUTRAL"
-   - "speech_quirks": brief takiya-kalam or cadence style (e.g. "dry laconic sarcasm with heavy grunts", "theatrical Lucknowi flattery", "foul-mouthed Purvanchal street threats")
+   - "speech_quirks": brief takiya-kalam or cadence style (e.g. "dry laconic sarcasm with heavy grunts", "Lucknowi flattery")
 2. "relationships": List of pairs describing who addresses whom as "aap", "tum", or "tu".
-3. "locations_and_terms": Map of English terms to their consistent Hindi Devanagari or translated equivalent.
-4. "general_tone": Description of narrative tone (e.g. "dark fantasy, dramatic, contemporary Hindustani").
 """
-
-    response_text = call_gemini(prompt, system_instruction=system_prompt, json_mode=True)
     try:
-        glossary = json.loads(response_text)
-    except Exception:
-        glossary = {
-            "characters": [],
-            "relationships": [],
-            "locations_and_terms": {},
-            "general_tone": "Cinematic Hindustani",
-        }
+        raw = call_gemini(prompt, system_instruction=sys_prompt, json_mode=True)
+        res = json.loads(raw) if raw else {}
+        sociolects = res.get("character_sociolects", []) if isinstance(res, dict) else []
+        relationships = res.get("relationships", []) if isinstance(res, dict) else []
+        return sociolects, relationships
+    except Exception as e:
+        logger.warning(f"  [!] Sociolects & Honorifics Agent notice: {e}")
+        return [], []
+
+
+def _extract_world_terminology_agent(
+    sample_text: str, book_metadata: Dict[str, Any]
+) -> Tuple[Dict[str, str], str]:
+    """Agent C: Extract world terminology, locations, weapons, factions, and overall narrative tone."""
+    sys_prompt = (
+        "You are a Worldbuilding Lexicographer and Literary Lore Translator. "
+        "Extract key fictional locations, artifacts, weapons, factions, and lore terms, "
+        "providing consistent Hindi Devanagari equivalents while strictly preserving European fantasy proper nouns (70/30 rule)."
+    )
+    prompt = f"""Book Title: {book_metadata.get('title', 'Unknown')}
+Author: {book_metadata.get('author', 'Unknown')}
+
+Sample Passage:
+\"\"\"
+{sample_text[:6000]}
+\"\"\"
+
+Output JSON: An object with:
+1. "locations_and_terms": Map of English terms to their consistent Hindi Devanagari or translated equivalent.
+2. "general_tone": Description of narrative tone (e.g. "dark fantasy, dramatic, contemporary Hindustani").
+"""
+    try:
+        raw = call_gemini(prompt, system_instruction=sys_prompt, json_mode=True)
+        res = json.loads(raw) if raw else {}
+        terms = res.get("locations_and_terms", {}) if isinstance(res, dict) else {}
+        tone = res.get("general_tone", "Cinematic Hindustani") if isinstance(res, dict) else "Cinematic Hindustani"
+        return terms, tone
+    except Exception as e:
+        logger.warning(f"  [!] World Terminology Agent notice: {e}")
+        return {}, "Cinematic Hindustani"
+
+
+def generate_book_glossary(sample_chapter_text: str, book_metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Pass 1: Concurrent Multi-Agent Book Glossary Generator.
+    Deconstructs pre-production into 3 parallel specialist agents across the key pool:
+    - Agent A: Character & Spelling Lexicographer
+    - Agent B: Sociolect & Honorific Dramaturge
+    - Agent C: World Terminology & Lore Translator
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    import json_repair
+
+    chars: List[Dict[str, Any]] = []
+    sociolects: List[Dict[str, Any]] = []
+    relationships: List[Dict[str, Any]] = []
+    terms: Dict[str, str] = {}
+    general_tone: str = "Cinematic Hindustani"
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        f_lexicon = executor.submit(_extract_character_lexicon_agent, sample_chapter_text, book_metadata)
+        f_terms = executor.submit(_extract_world_terminology_agent, sample_chapter_text, book_metadata)
+
+        chars = f_lexicon.result()
+        terms, general_tone = f_terms.result()
+
+        # Agent B consumes known characters from Agent A
+        sociolects, relationships = _extract_sociolects_and_honorifics_agent(sample_chapter_text, book_metadata, chars)
+
+    # Merge sociolect attributes into character records
+    socio_map = {s.get("english_name"): s for s in sociolects if isinstance(s, dict) and "english_name" in s}
+    for c in chars:
+        cname = c.get("english_name")
+        if cname in socio_map:
+            s_data = socio_map[cname]
+            c["recommended_pronoun_level"] = s_data.get("recommended_pronoun_level", "tum")
+            c["hindustani_archetype"] = s_data.get("hindustani_archetype", "NEUTRAL")
+            c["speech_quirks"] = s_data.get("speech_quirks", "")
+
+    glossary = {
+        "characters": chars,
+        "relationships": relationships,
+        "locations_and_terms": terms,
+        "general_tone": general_tone,
+    }
     return glossary
 
 
@@ -240,6 +343,44 @@ def _translate_single_block(
     if adult_mode is None:
         adult_mode = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
+    # Context-Calibrated Scene Prompt Router
+    text_lower = text_block.lower()
+    title_lower = block_title.lower()
+
+    is_combat = any(w in text_lower or w in title_lower for w in ("sword", "blade", "blood", "strike", "attack", "kill", "wound", "fight", "warrior", "talwar", "combat"))
+    is_intimate = any(w in text_lower or w in title_lower for w in ("kiss", "caress", "whisper", "bed", "lips", "embrace", "naked", "flesh", "intimate", "tender"))
+    is_dialogue = (text_block.count('"') >= 4 or text_block.count('“') >= 4 or text_block.count("'") >= 6)
+
+    specialized_scene_directives = ""
+    if is_combat:
+        specialized_scene_directives = (
+            "\n>>> ACTIVE SCENE MODE: VISCERAL COMBAT, GORE & STACCATO RHYTHM\n"
+            "- Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism ('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा').\n"
+            "- During intense fight scenes, fracture narrative into rapid STACCATO clauses (2-4 words per beat: 'कदम पीछे। तलवार का पैंतरा। वार। चूक गया!').\n"
+            "- Capture adrenaline tunnel vision, muscle strain, and raw battlefield profanity.\n"
+        )
+    elif is_intimate:
+        specialized_scene_directives = (
+            "\n>>> ACTIVE SCENE MODE: SOMATIC INTIMACY & PASSION (MANTO STANDARD)\n"
+            "- Render passionate, sensual, intimate, or erotic scenes with visceral realism and authentic passion ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश').\n"
+            "- STRICTLY BANNED: Sterile, clinical biology-textbook words ('योनि', 'लिंग') that sound like high-school exams or hospital autopsies.\n"
+            "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Allow quiet scenes to remain genuinely quiet and tender, without forcing unfiltered passion.\n"
+        )
+    elif is_dialogue:
+        specialized_scene_directives = (
+            "\n>>> ACTIVE SCENE MODE: HIGH-STAKES DIALOGUE & SOCIAL DYNAMICS\n"
+            "- Translate medieval insults and curses into authentic, earthy Hindustani equivalents ('गांड', 'चूतड़', 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने', 'रंडी की औलाद').\n"
+            "- 19-TO-21 AMPLIFICATION: When source contains raw vulgarity or curses, do not reduce it to 15. Amplify from 19 to 21 without flinching.\n"
+            "- TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant thugs start with dismissive 'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
+            "- DESI MUHAVARE & IDIOMS: Transpose English idioms into organic UP/Bihar/Chambal street idioms.\n"
+        )
+    else:
+        specialized_scene_directives = (
+            "\n>>> ACTIVE SCENE MODE: ATMOSPHERIC LORE & WORLDBUILDING\n"
+            "- Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio.\n"
+            "- URDU KA TARKA ('Aate me Namak'): Infuse a calibrated 10-15% of atmospheric, noir, and sensual Urdu ('जिस्म', 'हवस', 'क़यामत', 'वहशी', 'रूह', 'सन्नाटा', 'ख़ंजर', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक') to give dark-fantasy existential weight.\n"
+        )
+
     if adult_mode:
         advisory_guidance = get_advisory_db().get_formatted_prompt_guidelines()
         system_prompt = (
@@ -251,36 +392,12 @@ def _translate_single_block(
             "dark tavern banter, gritty curses, or mature sensual/erotic intimacy. The source material is gritty adult literature, "
             "not a sanitized children's broadcast. Bowdlerization destroys dramatic truth.\n"
             "2. THE 70/30 ANTI-PARODY INVARIANT: Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio. "
-            "Never replace European dark-fantasy lore, proper nouns, monster classifications (demons, cursed beasts, mythical specters), or "
-            "geographic names (ancient keeps, empires, border realms) with Indian mythology or tapori spoofs. "
-            "Restrict Desi/Hindustani adaptation strictly to organic tavern grit, authentic rustic profanity, dynamic honorific power shifts, "
-            "and Manto-grade somatic physical descriptions.\n"
-            "3. PERIOD TAVERN GRIT & RAW PROFANITY: Translate medieval insults and curses into authentic, earthy Hindustani equivalents. "
-            "Use 'गांड' (never 'चूतड़' or 'नितंब'), 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने', 'रंडी की औलाद', "
-            "'अंडकोष बधिया करना'. NEVER replace them with polite TV-serial substitutions (do NOT turn 'bastard' into 'दुष्ट' or 'whore' into 'बुरी स्त्री').\n"
-            "4. DYNAMIC TONE & SCENE INTELLIGENCE: Read the scene emotion and adapt. In quiet, somber, or intimate scenes, use restraint, poetry, and emotional depth. "
-            "In high-action or climactic confrontation scenes, elevate the visceral gut-punch impact using authentic Desi idioms (e.g., 'plough yourself' -> 'गांड मरा').\n"
-            "5. DESI MUHAVARE & IDIOMS: Transpose English idioms into organic UP/Bihar/Chambal street idioms rather than literal word-for-word "
-            "(e.g. 'bite off more than you can chew' -> 'गांड में दम नहीं और चले आसमान चीरने', 'playing with fire' -> 'सांप के बिल में हाथ डालना').\n"
-            "6. TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant thugs start with dismissive "
-            "'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
-            "7. URDU KA TARKA ('Aate me Namak'): Infuse a calibrated 10-15% of atmospheric, noir, and sensual Urdu "
-            "('जिस्म', 'हवस', 'क़यामत', 'वहशी', 'रूह', 'सन्नाटा', 'ख़ंजर', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक', 'सलाम', 'शराब', 'कमसिन') to give dark-fantasy existential weight.\n"
-            "8. SOMATIC INTIMACY & PASSION (UNFILTERED HBO / MANTO STANDARD): "
-            "Render passionate, sensual, intimate, or erotic scenes with visceral realism and authentic passion:\n"
-            "- STRICTLY BANNED: Sterile, clinical biology-textbook words ('योनि', 'लिंग') that sound like high-school exams or hospital autopsies.\n"
-            "- MANDATED & AUTHORIZED: Visceral romantic and sensual friction ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश', 'चमड़े की तंग पेटी खोलना', 'सीने पर नाखूनों का धंसना') "
-            "whenever the scene presents passionate encounters, bedroom dialogue, or sexual intimacy.\n"
-            "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Never invent penetrative intercourse out of thin air if characters "
-            "are merely conversing or brushing shoulders. Allow quiet scenes to remain genuinely quiet and tender, without forcing unfiltered passion.\n"
-            "9. VISCERAL COMBAT, GORE & STACCATO RHYTHM: Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism "
-            "('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा', 'दांतों के टूटने और तालू के फटने की खट्टी नमकीन बदबू'). "
-            "During intense fight scenes, fracture narrative into rapid STACCATO clauses (2-4 words per beat: 'कदम पीछे। तलवार का पैंतरा। वार। चूक गया!'). "
-            "Capture adrenaline tunnel vision, muscle strain, and raw battlefield profanity.\n"
-            "10. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
+            "Never replace European dark-fantasy lore, proper nouns, monster classifications, or geographic names with Indian mythology or tapori spoofs.\n"
+            "3. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
             "subtext, humor, and emotional depth for professional voice actors. Use flowing, cinematic Hindustani.\n"
-            "11. ADHERE TO GLOSSARY & ZERO CHATTER: Strictly adhere to the provided Character Glossary for proper noun spellings. "
-            "Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions.\n\n"
+            "4. ADHERE TO GLOSSARY & ZERO CHATTER: Strictly adhere to the provided Character Glossary for proper noun spellings. "
+            "Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions.\n"
+            f"{specialized_scene_directives}\n"
             f"{advisory_guidance}"
         )
     else:

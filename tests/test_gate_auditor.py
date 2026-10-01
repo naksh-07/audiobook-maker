@@ -105,20 +105,22 @@ class TestMultiGateAuditor(unittest.TestCase):
 
     def test_audit_gate1_anticensorship_dilution_and_pass(self):
         """Verify Gate 1 Anti-Censorship Agent flags diluted curses and passes authentic translation."""
+        from unittest.mock import patch
         eng_sample = "You bastard! I'll see you in hell, you whore!"
-        # Diluted polite translation
-        hindi_diluted = "तुम दुष्ट हो! मैं तुम्हें देख लूँगा, बुरी स्त्री!"
-        res_diluted = audit_gate1_anticensorship_agent(eng_sample, hindi_diluted)
-        self.assertEqual(res_diluted["status"], "DILUTED")
-        self.assertTrue(len(res_diluted["flagged"]) > 0)
-        self.assertLess(res_diluted["score"], 0.8)
+        with patch.dict("os.environ", {"MOCK_OFFLINE": "1"}):
+            # Diluted polite translation
+            hindi_diluted = "तुम दुष्ट हो! मैं तुम्हें देख लूँगा, बुरी स्त्री!"
+            res_diluted = audit_gate1_anticensorship_agent(eng_sample, hindi_diluted)
+            self.assertEqual(res_diluted["status"], "DILUTED")
+            self.assertTrue(len(res_diluted["flagged"]) > 0)
+            self.assertLess(res_diluted["score"], 0.8)
 
-        # Gritty authentic translation
-        hindi_gritty = "रुक, हरामी! जहन्नुम में जा, कमीनी रंडी!"
-        res_gritty = audit_gate1_anticensorship_agent(eng_sample, hindi_gritty)
-        self.assertEqual(res_gritty["status"], "PASS")
-        self.assertEqual(len(res_gritty["flagged"]), 0)
-        self.assertGreaterEqual(res_gritty["score"], 0.8)
+            # Gritty authentic translation
+            hindi_gritty = "रुक, हरामी! जहन्नुम में जा, कमीनी रंडी!"
+            res_gritty = audit_gate1_anticensorship_agent(eng_sample, hindi_gritty)
+            self.assertEqual(res_gritty["status"], "PASS")
+            self.assertEqual(len(res_gritty["flagged"]), 0)
+            self.assertGreaterEqual(res_gritty["score"], 0.8)
 
     def test_audit_gate2_screenplay_tags(self):
         """Verify Gate 2 Screenplay Tags Auditor validates prosody and vocal tags."""

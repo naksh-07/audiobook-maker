@@ -305,8 +305,64 @@ The final studio quality upgrade delivers commercial Pottermore-grade realism ac
 
 ---
 
+## 🎙️ Stage 3.5: Specialist Multi-Agent Sound Spotting Engine (`SoundSpotter`) (ADR-044)
+
+In legacy iterations, sound design was stuffed into the monolithic screenplay prompt, causing the LLM to drop sound cues (`sfx_cues: []`) due to schema bloat. 
+
+Stage 3.5 deploys [`SoundSpotter`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_spotter.py), a dedicated multi-agent supervising sound editor that decouples sound design from dialogue screenplay generation. It leverages workstation compute and the **100+ rotating Gemini API key pool** (`key_manager.py`) to execute **3 dedicated specialist LLMs concurrently**:
+
+```mermaid
+flowchart TD
+    Screenplay["Screenplay Script & Segments"] --> Dispatcher["SoundSpotter Dispatcher"]
+    
+    subgraph MultiAgentPool["100+ Rotating API Key Pool (Concurrent Execution)"]
+        Dispatcher --> FoleyAgent["Agent 1: Foley & Physical Prop Spotter<br/>(car door, briefcase, tea cup, footsteps, owl wings)"]
+        Dispatcher --> AmbAgent["Agent 2: Ambience & Acoustic Designer<br/>(room tone, weather, day/night, traffic)"]
+        Dispatcher --> MusicAgent["Agent 3: Music Scoring Director<br/>(emotional swells, tension curve, >= 60% silence)"]
+    end
+    
+    FoleyAgent --> Merger["Deterministic Cue Merger"]
+    AmbAgent --> Merger
+    MusicAgent --> Merger
+    
+    Merger --> EraFilter["SoundBank Era-Aware Negative Filter<br/>(MODERN excludes swamp, crypt, sword, tavern_brawl)"]
+    EraFilter --> CueSheet["chapter_XXX_sound_script.json<br/>(Explicit Inspectable Audio Cue Sheet)"]
+    CueSheet --> Director["AgentDirector Ingestion -> CreativeManifest"]
+```
+
+### 1. The 3 Specialist Agents
+1. **Foley & Prop Spotter (`_run_foley_spotter`)**:
+   - Focuses strictly on physical objects, materials, and character actions (`action_verb`, `object_material`, `anchor_word`).
+   - Identifies lead-in transient offsets (`pre_roll_ms: 100ms`), target gain (`gain_dbfs: -14.0 to -22.0`), and stereo azimuth pan (`pan: -0.6 to +0.6`).
+2. **Ambience & Acoustic Designer (`_run_ambience_spotter`)**:
+   - Analyzes time of day, location, weather, and acoustic space.
+   - Generates calibrated background room tone beds (e.g. `domestic_room_quiet`, `suburban_traffic_distant`) at broadcast-standard background levels (`target_lufs: -32.0`).
+3. **Music Scoring Director (`_run_music_spotter`)**:
+   - Maps scene tension curves, dramatic themes, and emotional swells.
+   - Enforces the strict **$\ge 60\%$ acoustic silence rule**, placing underscores only where narratively essential and choosing silence for mundane scenes.
+
+### 2. Era-Aware Negative Sound Bank Filtering
+With 27,456 sound assets on disk (many originating from medieval/fantasy libraries like Witcher 3), queries like `door` or `house` previously risked resolving to heavy wooden dungeon doors or spooky swamp bogs in modern domestic stories.
+- **`MODERN` Era Exclusions**: Strictly bans `swamp`, `bog`, `crypt`, `dungeon`, `sword`, `blade`, `armor`, `scabbard`, `drawbridge`, `tavern`, `tavern_brawl`, `gore`, `clash`, `parry`.
+- **`MEDIEVAL_FANTASY` Era Exclusions**: Strictly bans `car`, `automobile`, `engine`, `traffic`, `gunshot`, `phone`, `telephone`, `siren`, `computer`.
+- **Graceful Acoustic Fallback**: If an exact modern prop is unavailable in the local sound bank, the engine falls back to **pure acoustic silence**, guaranteeing that inappropriate fantasy assets never contaminate a modern scene.
+
+### 3. The Audio Cue Sheet (`chapter_XXX_sound_script.json`)
+The output is saved as a durable, human-inspectable Audio Cue Sheet inside `manifests/`, detailing every cue's start millisecond, target gain, pan position, and resolved file path before entering `AgentDirector` and the discrete 5-stem mix engine.
+
+### 4. Eradication of Domestic Foley Heuristics in AgentDirector (ADR-045)
+In legacy implementations, `agent_director.py` contained a heuristic fallback scanning dialogue prose for 4 domestic keywords (`door`, `gate`, `cup`, `tea`) to fake SFX generation when upstream cues were omitted. Under **ADR-045**, this heuristic was completely purged:
+- **Exclusive Authority:** All Foley and SFX cues are strictly sourced from the `SoundSpotter` Audio Cue Sheet (`chapter_XXX_sound_script.json`).
+- **Zero Fake Sound Synthesis:** If `SoundSpotter` or the local sound bank does not produce an asset, the engine falls back to **pure acoustic silence** rather than guessing fake cues.
+- **Fail-Closed Intent:** Scripts never simulate creative decisions on behalf of an LLM.
+
+---
+
 ## ⚡ Quick Links
 - Subsystem Code: [`audiobook_factory/sound_design/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/)
+- Multi-Agent Sound Spotter: [`audiobook_factory/sound_spotter.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_spotter.py)
+- Autonomous Character Caster: [`audiobook_factory/character_caster.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/character_caster.py)
+- Centralized Non-Hammering Client: [`audiobook_factory/llm_client.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/llm_client.py)
 - Data Contracts: [`audiobook_factory/sound_design/contracts.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/contracts.py)
-- Architecture Decisions: [ADR-034](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-035](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-036](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md) & [ADR-037](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md)
+- Architecture Decisions: [ADR-034](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-035](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-036](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-037](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md), [ADR-044](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md) & [ADR-045](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/memory/decisions.md)
 - Test Suites: [`tests/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/)

@@ -1,6 +1,6 @@
 {
   "chapter_id": "real_06_hindi_hinglish",
-  "created_at": "2026-09-30T17:14:11.466126+00:00",
+  "created_at": "2026-10-01T21:58:51.312429+00:00",
   "request": {
     "chapter_id": "real_06_hindi_hinglish",
     "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_06_hindi_hinglish.wav",
@@ -37,14 +37,14 @@
     "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_06_hindi_hinglish_cinema_master.wav",
     "profile": {
       "profile_name": "commercial_audiobook_standard",
-      "target_lufs": -19.6,
+      "target_lufs": -17.8,
       "tolerance_lu": 0.5,
       "true_peak_ceiling_dbtp": -1.5,
       "target_lra": 8.5,
       "subsonic_highpass_hz": 28,
       "enable_dual_pass_linear": true,
       "limiter_ceiling_db": -1.6,
-      "limiter_release_ms": 80,
+      "limiter_release_ms": 50,
       "dither_type": "tpdf",
       "output_sample_rate": 48000,
       "output_channels": 2,
@@ -81,21 +81,21 @@
       "duration_sec": 10.415,
       "sample_rate": 48000,
       "channels": 2,
-      "integrated_lufs": -19.8,
+      "integrated_lufs": -18.0,
       "short_term_max_lufs": null,
       "momentary_max_lufs": null,
       "loudness_range_lra": 2.5,
-      "true_peak_dbtp": -7.5,
-      "sample_peak_dbfs": -7.57,
-      "rms_level_dbfs": -22.79,
+      "true_peak_dbtp": -5.7,
+      "sample_peak_dbfs": -5.77,
+      "rms_level_dbfs": -20.99,
       "dynamic_range_db": 15.22,
       "crest_factor_db": 15.22,
       "spectral_centroid_hz": 386.0,
       "spectral_rolloff_hz": 492.2,
       "spectral_flatness": 0.0001,
-      "phase_correlation": 0.922,
+      "phase_correlation": 0.964,
       "mono_compatible": true,
-      "silence_ratio": 0.246,
+      "silence_ratio": 0.233,
       "dead_air_sec": 0.0,
       "transient_count": 36,
       "clipping_detected": false,
@@ -119,12 +119,12 @@
         "duration_delta_sec": 0.0,
         "sample_rate": 48000,
         "channels": 2,
-        "measured_integrated_lufs": -19.8,
-        "target_lufs": -19.6,
+        "measured_integrated_lufs": -18.0,
+        "target_lufs": -17.8,
         "loudness_error_lu": 0.2,
-        "measured_true_peak_dbtp": -7.5,
+        "measured_true_peak_dbtp": -5.7,
         "true_peak_ceiling_dbtp": -1.5,
-        "phase_correlation": 0.922,
+        "phase_correlation": 0.964,
         "dead_air_sec": 0.0
       }
     },
@@ -137,27 +137,27 @@
           "confidence": 0.95,
           "evidence": {
             "measured_lufs": -21.4,
-            "target_lufs": -20.2,
-            "delta_lu": 1.2,
+            "target_lufs": -19.0,
+            "delta_lu": 2.4,
             "direction": "cold"
           },
-          "recommended_action": "Premaster is cold by 1.20 LU; linear loudnorm pass 2 will normalize.",
+          "recommended_action": "Premaster is cold by 2.40 LU; linear loudnorm pass 2 will normalize.",
           "bounded_parameters": {
-            "target_lufs_adjust": -19.6
+            "target_lufs_adjust": -17.8
           }
         }
       ],
       "overall_verdict": "ADJUST",
       "adjusted_profile": {
         "profile_name": "commercial_audiobook_standard",
-        "target_lufs": -19.6,
+        "target_lufs": -17.8,
         "tolerance_lu": 0.5,
         "true_peak_ceiling_dbtp": -1.5,
         "target_lra": 8.5,
         "subsonic_highpass_hz": 28,
         "enable_dual_pass_linear": true,
         "limiter_ceiling_db": -1.6,
-        "limiter_release_ms": 80,
+        "limiter_release_ms": 50,
         "dither_type": "tpdf",
         "output_sample_rate": 48000,
         "output_channels": 2,
@@ -169,7 +169,7 @@
     "dialogue_protection": {
       "chapter_id": "real_06_hindi_hinglish",
       "dialogue_lufs": -70.0,
-      "mix_lufs": -19.8,
+      "mix_lufs": -18.0,
       "dialogue_anchor_ratio_db": 0.0,
       "masking_risk": "NONE",
       "clarity_score": 1.0,
@@ -197,26 +197,23 @@
         "tonal_balance_score=1.00",
         "dynamic_integrity_score=1.00",
         "emotional_preservation_score=1.00",
-        "solid_stereo_coherence (r=0.922)",
+        "solid_stereo_coherence (r=0.964)",
         "fatigue_risk_score=1.00"
       ],
       "critic_version": "1.0.0"
     },
     "scene_decision": {
-      "scene_type": "INTIMATE",
-      "primary_element": "whisper_dialogue",
-      "context_confidence": 0.75,
+      "scene_type": "NORMAL",
+      "primary_element": "dialogue",
+      "context_confidence": 0.6,
       "perceptual_findings": [
-        "Intimate scene detected: close-mic vocal with quiet dynamics."
+        "Standard narrative dialogue: balanced broadcast delivery."
       ],
-      "recommended_action": "Relax target loudness by +1.2 LU and use transparent 80ms limiter release.",
+      "recommended_action": null,
       "risk": "LOW",
-      "expected_effect": "Preserves delicate breath detail and close emotional presence without boosting noise floor.",
+      "expected_effect": "Transparent commercial audiobook loudness (-19.0 LUFS) and -1.5 dBTP true peak.",
       "requires_review": false,
-      "bounded_adjustments": {
-        "target_lufs_offset": 1.2,
-        "limiter_release_ms": 80
-      }
+      "bounded_adjustments": {}
     },
     "reference_comparison": null,
     "certification_report": {
@@ -240,12 +237,12 @@
           "duration_delta_sec": 0.0,
           "sample_rate": 48000,
           "channels": 2,
-          "measured_integrated_lufs": -19.8,
-          "target_lufs": -19.6,
+          "measured_integrated_lufs": -18.0,
+          "target_lufs": -17.8,
           "loudness_error_lu": 0.2,
-          "measured_true_peak_dbtp": -7.5,
+          "measured_true_peak_dbtp": -5.7,
           "true_peak_ceiling_dbtp": -1.5,
-          "phase_correlation": 0.922,
+          "phase_correlation": 0.964,
           "dead_air_sec": 0.0
         }
       },
@@ -256,7 +253,7 @@
       "dialogue_protection": {
         "chapter_id": "real_06_hindi_hinglish",
         "dialogue_lufs": -70.0,
-        "mix_lufs": -19.8,
+        "mix_lufs": -18.0,
         "dialogue_anchor_ratio_db": 0.0,
         "masking_risk": "NONE",
         "clarity_score": 1.0,
@@ -284,7 +281,7 @@
           "tonal_balance_score=1.00",
           "dynamic_integrity_score=1.00",
           "emotional_preservation_score=1.00",
-          "solid_stereo_coherence (r=0.922)",
+          "solid_stereo_coherence (r=0.964)",
           "fatigue_risk_score=1.00"
         ],
         "critic_version": "1.0.0"
@@ -292,8 +289,8 @@
       "reference_comparison": null,
       "artifact_info": {
         "filepath": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_06_hindi_hinglish_cinema_master.wav",
-        "sha256": "cb8b5f4f86f0bcb064e0e58302d334582b8d15e342c3b46f4c3d43637f337c21",
-        "size_bytes": 1999758,
+        "sha256": "7a51e4fe5f03c36c1ca6d70299765cefa5800ecb622077f978cbca2bede9aa85",
+        "size_bytes": 2999622,
         "duration_sec": 10.415,
         "sample_rate": 48000,
         "channels": 2,
@@ -310,37 +307,37 @@
         "engine_version": "2.2.0",
         "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
         "premaster_sha256": "cb709ecc399d521987f9fcf4eebfa09fb64a22d2c191179b8247cd88ef2e69ef",
-        "master_sha256": "cb8b5f4f86f0bcb064e0e58302d334582b8d15e342c3b46f4c3d43637f337c21",
+        "master_sha256": "7a51e4fe5f03c36c1ca6d70299765cefa5800ecb622077f978cbca2bede9aa85",
         "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
-        "effective_profile_sha256": "ac6f0b1d4a34c92026073e4dee7ed08af162880a89d818c5cf4965ccd80d77b2"
+        "effective_profile_sha256": "9e3593720aa0a8f16e8dfbc0b9d62fc8214fe30b66f04433879213f76bd824e3"
       },
-      "certified_at": "2026-09-30T17:14:11.465902+00:00"
+      "certified_at": "2026-10-01T21:58:51.312392+00:00"
     },
     "iteration_count": 1,
     "provenance": {
       "engine": "MasteringEngineV2",
       "engine_version": "2.2.0",
       "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
-      "timestamp": "2026-09-30T17:14:11.466023+00:00",
+      "timestamp": "2026-10-01T21:58:51.312408+00:00",
       "premaster_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_06_hindi_hinglish.wav",
       "premaster_sha256": "cb709ecc399d521987f9fcf4eebfa09fb64a22d2c191179b8247cd88ef2e69ef",
       "master_path": "C:\\Users\\Suraj\\Documents\\Antigravity\\Audiobook\\audiobooks\\real_audio_golden\\real_06_hindi_hinglish_cinema_master.wav",
-      "master_sha256": "cb8b5f4f86f0bcb064e0e58302d334582b8d15e342c3b46f4c3d43637f337c21",
+      "master_sha256": "7a51e4fe5f03c36c1ca6d70299765cefa5800ecb622077f978cbca2bede9aa85",
       "profile_name": "commercial_audiobook_standard",
-      "profile_sha256": "ac6f0b1d4a34c92026073e4dee7ed08af162880a89d818c5cf4965ccd80d77b2",
+      "profile_sha256": "9e3593720aa0a8f16e8dfbc0b9d62fc8214fe30b66f04433879213f76bd824e3",
       "initial_profile_sha256": "67a7c3ad130f025dceddcb8970fbd600a9f39e2c24ffc00400cf7350e4bc2d6b",
-      "effective_profile_sha256": "ac6f0b1d4a34c92026073e4dee7ed08af162880a89d818c5cf4965ccd80d77b2",
+      "effective_profile_sha256": "9e3593720aa0a8f16e8dfbc0b9d62fc8214fe30b66f04433879213f76bd824e3",
       "iteration_count": 1,
       "winning_attempt": 1,
       "attempts_history": [
         {
           "attempt": 1,
-          "target_lufs": -19.6,
+          "target_lufs": -17.8,
           "limiter_ceiling_db": -1.6,
           "qc_passed": true,
           "qc_status": "PASS",
-          "integrated_lufs": -19.8,
-          "true_peak_dbtp": -7.5,
+          "integrated_lufs": -18.0,
+          "true_peak_dbtp": -5.7,
           "failures": []
         }
       ],
@@ -348,7 +345,7 @@
       "judge_verdict": "ADJUST",
       "dialogue_protection_status": "PASS",
       "consistency_status": "UNSPECIFIED",
-      "scene_type": "INTIMATE",
+      "scene_type": "NORMAL",
       "perceptual_status": "PASS",
       "certification": "CERTIFIED",
       "reference_match": "NONE"
@@ -361,7 +358,7 @@
     "judge_verdict": "ADJUST",
     "dialogue_protection_status": "PASS",
     "consistency_status": "UNSPECIFIED",
-    "scene_type": "INTIMATE",
+    "scene_type": "NORMAL",
     "perceptual_status": "PASS",
     "certification": "CERTIFIED"
   }

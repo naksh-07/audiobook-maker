@@ -6,9 +6,13 @@ stakes, conflicts, opening/closing states, listener knowledge, and complexity.
 """
 
 from __future__ import annotations
+import os
+import logging
 import re
 import hashlib
 from typing import List, Dict, Any, Optional, Tuple
+
+logger = logging.getLogger("audiobook_factory.dramaturgy.scene_analyzer")
 
 from audiobook_factory.translation.intensity_model import IntensityEvaluator
 from .contracts import (
@@ -52,6 +56,8 @@ class SceneAnalyzer:
         chapter_title: str = "Chapter",
         known_characters: Optional[List[str]] = None,
         memory_context: Optional[Any] = None,
+        use_llm: bool = False,
+        use_offline_stub: bool = False,
     ) -> List[SceneDramaticPlan]:
         """
         Segments chapter into organic dramatic scenes and generates detailed
@@ -78,6 +84,8 @@ class SceneAnalyzer:
                 scene_title=scene_title_str,
                 known_characters=known_characters,
                 memory_context=memory_context,
+                use_llm=use_llm,
+                use_offline_stub=use_offline_stub,
             )
             scenes.append(plan)
 
@@ -125,6 +133,69 @@ class SceneAnalyzer:
         return ranges
 
     @classmethod
+    def _analyze_scene_llm(
+        cls,
+        scene_text: str,
+        scene_id: str = "scene_001",
+        known_characters: Optional[List[str]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Deep Literary Scene Comprehension LLM Pass:
+        Extracts genuine dramatic stakes, true conflict dynamics, psychological questions,
+        reveals, reversals, and setting nuances using round-robin Gemini pool.
+        """
+        try:
+            from audiobook_factory.llm_client import call_gemini
+            from audiobook_factory.model_manager import TaskType
+
+            known_str = ", ".join(known_characters) if known_characters else "None specified"
+            prompt = (
+                f"Scene ID: {scene_id}\n"
+                f"Known Characters: {known_str}\n\n"
+                f"Scene Text:\n\"\"\"\n{scene_text[:6000]}\n\"\"\"\n\n"
+                "Analyze this dramatic scene from a master dramaturge and literary director perspective.\n"
+                "Return a JSON object with:\n"
+                "- \"location\": specific acoustic & physical setting (e.g. 'Dimly lit tavern backroom', 'Rain-slicked castle battlements')\n"
+                "- \"time_context\": atmospheric time of day/period (e.g. 'Midnight during storm', 'Late afternoon')\n"
+                "- \"active_characters\": list of character names actively present or speaking\n"
+                "- \"scene_type\": 'combat' | 'confrontation' | 'revelation' | 'investigation' | 'romance' | 'horror' | 'introspection' | 'comedy' | 'dialogue'\n"
+                "- \"dramatic_complexity\": 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'\n"
+                "- \"primary_conflict\": precise dramatic tension driving this encounter\n"
+                "- \"secondary_conflicts\": list of underlying interpersonal or psychological tensions\n"
+                "- \"dramatic_purpose\": overarching narrative function served by this scene\n"
+                "- \"scene_question\": core dramatic question holding listener attention\n"
+                "- \"stakes\": authentic physical, emotional, or status consequences\n"
+                "- \"opening_state\": emotional/dramatic state of the world at scene start\n"
+                "- \"closing_state\": altered emotional/dramatic state of the world at scene close\n"
+                "- \"major_reveals\": list of specific secrets, clues, or truths brought to light\n"
+                "- \"reversals\": list of sudden dramatic turns or status shifts\n"
+                "- \"narrative_pov\": 'first_person' | 'third_person_limited' | 'third_person_omniscient'\n"
+                "- \"narrative_distance\": 'immediate' | 'close' | 'scenic' | 'distant'\n"
+                "- \"pov_character\": primary perspective character name or null\n"
+            )
+
+            system_instruction = (
+                "You are an Academy-Award winning Literary Dramaturge and Audio Drama Director. "
+                "Extract genuine psychological and dramatic truth from novel scenes. "
+                "Output purely valid JSON."
+            )
+
+            res = call_gemini(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                task_type=TaskType.DRAMATURGY,
+                response_mime_type="application/json",
+                temperature=0.2,
+                max_retries=4,
+            )
+            if isinstance(res, dict) and "scene_type" in res:
+                return res
+            return None
+        except Exception as e:
+            logger.error(f"  [!] Scene LLM analysis exception: {e}")
+            return None
+
+    @classmethod
     def analyze_single_scene(
         cls,
         scene_text: str,
@@ -133,23 +204,76 @@ class SceneAnalyzer:
         scene_title: str = "Scene 1",
         known_characters: Optional[List[str]] = None,
         memory_context: Optional[Any] = None,
+        use_llm: bool = False,
+        use_offline_stub: bool = False,
     ) -> SceneDramaticPlan:
         """
         Analyzes a single scene text and derives its dramatic architecture.
+        Primary: LLM-driven comprehension across key pool.
+        Offline Mock Mode: Enabled when use_offline_stub=True.
+        Fail-Closed: If LLM fails in production, strictly raises LLMUnavailableError.
         """
-        loc, time_str = cls._infer_setting(scene_text)
-        active_chars = cls._extract_active_characters(scene_text, known_characters, memory_context)
-        scene_type = cls._infer_scene_type(scene_text)
-        complexity = cls._calculate_complexity(scene_text, active_chars, scene_type)
+        active_llm = (use_llm or (os.environ.get("ENABLE_LLM_DRAMATURGY", "").lower() in ("true", "1"))) and not use_offline_stub
 
-        primary_conflict, secondary_conflicts = cls._derive_conflicts(scene_text, active_chars, scene_type)
-        purpose = cls._derive_dramatic_purpose(scene_text, scene_type, primary_conflict)
-        question = cls._derive_scene_question(scene_text, active_chars, scene_type)
-        stakes = cls._derive_stakes(scene_text, scene_type)
-        opening_state, closing_state = cls._derive_scene_states(scene_text, scene_type)
-        listener_knowledge = cls._derive_listener_knowledge(scene_text, active_chars, memory_context)
+        llm_data = None
+        if active_llm:
+            llm_data = cls._analyze_scene_llm(scene_text, scene_id=scene_id, known_characters=known_characters)
+            if not llm_data:
+                from audiobook_factory.model_manager import LLMUnavailableError
+                raise LLMUnavailableError(
+                    f"STRICT HALT: Dramatic Scene Analysis LLM failed for {scene_id}. "
+                    "Production halted to prevent canned regex dramaturgy heuristics."
+                )
 
-        reveals, reversals = cls._detect_reveals_and_reversals(scene_text)
+        if llm_data:
+            loc = llm_data.get("location") or "Indoors"
+            time_str = llm_data.get("time_context") or "Present"
+            active_chars = llm_data.get("active_characters") or cls._extract_active_characters(scene_text, known_characters, memory_context)
+            scene_type = llm_data.get("scene_type") or "dialogue"
+            complexity = llm_data.get("dramatic_complexity") or "MEDIUM"
+            primary_conflict = llm_data.get("primary_conflict") or "Interpersonal tension"
+            secondary_conflicts = llm_data.get("secondary_conflicts") or []
+            purpose = llm_data.get("dramatic_purpose") or "Develop narrative arc"
+            question = llm_data.get("scene_question") or "Will the character prevail?"
+            stakes = llm_data.get("stakes") or "Personal safety and agency"
+            opening_state = llm_data.get("opening_state") or "Equilibrium"
+            closing_state = llm_data.get("closing_state") or "Altered situation"
+            reveals = llm_data.get("major_reveals") or []
+            reversals = llm_data.get("reversals") or []
+            narrative_pov = llm_data.get("narrative_pov") or "third_person_limited"
+            dist_raw = llm_data.get("narrative_distance") or "close_third_person"
+            dist_map = {
+                "close": "close_third_person",
+                "immediate": "first_person_intimate",
+                "distant": "objective_detached",
+                "scenic": "objective_detached",
+                "editorial": "omniscient_editorial",
+                "close_third_person": "close_third_person",
+                "first_person_intimate": "first_person_intimate",
+                "objective_detached": "objective_detached",
+                "omniscient_editorial": "omniscient_editorial",
+            }
+            narrative_distance = dist_map.get(dist_raw, "close_third_person")
+            pov_char = llm_data.get("pov_character") or (active_chars[0] if active_chars else None)
+            listener_knowledge = cls._derive_listener_knowledge(scene_text, active_chars, memory_context)
+        else:
+            loc, time_str = cls._infer_setting(scene_text)
+            active_chars = cls._extract_active_characters(scene_text, known_characters, memory_context)
+            scene_type = cls._infer_scene_type(scene_text)
+            complexity = cls._calculate_complexity(scene_text, active_chars, scene_type)
+
+            primary_conflict, secondary_conflicts = cls._derive_conflicts(scene_text, active_chars, scene_type)
+            purpose = cls._derive_dramatic_purpose(scene_text, scene_type, primary_conflict)
+            question = cls._derive_scene_question(scene_text, active_chars, scene_type)
+            stakes = cls._derive_stakes(scene_text, scene_type)
+            opening_state, closing_state = cls._derive_scene_states(scene_text, scene_type)
+            listener_knowledge = cls._derive_listener_knowledge(scene_text, active_chars, memory_context)
+            reveals, reversals = cls._detect_reveals_and_reversals(scene_text)
+            narrative_pov, narrative_distance, pov_char = cls._infer_narrative_mode_and_pov(
+                scene_text=scene_text,
+                active_chars=active_chars,
+            )
+
         s_hash = hashlib.sha256(scene_text.encode("utf-8")).hexdigest()
 
         # Capability 2: Dramatic State Delta
@@ -170,12 +294,6 @@ class SceneAnalyzer:
             active_chars=active_chars,
             memory_context=memory_context,
             reveals=reveals,
-        )
-
-        # Capability 6: Narrative Mode, Distance, & Perspective
-        narrative_pov, narrative_distance, pov_char = cls._infer_narrative_mode_and_pov(
-            scene_text=scene_text,
-            active_chars=active_chars,
         )
 
         # Capability 8: Long-Range Story Connections

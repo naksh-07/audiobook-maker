@@ -1,20 +1,20 @@
 # Sonic Intelligence Canonical Inspection Report: Asset #68
 
 **File Name**: `tavern_crowd_murmur.ogg`  
-**Title**: tavern_crowd_murmur.ogg  
-**Category**: `AMB` / `Tavern`  
-**License / Source**:  (Royalty-Free)  
+**Title**: Tavern Crowd Murmur  
+**Category**: `AMB` / `Ambience`  
+**License / Source**: Curated_Ambience (Public Domain / CC0)  
 **Local Disk Status**: `LOCAL_DOWNLOADED`  
 
 ---
 
 ## 1. Agent Sound Card v3.0 (Active Production View)
 
-### 🎵 Sound Card [ID: 68] tavern_crowd_murmur.ogg
+### 🎵 Sound Card [ID: 68] Tavern Crowd Murmur
 - **File / Status [SOURCE_METADATA]**: `tavern_crowd_murmur.ogg` | LOCAL (Cached) | **Duration [MEASURED]**: 76.25s
-- **Source [SOURCE_METADATA]**: SoundBank (Royalty-Free)
+- **Source [SOURCE_METADATA]**: Curated_Ambience (Public Domain / CC0)
 - **Taxonomy [SOURCE METADATA]**:
-  - Category [SOURCE_METADATA]: `AMB` / `Tavern`
+  - Category [SOURCE_METADATA]: `AMB` / `Ambience`
   - Physical [SOURCE_METADATA]: Exciter: `unspecified` | Resonator: `unspecified` | Action: `unspecified` | Surface: `unspecified`
   - Source Pack Mood [SOURCE_METADATA]: `unspecified`
 - **Acoustics [MEASURED DSP]**:
@@ -41,7 +41,7 @@
 
 - **Agent Creative Interpretation**: None [AGENT_INTERPRETATION: Asset unassigned in catalog; dramatic role, scene purpose, emotional suitability, and dialogue ducking evaluated per scene by SoundDirector / Mix Director]
 - **Provenance & Quality**:
-  - Metadata Completeness: 70% | Status: `full_phase2`
+  - Metadata Completeness: 80% | Status: `full_phase2`
   - Provenance: DSP=`1.0.0`, AST=`AudioSet-527`, CLAP=`HTS-AT`
 - **Retrieval Evidence**:
   - Direct asset lookup
