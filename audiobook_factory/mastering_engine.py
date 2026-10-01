@@ -219,7 +219,7 @@ class MasteringEngineV2:
             "-af", filter_chain,
             "-ac", str(profile.output_channels),
             "-ar", str(profile.output_sample_rate),
-            "-c:a", "pcm_s16le",
+            "-c:a", "pcm_s24le",
             str(output_path.resolve()),
         ]
 

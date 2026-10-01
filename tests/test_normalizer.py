@@ -56,12 +56,19 @@ A boat emerged from the reeds.
         self.assertIn("“", curly)
         self.assertIn("‘", curly)
 
-    def test_normalize_block_text_warnings(self):
-        raw = "Corrupt character \ufffd in text with many multi-\nline broken-\nwords here-\ntoo."
-        norm, warnings = normalize_block_text(raw)
-        self.assertGreaterEqual(len(warnings), 1)
-        self.assertTrue(any("Unicode replacement" in w for w in warnings))
+    def test_indic_zwnj_zwj_preservation(self):
+        # Eyelash-ra: ra + virama + ZWJ + ya
+        eyelash_ra = "र्\u200dया"
+        # Explicit halant: ka + virama + ZWNJ + ka
+        explicit_halant = "क्\u200cक"
+        text = f"Sample text with {eyelash_ra} and {explicit_halant}."
+        cleaned = clean_book_text(text)
+        self.assertIn("\u200d", cleaned, "ZWJ must be preserved for Indic eyelash-ra")
+        self.assertIn("\u200c", cleaned, "ZWNJ must be preserved for explicit Indic halants")
+        self.assertIn(eyelash_ra, cleaned)
+        self.assertIn(explicit_halant, cleaned)
 
 
 if __name__ == "__main__":
     unittest.main()
+

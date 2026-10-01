@@ -669,6 +669,20 @@ Output STRICT JSON schema:
                     if not pre_check:
                         pre_check = self.sound_bank.search(search_q, category="music", limit=1)
                     if not pre_check:
+                        # Sonic Intelligence: Attempt query expansion and stop-word relaxation before dropping cue
+                        try:
+                            from audiobook_factory.sonic_intelligence_bridge import SonicIntelligenceBridge
+                            bridge = SonicIntelligenceBridge(sound_bank=self.sound_bank)
+                            relaxed_cands = bridge.normalize_and_expand_query(search_q, category="music")
+                            for rc in relaxed_cands:
+                                pre_check = self.sound_bank.search_music_catalog(rc, limit=1) or self.sound_bank.search(rc, category="music", limit=1)
+                                if pre_check:
+                                    search_q = rc
+                                    break
+                        except Exception:
+                            pass
+
+                    if not pre_check:
                         logger.info(
                             f"  [-] Music Director: No matching asset in catalog for primary query '{search_q}'. "
                             f"Falling back gracefully to pure acoustic silence (0 hardcoded tracks)."
@@ -1078,6 +1092,21 @@ Output STRICT JSON schema:
                     continue
                 if cand.exists():
                     return cand
+
+        # 3. Sonic Intelligence Bridge: Relaxed / Bilingual resolution
+        try:
+            from audiobook_factory.sonic_intelligence_bridge import SonicIntelligenceBridge
+            bridge = SonicIntelligenceBridge(sound_bank=self.sound_bank)
+            is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
+            cand_path, tier, _ = bridge.resolve_asset_with_fallback(
+                query=intent,
+                category="foley",
+                is_combat_scene=is_combat_intent,
+            )
+            if cand_path and cand_path.exists():
+                return cand_path
+        except Exception:
+            pass
 
         return None
 

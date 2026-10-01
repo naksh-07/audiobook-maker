@@ -529,10 +529,11 @@ def render_discrete_stems(
         "-i", str(dx_file),
         "-i", str(me_file),
         "-filter_complex",
-        f"[1:a][0:a]sidechaincompress=threshold=0.030:knee=2.5:ratio=2.2:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
+        f"[1:a]adelay=20|20[delayed_me];"
+        f"[delayed_me][0:a]sidechaincompress=threshold=0.030:knee=2.5:ratio=2.2:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
         f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000,volume=-1.5dB,alimiter=limit=0.85:attack=5:release=50[premaster_out]",
         "-map", "[premaster_out]",
-        "-c:a", "pcm_s16le",
+        "-c:a", "pcm_s24le",
         str(premaster_file),
     ]
     subprocess.run(cmd_premaster, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

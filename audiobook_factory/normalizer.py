@@ -11,7 +11,8 @@ import unicodedata
 from typing import Tuple, List, Dict
 
 
-ZERO_WIDTH_CHARS = ("\u200b", "\u200c", "\u200d", "\ufeff", "\u2060", "\u00ad")
+# U+200C (ZWNJ) and U+200D (ZWJ) are preserved for Indic conjuncts, eyelash-ra, and explicit halants
+ZERO_WIDTH_CHARS = ("\u200b", "\ufeff", "\u2060", "\u00ad")
 CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 
 PUNCTUATION_REPLACEMENTS = {

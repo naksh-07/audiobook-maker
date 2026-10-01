@@ -39,6 +39,7 @@ class ProductionTelemetryLedger:
     def _connection(self) -> Generator[sqlite3.Connection, None, None]:
         conn = sqlite3.connect(str(self.db_path), timeout=30.0)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON;")
         conn.execute("PRAGMA journal_mode = WAL;")
         conn.execute("PRAGMA synchronous = NORMAL;")
         conn.execute("PRAGMA busy_timeout = 30000;")
@@ -111,6 +112,13 @@ class ProductionTelemetryLedger:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_stage_run ON stage_telemetry(run_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_api_run ON api_telemetry(run_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_acoustic_run ON acoustic_telemetry(run_id);")
+            # Auto-reconcile any orphan telemetry records by registering missing production runs
+            conn.execute("""
+                INSERT OR IGNORE INTO production_runs (run_id, project_id, start_time, status)
+                SELECT DISTINCT run_id, 'reconciled_run', 0.0, 'COMPLETED'
+                FROM acoustic_telemetry
+                WHERE run_id NOT IN (SELECT run_id FROM production_runs);
+            """)
 
     def start_run(
         self,

@@ -133,10 +133,39 @@ def call_gemini(prompt: str, system_instruction: str = "", model: str = DEFAULT_
 
 def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str, Any]) -> str:
     """
-    Meso-Tier Verification Guard:
-    (Refactored for Agentic Pipeline: Regex-based Devanagari mutation is disabled 
-    to prevent broken ligatures. Trusting LLM schema generation.)
+    Canonical Devanagari Lexicon Normalizer.
+    Replaces glossary terms and character names using proper word boundaries.
+    Supports both flat dictionaries and nested schema glossaries.
     """
+    if not text or not glossary:
+        return text
+
+    replacements: Dict[str, str] = {}
+    if isinstance(glossary, dict):
+        if "characters" in glossary or "locations_and_terms" in glossary:
+            # Nested glossary format
+            chars = glossary.get("characters", [])
+            if isinstance(chars, list):
+                for item in chars:
+                    if isinstance(item, dict):
+                        eng = item.get("english_name")
+                        hin = item.get("hindi_name")
+                        if eng and hin:
+                            replacements[eng] = hin
+            terms = glossary.get("locations_and_terms", {})
+            if isinstance(terms, dict):
+                replacements.update(terms)
+        else:
+            # Flat dictionary format
+            replacements = {k: v for k, v in glossary.items() if isinstance(k, str) and isinstance(v, str)}
+
+    # Sort replacements by length descending to match longest phrases first
+    sorted_keys = sorted(replacements.keys(), key=len, reverse=True)
+    for k in sorted_keys:
+        v = replacements[k]
+        pattern = rf"(?<![\w\u0900-\u097F]){re.escape(k)}(?![\w\u0900-\u097F])"
+        text = re.sub(pattern, v, text)
+
     return text
 
 

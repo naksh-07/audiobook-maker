@@ -296,8 +296,9 @@ class IntelligentTranslationPipeline:
                     relevant_lexicon.setdefault(dec.source_concept, dec.chosen_translation)
             lexicon_str = json.dumps(relevant_lexicon, ensure_ascii=False, indent=2)
 
+            genre_name = getattr(self.book_bible, "genre", None) or "literary"
             system_instruction = (
-                f"You are a master literary translator rendering European dark-fantasy literature into "
+                f"You are a master literary translator rendering {genre_name} literature into "
                 f"unapologetic, publication-grade literary Hindustani (Hindi in Devanagari script).\n\n"
                 f"{policy_prompt}\n\n"
                 f"{hindustani_prompt}\n\n"

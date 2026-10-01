@@ -175,6 +175,24 @@ class PDFLayoutReconstructor:
         for row in rows:
             # Sort left-to-right within the row
             row.sort(key=lambda s: (s.x0, s.seq_order))
+
+            # Deduplicate faux-bold / drop-shadow multi-stroke overprints (identical text at microscopic offset)
+            deduped_row: List[PDFTextSpan] = []
+            for sp in row:
+                if deduped_row:
+                    last = deduped_row[-1]
+                    if (
+                        last.text == sp.text
+                        and abs(sp.x0 - last.x0) <= 0.65 * max(last.space_width, sp.space_width, 2.5)
+                        and abs(sp.y - last.y) <= 0.45 * max(last.font_height, sp.font_height, 8.0)
+                    ):
+                        last.x1 = max(last.x1, sp.x1)
+                        continue
+                deduped_row.append(sp)
+            row = deduped_row
+            if not row:
+                continue
+
             cur = PDFTextSpan(
                 text=row[0].text,
                 x0=row[0].x0,

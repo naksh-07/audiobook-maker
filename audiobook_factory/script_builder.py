@@ -21,10 +21,18 @@ def normalize_speech_text(text: str, is_hindi: bool = False) -> str:
 
     text = text.strip()
 
+    # Restrict % to numbers only (e.g. 50% -> 50 प्रतिशत / 50 percent)
+    # Standalone % (corrupted dashes/colons from legacy fonts) are converted to em-dash
+    if is_hindi:
+        text = re.sub(r"(\d+)\s*%", r"\1 प्रतिशत", text)
+        text = re.sub(r"(?<!\d)%(?!\d)", " — ", text)
+    else:
+        text = re.sub(r"(\d+)\s*%", r"\1 percent", text)
+        text = re.sub(r"(?<!\d)%(?!\d)", " — ", text)
+
     # Universal symbol replacements
     symbols = {
         "&": " and " if not is_hindi else " और ",
-        "%": " percent" if not is_hindi else " प्रतिशत",
         "$": " dollars " if not is_hindi else " डॉलर ",
         "₹": " rupees " if not is_hindi else " रुपये ",
         "@": " at ",

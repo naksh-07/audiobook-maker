@@ -44,7 +44,7 @@ class DialogueEditorialConfig(BaseModel):
 
     # Technical de-click: strictly preserve existing 5.0ms baseline
     default_declick_fade_ms: float = Field(default=5.0, description="Baseline technical de-click cosine micro-fade")
-    editorial_transition_fade_ms: float = Field(default=15.0, description="Micro-fade used only when editorial transition requires it")
+    editorial_transition_fade_ms: float = Field(default=18.0, description="Micro-fade used only when editorial transition requires it")
 
     # Endpoint boundaries & safety buffers
     minimum_speech_boundary_confidence: float = Field(default=0.50, description="Minimum confidence to perform aggressive trimming")

@@ -36,6 +36,7 @@ class ProjectStateLedger:
     def _connection(self):
         conn = sqlite3.connect(str(self.db_path), timeout=30.0)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON;")
         conn.execute("PRAGMA journal_mode = WAL;")
         conn.execute("PRAGMA synchronous = NORMAL;")
         conn.execute("PRAGMA busy_timeout = 30000;")
@@ -87,6 +88,13 @@ class ProjectStateLedger:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_chap ON segments(chapter_num);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_segments_status ON segments(status);")
             conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_segments_chap_seg ON segments(chapter_num, seg_num);")
+            # Auto-reconcile any orphan segments by registering missing parent chapters
+            conn.execute("""
+                INSERT OR IGNORE INTO chapters (chapter_num, title, scripted_status)
+                SELECT DISTINCT chapter_num, 'Chapter ' || printf('%03d', chapter_num), 'COMPLETED'
+                FROM segments
+                WHERE chapter_num NOT IN (SELECT chapter_num FROM chapters);
+            """)
 
     def recover_orphaned_segments(self) -> int:
         """Explicitly reset any interrupted IN_PROGRESS segments to PENDING after a crash or on resume."""
@@ -129,6 +137,11 @@ class ProjectStateLedger:
         import hashlib
 
         with self._connection() as conn:
+            # Ensure parent chapter row exists to uphold foreign key integrity
+            conn.execute(
+                "INSERT OR IGNORE INTO chapters (chapter_num, title, scripted_status) VALUES (?, ?, 'COMPLETED');",
+                (chapter_num, f"Chapter {chapter_num:03d}")
+            )
             for seg_num_idx, item in enumerate(script, 1):
                 seg_num = item.get("index", seg_num_idx)
                 text = item.get("text", "").strip()
