@@ -96,7 +96,46 @@ class TestAgenticAudioEngineer(unittest.TestCase):
         mock_resp_3.__enter__.return_value = mock_resp_3
 
         with patch("urllib.request.urlopen", side_effect=[mock_resp_1, mock_resp_2, mock_resp_3]):
-            with patch("audiobook_factory.ffmpeg_agent.get_persistent_key_pool") as mock_pool_fn:
+            with patch("audiobook_factory.ffmpeg_agent.get_persistent_key_pool") as mock_pool_fn, \
+                 patch("audiobook_factory.model_manager.get_model_manager") as mock_mm_fn:
+                mock_mm = MagicMock()
+                mock_mm.resolve_active_model.return_value = "gemini-2.5-flash"
+                mock_mm_fn.return_value = mock_mm
+
+                mock_pool = MagicMock()
+                mock_pool.get_key.return_value = "fake_key_for_test"
+                mock_pool_fn.return_value = mock_pool
+
+                graph = build_ffmpeg_filter_graph_via_agent(
+                    soundscape_plan={"scenes": [{"id": 1, "emotion": "tense"}]},
+                    cue_sheet={"foley_cues": []},
+                    vocal_dur=10.0,
+                    has_foley=False,
+                )
+
+                self.assertIsNotNone(graph)
+                self.assertEqual(graph, "[0:a][1:a]amix=inputs=2[out]")
+
+    def test_05_agent_retries_on_transient_loop_error(self):
+        """Verify agent continues retrying when a transient socket/exception occurs."""
+        mock_resp_success = MagicMock()
+        mock_resp_success.read.return_value = json.dumps({
+            "candidates": [{
+                "content": {
+                    "parts": [{"text": "```ffmpeg\n[0:a][1:a]amix=inputs=2[out]\n```"}]
+                }
+            }]
+        }).encode("utf-8")
+        mock_resp_success.__enter__.return_value = mock_resp_success
+
+        # Turn 1 raises RuntimeError (transient error), Turn 2 returns success
+        with patch("urllib.request.urlopen", side_effect=[RuntimeError("Transient connection reset"), mock_resp_success]):
+            with patch("audiobook_factory.ffmpeg_agent.get_persistent_key_pool") as mock_pool_fn, \
+                 patch("audiobook_factory.model_manager.get_model_manager") as mock_mm_fn:
+                mock_mm = MagicMock()
+                mock_mm.resolve_active_model.return_value = "gemini-2.5-flash"
+                mock_mm_fn.return_value = mock_mm
+
                 mock_pool = MagicMock()
                 mock_pool.get_key.return_value = "fake_key_for_test"
                 mock_pool_fn.return_value = mock_pool

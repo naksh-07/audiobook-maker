@@ -21,9 +21,12 @@ from audiobook_factory.model_manager import (
     ModelTierFloorBreachError,
 )
 
+from audiobook_factory.logger import logger
+from audiobook_factory.chunking_policy import chunking_policy
+
 ADULT_LITERARY_MODE = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
-TRANSLATOR_VERSION = "2.0"
-PROMPT_VERSION = "2.0.0"
+TRANSLATOR_VERSION = "2.1"
+PROMPT_VERSION = "2.1.0"
 
 
 from audiobook_factory.key_manager import get_persistent_key_pool
@@ -33,9 +36,7 @@ from audiobook_factory.advisory_lexicon import get_advisory_db
 pool = get_persistent_key_pool()
 
 
-class GeminiPayloadError(RuntimeError):
-    """Non-transient error indicating prompt payload issue (e.g. MAX_TOKENS or Safety Block)."""
-    pass
+from audiobook_factory.llm_client import call_gemini as core_call_gemini, GeminiPayloadError
 
 
 def get_api_key() -> str:
@@ -50,100 +51,26 @@ def call_gemini(
     response_schema: Optional[Dict[str, Any]] = None,
     max_retries: int = 4,
 ) -> str:
-    """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback."""
-    model_mgr = get_model_manager()
-    if not model:
-        model = model_mgr.resolve_active_model(TaskType.TRANSLATION)
-
-    candidate_models = [model]
-    for m in model_mgr.get_candidate_models_for_task(TaskType.TRANSLATION):
-        if m not in candidate_models:
-            candidate_models.append(m)
-
-    last_error = None
-
-    for curr_model in candidate_models:
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "temperature": 0.7,
-                "maxOutputTokens": 8192,
-            },
-            "safetySettings": [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-            ],
-        }
-
-        if system_instruction:
-            payload["systemInstruction"] = {
-                "parts": [{"text": system_instruction}]
-            }
-
-        if json_mode:
-            payload["generationConfig"]["responseMimeType"] = "application/json"
-            if response_schema:
-                payload["generationConfig"]["responseSchema"] = response_schema
-
-        data = json.dumps(payload).encode("utf-8")
-
-        for attempt in range(max_retries):
-            api_key = get_api_key()
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent?key={api_key}"
-            headers = get_stealth_sdk_headers(api_key)
-
-            req = urllib.request.Request(
-                url,
-                data=data,
-                headers=headers,
-                method="POST",
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=90.0) as resp:
-                    res_data = json.loads(resp.read().decode("utf-8"))
-                    candidates = res_data.get("candidates", [])
-                    if not candidates:
-                        prompt_fb = res_data.get("promptFeedback", {})
-                        raise GeminiPayloadError(f"Gemini API returned no candidates (blocked): {prompt_fb}")
-                    candidate = candidates[0]
-                    if candidate.get("finishReason") == "MAX_TOKENS":
-                        raise GeminiPayloadError("Gemini API output truncated: finishReason is MAX_TOKENS.")
-                    parts = candidate.get("content", {}).get("parts", [])
-                    if not parts or "text" not in parts[0]:
-                        raise GeminiPayloadError(f"Candidate has no text parts (finishReason: {candidate.get('finishReason')})")
-                    return parts[0]["text"]
-            except GeminiPayloadError as gpe:
-                # Deterministic payload problem: do NOT retry on identical payload
-                last_error = str(gpe)
-                print(f"    [FAIL-FAST] {gpe}. Breaking model retry immediately.", flush=True)
-                raise gpe
-            except urllib.error.HTTPError as e:
-                err_msg = e.read().decode("utf-8", errors="ignore")
-                last_error = f"HTTP {e.code}: {err_msg}"
-                if e.code in (429, 503, 500):
-                    pool.mark_temporary_backoff(api_key, 10.0, f"HTTP {e.code} in translator")
-                if e.code == 503:
-                    if attempt >= 1:
-                        print(f"    [MODEL OVERLOAD] {curr_model} overloaded (503). Skipping to next candidate model immediately.", flush=True)
-                        break
-                if e.code in (503, 500, 429) and attempt < max_retries - 1:
-                    wait_sec = 1.0 * (attempt + 1)
-                    print(f"    [WAIT] Gemini API {curr_model} HTTP {e.code}. Key backed off, cooling off {wait_sec:.1f}s before next key/retry...", flush=True)
-                    time.sleep(wait_sec)
-                    continue
-                break
-            except Exception as e:
-                last_error = str(e)
-                if attempt < max_retries - 1:
-                    wait_sec = 2.0 * (attempt + 1)
-                    print(f"    [WAIT] Network hiccup ({e}). Retrying in {wait_sec:.1f}s (Attempt {attempt+1}/{max_retries})...", flush=True)
-                    time.sleep(wait_sec)
-                    continue
-                break
-
-    raise LLMUnavailableError(f"STRICT HALT: Gemini API request failed on {candidate_models}: {last_error}")
+    """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback.
+    Delegates to centralized audiobook_factory.llm_client.
+    """
+    mime = "application/json" if json_mode else "text/plain"
+    res = core_call_gemini(
+        prompt=prompt,
+        system_instruction=system_instruction if system_instruction else None,
+        task_type=TaskType.TRANSLATION,
+        response_mime_type=mime,
+        temperature=0.7,
+        max_output_tokens=8192,
+        max_retries=max_retries,
+        model=model,
+        response_schema=response_schema,
+        timeout_sec=90.0,
+        return_raw_text=True,
+    )
+    if isinstance(res, str):
+        return res
+    return json.dumps(res, ensure_ascii=False)
 
 
 def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str, Any]) -> str:
@@ -476,7 +403,8 @@ def _retrieve_chapter_memory_in_translator(
             scene_text=source_text,
         )
         return mem_ctx.get_prompt_context()
-    except Exception:
+    except Exception as e:
+        logger.warning(f"  [!] Pre-translation memory retrieval notice for {block_label}: {e}")
         return ""
 
 
@@ -549,8 +477,8 @@ def _commit_chapter_memory_in_translator(
             )
             store.save(store_path)
             bible.save(project_dir)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"  [!] Post-translation memory commit failed for {block_label}: {e}", exc_info=True)
 
 
 def _sync_chapter_memory_in_translator(
@@ -608,8 +536,8 @@ def translate_chapter(
             effective_context = f"{preceding_context}\n\n{mem_block}".strip() if preceding_context else mem_block
 
     words = chapter_text.split()
-    # Chapters under 2,200 words fit comfortably within the 8,192 token limit
-    if len(words) <= 2200:
+    # Enforce strict chunking policy (750 words ceiling) to prevent cognitive fatigue & lost-in-the-middle
+    if len(words) <= chunking_policy.TRANSLATION_MAX_WORDS:
         cache_file = (cache_dir / f"{chapter_title}_full.txt") if cache_dir and chapter_title else None
         if cache_file and cache_file.exists() and cache_file.stat().st_size > 10:
             with open(cache_file, "r", encoding="utf-8") as f:
@@ -644,7 +572,7 @@ def translate_chapter(
             )
         return res
 
-    # For long chapters, split across paragraph boundaries to avoid hitting MAX_TOKENS
+    # For long chapters, split across paragraph boundaries using TRANSLATION_TARGET_WORDS (650 words)
     paragraphs = chapter_text.split("\n\n")
     chunks: List[str] = []
     curr_chunk: List[str] = []
@@ -652,7 +580,7 @@ def translate_chapter(
 
     for p in paragraphs:
         p_words = len(p.split())
-        if curr_words + p_words > 1800 and curr_chunk:
+        if curr_words + p_words > chunking_policy.TRANSLATION_TARGET_WORDS and curr_chunk:
             chunks.append("\n\n".join(curr_chunk))
             curr_chunk = [p]
             curr_words = p_words
@@ -690,8 +618,9 @@ def translate_chapter(
                         print(f"    [INVALID CACHE] [Part {i}/{len(chunks)}] Cache failed guardrail ({err}). Re-translating...", flush=True)
                 else:
                     print(f"    [STALE CACHE] [Part {i}/{len(chunks)}] Cache fingerprint mismatch. Re-translating...", flush=True)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"  [!] Cache fingerprint read notice for {chapter_title}_part_{i}: {e}")
+
 
         print(f"    -> [Part {i}/{len(chunks)}] Translating {chunk_words} words...", flush=True)
         chunk_title = f"{chapter_title} (Part {i}/{len(chunks)})" if chapter_title else f"Part {i}/{len(chunks)}"

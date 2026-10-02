@@ -24,6 +24,11 @@ from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnav
 from audiobook_factory.cadence import get_stealth_sdk_headers
 
 
+class GeminiPayloadError(RuntimeError):
+    """Non-transient error indicating prompt payload issue (e.g. MAX_TOKENS or Safety Block)."""
+    pass
+
+
 def call_gemini(
     prompt: str,
     system_instruction: Optional[str] = None,
@@ -35,6 +40,9 @@ def call_gemini(
     service: str = "text",
     explicit_key: Optional[str] = None,
     timeout_sec: float = 45.0,
+    model: Optional[str] = None,
+    response_schema: Optional[Dict[str, Any]] = None,
+    return_raw_text: bool = False,
 ) -> Any:
     """
     Executes an LLM call through Google Gemini API using strict round-robin rotation.
@@ -66,6 +74,8 @@ def call_gemini(
     }
     if response_mime_type:
         payload["generationConfig"]["responseMimeType"] = response_mime_type
+    if response_schema and response_mime_type == "application/json":
+        payload["generationConfig"]["responseSchema"] = response_schema
     if system_instruction:
         payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
@@ -83,12 +93,21 @@ def call_gemini(
             raise LLMUnavailableError(f"No available Gemini API keys in pool: {e}") from e
 
         if not curr_key:
+            curr_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+
+        if not curr_key:
             raise LLMUnavailableError("KeyPool returned empty API key.")
 
         try:
             candidate_models = model_mgr.get_candidate_models_for_task(task_type)
         except Exception:
             candidate_models = []
+
+        if model:
+            if model in candidate_models:
+                candidate_models = [model] + [m for m in candidate_models if m != model]
+            else:
+                candidate_models = [model] + candidate_models
 
         env_model = os.environ.get("GEMINI_TEXT_MODEL")
         if env_model:
@@ -105,6 +124,8 @@ def call_gemini(
         if attempt > 0 and len(candidate_models) > 1:
             # Automatic candidate rotation on retries/errors (never hammer a single model)
             curr_model = candidate_models[attempt % len(candidate_models)]
+        elif model:
+            curr_model = model
         else:
             try:
                 curr_model = model_mgr.resolve_active_model(task_type, api_key=curr_key)
@@ -123,15 +144,21 @@ def call_gemini(
 
                 resp_candidates = data.get("candidates", [])
                 if not resp_candidates:
-                    feedback = data.get("promptFeedback", {})
-                    logger.warning(f"  [!] LLM candidate empty (Feedback: {feedback}) on attempt {attempt + 1}")
-                    continue
+                    prompt_fb = data.get("promptFeedback", {})
+                    raise GeminiPayloadError(f"Gemini API returned no candidates (blocked): {prompt_fb}")
 
-                parts = resp_candidates[0].get("content", {}).get("parts", [])
+                candidate = resp_candidates[0]
+                if candidate.get("finishReason") == "MAX_TOKENS":
+                    raise GeminiPayloadError("Gemini API output truncated: finishReason is MAX_TOKENS.")
+
+                parts = candidate.get("content", {}).get("parts", [])
                 if not parts:
                     continue
 
                 raw_text = "".join(p.get("text", "") for p in parts if "text" in p).strip()
+
+                if return_raw_text or response_mime_type != "application/json":
+                    return raw_text
 
                 if response_mime_type == "application/json":
                     try:
@@ -139,6 +166,12 @@ def call_gemini(
                     except json.JSONDecodeError:
                         return json_repair.loads(raw_text)
                 return raw_text
+
+        except GeminiPayloadError as gpe:
+            # Deterministic payload problem: do NOT retry on identical payload
+            last_error = gpe
+            logger.warning(f"  [FAIL-FAST] {gpe}. Breaking model retry immediately.")
+            raise gpe
 
         except urllib.error.HTTPError as e:
             last_error = e

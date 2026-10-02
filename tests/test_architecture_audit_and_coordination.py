@@ -194,9 +194,11 @@ def test_architecture_auditor_read_only(tmp_path):
 # Test 8: Live Project Chapter 1 Architecture Audit (Read-Only)
 # -----------------------------------------------------------------------------
 def test_live_project_read_only_audit():
-    live_proj = Path("audiobooks/projects/harry_potter_or_paras_patthar").resolve()
-    if not live_proj.exists():
-        pytest.skip("Live project harry_potter_or_paras_patthar not found")
+    live_proj = Path("audiobooks/projects/dastan_e_hastinapur").resolve()
+    if not (live_proj / "mastered").exists():
+        live_proj = Path("audiobooks/projects/harry_potter_or_paras_patthar").resolve()
+    if not (live_proj / "mastered").exists():
+        pytest.skip("Certified benchmark project not found or unproduced")
 
     auditor = ArchitectureAuditor(project_dir=live_proj)
     report = auditor.audit_all(chapter_num=1)

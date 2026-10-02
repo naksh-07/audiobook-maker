@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 logger = logging.getLogger("audiobook_factory.dramaturgy.scene_analyzer")
 
+from audiobook_factory.chunking_policy import chunking_policy
 from audiobook_factory.translation.intensity_model import IntensityEvaluator
 from .contracts import (
     SceneDramaticPlan,
@@ -140,26 +141,62 @@ class SceneAnalyzer:
         known_characters: Optional[List[str]] = None,
     ) -> Optional[Dict[str, Any]]:
         """
-        Deep Literary Scene Comprehension LLM Pass:
-        Extracts genuine dramatic stakes, true conflict dynamics, psychological questions,
-        reveals, reversals, and setting nuances using round-robin Gemini pool.
+        Two-Pass Decoupled Literary Scene Comprehension:
+        Pass 1: Environmental & Acoustic Staging (location, time, characters, scene type).
+        Pass 2: Psychological Subtext & Dramatic Stakes (conflict, stakes, question, reveals).
+        Decoupled to eliminate cognitive fatigue and generic boilerplate LLM responses.
         """
         try:
             from audiobook_factory.llm_client import call_gemini
             from audiobook_factory.model_manager import TaskType
 
+            capped_scene_text = scene_text[:chunking_policy.DRAMATURGY_SCENE_MAX_CHARS]
             known_str = ", ".join(known_characters) if known_characters else "None specified"
-            prompt = (
+
+            # -------------------------------------------------------------
+            # Pass 1: Environmental & Acoustic Staging
+            # -------------------------------------------------------------
+            pass1_prompt = (
                 f"Scene ID: {scene_id}\n"
                 f"Known Characters: {known_str}\n\n"
-                f"Scene Text:\n\"\"\"\n{scene_text[:6000]}\n\"\"\"\n\n"
-                "Analyze this dramatic scene from a master dramaturge and literary director perspective.\n"
+                f"Scene Text:\n\"\"\"\n{capped_scene_text}\n\"\"\"\n\n"
+                "Extract acoustic environment, time, active characters, and primary scene genre.\n"
                 "Return a JSON object with:\n"
                 "- \"location\": specific acoustic & physical setting (e.g. 'Dimly lit tavern backroom', 'Rain-slicked castle battlements')\n"
                 "- \"time_context\": atmospheric time of day/period (e.g. 'Midnight during storm', 'Late afternoon')\n"
                 "- \"active_characters\": list of character names actively present or speaking\n"
                 "- \"scene_type\": 'combat' | 'confrontation' | 'revelation' | 'investigation' | 'romance' | 'horror' | 'introspection' | 'comedy' | 'dialogue'\n"
                 "- \"dramatic_complexity\": 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'\n"
+            )
+            pass1_sys = (
+                "You are an Audio Drama Acoustic & Staging Director. "
+                "Extract physical setting and character presence accurately. Output purely valid JSON."
+            )
+
+            res1 = call_gemini(
+                prompt=pass1_prompt,
+                system_instruction=pass1_sys,
+                task_type=TaskType.DRAMATURGY,
+                response_mime_type="application/json",
+                temperature=0.2,
+                max_retries=3,
+            )
+
+            if not isinstance(res1, dict) or "scene_type" not in res1:
+                logger.warning(f"  [!] Scene {scene_id} Pass 1 acoustic staging did not return expected schema. Proceeding with fallback.")
+                return None
+
+            # -------------------------------------------------------------
+            # Pass 2: Psychological Subtext & Dramatic Stakes
+            # -------------------------------------------------------------
+            resolved_loc = res1.get("location", "Indoors")
+            resolved_type = res1.get("scene_type", "dialogue")
+            pass2_prompt = (
+                f"Scene ID: {scene_id} ({resolved_type} at {resolved_loc})\n"
+                f"Active Characters: {', '.join(res1.get('active_characters', []))}\n\n"
+                f"Scene Text:\n\"\"\"\n{capped_scene_text}\n\"\"\"\n\n"
+                "Analyze the psychological subtext, narrative stakes, reveals, and conflict dynamics.\n"
+                "Return a JSON object with:\n"
                 "- \"primary_conflict\": precise dramatic tension driving this encounter\n"
                 "- \"secondary_conflicts\": list of underlying interpersonal or psychological tensions\n"
                 "- \"dramatic_purpose\": overarching narrative function served by this scene\n"
@@ -173,27 +210,34 @@ class SceneAnalyzer:
                 "- \"narrative_distance\": 'immediate' | 'close' | 'scenic' | 'distant'\n"
                 "- \"pov_character\": primary perspective character name or null\n"
             )
-
-            system_instruction = (
-                "You are an Academy-Award winning Literary Dramaturge and Audio Drama Director. "
-                "Extract genuine psychological and dramatic truth from novel scenes. "
-                "Output purely valid JSON."
+            pass2_sys = (
+                "You are an Academy-Award winning Literary Dramaturge. "
+                "Extract genuine psychological and dramatic truth without generic cliches. Output purely valid JSON."
             )
 
-            res = call_gemini(
-                prompt=prompt,
-                system_instruction=system_instruction,
-                task_type=TaskType.DRAMATURGY,
-                response_mime_type="application/json",
-                temperature=0.2,
-                max_retries=4,
-            )
-            if isinstance(res, dict) and "scene_type" in res:
-                return res
-            return None
+            try:
+                res2 = call_gemini(
+                    prompt=pass2_prompt,
+                    system_instruction=pass2_sys,
+                    task_type=TaskType.DRAMATURGY,
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                    max_retries=3,
+                )
+            except Exception as e2:
+                logger.warning(f"  [!] Pass 2 subtext analysis notice for {scene_id}: {e2}. Preserving Pass 1 staging.")
+                res2 = {}
+
+            # Merge Pass 1 and Pass 2 results
+            merged = dict(res1)
+            if isinstance(res2, dict):
+                merged.update(res2)
+            return merged
+
         except Exception as e:
-            logger.error(f"  [!] Scene LLM analysis exception: {e}")
+            logger.error(f"  [!] Scene LLM analysis exception: {e}", exc_info=True)
             return None
+
 
     @classmethod
     def analyze_single_scene(

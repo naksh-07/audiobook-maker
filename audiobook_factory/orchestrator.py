@@ -58,22 +58,20 @@ from audiobook_factory.agent_director import AgentDirector
 from audiobook_factory.manifest_renderer import render_manifest_soundscape
 from audiobook_factory.contracts import CreativeManifest, LegacyCreativeManifestAdapter
 from audiobook_factory.cinema_audio_engine import render_discrete_stems, CinemaAudioManifest
-from audiobook_factory.gate_auditor import (
-    audit_gate0_translation,
-    audit_gate1_roster,
-    audit_gate2_script,
-    audit_gate2_5_dramatic_fidelity,
-    audit_gate2_8_performance_fidelity,
-    audit_gate3_5_acoustic_feasibility,
-    audit_gate5_2_spectral_masking,
-    audit_gate5_3_stereo_phase,
-    audit_gate5_master,
-    audit_gate6a_voice_continuity,
-    audit_gate6c_toc_monotonicity,
-    GateAuditError,
-)
+from audiobook_factory.gate_auditor import GateAuditError
 from audiobook_factory.telemetry import get_telemetry_ledger
 from audiobook_factory.model_manager import LLMUnavailableError, ModelTierFloorBreachError
+from audiobook_factory.orchestration import (
+    verify_pre_synthesis_gates,
+    verify_performance_fidelity_gate,
+    verify_acoustic_feasibility_gate,
+    verify_post_mix_master_gates,
+    verify_translation_coverage_gates,
+    verify_screenplay_project_gates,
+    verify_packaging_gates,
+    cleanup_chapter_chunks,
+    process_and_master_dialogue_stem,
+)
 
 
 class PipelineOrchestrator:
@@ -158,16 +156,7 @@ class PipelineOrchestrator:
                     logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
                     translate_book_project(project_dir, force_gate=force_gate)
                     # Inline Gate 0: Translation Coverage Verification
-                    extracted_dir = project_dir / "extracted"
-                    translation_dir = project_dir / "translation"
-                    ext_files = sorted(extracted_dir.glob("chapter_*.md"))
-                    for ef in ext_files:
-                        tf = translation_dir / f"{ef.stem}_hi.md"
-                        if not tf.exists():
-                            tf = translation_dir / ef.name
-                        if tf.exists():
-                            g0_res = audit_gate0_translation(ef, tf)
-                            logger.info(f"[*] Gate 0 Translation Coverage: PASSED for {ef.name} ({g0_res.get('translation_chars')} chars, ratio {g0_res.get('length_ratio')})")
+                    verify_translation_coverage_gates(project_dir)
             else:
                 telemetry.record_stage(run_id, "Literary Translation", 2, duration_sec=0.0, status="SKIPPED")
                 logger.info("\n[Stage 2/6] Translation skipped (English/Native language selected).")
@@ -199,21 +188,8 @@ class PipelineOrchestrator:
                 if not script_files:
                     raise RuntimeError(f"No script files generated in {scripts_dir}")
 
-                # Inline Gate 1: Voice Collision & Roster Sanity
-                roster_file = project_dir / "character_roster.json"
-                registry_file = project_dir / "voice_registry.json"
-                if roster_file.exists() or registry_file.exists():
-                    g1_res = audit_gate1_roster(
-                        roster_file=roster_file if roster_file.exists() else {},
-                        registry_file=registry_file if registry_file.exists() else {},
-                    )
-                    logger.info(f"[*] Gate 1 Character Roster & Voice Collision: PASSED ({g1_res.get('status')})")
-
-                # Inline Gate 6A: Voice Continuity Across Chapters
-                g6a_res = audit_gate6a_voice_continuity(project_dir)
-                if not g6a_res.passed:
-                    raise GateAuditError(f"Gate 6A Voice Continuity Failed across chapters: {'; '.join(g6a_res.errors)}")
-                logger.info("[*] Gate 6A Voice Continuity: PASSED across all chapters")
+                # Inline Gate 1 & Gate 6A: Voice Collision, Roster Sanity & Voice Continuity
+                verify_screenplay_project_gates(project_dir)
 
             # -------------------------------------------------------------
             # Stage 4 & 5: Concurrent Synthesis & 5-Track Cinematic Production
@@ -239,14 +215,7 @@ class PipelineOrchestrator:
                 final_m4b = package_m4b_audiobook(project_dir, cover_image=cover_image)
 
                 # Inline Gate 6C: Table of Contents Monotonicity & Chapter Boundaries
-                try:
-                    g6c_res = audit_gate6c_toc_monotonicity(project_dir)
-                    if g6c_res.passed:
-                        logger.info("[*] Gate 6C Table of Contents Monotonicity: PASSED")
-                    else:
-                        logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {g6c_res.errors}")
-                except Exception as e:
-                    logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {e}")
+                verify_packaging_gates(project_dir)
 
             telemetry.end_run(run_id, status="SUCCESS")
             report_file = project_dir / "TELEMETRY_REPORT.json"
@@ -346,35 +315,8 @@ class PipelineOrchestrator:
             pass
 
 
-        # Gate 2: Screenplay Script Schema and canonical speakers (ADR-021 Whitelist Enforcement)
-        try:
-            gate2_res = audit_gate2_script(script_file, project_dir=project_dir)
-            logger.info(f"[*] Gate 2 Script Audit: PASSED for Chapter {chapter_num:02d} ({gate2_res.get('total_segments', 0)} segments)")
-        except GateAuditError as e:
-            logger.error(f"\n[!] 🛑 GATE 2 AUDIT FAILED for Chapter {chapter_num:02d}: {e}")
-            logger.error("[!] Screenplay contains non-canonical speakers or schema violations. Aborting synthesis to prevent voice drift.")
-            raise
-        except Exception as e:
-            logger.warning(f"[!] Gate 2 Script Audit notice for Chapter {chapter_num:02d}: {e}")
-
-        # Gate 2.5: Dramatic Beat Fidelity & Character Arc Validator
-        dramatic_plan_file = project_dir / "dramaturgy" / f"{chap_stem}_dramatic_plan.json"
-        source_chap_file = project_dir / "translated" / f"{chap_stem}.md"
-        if not source_chap_file.exists():
-            source_chap_file = project_dir / "extracted" / f"{chap_stem}.md"
-        try:
-            gate2_5_res = audit_gate2_5_dramatic_fidelity(
-                script_file=script_file,
-                dramatic_plan_file=dramatic_plan_file if dramatic_plan_file.exists() else None,
-                source_file=source_chap_file if source_chap_file.exists() else None,
-                project_dir=project_dir,
-            )
-            logger.info(f"[*] Gate 2.5 Dramatic Fidelity: PASSED for Chapter {chapter_num:02d} (Status: {gate2_5_res.get('status')})")
-        except GateAuditError as e:
-            logger.error(f"\n[!] 🛑 GATE 2.5 DRAMATIC FIDELITY FAILED for Chapter {chapter_num:02d}: {e}")
-            raise
-        except Exception as e:
-            logger.warning(f"[!] Gate 2.5 Dramatic Fidelity notice for Chapter {chapter_num:02d}: {e}")
+        # Gate 2 & Gate 2.5: Script Schema and Dramatic Fidelity
+        verify_pre_synthesis_gates(script_file, chap_stem, project_dir, chapter_num)
 
         # 1. Synthesize speech segments via Gemini TTS (Token Bucket & Graceful Key Halting)
         logger.info(f"[*] Synthesizing Chapter {chapter_num:02d} speech segments (Workers: {workers})...")
@@ -394,100 +336,18 @@ class PipelineOrchestrator:
                 sys.exit(0)
 
         # Gate 2.8: Pre-Mix Performance Fidelity Gate (Fail-Closed)
-        perf_report_file = manifests_dir / f"chapter_{chapter_num:03d}_performance_report.json"
-        if not perf_report_file.exists():
-            perf_report_file = manifests_dir / f"{chap_stem}_performance_report.json"
-        if perf_report_file.exists():
-            try:
-                from audiobook_factory.performance.contracts import PerformanceFidelityReport
-                with open(perf_report_file, "r", encoding="utf-8") as rf:
-                    rep_dict = json.load(rf)
-                rep = PerformanceFidelityReport.model_validate(rep_dict)
-                if rep.passed:
-                    logger.info(f"[*] Gate 2.8 Performance Fidelity: PASSED for Chapter {chapter_num:02d} (Avg Score: {rep.avg_evaluation_score:.2f})")
-                else:
-                    force_perf = os.environ.get("FORCE_PERFORMANCE_GATE", "false").lower() in ("true", "1", "yes")
-                    if force_perf:
-                        logger.warning(f"[!] Gate 2.8 Performance Fidelity FORCED for Chapter {chapter_num:02d}: {rep.unresolved_issues}")
-                    else:
-                        raise GateAuditError(
-                            f"Gate 2.8 Performance Fidelity Failed for Chapter {chapter_num:02d}: "
-                            f"{'; '.join(rep.unresolved_issues[:3]) if rep.unresolved_issues else 'Low evaluation score'}"
-                        )
-            except GateAuditError:
-                raise
-            except Exception as e:
-                logger.warning(f"[!] Gate 2.8 Performance Fidelity notice for Chapter {chapter_num:02d}: {e}")
+        verify_performance_fidelity_gate(manifests_dir, chap_stem, chapter_num)
 
-        # 2. Dialogue Editorial Layer (DE-01 - DE-04) & Dialogue Vocal Mastering
-        segments = sorted(audio_dir.glob(f"c{chapter_num:03d}_*.wav"))
-        if not segments:
-            raise RuntimeError(f"No audio segments found for Chapter {chapter_num}")
-
-        edit_plans = None
-        edited_segments = segments
-        try:
-            from audiobook_factory.dialogue_editing import DialogueEditor
-            dialogue_editor = DialogueEditor(project_dir=project_dir)
-            edited_segments, edit_plans, qc_rep = dialogue_editor.process_chapter(
-                chapter_num=chapter_num,
-                audio_segments=segments,
-                script_segments=script_data,
-            )
-            if not qc_rep.passed or qc_rep.has_hard_failures:
-                # Check for fatal acoustic corruption in the audio samples themselves
-                acoustic_fatal_codes = {
-                    "NUMERICAL_INSTABILITY_NAN_INF",
-                    "SEVERE_CLIPPING_DETECTED",
-                    "EMPTY_AUDIO_SAMPLES",
-                }
-                fatal_issues = [f for f in qc_rep.hard_failures if f.code in acoustic_fatal_codes]
-                if fatal_issues:
-                    raise RuntimeError(
-                        f"Dialogue Editorial QC detected critical acoustic defect in Chapter {chapter_num:02d}: "
-                        f"{fatal_issues[0].code} - {fatal_issues[0].message}. Halting to prevent defective master."
-                    )
-                logger.warning(f"[!] Dialogue Editorial QC notice for Chapter {chapter_num:02d}: using unedited fallback.")
-                edited_segments = segments
-                edit_plans = None
-        except Exception as e:
-            logger.warning(f"[!] Dialogue Editorial notice for Chapter {chapter_num:02d}: {e}")
-            edited_segments = segments
-            edit_plans = None
-
-        vocal_wav = mastered_dir / f"{chap_stem}_dialogue.wav"
-        concatenate_and_master_chapter(
-            edited_segments, vocal_wav,
-            script_segments=script_data,
+        # 2. Dialogue Editorial Layer & Dialogue Vocal Mastering
+        vocal_wav, vocal_dur, seg_durations, segments = process_and_master_dialogue_stem(
+            project_dir=project_dir,
+            chapter_num=chapter_num,
+            chap_stem=chap_stem,
+            script_data=script_data,
+            audio_dir=audio_dir,
+            mastered_dir=mastered_dir,
             spatial_staging=spatial_staging,
-            edit_plans=edit_plans,
         )
-        vocal_dur = get_audio_duration(vocal_wav)
-
-        # 3. Map exact segment durations strictly from segments passed to vocal mastering
-        seg_durations = {}
-        for seg in script_data:
-            s_idx = seg.get("index", 1)
-            # Match directly against the files passed to mastering to guarantee perfect DME stem sync
-            matched = [s for s in edited_segments if f"_s{s_idx:04d}_" in s.name]
-            if matched:
-                chunk_path = matched[0]
-                seg_durations[s_idx] = get_audio_duration(chunk_path)
-                words_json = chunk_path.with_suffix(".words.json")
-                if words_json.exists():
-                    with open(words_json, "r", encoding="utf-8") as wf:
-                        seg["word_alignments"] = json.load(wf)
-            else:
-                seg_matches = sorted(audio_dir.glob(f"c{chapter_num:03d}_s{s_idx:04d}_*.wav"))
-                if seg_matches:
-                    chunk_path = seg_matches[0]
-                    seg_durations[s_idx] = get_audio_duration(chunk_path)
-                    words_json = chunk_path.with_suffix(".words.json")
-                    if words_json.exists():
-                        with open(words_json, "r", encoding="utf-8") as wf:
-                            seg["word_alignments"] = json.load(wf)
-                else:
-                    seg_durations[s_idx] = 4.0
 
         # 4. Agentic Directing Layer: Produce validated CreativeManifest via AgentDirector
         manifest_file = manifests_dir / f"{chap_stem}_manifest.json"
@@ -511,18 +371,7 @@ class PipelineOrchestrator:
                 f.write(manifest.to_json(indent=2))
 
         # Gate 3.5: Acoustic Pre-Flight Feasibility Guard
-        try:
-            gate35_res = audit_gate3_5_acoustic_feasibility(manifest, sound_bank=get_sound_bank())
-            if not gate35_res.passed:
-                logger.error(f"[!] 🛑 Gate 3.5 Pre-Flight Feasibility FAILED for Chapter {chapter_num:02d}: {gate35_res.errors}")
-                if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
-                    raise GateAuditError(f"Gate 3.5 Pre-Flight Feasibility Failed: {'; '.join(gate35_res.errors)}")
-            else:
-                logger.info(f"[*] Gate 3.5 Acoustic Feasibility: PASSED for Chapter {chapter_num:02d}")
-        except GateAuditError:
-            raise
-        except Exception as e:
-            logger.warning(f"[!] Gate 3.5 Feasibility notice: {e}")
+        verify_acoustic_feasibility_gate(manifest, chapter_num)
 
         # 5. Cinema Audio Engine: Render 5-Track Discrete DME Stems & Final Cinema Master
         cinematic_out = mastered_dir / f"{chap_stem}_cinematic.m4a"
@@ -575,76 +424,18 @@ class PipelineOrchestrator:
                 output_master_file=cinematic_out,
             )
 
-        # Gate 5.2: Spectral Masking (Dialogue vs Music DMR)
+        # Post-Mix Audio Quality Gates (5.2, 5.3, 5.0) and Telemetry
         mx_stem = mastered_dir / f"{cinema_manifest.chapter_id}_stem_MX.wav"
         if not mx_stem.exists():
             mx_stem = mastered_dir / f"{chap_stem}_stem_MX.wav"
-        gate52_passed = True
-        if mx_stem.exists() and vocal_wav.exists():
-            try:
-                gate52_res = audit_gate5_2_spectral_masking(vocal_wav, mx_stem, min_dmr_db=12.0)
-                gate52_passed = gate52_res.passed
-                if not gate52_res.passed:
-                    logger.error(f"[!] 🛑 Gate 5.2 Spectral Masking FAILED for Chapter {chapter_num:02d}: {gate52_res.errors}")
-                    if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
-                        raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.2 Spectral Masking: {'; '.join(gate52_res.errors)}")
-                else:
-                    logger.info(f"[*] Gate 5.2 Spectral Masking: PASSED (DMR: {gate52_res.details.get('measured_dmr_db', 'N/A')} dB)")
-            except GateAuditError:
-                raise
-            except Exception as e:
-                logger.error(f"[!] Gate 5.2 Spectral Masking probe error: {e}")
-                gate52_passed = False
-                if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
-                    raise GateAuditError(f"Gate 5.2 audit probe error: {e}")
 
-        # Gate 5.3: Stereo Phase Correlation
-        gate53_passed = True
-        if master_wav.exists():
-            try:
-                gate53_res = audit_gate5_3_stereo_phase(master_wav, min_phase_correlation=0.20)
-                gate53_passed = gate53_res.passed
-                if not gate53_res.passed:
-                    logger.error(f"[!] 🛑 Gate 5.3 Stereo Phase FAILED for Chapter {chapter_num:02d}: {gate53_res.errors}")
-                    if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
-                        raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.3 Stereo Phase: {'; '.join(gate53_res.errors)}")
-                else:
-                    logger.info(f"[*] Gate 5.3 Stereo Phase: PASSED (mean r: {gate53_res.details.get('mean_phase_correlation', 'N/A')})")
-            except GateAuditError:
-                raise
-            except Exception as e:
-                logger.error(f"[!] Gate 5.3 Stereo Phase probe error: {e}")
-                gate53_passed = False
-                if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
-                    raise GateAuditError(f"Gate 5.3 audit probe error: {e}")
-
-        # Gate 5: Broadcast Master EBU R128 Probe
-        gate5_certified = False
-        if cinematic_out.exists():
-            try:
-                gate5_res = audit_gate5_master(cinematic_out, target_lufs=-19.0, tolerance_lu=2.0, max_true_peak=-1.4)
-                gate5_certified = (gate5_res.get("status") == "PASS")
-                logger.info(f"[*] Gate 5 Broadcast Master: PASSED (LUFS: {gate5_res.get('integrated_lufs')}, TP: {gate5_res.get('true_peak_dbtp')})")
-                if gate5_certified:
-                    try:
-                        t_ledger = get_telemetry_ledger()
-                        phase_corr = float(gate53_res.details.get("mean_phase_correlation", 1.0)) if ('gate53_res' in locals() and gate53_res.passed) else 1.0
-                        t_ledger.record_acoustic_metrics(
-                            run_id=os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", f"chap_{chapter_num}"),
-                            chapter_num=chapter_num,
-                            duration_sec=float(gate5_res.get("duration_sec", 0.0) or 0.0),
-                            integrated_lufs=float(gate5_res.get("integrated_lufs", -19.0)),
-                            true_peak_dbtp=float(gate5_res.get("true_peak_dbtp", -1.5)),
-                            loudness_range_lu=float(gate5_res.get("loudness_range_lu", 0.0) or 0.0),
-                            phase_correlation=phase_corr,
-                        )
-                    except Exception as te:
-                        logger.debug(f"Telemetry acoustic recording notice: {te}")
-            except GateAuditError:
-                raise
-            except Exception as e:
-                logger.error(f"[!] 🛑 Gate 5 Broadcast Master FAILED for Chapter {chapter_num:02d}: {e}")
-                raise GateAuditError(f"Chapter {chapter_num:02d} master failed EBU R128 broadcast certification: {e}")
+        gate52_passed, gate53_passed, gate5_certified = verify_post_mix_master_gates(
+            chapter_num=chapter_num,
+            cinematic_out=cinematic_out,
+            master_wav=master_wav,
+            vocal_wav=vocal_wav,
+            mx_stem=mx_stem,
+        )
 
         # 6. Build Millisecond Timeline Ledger (Canonical in scripts_dir, mirrored to bgm_dir)
         ledger_file = scripts_dir / f"{chap_stem}_timeline_ledger.json"
@@ -672,12 +463,6 @@ class PipelineOrchestrator:
             pass
 
         # 9. Auto-Janitor: Clean up intermediate uncompressed WAV chunks ONLY IF certified
-        #    Safety Invariant: Chunks are NEVER purged if cinematic master failed, is corrupt,
-        #    if any Gate 5.x check failed, or unless PURGE_INTERMEDIATE_CHUNKS=true is explicitly set.
-        #    By default, chunks are preserved for zero-cost DSP remastering without burning TTS quota.
-        purge_chunks_flag = os.environ.get("PURGE_INTERMEDIATE_CHUNKS", "false").lower() in ("1", "true", "yes")
-        retain_chunks_flag = (not purge_chunks_flag) or (os.environ.get("AUDIOBOOK_RETAIN_CHUNKS", "").lower() in ("1", "true", "yes"))
-
         all_gates_certified = (
             cinematic_out.exists()
             and gate5_certified
@@ -685,27 +470,7 @@ class PipelineOrchestrator:
             and gate53_passed
             and cinematic_out.stat().st_size > 1000
         )
-
-        chunk_pattern = f"c{chapter_num:03d}_*.wav"
-        all_chunks = list(audio_dir.glob(chunk_pattern))
-
-        if retain_chunks_flag:
-            logger.info(f"  [JANITOR SHIELD] Retaining {len(all_chunks)} raw WAV chunks for chapter {chapter_num:02d} (Zero-cost remaster shield enabled).")
-        elif not all_gates_certified:
-            logger.warning(
-                f"  [JANITOR SHIELD] Master render uncertified or Gate 5/5.2/5.3 failed for chapter {chapter_num:02d}. "
-                f"Retaining {len(all_chunks)} raw WAV chunks to protect synthesized progress."
-            )
-        else:
-            purged_count = 0
-            for chunk_file in all_chunks:
-                try:
-                    chunk_file.unlink(missing_ok=True)
-                    purged_count += 1
-                except Exception:
-                    pass
-            if purged_count:
-                logger.info(f"  [JANITOR] Purged {purged_count} intermediate WAV chunks for chapter {chapter_num:02d}")
+        cleanup_chapter_chunks(audio_dir, chapter_num, cinematic_out, all_gates_certified)
 
         stem_ledger_file = mastered_dir / f"{cinema_manifest.chapter_id}_stem_ledger.json"
         if not stem_ledger_file.exists():

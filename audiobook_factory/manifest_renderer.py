@@ -439,7 +439,7 @@ def assemble_master_filter_graph(
     duck_release_ms: int = 750,
     spectral_carve_hz: int = 2200,
     spectral_carve_gain_db: float = -5.5,
-    sidechain_threshold: float = 0.018,
+    sidechain_threshold: float = 0.03,
     reverb_preset: str = "room",
     rt60_ms: Optional[int] = None,
 ) -> str:

@@ -1010,3 +1010,30 @@
      - Verified with `tests/test_production_certification.py` clean-room run: 100% PASS (8/8).
      - Verified with `tests/test_fail_closed_quality_gates.py` (16/16), `test_uncompromised_cinema_audio.py` (14/14), `test_pdf_engine.py` (10/10), `test_storage.py` (4/4), `test_zero_hardcoding_contracts.py` (4/4), and full audio DSP regression suites.
 - **Rationale:** Transforms the monolithic codebase into a highly maintainable, modular, fail-closed studio architecture while preserving 100% backward compatibility for all existing CLI commands, tests, and mock interfaces.
+
+## ADR-048: Sprint 2 Monolith Decomposition (Top 5 God Objects), Centralized Chunking Policy, and Creative Stamina
+- **Status:** Accepted
+- **Date:** 2026-10-02
+- **Context:**
+  1. Five critical God objects remained in the codebase exceeding recommended maintainability thresholds: `cinematic_mix/judge.py` (>1,180 lines), `soundscape.py` (>1,280 lines), `script_builder.py` (>1,090 lines), `forced_aligner.py` (>1,070 lines), and `orchestrator.py` (>720 lines).
+  2. Large generative chunk sizes in `translator.py` (2,200 words) and screenplay builders caused silent LLM context exhaustion, paragraph drops, and token fatigue.
+  3. Windows CLI commands exceeding 8,191 characters risked truncation during complex multi-stem mixing graphs.
+- **Decision:**
+  1. **Centralized Chunking Policy (`audiobook_factory/chunking_policy.py`):**
+     - Slashed translation ceiling to `TRANSLATION_MAX_WORDS = 750` words to guarantee zero dropped paragraphs and complete proposition parity.
+     - Enforced `SCREENPLAY_MAX_WORDS = 350` words micro-chunking aligned to scene beat transitions.
+     - Enforced `DRAMATURGY_SCENE_MAX_CHARS = 3500` characters for two-pass micro-prompts.
+     - Removed all silent exception suppressing in `translator.py`, enforcing fail-closed status.
+  2. **Top 5 God Objects Decomposed with Zero-Breaking Facades:**
+     - `cinematic_mix/judge.py` -> `remediation_planner.py` & `rules/` (`technical_rules.py`, `acoustic_rules.py`, `cinematic_rules.py`).
+     - `soundscape.py` -> `audiobook_factory/soundscape_engine/` (`probe.py`, `mood_detector.py`, `sound_resolver.py`, `ducking.py`, `whisper_guard.py`, `planner.py`, `mixer.py`).
+     - `script_builder.py` -> `audiobook_factory/script/` (`normalizer.py`, `dialogue_parser.py`, `staging_enricher.py`, `screenplay_cleaner.py`, `dramatized_builder.py`, `project_generator.py`).
+     - `forced_aligner.py` -> `audiobook_factory/alignment/` (`text_utils.py`, `audio_io.py`, `pause_classifier.py`, `diagnostics.py`, `energy_fallback.py`, `mms_aligner.py`).
+     - `orchestrator.py` -> `audiobook_factory/orchestration/` (`gates.py`, `janitor.py`, `dialogue_runner.py`).
+  3. **Workstation Engine Hardening:**
+     - MMS Aligner explicit CUDA memory cleanup (`del waveform, emission; torch.cuda.empty_cache()`).
+     - Cinema audio engine Windows CLI length guard via dynamic `-filter_complex_script` file execution.
+     - Network glitch loop resilience in `ffmpeg_agent.py`.
+     - Key pool error payload extraction and unified `call_gemini` routing.
+- **Rationale:** Ensures long-form novel adaptation without LLM fatigue or paragraph swallowing, eliminates all monolith scripts across the codebase, and maintains 100% backward compatibility for existing tests and CLI invocation patterns.
+

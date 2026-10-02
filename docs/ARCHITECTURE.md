@@ -461,3 +461,111 @@ The system bridges all 10 critical producer-consumer metadata silos:
 | **S8** | Combat Action Staging & LFE Sub-Drop | `script_builder.py` | `manifest_renderer.py` | Foley cues with `is_lfe_sub_drop=True` and action-beat splitting trigger 52Hz mono sub-bass boost and `PROFILE_COMBAT_SHOCK`. |
 | **S9** | `PerformanceDirection`<br>`TakeVariant`<br>`Gate 2.8 Report` | `performance/director.py`<br>`performance/take_selector.py` | `tts_adapter.py`<br>`cinema_audio_engine.py`<br>`gate_auditor.py` | Bridges Stage 3 dramatic beats into moment-level actor performance directions, priority multi-take synthesis, 8D acoustic evaluation, intelligent take selection, and fail-closed Gate 2.8 pre-mix verification before dialogue stems are mastered. |
 | **S10** | `spoken_text`<br>`pronunciation_metadata`<br>`Gate T13-T15 / Gate 6E` | `pronunciation/spoken_text.py`<br>`pronunciation/resolver.py` | `tts_dispatcher.py`<br>`performance/gate.py`<br>`gate_auditor.py` | Decouples sacred literary prose (`ScreenplaySegment.text`, strictly immutable) from phonetically resolved TTS payloads (`ScreenplaySegment.spoken_text`). Passes 7-tier resolved phonetic Devanagari guides, numerals, currencies, and units to Gemini Cloud TTS while shielding neural acting tags (`[whispers]`), verifies acoustic articulation with Meta MMS_FA CTC alignment, executes single-take repairs, and enforces project-wide cross-chapter pronunciation consistency (Gate 6E). |
+
+---
+
+## 🏛️ Section 6: Master Modernization & Monolith Decomposition (ADR-047 & ADR-048)
+
+To achieve enterprise maintainability, scale across 100+ chapter novels, and support clean-room CI/CD testing, the architecture underwent full monolith decomposition across all 10 core subsystems:
+
+### 1. The 10 Decomposed Subsystems & Facade Architecture
+All legacy entrypoints are preserved as zero-breaking, backward-compatible facades that forward calls directly to modular package implementations:
+
+1. **Contracts Subsystem ([`audiobook_factory/contracts/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts/))**:
+   - `base.py`: Fundamental Pydantic v2 schemas and validation primitives.
+   - `screenplay.py`: `ScreenplaySegment`, `ScreenplayScript`, vocal tagging, and spatial stage contracts.
+   - `manifest.py`: `CreativeManifest`, `SceneMixIntent`, and `AcousticProfile` specifications.
+   - `timeline.py`: `TimelineSegment` and `TimelineLedger` sample-accurate contracts.
+   - `album.py`: Chapter, TOC, and packaging manifests.
+   - `sonic_genome.py`: Audio analysis schemas and acoustic measurement records.
+
+2. **Sound Bank Subsystem ([`audiobook_factory/sound_bank/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/))**:
+   - `db.py`: SQLite FTS5 connection pooling, schema migrations, and WAL management.
+   - `search.py`: BM25 lexical querying with era-aware negative filtering.
+   - `resolver.py`: Cue-to-sound resolution and hybrid scoring.
+   - `sound_card.py`: Epistemic `AgentSoundCard` v3.0 representations.
+   - `indexer.py` & `harvester.py`: Multi-format audio harvesting and fingerprinting.
+   - `downloader.py`: Cloud asset streaming and local caching.
+   - `dsp_metrics.py`: Welch spectral centroid, zero-crossing rate, attack/decay, and LUFS analysis.
+
+3. **Text-to-Speech Subsystem ([`audiobook_factory/tts/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts/))**:
+   - `dispatcher.py`: Master multi-cast speech synthesis dispatcher and dry-run pre-flight validation.
+   - `rate_limiter.py`: Thread-safe `TokenBucketRateLimiter` with organic jitter.
+   - `audio_slicer.py`: Atomic chunk generation, verification, and unlinking.
+   - `providers/gemini.py`: Google Gemini 3.8 Flash TTS REST integration with `BLOCK_NONE` safety.
+   - `providers/winrt.py`: Windows WinRT offline TTS backup provider.
+
+4. **Quality Gates Subsystem ([`audiobook_factory/gates/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/))**:
+   - `contracts.py`: Audit report schemas, error hierarchies, and threshold definitions.
+   - `literary.py`: Gates 0, 0.1, and Translation Gates T0–T15.
+   - `screenplay.py`: Gate 2 anti-swallow quote audits and Gate 2.5 dramatic fidelity audits.
+   - `acoustics.py`: Gate 3 silence quotas, Gate 4.5 timeline continuity, and Gates 5/5.2/5.3 DSP compliance.
+   - `album.py`: Gates 6A–6E macro album certification.
+   - `orchestrator.py`: Unified gate execution engine with fail-closed halts.
+
+5. **PDF Ingestion Subsystem ([`audiobook_factory/pdf/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/pdf/))**:
+   - `models.py`: Bounding boxes, layout spans, and reading order records.
+   - `layout_reconstructor.py`: Recursive XY-cut multi-column analysis and banner detection.
+   - `quality_analyzer.py`: Multi-signal composite scoring for layout validation.
+   - `vision_extractor.py`: Multimodal vision fallback for complex page layouts.
+   - `forensic_engine.py`: Character-accurate `_PDFPageSpanRecord` mapping.
+
+6. **Agentic Director Subsystem ([`audiobook_factory/director/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/director/))**:
+   - `director.py`: Master `AgentDirector` orchestrating the multi-pass directing cycle.
+   - `dramaturgy.py`: Pass 1 silence carving and dramatic pacing.
+   - `music_director.py`: Pass 2 leitmotif binding and scene underscore scoring.
+   - `foley_director.py`: Pass 3 Foley synchronization and whisper attenuation.
+   - `scene_acoustics.py`: 4-stem scene acoustic environment configuration.
+
+7. **Forced Alignment Subsystem ([`audiobook_factory/alignment/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment/))**:
+   - `text_utils.py`: Devanagari-to-Roman transliteration and conjunct normalization.
+   - `audio_io.py`: Standard-library wave loading and tensor conversion.
+   - `pause_classifier.py`: 7-class dramatic pause categorizer.
+   - `diagnostics.py`: Swallowed token, stutter, and timing anomaly detection.
+   - `energy_fallback.py`: Zero-GPU proportional energy valley alignment fallback.
+   - `mms_aligner.py`: Meta MMS_FA CTC frame-level aligner with CUDA VRAM eviction.
+
+8. **Screenplay Engine ([`audiobook_factory/script/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script/))**:
+   - `normalizer.py`: Text hygiene, dialogue quote formatting, and ellipsis standardization.
+   - `dialogue_parser.py`: Pass 1 LLM dialogue turn extraction and attribution.
+   - `staging_enricher.py`: Pass 2 Stanislavski subtext, action verbs, and spatial panning.
+   - `screenplay_cleaner.py`: Double-safety quote auto-slicing and pronoun disambiguation.
+   - `dramatized_builder.py`: Micro-chunk orchestration and context stack management.
+   - `project_generator.py`: Screenplay artifact persistence.
+
+9. **Soundscape Engine ([`audiobook_factory/soundscape_engine/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape_engine/))**:
+   - `probe.py`: Audio stream duration, channel, and sample rate probing.
+   - `mood_detector.py`: Natural language scene emotion detection.
+   - `sound_resolver.py`: Resolving mood stems and procedural drones.
+   - `ducking.py`: Whisper-safe dynamic sidechain ducking filter generation.
+   - `whisper_guard.py`: Foley whisper collision attenuation.
+   - `planner.py`: Chapter soundscape plan compiler.
+   - `mixer.py`: Multi-track FFmpeg compositing and mixdown.
+
+10. **Orchestration Subsystem ([`audiobook_factory/orchestration/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestration/))**:
+    - `dialogue_runner.py`: Speech chunk synthesis and retry coordination.
+    - `gates.py`: In-pipeline quality gate execution and verification.
+    - `janitor.py`: Audio chunk retention shield (`AUDIOBOOK_RETAIN_CHUNKS`) and safe cleanup.
+
+### 2. Storage Abstraction Layer ([`audiobook_factory/storage/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/storage/))
+Provides a pluggable filesystem abstraction interface (`IStorageBackend`) decoupling pipeline stages from physical NVMe disk paths:
+- **`LocalStorageBackend`**: Production implementation featuring:
+  - Atomic file writes using temporary `.tmp` files with atomic file promotion via `os.replace()`.
+  - Directory traversal defense rejecting paths resolving outside project boundaries.
+  - Uniform POSIX path normalization across Windows, macOS, and Linux.
+
+### 3. Centralized Creative Chunking Policy ([`audiobook_factory/chunking_policy.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/chunking_policy.py))
+Standardizes chunk sizes across the entire creative lifecycle to prevent prompt fatigue, token truncation, and hallucinated omissions:
+- `TRANSLATION_MAX_WORDS = 750`: Slashed from 2,200 words to ensure complete semantic proposition parity.
+- `SCREENPLAY_MAX_WORDS = 350`: Micro-chunking aligned to scene beats.
+- `DRAMATURGY_SCENE_MAX_CHARS = 3500`: Decoupled scene analysis micro-prompts.
+
+---
+
+## 🛡️ Section 7: Production Certification & Clean-Room Verification
+
+The codebase includes an end-to-end clean-room production certification harness ([`audiobook_factory/production_certification_harness.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/production_certification_harness.py)):
+- **24 Verification Points**: Evaluates clean-room deliverables, EBU R128 compliance, BookMasterProfile consistency, controlled failure injections, bit-exact reproducibility, fatigue and long-form stress handling.
+- **10 Production Quality Gates**: All gates evaluated fail-closed with zero bypasses in production mode.
+- **1,130+ Passing Unit & Integration Tests**: 100% green test suite across AST zero-hardcoding compliance, DSP loudness math, memory continuity, and audio mastering.
+

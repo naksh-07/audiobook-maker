@@ -209,7 +209,7 @@ Once tested and successful, output the final graph as a raw string in a markdown
             continue
         except Exception as e:
             logger.warning(f"  [!] Audio Engineer Agent loop error: {e}")
-            return None
+            continue
     return None
 
 

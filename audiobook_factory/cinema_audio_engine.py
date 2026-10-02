@@ -414,7 +414,8 @@ def render_discrete_stems(
         filter_str = ";".join(filters) + f";{mix_inputs}amix=inputs={len(amb_cues)+1}:duration=first:normalize=0,alimiter=limit=0.95:attack=5:release=50[amb_out]"
 
         filter_script = None
-        if len(filter_str) > 6000:
+        cmd_length_est = sum(len(str(x)) + 1 for x in inputs) + len(filter_str)
+        if len(filter_str) > 3000 or cmd_length_est > 6000:
             filter_script = out_dir / f"{ch_id}_amb_filter.txt"
             filter_script.write_text(filter_str, encoding="utf-8")
             fc_args = ["-filter_complex_script", str(filter_script)]
@@ -429,17 +430,21 @@ def render_discrete_stems(
             "-c:a", "pcm_s16le",
             str(amb_file),
         ]
-        res = subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if filter_script and filter_script.exists():
-            filter_script.unlink(missing_ok=True)
-        if res.returncode != 0 or not amb_file.exists():
-            # Fallback to safe loop of first cue if complex graph exceeds bounds
-            first_amb, _, _, _, _, _ = amb_cues[0]
-            cmd_fallback = [
-                ff, "-y", "-stream_loop", "-1", "-i", str(first_amb), "-t", f"{total_dur:.2f}",
-                "-af", "volume=-12dB,aresample=48000", "-c:a", "pcm_s16le", str(amb_file)
-            ]
-            subprocess.run(cmd_fallback, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            res = subprocess.run(cmd_amb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if res.returncode != 0 or not amb_file.exists():
+                err_msg = res.stderr.decode("utf-8", errors="ignore")[:300] if res.stderr else "unknown error"
+                logger.warning(f"Ambience composite notice ({res.returncode}): {err_msg}")
+                # Fallback to safe loop of first cue if complex graph exceeds bounds
+                first_amb, _, _, _, _, _ = amb_cues[0]
+                cmd_fallback = [
+                    ff, "-y", "-stream_loop", "-1", "-i", str(first_amb), "-t", f"{total_dur:.2f}",
+                    "-af", "volume=-12dB,aresample=48000", "-c:a", "pcm_s16le", str(amb_file)
+                ]
+                subprocess.run(cmd_fallback, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        finally:
+            if filter_script and filter_script.exists():
+                filter_script.unlink(missing_ok=True)
 
     amb_m = measure_audio_metrics(amb_file, ffmpeg=ff)
     stems_meta["AMB"] = StemMetadata(
@@ -490,18 +495,22 @@ def render_discrete_stems(
         for stem_name, stem_file in [("DX", dx_file), ("MX", mx_file), ("FX", fx_file), ("AMB", amb_file)]:
             if stem_file.exists():
                 tmp_auto = out_dir / f"{ch_id}_stem_{stem_name}_auto.wav"
-                apply_automation_to_stem(stem_file, stem_name, tmp_auto, mix_automation, ffmpeg=ff)
-                if tmp_auto.exists() and tmp_auto.stat().st_size > 1000:
-                    shutil.move(str(tmp_auto), str(stem_file))
-                    # Refresh stem metadata with post-automation metrics
-                    stem_m = measure_audio_metrics(stem_file, ffmpeg=ff)
-                    stems_meta[stem_name] = StemMetadata(
-                        stem_type=stem_name,
-                        filepath=str(stem_file),
-                        duration_sec=stem_m["duration_sec"],
-                        integrated_lufs=stem_m["integrated_lufs"],
-                        true_peak_dbtp=stem_m["true_peak_dbtp"],
-                    )
+                try:
+                    apply_automation_to_stem(stem_file, stem_name, tmp_auto, mix_automation, ffmpeg=ff)
+                    if tmp_auto.exists() and tmp_auto.stat().st_size > 1000:
+                        shutil.move(str(tmp_auto), str(stem_file))
+                        # Refresh stem metadata with post-automation metrics
+                        stem_m = measure_audio_metrics(stem_file, ffmpeg=ff)
+                        stems_meta[stem_name] = StemMetadata(
+                            stem_type=stem_name,
+                            filepath=str(stem_file),
+                            duration_sec=stem_m["duration_sec"],
+                            integrated_lufs=stem_m["integrated_lufs"],
+                            true_peak_dbtp=stem_m["true_peak_dbtp"],
+                        )
+                finally:
+                    if tmp_auto.exists():
+                        tmp_auto.unlink(missing_ok=True)
         has_dynamic_eq = bool(mix_automation.get_events_for_target("MX", "eq_depth"))
 
     # --- STEM 5: ME (Music & Effects Mix) ---
@@ -605,17 +614,21 @@ def render_discrete_stems(
             for stem_name, stem_file in [("DX", dx_file), ("MX", mx_file), ("FX", fx_file), ("AMB", amb_file)]:
                 if stem_file.exists():
                     tmp_auto = out_dir / f"{ch_id}_stem_{stem_name}_remix.wav"
-                    apply_automation_to_stem(stem_file, stem_name, tmp_auto, remediated_auto, ffmpeg=ff)
-                    if tmp_auto.exists() and tmp_auto.stat().st_size > 1000:
-                        shutil.move(str(tmp_auto), str(stem_file))
-                        stem_m = measure_audio_metrics(stem_file, ffmpeg=ff)
-                        stems_meta[stem_name] = StemMetadata(
-                            stem_type=stem_name,
-                            filepath=str(stem_file),
-                            duration_sec=stem_m["duration_sec"],
-                            integrated_lufs=stem_m["integrated_lufs"],
-                            true_peak_dbtp=stem_m["true_peak_dbtp"],
-                        )
+                    try:
+                        apply_automation_to_stem(stem_file, stem_name, tmp_auto, remediated_auto, ffmpeg=ff)
+                        if tmp_auto.exists() and tmp_auto.stat().st_size > 1000:
+                            shutil.move(str(tmp_auto), str(stem_file))
+                            stem_m = measure_audio_metrics(stem_file, ffmpeg=ff)
+                            stems_meta[stem_name] = StemMetadata(
+                                stem_type=stem_name,
+                                filepath=str(stem_file),
+                                duration_sec=stem_m["duration_sec"],
+                                integrated_lufs=stem_m["integrated_lufs"],
+                                true_peak_dbtp=stem_m["true_peak_dbtp"],
+                            )
+                    finally:
+                        if tmp_auto.exists():
+                            tmp_auto.unlink(missing_ok=True)
             # Re-sum ME
             subprocess.run(cmd_me, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             me_m = measure_audio_metrics(me_file, ffmpeg=ff)

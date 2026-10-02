@@ -26,6 +26,7 @@ from audiobook_factory.contracts import (
 )
 
 from audiobook_factory.key_manager import get_persistent_key_pool
+from audiobook_factory.sound_bank import get_sound_bank
 
 __all__ = [
     "AgentDirector",
@@ -41,4 +42,5 @@ __all__ = [
     "ManifestValidationError",
     "TimelineLedger",
     "get_persistent_key_pool",
+    "get_sound_bank",
 ]

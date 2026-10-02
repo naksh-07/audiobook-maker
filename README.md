@@ -8,7 +8,7 @@
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.8%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-Universal%20Director%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-1%2C000%2B%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-1%2C130%2B%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![Acting Engine](https://img.shields.io/badge/Acting%20Engine-Performance%20QC%202.0%20(A%2B%20Audited)-blue.svg)](docs/TTS_GENERATION_ARCHITECTURE.md)
 [![Sound Design](https://img.shields.io/badge/Sound%20Design-Cinematic%2020%20Capabilities%20(A%2B%20Audited)-purple.svg)](docs/CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
@@ -406,6 +406,46 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   3. *Music Scoring Director:* Spots scene underscoring, tension motifs, and enforces dramatic silence.
   Outputs clean, inspectable `chapter_XXX_sound_script.json` (Audio Cue Sheet) ingested directly into `CreativeManifest v3.0`.
 - **Era-Aware Negative Keyword Sound Bank Filtering ([`audiobook_factory/sound_bank.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank.py)):** Injects `era` and `negative_tags` filters in SQLite FTS5 queries. In `MODERN` era scenes, bans medieval keywords (`swamp`, `bog`, `crypt`, `sword`, `armor`, `tavern_brawl`), falling back to natural acoustic silence rather than playing anachronistic sounds.
+
+### 22. Master Modernization, Monolith Decomposition & Storage Abstraction (ADR-047)
+*(See full technical guide: [`docs/ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md))*
+- **Monolith Deconstruction of Core Production Subsystems:**
+  - `contracts.py` $\rightarrow$ [`audiobook_factory/contracts/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts/) (`base.py`, `screenplay.py`, `manifest.py`, `timeline.py`, `album.py`, `sonic_genome.py`).
+  - `sound_bank.py` $\rightarrow$ [`audiobook_factory/sound_bank/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/) (`db.py`, `search.py`, `resolver.py`, `sound_card.py`, `indexer.py`, `downloader.py`, `harvester.py`, `dsp_metrics.py`).
+  - `tts_dispatcher.py` $\rightarrow$ [`audiobook_factory/tts/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts/) (`dispatcher.py`, `rate_limiter.py`, `audio_slicer.py`, `constants.py`, `providers/gemini.py`, `providers/winrt.py`).
+  - `gate_auditor.py` $\rightarrow$ [`audiobook_factory/gates/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/) (`contracts.py`, `literary.py`, `screenplay.py`, `acoustics.py`, `album.py`, `orchestrator.py`).
+  - `pdf_engine.py` $\rightarrow$ [`audiobook_factory/pdf/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/pdf/) (`models.py`, `layout_reconstructor.py`, `quality_analyzer.py`, `vision_extractor.py`, `forensic_engine.py`).
+  - `agent_director.py` $\rightarrow$ [`audiobook_factory/director/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/director/) (`director.py`, `dramaturgy.py`, `music_director.py`, `foley_director.py`, `scene_acoustics.py`).
+  - `audiobook_cli.py` $\rightarrow$ [`audiobook_factory/cli/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cli/) (modular command routing across `pipeline.py`, `audio.py`, `audit.py`, `bank.py`, `context.py`).
+- **Storage Abstraction Layer ([`audiobook_factory/storage/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/storage/)):**
+  - Abstract storage interface (`IStorageBackend`, `LocalStorageBackend`) providing zero hardcoded filesystem dependencies.
+  - Safe atomic write operations (`.tmp` write + rename), path traversal defenses, and cross-platform POSIX path normalization.
+- **Fail-Closed Quality Gates & Retention Shield:**
+  - Converted Gates 5, 5.2, 5.3, and 6A–6D to strictly fail-closed architectures.
+  - Implemented `AUDIOBOOK_RETAIN_CHUNKS` retention shield preventing automatic purge of intermediate audio chunks (`PURGE_INTERMEDIATE_CHUNKS=false`), safeguarding scarce API quotas during mix retries.
+
+### 23. Complete Deconstruction of Remaining God Objects & Creative Stamina (Sprint 2 / ADR-048)
+- **Centralized Creative Chunking Policy ([`audiobook_factory/chunking_policy.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/chunking_policy.py)):**
+  - Standardizes LLM context windows to eliminate prompt fatigue and dialogue truncation:
+    - `TRANSLATION_MAX_WORDS = 750` (slashed from 2,200 words; prevents dropped paragraphs and silent translation omissions).
+    - `SCREENPLAY_MAX_WORDS = 350` (micro-chunking aligned to scene beats).
+    - `DRAMATURGY_SCENE_MAX_CHARS = 3500`.
+  - Removes silent exception handling in `translator.py`, enforcing fail-closed reporting.
+  - Decoupled `scene_analyzer.py` into 2-pass micro-prompts.
+- **Top 5 Remaining God Objects Modularized:**
+  1. [`cinematic_mix/judge.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinematic_mix/judge.py) (1,183 lines $\rightarrow$ 481 lines): decomposed into [`remediation_planner.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinematic_mix/remediation_planner.py) and modular rules engine [`cinematic_mix/rules/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinematic_mix/rules/) (`technical_rules.py`, `acoustic_rules.py`, `cinematic_rules.py`).
+  2. [`soundscape.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape.py) (1,286 lines $\rightarrow$ 53 lines facade): decomposed into [`audiobook_factory/soundscape_engine/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape_engine/) (`probe.py`, `mood_detector.py`, `sound_resolver.py`, `ducking.py`, `whisper_guard.py`, `planner.py`, `mixer.py`).
+  3. [`script_builder.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py) (1,090 lines $\rightarrow$ 27 lines facade): decomposed into [`audiobook_factory/script/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script/) (`normalizer.py`, `dialogue_parser.py`, `staging_enricher.py`, `screenplay_cleaner.py`, `dramatized_builder.py`, `project_generator.py`).
+  4. [`forced_aligner.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/forced_aligner.py) (1,072 lines $\rightarrow$ 35 lines facade): decomposed into [`audiobook_factory/alignment/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/alignment/) (`text_utils.py`, `audio_io.py`, `pause_classifier.py`, `diagnostics.py`, `energy_fallback.py`, `mms_aligner.py`).
+  5. [`orchestrator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestrator.py) (723 lines $\rightarrow$ 483 lines facade): decomposed into [`audiobook_factory/orchestration/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestration/) (`gates.py`, `janitor.py`, `dialogue_runner.py`).
+- **Engine Hardening & Windows Compatibility:**
+  - MMS Aligner CUDA VRAM optimization (`del waveform, emission; torch.cuda.empty_cache()`).
+  - Windows CLI 8,191-character command line limit protection in `cinema_audio_engine.py` using `-filter_complex_script`.
+  - Transient network glitch loop recovery in `ffmpeg_agent.py`.
+  - Unified `call_gemini` routing through `llm_client.py` with payload error extraction.
+- **Production Certification Harness ([`audiobook_factory/production_certification_harness.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/production_certification_harness.py)):**
+  - 10 Production Quality Gates verified across 24 verification points in a clean-room sandbox.
+  - 1,130+ unit, integration, and golden regression tests passing (100% green).
 
 ---
 

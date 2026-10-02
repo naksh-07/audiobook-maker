@@ -77,6 +77,10 @@ class ProductionCertificationHarness:
         self.outputs_dir = self.root / "audiobooks" / "outputs"
         self.outputs_dir.mkdir(parents=True, exist_ok=True)
         self.book_input = self.inputs_dir / "dastan_e_hastinapur.txt"
+        if not self.book_input.exists():
+            fixture_input = self.root / "tests" / "fixtures" / "dastan_e_hastinapur.txt"
+            if fixture_input.exists():
+                self.book_input = fixture_input
         self.project_id = "dastan_e_hastinapur"
         self.project_dir = self.projects_dir / self.project_id
 

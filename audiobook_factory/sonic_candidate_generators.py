@@ -369,6 +369,8 @@ class CLAPSemanticCandidateGenerator(BaseCandidateGenerator):
                 for idx in top_indices:
                     tid = track_ids[idx]
                     raw_sim = float(sims[idx])
+                    if raw_sim <= 0.05:
+                        continue
                     # Per-query relative normalization [0.0, 1.0]
                     if sim_range < 1e-5:
                         rel_score = max(0.0, min(1.0, raw_sim)) if raw_sim > 0 else 1.0

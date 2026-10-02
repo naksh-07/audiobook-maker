@@ -12,12 +12,14 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
+from audiobook_factory.sound_bank.indexer import IndexerMixin
 
 
 class ResolverMixin:
     """Asset resolution, track slicing, and metrics retrieval mixin."""
 
     bank_root: Path
+    _extract_duration = staticmethod(IndexerMixin._extract_duration)
 
     def link_assets(self, source_id: int, target_id: int, relationship_type: str, confidence: float = 1.0) -> bool:
         """Creates a directional relationship between two sound assets."""

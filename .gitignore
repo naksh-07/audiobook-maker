@@ -66,8 +66,13 @@ audiobooks/samples/
 audiobooks/sound_bank/
 audiobooks/soundscapes/
 audiobooks/real_audio_golden/
+audiobooks/cache/
+temp_audio/
+tmp/
+tmp_test/
 standalone_*_run/
 standalone_workspace/
+dummy.wav
 *.sfk
 *.zip
 *bak*

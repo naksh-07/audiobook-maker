@@ -46,18 +46,27 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **521 passed unit tests (17 subtests passed)** across all test suites with a zero-regression and multi-script zero-hardcoding invariant (100% OK, 0 failures, 0 errors).
+The codebase maintains **1,130+ passed unit and integration tests (100% green, 0 regressions)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant:
 
-### Running Dedicated Phase Test Suites
+### Running Modernized Production & Subsystem Suites
 ```powershell
-# Sonic Intelligence Engine (Phases 1-3 & Adversarial Audit, 53 tests)
-pytest tests/test_deterministic_audio_analyzer.py tests/test_sonic_enrichment_phase2.py tests/test_sonic_intelligence_phase3.py tests/test_sonic_intelligence_phase3_audit.py -v
+# Run Clean-Room Production Certification Harness (10 Gates, 24 Points)
+python -m unittest tests/test_production_certification.py -v
 
-# Commercial Studio Voice Casting, Identity & Generation Suites (Waves 1-6, 77 tests)
-pytest tests/test_wave1_casting.py tests/test_wave2_voice_identity.py tests/test_wave3_acting_intelligence.py tests/test_wave4_generation_quality.py tests/test_wave5_ensemble_performance.py -v
+# Run Fail-Closed Quality Gates Suite (ADR-047)
+python -m unittest tests/test_fail_closed_quality_gates.py -v
 
-# Golden Audio Regression Suite (18 dramatic cases offline)
-pytest tests/test_golden_audio_regression_suite.py -v
+# Run Storage Abstraction & Path Safety Suite (ADR-047)
+python -m unittest tests/test_storage.py -v
+
+# Run Stage 12 Mastering V2 Full Suite (Missions 1–4 Certified)
+pytest tests/test_mastering_contracts.py tests/test_mastering_analyzer.py tests/test_mastering_engine.py tests/test_mastering_closed_loop.py tests/test_mastering_judge.py tests/test_dialogue_protection.py tests/test_book_master_profile.py tests/test_chapter_consistency.py tests/test_perceptual_critic.py tests/test_reference_mastering.py tests/test_scene_aware_mastering.py tests/test_mastering_certification.py tests/test_golden_mastering_regression.py -v
+
+# Run Stage 11 Cinematic Mix Automation Suites
+pytest tests/test_cinematic_mix_automation.py tests/test_uncompromised_cinema_audio.py -v
+
+# Commercial Studio Quality Upgrade Waves A-E Benchmark Suite (50 tests)
+pytest tests/test_golden_take_selection_benchmark.py tests/test_take_selection_2.py tests/test_performance_evidence_and_evaluator_2.py tests/test_scene_selection_and_continuity.py tests/test_golden_alignment_benchmark.py -v
 
 # AST Zero-Hardcoding Contracts Verification
 pytest tests/test_zero_hardcoding_contracts.py -v
@@ -236,6 +245,17 @@ This renders composite assets (`magic_lumos_light.wav`, `magic_expelliarmus_kine
 | `GateAuditError: Gate 3 Failed: Scenes source file missing` | Project uses modern `CreativeManifest` rather than legacy scenes. | Gate 3 has been dynamically hardened in `gate_auditor.py` to audit `CreativeManifest` directly or grant PASS for director-managed workflows. Ensure latest `gate_auditor.py` is in place. |
 | `FFmpeg packaging failed: Invalid audio stream copy` | Uncompressed WAV (`pcm_s16le`) was passed to M4B packager with `-c:a copy`. | The packager now automatically validates `is_all_aac` and transcodes non-AAC/WAV stems to AAC 192k with `+faststart`. |
 | `HTTP 400 Bad Request on Gemini API Key` | Key in `.env` was enclosed in quotes (e.g. `GEMINI_API_KEY="AIza..."`). | Fixed automatically in `key_manager.py` by `.strip("'\"")`. Remove surrounding quotes if overriding via external environment variables. |
+
+---
+
+## 🧹 Git & Workspace Hygiene Protocol
+
+To maintain repository cleanliness, avoid storage bloat, and protect against committing copyrighted audio literature or intermediate media:
+1. **Zero Media in Git**: Never commit audio binary files (`*.wav`, `*.mp3`, `*.m4a`, `*.m4b`, `*.aac`, `*.flac`, `*.ogg`), ebooks (`*.epub`, `*.pdf`, `*.mobi`), or database journal files (`*.db-journal`, `*.db-wal`, `*.db-shm`).
+2. **Audiobooks Production Outputs Ignored**: `audiobooks/output/`, `audiobooks/outputs/`, `audiobooks/projects/`, `audiobooks/real_audio_golden/`, `audiobooks/inputs/`, and `audiobooks/cache/` are strictly ignored by `.gitignore`.
+3. **Temporary Directories Scrubbed**: `temp_audio/`, `tmp/`, `tmp_test/`, `dummy.wav`, and `standalone_workspace/` are temporary directories and must never be tracked.
+4. **Test Fixtures Isolation**: Synthetic test books and audio fixtures belong strictly in `tests/fixtures/` (e.g. `tests/fixtures/dastan_e_hastinapur.txt`). Production test runners fall back transparently to fixtures if user input files are not present.
+
 | `TTS Quota rapidly depleted by background tasks` | Text prompts (mood detection, dramaturgy) were sharing the TTS key pool. | Quota isolation now explicitly routes text prompts through `global_key_pool.get_key(service="text")`, shielding the scarce 10 RPD Gemini TTS quota. |
 | `Gemini Flash TTS censorship false-positives on mature literature` | Harm categories triggered safety block. | Fixed permanently in `tts_dispatcher.py` by setting explicit `safetySettings: [BLOCK_NONE]` across all 4 categories (`HARASSMENT`, `HATE_SPEECH`, `SEXUALLY_EXPLICIT`, `DANGEROUS_CONTENT`). |
 | `StemLedger reports dmr_compliant: false` | Background stems ($ME$) within 10dB of vocal dialogue ($DX$). | Check `chapter_XXX_manifest.json` ducking parameters or decrease background bed gain to guarantee $DMR \ge 10.0$ dB. |
