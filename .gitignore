@@ -65,6 +65,7 @@ audiobooks/workspace/
 audiobooks/samples/
 audiobooks/sound_bank/
 audiobooks/soundscapes/
+audiobooks/real_audio_golden/
 standalone_*_run/
 standalone_workspace/
 *.sfk

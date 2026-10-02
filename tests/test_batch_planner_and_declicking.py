@@ -221,7 +221,8 @@ class TestSliceAndDeclick:
         )
 
         assert len(sliced) == 2
-        for s_path, s_dur in sliced:
+        for item in sliced:
+            s_path, s_dur = item[0], item[1]
             assert s_path.exists()
             assert s_dur > 0.0
             with wave.open(str(s_path), "rb") as wf:
@@ -280,6 +281,8 @@ class TestDispatcherBatchIntegration:
         }), encoding="utf-8")
 
         dispatcher = TTSDispatcher(project_dir=tmp_path, audio_dir=audio_dir, strict_speakers=False)
+        dispatcher.batching_enabled = True
+        dispatcher.batch_planner.enabled = True
         calls = {"batch": 0, "single": 0}
 
         def fake_multispeaker(batch, output_file, voice_map, rate_limiter=None):
@@ -287,7 +290,7 @@ class TestDispatcherBatchIntegration:
             create_dummy_wav(output_file, duration_sec=3.0, sample_rate=24000)
             return output_file, 3.0
 
-        def fake_single(text, output_file, voice="Aoede", model="m", emotion="neutral", max_retries=4, rate_limiter=None):
+        def fake_single(text, output_file, voice="Aoede", model="m", emotion="neutral", max_retries=4, rate_limiter=None, **kwargs):
             calls["single"] += 1
             create_dummy_wav(output_file, duration_sec=1.5, sample_rate=24000)
             return output_file, 1.5

@@ -30,7 +30,7 @@ def concatenate_and_master_chapter(
     loudness_range: float = 11.0,
     target_sample_rate: int = 48000,
     script_segments: Optional[List[Dict[str, Any]]] = None,
-    spatial_staging: bool = False,
+    spatial_staging: bool = True,
     edit_plans: Optional[List[Any]] = None,
 ) -> Path:
     """
@@ -159,6 +159,8 @@ def concatenate_and_master_chapter(
             if matched_idx is not None:
                 edit_plan_by_idx[matched_idx] = p
 
+    speaker_auto_pan: Dict[str, float] = {}
+
     # 1. Create a concat list file for FFmpeg
     concat_list = output_chapter_file.parent / f"concat_{output_chapter_file.stem}.txt"
     try:
@@ -206,14 +208,24 @@ def concatenate_and_master_chapter(
                         speaker = str(seg_info.get("speaker", "Narrator"))
                         seg_spatial = seg_info.get("spatial", {}) if isinstance(seg_info, dict) else getattr(seg_info, "spatial", None)
                         if isinstance(seg_spatial, dict):
-                            pan = float(seg_spatial.get("pan", 0.0) or 0.0)
+                            pan = float(seg_spatial.get("pan") or seg_spatial.get("azimuth_pan") or 0.0)
                         elif hasattr(seg_spatial, "pan"):
                             pan = float(getattr(seg_spatial, "pan", 0.0) or 0.0)
+                        elif hasattr(seg_spatial, "azimuth_pan"):
+                            pan = float(getattr(seg_spatial, "azimuth_pan", 0.0) or 0.0)
                         else:
                             pan = float(seg_info.get("spatial_pan", 0.0) or 0.0)
 
                         if speaker.lower() in ("narrator", "narration"):
                             pan = 0.0
+                        elif pan == 0.0 and speaker.lower() not in ("foley", "action"):
+                            # Automatic stage azimuth separation for characters when pan is neutral
+                            if speaker not in speaker_auto_pan:
+                                off_idx = len(speaker_auto_pan)
+                                sign = -1.0 if (off_idx % 2 == 0) else 1.0
+                                mag = 0.18 if off_idx < 2 else 0.30
+                                speaker_auto_pan[speaker] = round(sign * mag, 2)
+                            pan = speaker_auto_pan[speaker]
 
                         panned_seg = _get_panned_segment(seg, pan, s_idx)
                         safe_path = str(panned_seg.resolve()).replace("\\", "/").replace("'", "'\\''")
@@ -226,8 +238,19 @@ def concatenate_and_master_chapter(
                     if i < len(audio_segments) - 1:
                         if plan_for_seg is not None and getattr(plan_for_seg, "pause_after_ms", None) is not None:
                             cur_pause_ms = int(plan_for_seg.pause_after_ms)
+                        elif seg_info.get("pause_after_ms") is not None:
+                            cur_pause_ms = int(seg_info.get("pause_after_ms"))
                         else:
-                            cur_pause_ms = int(seg_info.get("pause_after_ms", pause_ms) or pause_ms)
+                            if seg_info.get("is_chapter_header"):
+                                cur_pause_ms = 1400
+                            elif seg_info.get("is_scene_break"):
+                                cur_pause_ms = 900
+                            elif seg_info.get("intensity_level") == "explosive":
+                                cur_pause_ms = 280
+                            elif seg_info.get("intensity_level") == "low":
+                                cur_pause_ms = 600
+                            else:
+                                cur_pause_ms = pause_ms
                         if cur_pause_ms > 0:
                             s_file = _get_silence_file(cur_pause_ms)
                             if s_file:
@@ -250,13 +273,24 @@ def concatenate_and_master_chapter(
                         speaker = str(seg_info.get("speaker", "Narrator"))
                         seg_spatial = seg_info.get("spatial", {}) if isinstance(seg_info, dict) else getattr(seg_info, "spatial", None)
                         if isinstance(seg_spatial, dict):
-                            pan = float(seg_spatial.get("pan", 0.0) or 0.0)
+                            pan = float(seg_spatial.get("pan") or seg_spatial.get("azimuth_pan") or 0.0)
                         elif hasattr(seg_spatial, "pan"):
                             pan = float(getattr(seg_spatial, "pan", 0.0) or 0.0)
+                        elif hasattr(seg_spatial, "azimuth_pan"):
+                            pan = float(getattr(seg_spatial, "azimuth_pan", 0.0) or 0.0)
                         else:
                             pan = float(seg_info.get("spatial_pan", 0.0) or 0.0)
+
                         if speaker.lower() in ("narrator", "narration"):
                             pan = 0.0
+                        elif pan == 0.0 and speaker.lower() not in ("foley", "action"):
+                            if speaker not in speaker_auto_pan:
+                                off_idx = len(speaker_auto_pan)
+                                sign = -1.0 if (off_idx % 2 == 0) else 1.0
+                                mag = 0.18 if off_idx < 2 else 0.30
+                                speaker_auto_pan[speaker] = round(sign * mag, 2)
+                            pan = speaker_auto_pan[speaker]
+
                         panned_seg = _get_panned_segment(seg, pan, s_idx)
                         resolved_segs.append(panned_seg)
                     else:

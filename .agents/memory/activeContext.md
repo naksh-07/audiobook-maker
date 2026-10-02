@@ -1,32 +1,24 @@
-<!-- schema_version: 1.0 -->
+<!-- schema_version: 2.0 -->
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
-# Active Context: Overloaded LLM Deconstruction & Anti-Fake Engine Certified
+# Active Context: Master Modernization & Production Certification Completed
 
-## Live Sprint State: Multi-Agent Decoupling & Anti-Hammering Key Pool Deployed
-- **Status**: COMPLETE & VERIFIED (170+ targeted unit & regression tests passing 100%).
-- **Key Architectures Delivered**:
-  1. **Centralized Non-Hammering Client (`audiobook_factory/llm_client.py`)**:
-     - Centralized `call_gemini` backed by `PersistentKeyPool.get_key(service="text")`.
-     - 100+ rotating API keys with true round-robin scheduling (`ORDER BY last_used ASC NULLS FIRST`).
-     - Pacing jitter (100–350ms) to prevent server hammering; categorized error classification (`503`, `429`, `400`).
-     - Permissive `BLOCK_NONE` thresholds across all safety categories for unfiltered literary drama.
-     - Fail-closed typed `LLMUnavailableError` with zero silent degraded fallbacks.
-  2. **Two-Pass Decoupled Screenplay Parser (`script_builder.py`)**:
-     - *Pass 1*: Pure dialogue isolation, canonical character roster attribution, clean text, neural vocal tags.
-     - *Pass 2*: Stanislavski subtext, actioning verbs, dynamic headroom intensity, delivery styles, spatial panning.
-  3. **Translation Pre-Production & Entity Discovery (`translator.py`, `entity_discovery.py`)**:
-     - `generate_book_glossary` deconstructed into 3 parallel specialist agents (Character, Sociolect, Lore).
-     - Context-Calibrated Scene Prompt Router (`COMBAT`, `INTIMATE`, `DIALOGUE`, `LORE`).
-  4. **Dramaturgy & Sound Design Heuristic Purge (`beat_planner.py`, `agent_director.py`)**:
-     - Purged canned Stanislavski templates (`underlying_desire`, `core_fear`, `strategy`); authentic LLM intent only.
-     - Purged 4-word domestic Foley regex guessing (`door`, `gate`, `cup`, `tea`); cues strictly from `SoundSpotter`.
-  5. **Adversarial Gate 1 Hardening (`gate_auditor.py`)**:
-     - Deconstructed anti-censorship audit into 3 parallel specialist checkers (Profanity, Combat, Intimacy).
-     - Fail-closed in production if audit is bypassed or fails.
-- **Verification Highlights**:
-  - `tests/dramaturgy/`: 52/52 PASS.
-  - `tests/translation/`: 56/56 PASS.
-  - `tests/test_model_manager_and_strict_halt.py`: 13/13 PASS (AST confirms 0 hardcoded models).
-  - Screenplay, Gate Auditor, Sound Spotter, Caster suites: 100% green.
+## Live State: Clean Room Certified & Modular Architecture Operational
+- **Status**: PRODUCTION CERTIFIED (100% Tests Green).
+- **Core Architecture Modernization (Phases 1-5 Complete)**:
+  - **Phase 1 (Fail-Closed Gates & Retention Shield)**: Gates 5, 5.2, 5.3, 6A-6D strictly fail-closed; intermediate speech chunks preserved (`AUDIOBOOK_RETAIN_CHUNKS=true`).
+  - **Phase 2 (Metadata Silos & Spatial Audio)**: Screenplay actor pacing (`pause_after_ms`, `pre_roll_breath_ms`) and constant-power stereo panning (-0.8 to +0.8) wired into mastering DSP.
+  - **Phase 3 (Monolith Decomposition & Zero-Breaking Facades)**:
+    - [audiobook_factory/contracts/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/contracts/) & [audiobook_factory/sound_bank/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/).
+    - [audiobook_factory/tts/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts/), [audiobook_factory/gates/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/).
+    - [audiobook_factory/pdf/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/pdf/), [audiobook_factory/director/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/director/).
+    - All legacy monolith roots maintained as backward-compatible thin facades.
+  - **Phase 4 (Storage Abstraction & Modular CLI Router)**:
+    - [audiobook_factory/storage/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/storage/): `IStorageBackend`, `LocalStorageBackend` with atomic temp write + rename.
+    - [audiobook_factory/cli/](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cli/): Modular CLI command registry; [audiobook_cli.py](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_cli.py) reduced to thin ~250L router.
+  - **Phase 5 (Production Certification & Verification)**:
+    - Clean-room production deliverable: `audiobooks/outputs/Dastan_E_Hastinapur.m4b` generated and certified.
+    - [test_production_certification.py](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/test_production_certification.py): 8/8 PASS (All 10 production gates PASS).
+    - Full regression suites verified green: `test_fail_closed_quality_gates.py` (16/16), `test_uncompromised_cinema_audio.py` (14/14), `test_zero_hardcoding_contracts.py` (4/4), `test_real_audio_validation.py` (10/10), `test_model_manager_and_strict_halt.py` (14/14), `test_storage.py` (4/4), `test_pdf_engine.py` (10/10).
+- **Workspace Hygiene**: Zero audio files or projects committed to Git. Standby ready for production ingestion.

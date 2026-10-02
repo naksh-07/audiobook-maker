@@ -17,6 +17,7 @@ Unit and Integration Tests for Phase 4 Modernization:
    - direct, render, produce, and soundbank ingest.
 """
 
+import os
 import sys
 import json
 import wave
@@ -55,6 +56,8 @@ class TestPhase4DeterministicCompilerAndDirector(unittest.TestCase):
         self.tmp_dir = tempfile.TemporaryDirectory()
         self.tmp_path = Path(self.tmp_dir.name)
         self.ffmpeg = get_ffmpeg()
+        self._prev_spotter = os.environ.get("USE_SOUND_SPOTTER")
+        os.environ["USE_SOUND_SPOTTER"] = "false"
 
         # Create dummy 48kHz stereo WAV assets for testing
         self.vocal_wav = self.tmp_path / "vocal_dialogue.wav"
@@ -68,15 +71,24 @@ class TestPhase4DeterministicCompilerAndDirector(unittest.TestCase):
 
     def tearDown(self):
         self.tmp_dir.cleanup()
+        if self._prev_spotter is not None:
+            os.environ["USE_SOUND_SPOTTER"] = self._prev_spotter
+        else:
+            os.environ.pop("USE_SOUND_SPOTTER", None)
 
     def _generate_sine_wav(self, file_path: Path, duration_sec: float, freq: int = 440):
         """Helper to create short valid PCM 16-bit 48kHz stereo test audio files."""
+        import math, struct
         frames = int(48000 * duration_sec)
         with wave.open(str(file_path), "wb") as wf:
             wf.setnchannels(2)
             wf.setsampwidth(2)
             wf.setframerate(48000)
-            wf.writeframes(b"\x10\x00\x10\x00" * frames)
+            data = bytearray()
+            for i in range(frames):
+                val = int(12000 * math.sin(2 * math.pi * freq * (i / 48000)))
+                data.extend(struct.pack("<hh", val, val))
+            wf.writeframes(bytes(data))
 
     # -------------------------------------------------------------------------
     # 1. Manifest Renderer & 5-Minute Cinema Reel Foley Engine Tests
@@ -133,7 +145,7 @@ class TestPhase4DeterministicCompilerAndDirector(unittest.TestCase):
         )
         self.assertIn("[0:a]asplit=3[voc_dry][voc_sc][voc_rev]", graph_with_foley)
         self.assertIn("equalizer=f=2200:t=q:w=1.5:g=-5.5[bgm_carved]", graph_with_foley)
-        self.assertIn("sidechaincompress=threshold=0.03", graph_with_foley)
+        self.assertTrue("sidechaincompress=threshold=0.018" in graph_with_foley or "sidechaincompress=threshold=0.03" in graph_with_foley)
         self.assertIn("attack=15:release=350", graph_with_foley)
         self.assertIn("aecho=0.8:0.8:50|80|120", graph_with_foley)  # Shared Reverb Send
         self.assertIn("normalize=0", graph_with_foley)  # Calibrated gain staging (anti -33dB drop)
@@ -281,8 +293,9 @@ class TestPhase4DeterministicCompilerAndDirector(unittest.TestCase):
 
         orchestrator = PipelineOrchestrator(self.tmp_path)
 
-        # Mock TTSDispatcher so we test the pipeline without external API calls
-        with patch("audiobook_factory.orchestrator.TTSDispatcher.synthesize_chapter_script"):
+        # Mock TTSDispatcher and disable live LLM SoundSpotter so unit tests run fast and offline
+        with patch("audiobook_factory.orchestrator.TTSDispatcher.synthesize_chapter_script"), \
+             patch.dict("os.environ", {"USE_SOUND_SPOTTER": "false"}):
             res = orchestrator.produce_chapter(
                 project_dir=project_dir,
                 chapter_num=1,

@@ -971,3 +971,42 @@
      - Purged fake 1.0 PASS audit fallbacks from `gate_auditor.py`; deconstructed Gate 1 into 3 parallel specialist checkers (Profanity, Combat, Intimacy).
      - Strict fail-closed halts (`LLMUnavailableError`) across all creative tasks in production.
 - **Rationale:** Leverages the high compute capacity of 100+ rotating API keys without hammering, eliminates prompt fatigue and character dialogue swallowing, and guarantees uncompromised dramatic production quality with zero fake creative shortcuts.
+
+## ADR-046: Production Pilot Hardening (Candidate Model Cycling on 503, Exception Import Repair, and Scene Acoustic Scaling)
+- **Status:** Accepted
+- **Date:** 2026-10-02
+- **Context:**
+  1. During the production pilot of Harry Potter Chapter 1, Google Cloud's backend experienced severe transient HTTP 503 Service Unavailable outages on `gemini-3.8-flash`. `llm_client.py` only rotated API keys on retry rather than candidate models, burning retries against the same overloaded model and halting prematurely.
+  2. `sound_spotter.py` imported `LLMUnavailableError` from non-existent `audiobook_factory.exceptions` rather than `audiobook_factory.model_manager`, causing spotting sessions to fail silently.
+  3. `script_builder.py` was missing `import hashlib` at module scope for source provenance hashing.
+  4. `SceneAcousticProfile` in `scene_acoustics.py` imposed an artificial constraint `act_index: int = Field(..., le=10)`, crashing the pipeline on chapters with > 10 scene acts.
+- **Decision:**
+  1. **Candidate Model Cycling & Env Override (`audiobook_factory/llm_client.py`):** On retries following server glitches/503s, cycle through eligible candidate models satisfying the task tier; support `GEMINI_TEXT_MODEL` override; raised default `max_retries` from 4 to 6.
+  2. **Import Path Correction (`audiobook_factory/sound_spotter.py`, `script_builder.py`):** Re-pointed `LLMUnavailableError` to `audiobook_factory.model_manager` and imported `hashlib` at module level.
+  3. **Acoustic Profile Scaling (`audiobook_factory/scene_acoustics.py`):** Relaxed `act_index` ceiling to `le=1000` to support arbitrary scene structures without validation crashes.
+- **Rationale:** Ensures resilient multi-model failover when individual Gemini model endpoints experience transient outages, and removes arbitrary structural limits on long-form literary adaptations.
+
+## ADR-047: Monolith Decomposition, Facade Backward-Compatibility, Storage Abstraction, and Full Production Certification
+- **Status:** Accepted
+- **Date:** 2026-10-02
+- **Context:**
+  1. The core production engine contained several monolith God scripts (`pdf_engine.py` >1,600 lines, `agent_director.py` >1,500 lines, `audiobook_cli.py` >1,000 lines, `gate_auditor.py`, `sound_bank.py`, `contracts.py`).
+  2. Direct filesystem operations were tightly coupled to local disk paths, lacking an abstract storage interface needed for cloud/remote deployments.
+  3. Quality Gates (Gate 5, 5.2, 5.3, 6A-6D) previously contained fail-open exception handlers, and intermediate speech chunks were aggressively deleted after single-pass mixdown, burning API quota on remaster retries.
+- **Decision:**
+  1. **Phase 1 Fail-Closed Quality Gates & Retention Shield:** Hardened Gates 5, 5.2, 5.3, and 6A-6D to be strictly fail-closed. Implemented `AUDIOBOOK_RETAIN_CHUNKS` retention shield preserving intermediate speech chunks by default (`PURGE_INTERMEDIATE_CHUNKS=false`).
+  2. **Phase 2 Metadata Silo Liquidation & Spatial Mastering:** Passed rich actor pacing (`pause_after_ms`, `pre_roll_breath_ms`) to DSP mastering; wired constant-power stereo azimuth panning into Dialogue (DX) stem rendering.
+  3. **Phase 3 Monolith Decomposition with Zero-Breaking Facades:**
+     - `contracts.py` -> `audiobook_factory/contracts/` (`base.py`, `creative.py`, `audio.py`, `book.py`, `packaging.py`, `tts.py`, `timeline.py`, `provenance.py`).
+     - `sound_bank.py` -> `audiobook_factory/sound_bank/` (`models.py`, `catalog.py`, `resolver.py`, `bank.py`).
+     - `tts_dispatcher.py` -> `audiobook_factory/tts/` with backward-compatible `tts_dispatcher.py` facade.
+     - `gate_auditor.py` -> `audiobook_factory/gates/` (`contracts.py`, `literary.py`, `screenplay.py`, `acoustics.py`, `album.py`) with zero-breaking `gate_auditor.py` facade.
+     - `pdf_engine.py` -> `audiobook_factory/pdf/` (`models.py`, `layout_reconstructor.py`, `quality_analyzer.py`, `vision_extractor.py`, `forensic_engine.py`) with facade.
+     - `agent_director.py` -> `audiobook_factory/director/` (`dramaturgy.py`, `music_director.py`, `foley_director.py`, `scene_acoustics.py`, `director.py`) with facade.
+  4. **Phase 4 Storage Abstraction & CLI Router:**
+     - Created `audiobook_factory/storage/` (`IStorageBackend`, `LocalStorageBackend`) with atomic temp write + rename, POSIX normalization, and directory traversal defense.
+     - Created `audiobook_factory/cli/` (modular command groups: pipeline, audio, audit, bank) and reduced `audiobook_cli.py` to a thin ~250-line router.
+  5. **Phase 5 Production Certification:**
+     - Verified with `tests/test_production_certification.py` clean-room run: 100% PASS (8/8).
+     - Verified with `tests/test_fail_closed_quality_gates.py` (16/16), `test_uncompromised_cinema_audio.py` (14/14), `test_pdf_engine.py` (10/10), `test_storage.py` (4/4), `test_zero_hardcoding_contracts.py` (4/4), and full audio DSP regression suites.
+- **Rationale:** Transforms the monolithic codebase into a highly maintainable, modular, fail-closed studio architecture while preserving 100% backward compatibility for all existing CLI commands, tests, and mock interfaces.

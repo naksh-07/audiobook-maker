@@ -92,7 +92,7 @@ class PipelineOrchestrator:
         cover_image: Optional[Path] = None,
         workers: int = 3,
         duck_db: float = -16.0,
-        spatial_staging: bool = False,
+        spatial_staging: bool = True,
         adult_literary_mode: bool = True,
         force_gate: bool = False,
     ) -> Path:
@@ -277,7 +277,7 @@ class PipelineOrchestrator:
         voice: str = "Aoede",
         workers: int = 3,
         duck_db: float = -16.0,
-        spatial_staging: bool = False,
+        spatial_staging: bool = True,
     ) -> Dict[str, Any]:
         """
         Produces a single cinematic chapter using the deterministic agentic standard:
@@ -514,9 +514,13 @@ class PipelineOrchestrator:
         try:
             gate35_res = audit_gate3_5_acoustic_feasibility(manifest, sound_bank=get_sound_bank())
             if not gate35_res.passed:
-                logger.warning(f"[!] Gate 3.5 Feasibility Notice: {gate35_res.warnings} | {gate35_res.errors}")
+                logger.error(f"[!] 🛑 Gate 3.5 Pre-Flight Feasibility FAILED for Chapter {chapter_num:02d}: {gate35_res.errors}")
+                if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
+                    raise GateAuditError(f"Gate 3.5 Pre-Flight Feasibility Failed: {'; '.join(gate35_res.errors)}")
             else:
                 logger.info(f"[*] Gate 3.5 Acoustic Feasibility: PASSED for Chapter {chapter_num:02d}")
+        except GateAuditError:
+            raise
         except Exception as e:
             logger.warning(f"[!] Gate 3.5 Feasibility notice: {e}")
 
@@ -575,26 +579,44 @@ class PipelineOrchestrator:
         mx_stem = mastered_dir / f"{cinema_manifest.chapter_id}_stem_MX.wav"
         if not mx_stem.exists():
             mx_stem = mastered_dir / f"{chap_stem}_stem_MX.wav"
+        gate52_passed = True
         if mx_stem.exists() and vocal_wav.exists():
             try:
                 gate52_res = audit_gate5_2_spectral_masking(vocal_wav, mx_stem, min_dmr_db=12.0)
+                gate52_passed = gate52_res.passed
                 if not gate52_res.passed:
-                    logger.warning(f"[!] Gate 5.2 Spectral Masking Notice: {gate52_res.errors}")
+                    logger.error(f"[!] 🛑 Gate 5.2 Spectral Masking FAILED for Chapter {chapter_num:02d}: {gate52_res.errors}")
+                    if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
+                        raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.2 Spectral Masking: {'; '.join(gate52_res.errors)}")
                 else:
                     logger.info(f"[*] Gate 5.2 Spectral Masking: PASSED (DMR: {gate52_res.details.get('measured_dmr_db', 'N/A')} dB)")
+            except GateAuditError:
+                raise
             except Exception as e:
-                logger.warning(f"[!] Gate 5.2 Spectral Masking notice: {e}")
+                logger.error(f"[!] Gate 5.2 Spectral Masking probe error: {e}")
+                gate52_passed = False
+                if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
+                    raise GateAuditError(f"Gate 5.2 audit probe error: {e}")
 
         # Gate 5.3: Stereo Phase Correlation
+        gate53_passed = True
         if master_wav.exists():
             try:
                 gate53_res = audit_gate5_3_stereo_phase(master_wav, min_phase_correlation=0.20)
+                gate53_passed = gate53_res.passed
                 if not gate53_res.passed:
-                    logger.warning(f"[!] Gate 5.3 Stereo Phase Notice: {gate53_res.errors}")
+                    logger.error(f"[!] 🛑 Gate 5.3 Stereo Phase FAILED for Chapter {chapter_num:02d}: {gate53_res.errors}")
+                    if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
+                        raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.3 Stereo Phase: {'; '.join(gate53_res.errors)}")
                 else:
                     logger.info(f"[*] Gate 5.3 Stereo Phase: PASSED (mean r: {gate53_res.details.get('mean_phase_correlation', 'N/A')})")
+            except GateAuditError:
+                raise
             except Exception as e:
-                logger.warning(f"[!] Gate 5.3 Stereo Phase notice: {e}")
+                logger.error(f"[!] Gate 5.3 Stereo Phase probe error: {e}")
+                gate53_passed = False
+                if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
+                    raise GateAuditError(f"Gate 5.3 audit probe error: {e}")
 
         # Gate 5: Broadcast Master EBU R128 Probe
         gate5_certified = False
@@ -651,18 +673,27 @@ class PipelineOrchestrator:
 
         # 9. Auto-Janitor: Clean up intermediate uncompressed WAV chunks ONLY IF certified
         #    Safety Invariant: Chunks are NEVER purged if cinematic master failed, is corrupt,
-        #    or if AUDIOBOOK_RETAIN_CHUNKS is set.
-        retain_chunks_flag = os.environ.get("AUDIOBOOK_RETAIN_CHUNKS", "").lower() in ("1", "true", "yes")
-        master_certified = cinematic_out.exists() and gate5_certified and cinematic_out.stat().st_size > 1000
+        #    if any Gate 5.x check failed, or unless PURGE_INTERMEDIATE_CHUNKS=true is explicitly set.
+        #    By default, chunks are preserved for zero-cost DSP remastering without burning TTS quota.
+        purge_chunks_flag = os.environ.get("PURGE_INTERMEDIATE_CHUNKS", "false").lower() in ("1", "true", "yes")
+        retain_chunks_flag = (not purge_chunks_flag) or (os.environ.get("AUDIOBOOK_RETAIN_CHUNKS", "").lower() in ("1", "true", "yes"))
+
+        all_gates_certified = (
+            cinematic_out.exists()
+            and gate5_certified
+            and gate52_passed
+            and gate53_passed
+            and cinematic_out.stat().st_size > 1000
+        )
 
         chunk_pattern = f"c{chapter_num:03d}_*.wav"
         all_chunks = list(audio_dir.glob(chunk_pattern))
 
         if retain_chunks_flag:
-            logger.info(f"  [JANITOR] Retaining {len(all_chunks)} raw WAV chunks for chapter {chapter_num:02d} (AUDIOBOOK_RETAIN_CHUNKS enabled).")
-        elif not master_certified:
+            logger.info(f"  [JANITOR SHIELD] Retaining {len(all_chunks)} raw WAV chunks for chapter {chapter_num:02d} (Zero-cost remaster shield enabled).")
+        elif not all_gates_certified:
             logger.warning(
-                f"  [JANITOR SHIELD] Master render missing or Gate 5 uncertified for chapter {chapter_num:02d}. "
+                f"  [JANITOR SHIELD] Master render uncertified or Gate 5/5.2/5.3 failed for chapter {chapter_num:02d}. "
                 f"Retaining {len(all_chunks)} raw WAV chunks to protect synthesized progress."
             )
         else:

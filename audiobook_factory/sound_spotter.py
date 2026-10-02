@@ -428,7 +428,7 @@ Return a JSON array of Music cues where each object has:
     def _call_gemini_json(self, prompt: str, system_instruction: str) -> List[Dict[str, Any]]:
         """Invokes Gemini with rotating keys from key pool via centralized llm_client."""
         from audiobook_factory.llm_client import call_gemini
-        from audiobook_factory.exceptions import LLMUnavailableError
+        from audiobook_factory.model_manager import LLMUnavailableError
 
         try:
             parsed = call_gemini(

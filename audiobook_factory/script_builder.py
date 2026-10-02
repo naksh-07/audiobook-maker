@@ -9,6 +9,7 @@ import os
 import re
 import time
 import json
+import hashlib
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional

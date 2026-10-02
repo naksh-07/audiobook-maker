@@ -170,6 +170,26 @@ class ProductionCertificationHarness:
             with open(script_out, "w", encoding="utf-8") as sf:
                 json.dump(script_segments, sf, ensure_ascii=False, indent=2)
 
+        # Persist canonical voice assignments for Gate 6A voice continuity audit
+        voice_registry = {
+            "Narrator": {"voice": "Kalpana"},
+            "Devavrata": {"voice": "Kalpana"},
+            "Markandeya": {"voice": "David"},
+            "EnemyCommander": {"voice": "Zira"},
+        }
+        with open(self.project_dir / "voice_registry.json", "w", encoding="utf-8") as vf:
+            json.dump(voice_registry, vf, indent=2)
+
+        cast_lock = {
+            "book_id": self.project_id,
+            "locks": {
+                char: {"voice_id": cfg["voice"], "locked": True}
+                for char, cfg in voice_registry.items()
+            },
+        }
+        with open(self.project_dir / "cast_lock.json", "w", encoding="utf-8") as clf:
+            json.dump(cast_lock, clf, indent=2)
+
         script_files = sorted(scripts_dir.glob("chapter_*_hi_script.json"))
         s2_dur = round(time.time() - t_s2, 2)
         self.stage_artifacts["stage_2_screenplay"] = {

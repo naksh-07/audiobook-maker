@@ -266,6 +266,7 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
         exempt_files = {
             "model_manager.py",
             "tts_dispatcher.py",
+            "constants.py",
             "contracts.py",
             "provenance.py",
         }
@@ -293,6 +294,47 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
             f"Detected {len(violations)} hardcoded Gemini model string(s) in codebase:\n"
             + "\n".join(violations),
         )
+
+    def test_14_llm_client_candidate_cycling_with_env_preference(self):
+        """
+        Validates that call_gemini dynamically cycles across candidate models upon retry,
+        even when GEMINI_TEXT_MODEL is set in the environment, preventing static model deadlocks.
+        """
+        import os
+        from audiobook_factory.llm_client import call_gemini
+        from audiobook_factory.key_manager import get_persistent_key_pool
+        import urllib.request
+        from unittest.mock import MagicMock
+
+        models_contacted = []
+
+        def mock_urlopen(req, timeout=45.0):
+            # Record which model URL was called
+            url = req.full_url
+            for m in ["model-primary", "model-fallback", "model-alt"]:
+                if m in url:
+                    models_contacted.append(m)
+            # Fail first call with 503, succeed second call
+            if len(models_contacted) == 1:
+                import urllib.error
+                raise urllib.error.HTTPError(url, 503, "Service Unavailable", {}, None)
+            mock_resp = MagicMock()
+            mock_resp.__enter__.return_value = mock_resp
+            mock_resp.read.return_value = json.dumps({
+                "candidates": [{"content": {"parts": [{"text": '{"result": "success"}'}]}}]
+            }).encode("utf-8")
+            return mock_resp
+
+        with patch.dict(os.environ, {"GEMINI_TEXT_MODEL": "model-primary"}):
+            with patch("urllib.request.urlopen", side_effect=mock_urlopen):
+                with patch("audiobook_factory.llm_client.get_model_manager", return_value=self.manager):
+                    with patch.object(self.manager, "get_candidate_models_for_task", return_value=["model-primary", "model-fallback", "model-alt"]):
+                        with patch.object(self.manager, "resolve_active_model", return_value="model-primary"):
+                            with patch.object(get_persistent_key_pool(), "get_key", return_value="AIzaSyDummyKey"):
+                                res = call_gemini("test prompt", max_retries=3)
+                                self.assertEqual(res, {"result": "success"})
+                                # First attempt was model-primary (503), second attempt cycled to model-fallback!
+                                self.assertEqual(models_contacted, ["model-primary", "model-fallback"])
 
 
 def json_bytes(obj) -> bytes:

@@ -190,16 +190,34 @@ def measure_audio_metrics(audio_file: Path, ffmpeg: str = "ffmpeg") -> Dict[str,
         dur_match = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.?\d*)", output)
 
         dur_sec = 0.0
-        if dur_match:
+        if p.suffix.lower() == ".wav" and p.exists():
+            try:
+                with wave.open(str(p), "rb") as wf:
+                    dur_sec = wf.getnframes() / float(wf.getframerate())
+            except Exception:
+                pass
+        if dur_sec <= 0.0 and dur_match:
             h, m, s = dur_match.groups()
             dur_sec = int(h) * 3600 + int(m) * 60 + float(s)
 
-        lufs = float(i_match.group(1)) if i_match else -24.0
+        lufs = -24.0
+        if i_match:
+            try:
+                lufs = float(i_match.group(1))
+            except ValueError:
+                lufs = -70.0
+
+        peak = -1.5
         if tp_match:
-            tp_vals = [float(v) for v in tp_match.groups() if v is not None]
-            peak = max(tp_vals) if tp_vals else -1.5
-        else:
-            peak = -1.5
+            tp_vals = []
+            for v in tp_match.groups():
+                if v is not None:
+                    try:
+                        tp_vals.append(float(v))
+                    except ValueError:
+                        pass
+            if tp_vals:
+                peak = max(tp_vals)
         return {"integrated_lufs": round(lufs, 2), "true_peak_dbtp": round(peak, 2), "duration_sec": round(dur_sec, 2)}
     except Exception as e:
         logger.warning(f"Audio measurement failed for {p.name}: {e}")
@@ -530,7 +548,7 @@ def render_discrete_stems(
         "-i", str(me_file),
         "-filter_complex",
         f"[1:a]adelay=20|20[delayed_me];"
-        f"[delayed_me][0:a]sidechaincompress=threshold=0.030:knee=2.5:ratio=2.2:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
+        f"[delayed_me][0:a]sidechaincompress=threshold=0.018:knee=2.8:ratio=2.2:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
         f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000,volume=-1.5dB,alimiter=limit=0.85:attack=5:release=50[premaster_out]",
         "-map", "[premaster_out]",
         "-c:a", "pcm_s24le",

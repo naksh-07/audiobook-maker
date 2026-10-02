@@ -255,7 +255,7 @@ class MasteringJudge:
                     confidence=conf,
                     evidence={"measured_lufs": premaster_facts.integrated_lufs, "target_lufs": prof.target_lufs, "delta_lu": round(lufs_diff, 2), "direction": direction},
                     recommended_action=f"Premaster is {direction} by {lufs_diff:.2f} LU; linear loudnorm pass 2 will normalize.",
-                    bounded_parameters={"target_lufs_adjust": round(prof.target_lufs - (premaster_facts.integrated_lufs - prof.target_lufs) * 0.5, 2)},
+                    bounded_parameters={},
                 )
             )
 
@@ -304,7 +304,7 @@ class MasteringJudge:
             # 1. Target LUFS adjustment
             if "target_lufs_adjust" in params:
                 req_lufs = float(params["target_lufs_adjust"])
-                delta = req_lufs - base_profile.target_lufs
+                delta = req_lufs - base_profile.target_lufs if req_lufs < -5.0 else req_lufs
                 clamped_delta = max(-SAFETY_BOUNDS["max_lufs_shift"], min(SAFETY_BOUNDS["max_lufs_shift"], delta))
                 effective_lufs = base_profile.target_lufs + clamped_delta
                 new_prof.target_lufs = round(

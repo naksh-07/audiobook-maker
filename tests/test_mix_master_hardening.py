@@ -210,7 +210,7 @@ class TestMixMasterHardening(unittest.TestCase):
         fmt = self.det_analyzer.probe_format(master_out)
         self.assertEqual(fmt.sample_rate, 48000)
         self.assertEqual(fmt.channels, 2)
-        self.assertEqual(fmt.codec, "pcm_s16le")
+        self.assertEqual(fmt.codec, "pcm_s24le")
 
     # 6. Stereo Phase Cancellation Detection (Gate 5.3)
     def test_failure_injection_anti_phase_cancellation_caught(self):

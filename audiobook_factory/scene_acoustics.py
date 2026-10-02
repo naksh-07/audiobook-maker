@@ -45,7 +45,7 @@ class SceneAcousticProfile(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     scene_id: str = Field(..., description="Unique scene identifier (e.g. 'sc_001_tavern_interior')")
-    act_index: int = Field(default=1, ge=1, le=10, description="Dramatic act grouping")
+    act_index: int = Field(default=1, ge=1, le=1000, description="Dramatic act grouping")
     start_ms: int = Field(default=0, ge=0, description="Scene start on chapter timeline in milliseconds")
     end_ms: int = Field(default=0, ge=0, description="Scene end on chapter timeline in milliseconds")
     environment_id: str = Field(default="default", description="Reference to WorldAcousticProfile in SonicBible")
@@ -205,7 +205,7 @@ class SceneSoundscapeManifest(BaseModel):
                         pause_slots.append(segs[i].end_ms + 150)
 
             for l_idx, layer in enumerate(spot_layers):
-                interval_sec = max(90.0, layer.stochastic_interval_sec or 90.0)
+                interval_sec = max(5.0, layer.stochastic_interval_sec) if layer.stochastic_interval_sec else 90.0
                 num_cues = max(1, int(scene_dur_sec / interval_sec))
 
                 # Resolve candidate sound assets from sound bank

@@ -53,7 +53,7 @@ def call_gemini(
     """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback."""
     model_mgr = get_model_manager()
     if not model:
-        model = os.environ.get("GEMINI_TEXT_MODEL") or model_mgr.resolve_active_model(TaskType.TRANSLATION)
+        model = model_mgr.resolve_active_model(TaskType.TRANSLATION)
 
     candidate_models = [model]
     for m in model_mgr.get_candidate_models_for_task(TaskType.TRANSLATION):
@@ -339,7 +339,7 @@ def _translate_single_block(
     adult_mode: Optional[bool] = None,
 ) -> str:
     if not model:
-        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
+        model = get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     if adult_mode is None:
         adult_mode = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
@@ -589,7 +589,7 @@ def translate_chapter(
 ) -> str:
     """Pass 2: Sense-for-sense literary translation of a single chapter into spoken Hindustani."""
     if not model:
-        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
+        model = get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     from audiobook_factory.sanitizer import validate_and_sanitize_translation
     cache_dir = None
     effective_context = preceding_context
@@ -730,7 +730,7 @@ def translate_book_project(
     automatic fail-safe gate certification and full artifact persistence.
     """
     if not model:
-        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
+        model = get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     extracted_dir = project_dir / "extracted"
     if not extracted_dir.exists() and (project_dir / "chapters").exists():
         extracted_dir = project_dir / "chapters"
@@ -883,7 +883,7 @@ def translate_chapter_intelligent(
     Dedicated Evaluators (Gates T0-T11), and Tiered Self-Healing Repair.
     """
     if not model:
-        model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.TRANSLATION)
+        model = get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     from audiobook_factory.translation import IntelligentTranslationPipeline
     pipeline = IntelligentTranslationPipeline(project_dir=project_dir, model=model)
     return pipeline.translate_chapter(

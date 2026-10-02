@@ -31,7 +31,7 @@ def call_gemini(
     response_mime_type: str = "application/json",
     temperature: float = 0.2,
     max_output_tokens: int = 4096,
-    max_retries: int = 4,
+    max_retries: int = 6,
     service: str = "text",
     explicit_key: Optional[str] = None,
     timeout_sec: float = 45.0,
@@ -86,13 +86,30 @@ def call_gemini(
             raise LLMUnavailableError("KeyPool returned empty API key.")
 
         try:
-            curr_model = model_mgr.resolve_active_model(task_type, api_key=curr_key)
+            candidate_models = model_mgr.get_candidate_models_for_task(task_type)
         except Exception:
-            candidates = model_mgr.get_candidate_models_for_task(task_type)
-            if candidates:
-                curr_model = candidates[0]
+            candidate_models = []
+
+        env_model = os.environ.get("GEMINI_TEXT_MODEL")
+        if env_model:
+            # If user specified a preferred model, prioritize it in candidate list
+            # but NEVER hard-lock or prevent candidate cycling across retries
+            if env_model in candidate_models:
+                candidate_models = [env_model] + [m for m in candidate_models if m != env_model]
             else:
-                raise LLMUnavailableError(f"STRICT HALT: No valid models available for task {task_type}")
+                candidate_models = [env_model] + candidate_models
+
+        if not candidate_models:
+            raise LLMUnavailableError(f"STRICT HALT: No valid models available for task {task_type}")
+
+        if attempt > 0 and len(candidate_models) > 1:
+            # Automatic candidate rotation on retries/errors (never hammer a single model)
+            curr_model = candidate_models[attempt % len(candidate_models)]
+        else:
+            try:
+                curr_model = model_mgr.resolve_active_model(task_type, api_key=curr_key)
+            except Exception:
+                curr_model = candidate_models[0]
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent?key={curr_key}"
         headers = get_stealth_sdk_headers(curr_key)
@@ -104,13 +121,13 @@ def call_gemini(
                 data = json.loads(raw_bytes.decode("utf-8"))
                 pool.record_success(curr_key)
 
-                candidates = data.get("candidates", [])
-                if not candidates:
+                resp_candidates = data.get("candidates", [])
+                if not resp_candidates:
                     feedback = data.get("promptFeedback", {})
                     logger.warning(f"  [!] LLM candidate empty (Feedback: {feedback}) on attempt {attempt + 1}")
                     continue
 
-                parts = candidates[0].get("content", {}).get("parts", [])
+                parts = resp_candidates[0].get("content", {}).get("parts", [])
                 if not parts:
                     continue
 

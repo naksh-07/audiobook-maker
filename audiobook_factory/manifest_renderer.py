@@ -402,8 +402,23 @@ def render_ambience_bus(
         return res.returncode == 0 and output_bus_file.exists()
 
 
-def get_reverb_filter_string(preset: str = "room") -> Tuple[str, float]:
-    """Resolves dynamic FFmpeg aecho filter and wet send volume for acoustic presets."""
+def get_reverb_filter_string(preset: str = "room", rt60_ms: Optional[int] = None) -> Tuple[str, float]:
+    """
+    Resolves dynamic FFmpeg aecho filter and wet send volume for acoustic presets.
+    If rt60_ms is provided, uses physical reverberation time T60 mapping from World/Scene profiles.
+    """
+    if rt60_ms is not None and rt60_ms > 0:
+        if rt60_ms >= 2000:
+            return "aecho=0.8:0.8:100|180|260:0.55|0.40|0.25", 0.32
+        elif rt60_ms >= 1200:
+            return "aecho=0.8:0.8:60|110|160:0.40|0.30|0.18", 0.28
+        elif rt60_ms >= 600:
+            return "aecho=0.8:0.8:40|70|100:0.30|0.20|0.10", 0.22
+        elif rt60_ms >= 250:
+            return "aecho=0.8:0.8:25|50|75:0.18|0.12|0.06", 0.15
+        else:
+            return "aecho=0.8:0.7:15|30:0.06|0.03", 0.05
+
     p = str(preset).lower()
     if any(k in p for k in ("cathedral", "crypt", "temple", "cavern", "large_hall")):
         return "aecho=0.8:0.8:100|180|260:0.55|0.40|0.25", 0.32
@@ -424,8 +439,9 @@ def assemble_master_filter_graph(
     duck_release_ms: int = 750,
     spectral_carve_hz: int = 2200,
     spectral_carve_gain_db: float = -5.5,
-    sidechain_threshold: float = 0.03,
+    sidechain_threshold: float = 0.018,
     reverb_preset: str = "room",
+    rt60_ms: Optional[int] = None,
 ) -> str:
     """
     Deterministic FFmpeg Master Filter Graph Assembly:
@@ -437,7 +453,7 @@ def assemble_master_filter_graph(
     - Broadcast EBU R128 Master (-19 LUFS, -1.5 dBTP)
     """
     comp_ratio = max(4.0, min(10.0, abs(duck_attenuation_db) / 2.3))
-    rev_filter, rev_vol = get_reverb_filter_string(reverb_preset)
+    rev_filter, rev_vol = get_reverb_filter_string(reverb_preset, rt60_ms=rt60_ms)
 
     if has_foley:
         filter_str = (

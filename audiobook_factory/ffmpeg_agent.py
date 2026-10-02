@@ -88,7 +88,7 @@ def build_ffmpeg_filter_graph_via_agent(
     """
     pool = get_persistent_key_pool()
     from audiobook_factory.model_manager import get_model_manager, TaskType
-    model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.UTILITY)
+    model = get_model_manager().resolve_active_model(TaskType.UTILITY)
     
     scene_summary = [
         f"Scene {s.get('scene_id', s.get('id', '?'))}: Mood={s.get('emotional_arc', {}).get('music_mood', s.get('emotion', 'neutral'))}, Env={s.get('location', {}).get('environment_type', s.get('location', {}).get('environment', 'unknown'))}"
@@ -227,7 +227,7 @@ def build_manifest_mastering_filter_graph_via_agent(
     """
     pool = get_persistent_key_pool()
     from audiobook_factory.model_manager import get_model_manager, TaskType
-    model = os.environ.get("GEMINI_TEXT_MODEL") or get_model_manager().resolve_active_model(TaskType.UTILITY)
+    model = get_model_manager().resolve_active_model(TaskType.UTILITY)
 
     mastering = manifest_data.get("mastering", {})
     target_lufs = mastering.get("target_lufs", -19.0)

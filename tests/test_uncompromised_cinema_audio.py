@@ -221,7 +221,7 @@ class TestAcousticBusMatrixRoom3(unittest.TestCase):
 
         prof_intimate = get_ducking_profile("whisper_confession")
         self.assertEqual(prof_intimate.profile_name, "intimate_dialogue")
-        self.assertEqual(prof_intimate.attenuation_db, -10.0)
+        self.assertEqual(prof_intimate.attenuation_db, -6.0)
 
         prof_default = get_ducking_profile("narrative_exposition")
         self.assertEqual(prof_default.profile_name, "standard_speech")

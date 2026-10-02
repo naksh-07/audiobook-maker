@@ -118,6 +118,7 @@ class TestNovelPipelineUpgrade(unittest.TestCase):
 
     def test_05_alexandria_and_vibevoice_integration(self):
         """Verify Alexandria pronoun disambiguation and VibeVoice emotion preservation."""
+        from unittest.mock import patch
         from audiobook_factory.script_builder import build_dramatized_script_llm
         # Test alias mapping & pronoun disambiguation logic via mock
         roster = {
@@ -126,9 +127,13 @@ class TestNovelPipelineUpgrade(unittest.TestCase):
                 "Hermione": {"gender": "female", "aliases": ["Miss Granger"]},
             }
         }
-        # Verify script builder respects roster and alias resolution
+        mock_chunks = [
+            {"index": 1, "speaker": "Harry", "type": "dialogue", "text": "Let us move quickly.", "emotion": "urgent"},
+            {"index": 2, "speaker": "Hermione", "type": "dialogue", "text": "Wait for me!", "emotion": "pleading"},
+        ]
         sample = "Harry said, 'Let us move quickly.'\n\nHermione replied, 'Wait for me!'"
-        script = build_dramatized_script_llm(sample, character_roster=roster)
+        with patch("audiobook_factory.script_builder._parse_dramatized_chunk_llm", return_value=mock_chunks):
+            script = build_dramatized_script_llm(sample, character_roster=roster)
         self.assertIsInstance(script, list)
         self.assertGreater(len(script), 0)
         for item in script:
