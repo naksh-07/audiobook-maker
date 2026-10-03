@@ -10,7 +10,7 @@ import json
 import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Literal
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator, AliasChoices
 
 
 CastingGender = Literal["male", "female", "neutral"]
@@ -247,8 +247,8 @@ class CastLock(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
-    character_id: str
-    character_name: str
+    character_id: str = ""
+    character_name: str = ""
     voice_id: str
     casting_version: str = "1.0.0"
     locked: bool = True
@@ -259,6 +259,16 @@ class CastLock(BaseModel):
     casting_evidence: Dict[str, Any] = Field(default_factory=dict)
     calibration_overrides: Dict[str, Any] = Field(default_factory=dict)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _fill_defaults(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            cid = data.get("character_id") or data.get("character_name") or ""
+            cname = data.get("character_name") or data.get("character_id") or ""
+            data["character_id"] = cid
+            data["character_name"] = cname
+        return data
+
 
 class CastLockManifest(BaseModel):
     """
@@ -266,11 +276,23 @@ class CastLockManifest(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
-    project_slug: str
+    project_slug: str = Field(default="", validation_alias=AliasChoices("project_slug", "project_id"))
     version: str = "1.0.0"
     locks: Dict[str, CastLock] = Field(default_factory=dict)
     recast_history: List[Dict[str, Any]] = Field(default_factory=list)
     updated_at: str = Field(default_factory=lambda: datetime.datetime.now().isoformat())
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fill_lock_keys(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "locks" in data and isinstance(data["locks"], dict):
+            for key, lock_val in data["locks"].items():
+                if isinstance(lock_val, dict):
+                    if not lock_val.get("character_id"):
+                        lock_val["character_id"] = key
+                    if not lock_val.get("character_name"):
+                        lock_val["character_name"] = key
+        return data
 
     def get_lock(self, character_name_or_id: str) -> Optional[CastLock]:
         """Case-insensitive character lookup in cast locks."""

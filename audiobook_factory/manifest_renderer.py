@@ -133,8 +133,14 @@ def render_foley_bus_reel_chunked(
                 if getattr(cue, "is_lfe_sub_drop", False):
                     extra_fx = "lowpass=f=120,equalizer=f=52:t=q:w=2.0:g=6.0,"
 
+                # Strict Foley Transient Physics Cap (max 3.5s with clean micro-fadeout)
+                cue_dur_req = float(getattr(cue, "duration_ms", 0) or 0) / 1000.0
+                max_foley_sec = min(3.5, cue_dur_req) if cue_dur_req > 0.1 else 3.5
+                fade_start = max(0.05, max_foley_sec - 0.20)
+                trim_filter = f"atrim=0:{max_foley_sec:.2f},afade=t=out:st={fade_start:.2f}:d=0.20,"
+
                 filters.append(
-                    f"[{i+1}:a]{extra_fx}{pan_filter}volume={cue_gain:.3f},adelay={cue_start_ms}|{cue_start_ms}[cue_{i}]"
+                    f"[{i+1}:a]{trim_filter}{extra_fx}{pan_filter}volume={cue_gain:.3f},adelay={cue_start_ms}|{cue_start_ms}[cue_{i}]"
                 )
 
             mix_ins = "[0:a]" + "".join(f"[cue_{i}]" for i in range(len(sub_cues)))

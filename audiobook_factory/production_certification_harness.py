@@ -151,21 +151,38 @@ class ProductionCertificationHarness:
             with open(ch_file, "r", encoding="utf-8") as f:
                 ch_text = f.read()
 
+            # Load dynamic character roster if available
+            roster_file = self.project_dir / "character_roster.json"
+            roster_chars: Dict[str, Any] = {}
+            if roster_file.exists():
+                try:
+                    with open(roster_file, "r", encoding="utf-8") as rf:
+                        rdata = json.load(rf)
+                    roster_chars = rdata.get("characters", rdata) if isinstance(rdata, dict) else {}
+                except Exception as e:
+                    logger.warning(f"Could not load roster in harness: {e}")
+
             script_segments = build_narrator_script(ch_text, is_hindi=True)
             for seg in script_segments:
                 txt = seg.get("text", "")
-                if "देवव्रत" in txt and ("?" in txt or "!" in txt or "शपथ" in txt or "रक्षा" in txt):
-                    seg["speaker"] = "Devavrata"
+                matched_speaker = None
+                # Match against dynamic character roster
+                for cname, cinfo in roster_chars.items():
+                    if cname in ("Narrator", "Foley"):
+                        continue
+                    aliases = [cname]
+                    if isinstance(cinfo, dict):
+                        if cinfo.get("hindi_name"):
+                            aliases.append(cinfo["hindi_name"])
+                        aliases.extend(cinfo.get("aliases", []))
+                    if any(a in txt for a in aliases if len(a) > 2):
+                        matched_speaker = cname
+                        break
+
+                if matched_speaker and ('"' in txt or '“' in txt or '?' in txt or '!' in txt):
+                    seg["speaker"] = matched_speaker
                     seg["type"] = "dialogue"
                     seg["emotion"] = "determined"
-                elif "महर्षि" in txt or "मार्कंडेय" in txt:
-                    seg["speaker"] = "Markandeya"
-                    seg["type"] = "dialogue"
-                    seg["emotion"] = "grave"
-                elif "द्वारपाल" in txt or "शत्रु सेनापति" in txt:
-                    seg["speaker"] = "EnemyCommander"
-                    seg["type"] = "dialogue"
-                    seg["emotion"] = "shouting"
                 else:
                     seg["speaker"] = "Narrator"
                     seg["type"] = "narration"
@@ -174,15 +191,18 @@ class ProductionCertificationHarness:
             with open(script_out, "w", encoding="utf-8") as sf:
                 json.dump(script_segments, sf, ensure_ascii=False, indent=2)
 
-        # Persist canonical voice assignments for Gate 6A voice continuity audit
-        voice_registry = {
-            "Narrator": {"voice": "Kalpana"},
-            "Devavrata": {"voice": "Kalpana"},
-            "Markandeya": {"voice": "David"},
-            "EnemyCommander": {"voice": "Zira"},
-        }
-        with open(self.project_dir / "voice_registry.json", "w", encoding="utf-8") as vf:
-            json.dump(voice_registry, vf, indent=2)
+        # Persist dynamic voice assignments for Gate 6A voice continuity audit
+        reg_file = self.project_dir / "voice_registry.json"
+        if not reg_file.exists():
+            voice_registry = {"Narrator": {"voice": "Charon"}}
+            for cname in roster_chars.keys():
+                if cname not in voice_registry:
+                    voice_registry[cname] = {"voice": "Puck"}
+            with open(reg_file, "w", encoding="utf-8") as vf:
+                json.dump(voice_registry, vf, indent=2)
+        else:
+            with open(reg_file, "r", encoding="utf-8") as vf:
+                voice_registry = json.load(vf)
 
         cast_lock = {
             "book_id": self.project_id,

@@ -351,11 +351,23 @@ class PipelineOrchestrator:
 
         # 4. Agentic Directing Layer: Produce validated CreativeManifest via AgentDirector
         manifest_file = manifests_dir / f"{chap_stem}_manifest.json"
-        if manifest_file.exists():
+        force_rebuild_manifest = os.environ.get("FORCE_REBUILD_MANIFEST", "false").lower() in ("true", "1", "yes")
+        manifest = None
+
+        if manifest_file.exists() and not force_rebuild_manifest:
             logger.info(f"[*] Loading existing Creative Manifest: {manifest_file.name}")
-            with open(manifest_file, "r", encoding="utf-8") as f:
-                manifest = CreativeManifest.from_json(f.read())
-        else:
+            try:
+                with open(manifest_file, "r", encoding="utf-8") as f:
+                    manifest = CreativeManifest.from_json(f.read())
+                # Self-healing: if existing manifest was corrupted with 100% silence, re-direct
+                if manifest.silence_percentage >= 99.9 and len(manifest.music_cues) == 0:
+                    logger.warning(f"  [!] Existing manifest {manifest_file.name} is 100% silent. Re-directing with updated engine...")
+                    manifest = None
+            except Exception as e:
+                logger.warning(f"  [!] Failed to parse existing manifest {manifest_file.name}: {e}")
+                manifest = None
+
+        if manifest is None:
             logger.info(f"[*] Agent Director: Directing Chapter {chapter_num:02d} Creative Manifest...")
             director = AgentDirector(project_dir=project_dir)
             manifest = director.direct_chapter_manifest(
@@ -412,6 +424,7 @@ class PipelineOrchestrator:
             cmd_enc = [
                 ff, "-y",
                 "-i", str(master_wav),
+                "-af", "volume=-0.2dB",
                 "-c:a", "aac", "-b:a", "192k",
                 str(cinematic_out),
             ]

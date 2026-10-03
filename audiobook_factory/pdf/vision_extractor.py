@@ -66,6 +66,7 @@ class GeminiVisionPDFExtractor(PDFEscalationEngine):
             "Extract all prose text from this book page in clean Markdown reading order. "
             "Strip running headers and footers. Do not summarize."
         )
+        from audiobook_factory.safety import get_universal_safety_settings
         payload = {
             "contents": [
                 {
@@ -74,7 +75,8 @@ class GeminiVisionPDFExtractor(PDFEscalationEngine):
                         {"inlineData": {"mimeType": "application/pdf", "data": b64_data}},
                     ]
                 }
-            ]
+            ],
+            "safetySettings": get_universal_safety_settings(),
         }
 
         try:

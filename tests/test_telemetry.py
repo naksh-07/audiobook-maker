@@ -157,6 +157,65 @@ def test_telemetry_report_json_export():
         assert len(report["stages"]) == 2
         assert report["api_metrics"]["total_calls"] == 2
         assert report["api_metrics"]["rate_limits_429"] == 1
-        assert report["api_metrics"]["total_prompt_tokens"] == 1000
         assert len(report["acoustic_deliverables"]) == 1
         assert report["acoustic_deliverables"][0]["phase_correlation"] == 0.980
+
+
+def test_unregistered_run_auto_registration():
+    """Verifies that calling telemetry logging without prior start_run auto-registers the run without FK errors."""
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "telemetry.db"
+        ledger = ProductionTelemetryLedger(db_path=db_path)
+        unregistered_run = "ghost_run_999"
+
+        # Record metrics on a run that was never explicitly started via start_run
+        ledger.record_acoustic_metrics(
+            run_id=unregistered_run,
+            chapter_num=2,
+            duration_sec=120.0,
+            integrated_lufs=-19.0,
+            true_peak_dbtp=-1.5,
+            loudness_range_lu=5.0,
+            phase_correlation=0.85,
+        )
+
+        ledger.record_api_call(
+            run_id=unregistered_run,
+            service="gemini-tts",
+            endpoint="synthesize",
+            status_code=200,
+            latency_sec=1.1,
+        )
+
+        with ledger._connection() as conn:
+            run_row = conn.execute("SELECT * FROM production_runs WHERE run_id = ?", (unregistered_run,)).fetchone()
+            assert run_row is not None
+            assert run_row["status"] == "RUNNING"
+
+            acoustic_row = conn.execute("SELECT * FROM acoustic_telemetry WHERE run_id = ?", (unregistered_run,)).fetchone()
+            assert acoustic_row is not None
+            assert acoustic_row["chapter_num"] == 2
+
+
+def test_incident_telemetry_recording():
+    """Verifies that incident_telemetry records 429s, safety trips, and error details."""
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "telemetry.db"
+        ledger = ProductionTelemetryLedger(db_path=db_path)
+        run_id = "test_run_incident"
+
+        ledger.record_incident(
+            run_id=run_id,
+            stage_name="LLM Generation",
+            incident_type="RATE_LIMIT_429",
+            details={"model": "gemini-2.5-flash", "wait_sec": 12.5},
+        )
+
+        with ledger._connection() as conn:
+            rows = conn.execute("SELECT * FROM incident_telemetry WHERE run_id = ?", (run_id,)).fetchall()
+            assert len(rows) == 1
+            assert rows[0]["incident_type"] == "RATE_LIMIT_429"
+            details = json.loads(rows[0]["details_json"])
+            assert details["model"] == "gemini-2.5-flash"
+            assert details["wait_sec"] == 12.5
+

@@ -19,8 +19,13 @@ from audiobook_factory.gates.contracts import GateAuditError
 logger = logging.getLogger("audiobook_factory.gates.literary")
 
 
-def audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dict[str, Any]:
-    """Audit Gate 0: Verifies source text and localized translation file existence and length sanity."""
+def audit_gate0_translation(
+    extracted_file: Path,
+    translation_file: Path,
+    enable_llm_judge: bool = True,
+    strict: bool = True,
+) -> Dict[str, Any]:
+    """Audit Gate 0: Verifies source text and localized translation file existence, length sanity, and LLM literary fidelity."""
     extracted_file = Path(extracted_file).resolve()
     translation_file = Path(translation_file).resolve()
 
@@ -44,6 +49,25 @@ def audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dic
             f"(extracted: {len(ext_text)}, translation: {len(trans_text)})"
         )
 
+    llm_info: Dict[str, Any] = {}
+    if enable_llm_judge:
+        from audiobook_factory.gates.llm_judge import LLMTranslationJudge
+        verdict = LLMTranslationJudge.audit_translation(
+            source_text=ext_text,
+            hindi_text=trans_text,
+            chapter_title=extracted_file.stem,
+            strict=strict,
+        )
+        llm_info = {
+            "fidelity_score": verdict.score,
+            "literary_cadence_score": verdict.literary_cadence_score,
+            "action_integrity_score": verdict.action_integrity_score,
+            "critical_inversions": verdict.critical_inversions,
+            "dropped_clauses": verdict.dropped_clauses,
+            "translatese_passages": verdict.translatese_passages,
+            "critique_reason": verdict.reason,
+        }
+
     return {
         "status": "PASS",
         "extracted_chars": len(ext_text),
@@ -51,6 +75,7 @@ def audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dic
         "length_ratio": round(ratio, 3),
         "extracted_lines": len(ext_text.splitlines()),
         "translation_lines": len(trans_text.splitlines()),
+        **llm_info,
     }
 
 
@@ -310,6 +335,7 @@ def audit_gate1_anticensorship_agent(
     english_text: str,
     hindi_text: str,
     model: Optional[str] = None,
+    strict: bool = False,
 ) -> Dict[str, Any]:
     """
     Audit Gate 1 (Adversarial Anti-Censorship & Translation Fidelity Agent):
@@ -319,6 +345,7 @@ def audit_gate1_anticensorship_agent(
     3. Somatic Intimacy & Passion Auditor
 
     Fail-Closed: If any checker flags dilution or fails in production, status is DILUTED.
+    If strict=True, raises GateAuditError when status is DILUTED.
     """
     if not english_text or not english_text.strip() or not hindi_text or not hindi_text.strip():
         return {"status": "PASS", "flagged": [], "score": 1.0}
@@ -346,6 +373,9 @@ def audit_gate1_anticensorship_agent(
                 "recommendation": "रंडी",
             })
         if dilution_flags:
+            if strict:
+                reasons = "; ".join(f"{f['english']}->{f['hindi']}: {f['reason']}" for f in dilution_flags)
+                raise GateAuditError(f"Gate 1 Anti-Censorship Failed: {reasons}")
             return {"status": "DILUTED", "flagged": dilution_flags, "score": 0.5}
         return {"status": "PASS", "flagged": [], "score": 1.0}
 
@@ -368,6 +398,8 @@ def audit_gate1_anticensorship_agent(
                 scores.append(float(res["score"]))
 
     if any_error and not scores:
+        if strict:
+            raise GateAuditError("Gate 1 Anti-Censorship Failed: All specialist checkers encountered API errors.")
         return {
             "status": "DILUTED",
             "flagged": [{"reason": "Anti-Censorship Gate LLM audit failed; production fail-closed quarantine"}],
@@ -376,6 +408,10 @@ def audit_gate1_anticensorship_agent(
 
     min_score = min(scores) if scores else 1.0
     status = "DILUTED" if all_flagged or min_score < 0.8 else "PASS"
+
+    if strict and status == "DILUTED":
+        reasons = "; ".join(f"{f.get('english', '')}->{f.get('hindi', '')}: {f.get('reason', '')}" for f in all_flagged) or "Quality score below 0.80"
+        raise GateAuditError(f"Gate 1 Anti-Censorship Failed: {reasons}")
 
     return {
         "status": status,

@@ -51,38 +51,60 @@ class ResolverMixin:
         query: str,
         category: Optional[str] = None,
         prefer_mood: Optional[str] = None,
+        era: Optional[str] = None,
+        franchise_affinity: Optional[str] = None,
+        verify: bool = True,
+        is_continuous_bed: bool = True,
     ) -> Optional[Path]:
         """
         Resolves the single best matching audio file for a given cue or scene mood
         using pure SQLite FTS5 queries with zero static map fallbacks.
         If the best match is a virtual cloud entry, JIT downloads it on demand.
-        Returns absolute Path if found/downloaded, else None.
+        Verifies all candidate files through AudioVerificationGate before returning.
+        Returns absolute Path if found/downloaded and verified, else None.
         """
+        from audiobook_factory.logger import logger
+        from audiobook_factory.sound_bank.verification_gate import AudioVerificationGate
+
         # 1. Direct filename or exact path check first
         direct_p = Path(query)
         if direct_p.is_file() and direct_p.exists():
-            return direct_p
+            if verify:
+                gate = AudioVerificationGate()
+                v_res = gate.verify_asset(
+                    direct_p,
+                    category=category or "",
+                    era=era,
+                    is_continuous_bed=is_continuous_bed,
+                )
+                if v_res.is_valid:
+                    return direct_p
+                logger.warning(f"[!] Direct path rejected by verification gate: {v_res.reason}")
+            else:
+                return direct_p
 
         q_clean = query.lower().strip()
+        gate = AudioVerificationGate() if verify else None
 
         def _check_cand(cand: Dict[str, Any]) -> Optional[Path]:
+            resolved_p = None
             raw_fp = cand.get("filepath") or ""
             if raw_fp:
                 cand_path = Path(raw_fp)
                 if cand_path.is_file() and cand_path.exists():
-                    return cand_path
+                    resolved_p = cand_path
 
-            if cand.get("filename"):
+            if not resolved_p and cand.get("filename"):
                 rel_p = self.bank_root / cand["filename"]
                 if rel_p.is_file() and rel_p.exists():
-                    return rel_p
+                    resolved_p = rel_p
                 cat = cand.get("category", "")
-                if cat:
+                if not resolved_p and cat:
                     cat_p = self.bank_root / cat.lower() / cand["filename"]
                     if cat_p.is_file() and cat_p.exists():
-                        return cat_p
+                        resolved_p = cat_p
 
-            if cand.get("source_url") or cand.get("mirror_url"):
+            if not resolved_p and (cand.get("source_url") or cand.get("mirror_url")):
                 downloaded = self.download_virtual_asset(
                     sound_id=cand["id"],
                     source_url=cand.get("source_url"),
@@ -91,11 +113,33 @@ class ResolverMixin:
                     mirror_url=cand.get("mirror_url"),
                 )
                 if downloaded and downloaded.exists():
-                    return downloaded
-            return None
+                    resolved_p = downloaded
 
-        # 2. Try exact category & mood match
-        results = self.search(q_clean, category=category, mood=prefer_mood, limit=20)
+            if resolved_p and gate:
+                v_res = gate.verify_asset(
+                    resolved_p,
+                    category=category or cand.get("category", ""),
+                    era=era,
+                    candidate_meta=cand,
+                    is_continuous_bed=is_continuous_bed,
+                )
+                if not v_res.is_valid:
+                    logger.warning(
+                        f"[!] AudioVerificationGate Rejected candidate '{cand.get('filename')}': "
+                        f"{v_res.reason}. Falling back to next candidate..."
+                    )
+                    return None
+            return resolved_p
+
+        # 2. Try exact category, mood, and franchise match
+        results = self.search(
+            q_clean,
+            category=category,
+            mood=prefer_mood,
+            limit=25,
+            era=era,
+            franchise_affinity=franchise_affinity,
+        )
         for cand in results:
             resolved = _check_cand(cand)
             if resolved:
@@ -103,7 +147,13 @@ class ResolverMixin:
 
         # 3. Relax mood filter if not found
         if prefer_mood:
-            results = self.search(q_clean, category=category, limit=20)
+            results = self.search(
+                q_clean,
+                category=category,
+                limit=25,
+                era=era,
+                franchise_affinity=franchise_affinity,
+            )
             for cand in results:
                 resolved = _check_cand(cand)
                 if resolved:
@@ -120,14 +170,25 @@ class ResolverMixin:
                 "music": ["MUS", "DYNAMIC_STEM", "CHAPTER_BED"],
             }
             for alt_cat in cat_aliases.get(category, []):
-                results = self.search(q_clean, category=alt_cat, limit=10)
+                results = self.search(
+                    q_clean,
+                    category=alt_cat,
+                    limit=15,
+                    era=era,
+                    franchise_affinity=franchise_affinity,
+                )
                 for cand in results:
                     resolved = _check_cand(cand)
                     if resolved:
                         return resolved
 
         # 5. Broad search without category constraint
-        results = self.search(q_clean, limit=20)
+        results = self.search(
+            q_clean,
+            limit=25,
+            era=era,
+            franchise_affinity=franchise_affinity,
+        )
         for cand in results:
             resolved = _check_cand(cand)
             if resolved:

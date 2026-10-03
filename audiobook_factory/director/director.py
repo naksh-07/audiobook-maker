@@ -45,18 +45,27 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
             self._load_project_sonic_bible(self.project_dir)
 
     def _load_project_sonic_bible(self, pdir: Path) -> None:
-        """Attempt to load project-level sound_bible.json if present."""
+        """Attempt to load project-level sound_bible.json or sonic_bible.json if present."""
         bible_path = pdir / "sound_bible.json"
+        if not bible_path.exists():
+            bible_path = pdir / "sonic_bible.json"
+
         if bible_path.exists():
             try:
                 from audiobook_factory.sonic_bible import SonicBible
                 self.sonic_bible = SonicBible.load_from_disk(bible_path)
                 logger.info(
-                    f"[+] Agent Director: Loaded Sonic Bible from {bible_path} "
+                    f"[+] Agent Director: Loaded Sonic Bible from {bible_path.name} "
                     f"({len(self.sonic_bible.leitmotifs)} motifs, {len(self.sonic_bible.acoustic_spaces)} spaces)"
                 )
             except Exception as e:
                 logger.warning(f"  [!] Failed to load Sonic Bible from {bible_path}: {e}")
+        else:
+            try:
+                from audiobook_factory.sonic_bible_generator import SonicBibleGenerator
+                self.sonic_bible = SonicBibleGenerator.generate_for_project(pdir, sound_bank=self.sound_bank)
+            except Exception as e:
+                logger.debug(f"Could not auto-generate Sonic Bible: {e}")
 
     def direct_chapter_manifest(
         self,
@@ -82,6 +91,8 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
             check_dir = project_dir or self.project_dir
             if check_dir:
                 bible_path = Path(check_dir) / "sound_bible.json"
+                if not bible_path.exists():
+                    bible_path = Path(check_dir) / "sonic_bible.json"
                 if bible_path.exists():
                     try:
                         from audiobook_factory.sonic_bible import SonicBible
@@ -138,11 +149,23 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
                     logger.warning(f"  [!] Failed to read sound script {sound_script_file}: {e}")
 
         use_spotter = os.environ.get("USE_SOUND_SPOTTER", "true").lower() in ("true", "1", "yes")
+        era = os.environ.get("STORY_ERA")
+        franchise_affinity = None
+        dramatic_theme = "Cinematic Audio Drama"
+
+        if check_pdir:
+            from audiobook_factory.project_classifier import ProjectClassifier
+            clf = ProjectClassifier.classify(project_dir=Path(check_pdir))
+            era = era or clf.era
+            franchise_affinity = clf.franchise_affinity
+            dramatic_theme = clf.dramatic_theme
+        else:
+            era = era or "GENERAL_DRAMA"
+
         if not sound_script_data and use_spotter:
             try:
                 from audiobook_factory.sound_spotter import SoundSpotter
                 spotter = SoundSpotter(sound_bank=self.sound_bank)
-                era = os.environ.get("STORY_ERA", "MODERN")
                 sound_script_data = spotter.spot_chapter(
                     chapter_id=chapter_id,
                     script_segments=script_segments,
@@ -150,16 +173,27 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
                     seg_starts_ms=seg_starts_ms,
                     total_duration_sec=total_duration_sec,
                     era=era,
+                    franchise_affinity=franchise_affinity,
                     project_dir=check_pdir,
                 )
             except Exception as e:
                 logger.warning(f"  [!] SoundSpotter multi-agent run encountered error, falling back to legacy passes: {e}")
 
-        if sound_script_data:
+        # Bulletproof Fallback Gate: Never treat empty or failed cues as intentional 100% silence!
+        has_spotter_cues = bool(
+            sound_script_data and (
+                sound_script_data.get("music_cues") or
+                sound_script_data.get("foley_cues") or
+                sound_script_data.get("ambience_scenes")
+            )
+        )
+
+        if has_spotter_cues:
             dramaturgy_plan = {
                 "chapter_id": chapter_id,
-                "dramatic_theme": "Modern Audio Drama",
-                "era": sound_script_data.get("era", "MODERN"),
+                "dramatic_theme": dramatic_theme,
+                "era": sound_script_data.get("era", era),
+                "franchise_affinity": franchise_affinity,
                 "ambience": sound_script_data.get("ambience_scenes", []),
                 "foley_events": sound_script_data.get("foley_cues", []),
                 "music_cues": sound_script_data.get("music_cues", []),
@@ -199,6 +233,9 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
                 segment_durations_sec=segment_durations_sec,
             )
         else:
+            logger.warning(
+                "  [!] SoundSpotter returned 0 cues (or was empty). Engaging deterministic Sound Bank directing passes..."
+            )
             # =====================================================================
             # LEGACY PASS 1: Dramaturgy & Silence Carving (Fallback Heuristic)
             # =====================================================================

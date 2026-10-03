@@ -33,14 +33,14 @@ def verify_pre_synthesis_gates(
     project_dir: Path,
     chapter_num: int,
 ) -> None:
-    """Evaluates Gate 2 (Script Schema/Whitelist) and Gate 2.5 (Dramatic Beat Fidelity)."""
-    # Gate 2: Screenplay Script Schema and canonical speakers (ADR-021 Whitelist Enforcement)
+    """Evaluates Gate 2 (Script Schema/Whitelist/LLM Attribution) and Gate 2.5 (Dramatic Beat Fidelity)."""
+    # Gate 2: Screenplay Script Schema and canonical speakers (ADR-021 Whitelist & LLM Attribution)
     try:
-        gate2_res = audit_gate2_script(script_file, project_dir=project_dir)
+        gate2_res = audit_gate2_script(script_file, project_dir=project_dir, enable_llm_judge=True, strict=True)
         logger.info(f"[*] Gate 2 Script Audit: PASSED for Chapter {chapter_num:02d} ({gate2_res.get('total_segments', 0)} segments)")
     except GateAuditError as e:
         logger.error(f"\n[!] 🛑 GATE 2 AUDIT FAILED for Chapter {chapter_num:02d}: {e}")
-        logger.error("[!] Screenplay contains non-canonical speakers or schema violations. Aborting synthesis to prevent voice drift.")
+        logger.error("[!] Screenplay contains non-canonical speakers, schema violations, or misattributed dialogue. Aborting synthesis.")
         raise
     except Exception as e:
         logger.warning(f"[!] Gate 2 Script Audit notice for Chapter {chapter_num:02d}: {e}")
@@ -184,10 +184,17 @@ def verify_post_mix_master_gates(
             if gate5_certified:
                 try:
                     t_ledger = get_telemetry_ledger()
+                    meas_dur = float(gate5_res.get("duration_sec", 0.0) or 0.0)
+                    if meas_dur <= 0.0:
+                        try:
+                            from audiobook_factory.soundscape import measure_audio_metrics
+                            meas_dur = float(measure_audio_metrics(cinematic_out).get("duration_sec", 0.0) or 0.0)
+                        except Exception:
+                            pass
                     t_ledger.record_acoustic_metrics(
                         run_id=os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", f"chap_{chapter_num}"),
                         chapter_num=chapter_num,
-                        duration_sec=float(gate5_res.get("duration_sec", 0.0) or 0.0),
+                        duration_sec=meas_dur,
                         integrated_lufs=float(gate5_res.get("integrated_lufs", -19.0)),
                         true_peak_dbtp=float(gate5_res.get("true_peak_dbtp", -1.5)),
                         loudness_range_lu=float(gate5_res.get("loudness_range_lu", 0.0) or 0.0),
@@ -204,8 +211,9 @@ def verify_post_mix_master_gates(
     return gate52_passed, gate53_passed, gate5_certified
 
 
-def verify_translation_coverage_gates(project_dir: Path) -> None:
-    """Evaluates Gate 0 Translation Coverage across all extracted chapters."""
+def verify_translation_coverage_gates(project_dir: Path, strict: bool = True) -> None:
+    """Evaluates Gate 0 Translation Coverage and Gate 1 Anti-Censorship across all extracted chapters."""
+    from audiobook_factory.gates.literary import audit_gate1_anticensorship_agent
     extracted_dir = project_dir / "extracted"
     translation_dir = project_dir / "translation"
     ext_files = sorted(extracted_dir.glob("chapter_*.md"))
@@ -214,8 +222,18 @@ def verify_translation_coverage_gates(project_dir: Path) -> None:
         if not tf.exists():
             tf = translation_dir / ef.name
         if tf.exists():
-            g0_res = audit_gate0_translation(ef, tf)
-            logger.info(f"[*] Gate 0 Translation Coverage: PASSED for {ef.name} ({g0_res.get('translation_chars')} chars, ratio {g0_res.get('length_ratio')})")
+            g0_res = audit_gate0_translation(ef, tf, enable_llm_judge=True, strict=strict)
+            logger.info(
+                f"[*] Gate 0 Translation Coverage: PASSED for {ef.name} "
+                f"({g0_res.get('translation_chars')} chars, ratio {g0_res.get('length_ratio')}, "
+                f"fidelity: {g0_res.get('fidelity_score', 'N/A')})"
+            )
+
+            # Gate 1 Anti-Censorship (Adversarial Profanity, Combat Gore, Somatic Intimacy)
+            ext_text = ef.read_text(encoding="utf-8")
+            trans_text = tf.read_text(encoding="utf-8")
+            g1_anti = audit_gate1_anticensorship_agent(ext_text, trans_text, strict=strict)
+            logger.info(f"[*] Gate 1 Anti-Censorship Audit: PASSED for {ef.name} (Status: {g1_anti.get('status')})")
 
 
 def verify_screenplay_project_gates(project_dir: Path) -> None:

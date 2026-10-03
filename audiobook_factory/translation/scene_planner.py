@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 
 from .intensity_model import LiteraryIntensityVector, IntensityEvaluator
+from audiobook_factory.chunking_policy import chunking_policy
 
 
 class ScenePlan(BaseModel):
@@ -113,6 +114,13 @@ class ScenePlanner:
             # Explicit markdown divider
             if para.strip() in ("---", "***", "* * *", "___"):
                 if i not in boundaries and (i - boundaries[-1]) >= 2:
+                    boundaries.append(i)
+                    curr_words = 0
+                continue
+
+            # Hard ceiling check: enforce TRANSLATION_MAX_WORDS (750 words) to prevent output truncation
+            if curr_words >= chunking_policy.TRANSLATION_MAX_WORDS:
+                if i not in boundaries and i > boundaries[-1]:
                     boundaries.append(i)
                     curr_words = 0
                 continue

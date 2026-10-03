@@ -33,6 +33,17 @@ from audiobook_factory.gates import (
     audit_gate6d_packaging_specs,
     audit_chapter_gates,
     audit_book_master,
+    BaseLLMJudge,
+    LLMTranslationJudge,
+    LLMScreenplayAuditor,
+    LLMDramaticCritic,
+    LLMPerceptualPerformanceJudge,
+    LLMSoundDesignCritic,
+    TranslationFidelityVerdict,
+    DialogueAttributionVerdict,
+    DramaticArcVerdict,
+    VocalActingVerdict,
+    SoundDesignAtmosphereVerdict,
 )
 
 __all__ = [
@@ -61,4 +72,15 @@ __all__ = [
     "audit_gate6d_packaging_specs",
     "audit_chapter_gates",
     "audit_book_master",
+    "BaseLLMJudge",
+    "LLMTranslationJudge",
+    "LLMScreenplayAuditor",
+    "LLMDramaticCritic",
+    "LLMPerceptualPerformanceJudge",
+    "LLMSoundDesignCritic",
+    "TranslationFidelityVerdict",
+    "DialogueAttributionVerdict",
+    "DramaticArcVerdict",
+    "VocalActingVerdict",
+    "SoundDesignAtmosphereVerdict",
 ]

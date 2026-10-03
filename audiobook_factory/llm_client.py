@@ -35,7 +35,7 @@ def call_gemini(
     task_type: TaskType = TaskType.UTILITY,
     response_mime_type: str = "application/json",
     temperature: float = 0.2,
-    max_output_tokens: int = 4096,
+    max_output_tokens: int = 8192,
     max_retries: int = 6,
     service: str = "text",
     explicit_key: Optional[str] = None,
@@ -56,13 +56,8 @@ def call_gemini(
     pool = get_persistent_key_pool()
     model_mgr = get_model_manager()
 
-    # Creative fiction / dramatic safety settings (BLOCK_NONE)
-    safety_settings = [
-        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-    ]
+    from audiobook_factory.safety import get_universal_safety_settings
+    safety_settings = get_universal_safety_settings()
 
     payload: Dict[str, Any] = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -103,20 +98,18 @@ def call_gemini(
         except Exception:
             candidate_models = []
 
+        env_model = os.environ.get("GEMINI_TEXT_MODEL")
+        if env_model:
+            if env_model in candidate_models:
+                candidate_models = [env_model] + [m for m in candidate_models if m != env_model]
+            else:
+                candidate_models = [env_model] + candidate_models
+
         if model:
             if model in candidate_models:
                 candidate_models = [model] + [m for m in candidate_models if m != model]
             else:
                 candidate_models = [model] + candidate_models
-
-        env_model = os.environ.get("GEMINI_TEXT_MODEL")
-        if env_model:
-            # If user specified a preferred model, prioritize it in candidate list
-            # but NEVER hard-lock or prevent candidate cycling across retries
-            if env_model in candidate_models:
-                candidate_models = [env_model] + [m for m in candidate_models if m != env_model]
-            else:
-                candidate_models = [env_model] + candidate_models
 
         if not candidate_models:
             raise LLMUnavailableError(f"STRICT HALT: No valid models available for task {task_type}")
@@ -136,11 +129,35 @@ def call_gemini(
         headers = get_stealth_sdk_headers(curr_key)
         req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
 
+        t_req_start = time.perf_counter()
         try:
             with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
                 raw_bytes = resp.read()
+                latency_sec = time.perf_counter() - t_req_start
                 data = json.loads(raw_bytes.decode("utf-8"))
                 pool.record_success(curr_key)
+
+                # Record Telemetry API Call
+                usage_meta = data.get("usageMetadata", {})
+                prompt_tok = usage_meta.get("promptTokenCount", 0)
+                cand_tok = usage_meta.get("candidatesTokenCount", 0)
+                cost_est = (prompt_tok * 0.075 + cand_tok * 0.30) / 1_000_000
+                run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
+                try:
+                    from audiobook_factory.telemetry import get_telemetry_ledger
+                    get_telemetry_ledger().record_api_call(
+                        run_id=run_id,
+                        service="gemini-llm",
+                        endpoint=curr_model,
+                        status_code=200,
+                        latency_sec=latency_sec,
+                        is_rate_limit=False,
+                        prompt_tokens=prompt_tok,
+                        completion_tokens=cand_tok,
+                        est_cost_usd=cost_est,
+                    )
+                except Exception as t_err:
+                    logger.debug(f"[telemetry] Notice recording API call: {t_err}")
 
                 resp_candidates = data.get("candidates", [])
                 if not resp_candidates:
@@ -171,9 +188,21 @@ def call_gemini(
             # Deterministic payload problem: do NOT retry on identical payload
             last_error = gpe
             logger.warning(f"  [FAIL-FAST] {gpe}. Breaking model retry immediately.")
+            run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
+            try:
+                from audiobook_factory.telemetry import get_telemetry_ledger
+                get_telemetry_ledger().record_incident(
+                    run_id=run_id,
+                    stage_name="LLM Generation",
+                    incident_type="SAFETY_OR_PAYLOAD_BLOCK",
+                    details={"model": curr_model, "error": str(gpe)},
+                )
+            except Exception:
+                pass
             raise gpe
 
         except urllib.error.HTTPError as e:
+            latency_sec = time.perf_counter() - t_req_start
             last_error = e
             err_body = ""
             try:
@@ -187,6 +216,31 @@ def call_gemini(
             logger.warning(
                 f"  [!] LLM HTTP {e.code} ({error_type}) on key {preview} (attempt {attempt + 1}/{max_retries}): {msg}"
             )
+
+            run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
+            try:
+                from audiobook_factory.telemetry import get_telemetry_ledger
+                t_led = get_telemetry_ledger()
+                t_led.record_api_call(
+                    run_id=run_id,
+                    service="gemini-llm",
+                    endpoint=curr_model,
+                    status_code=e.code,
+                    latency_sec=latency_sec,
+                    is_rate_limit=(e.code == 429),
+                    prompt_tokens=0,
+                    completion_tokens=0,
+                    est_cost_usd=0.0,
+                )
+                if e.code == 429:
+                    t_led.record_incident(
+                        run_id=run_id,
+                        stage_name="LLM Generation",
+                        incident_type="RATE_LIMIT_429",
+                        details={"model": curr_model, "attempt": attempt + 1, "key": preview, "error": msg},
+                    )
+            except Exception as t_err:
+                logger.debug(f"[telemetry] Notice recording error telemetry: {t_err}")
 
             if error_type == "DAILY_QUOTA_EXHAUSTED":
                 pool.mark_daily_quota_exhausted(curr_key, msg)

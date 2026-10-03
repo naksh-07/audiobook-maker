@@ -2,25 +2,21 @@
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
-# Active Context: Master Modernization & Production Certification Completed
+# Active Context: Sword of Destiny Audio Drama Production
 
-## Live State: Clean Room Certified & Modular Architecture Operational
-- **Status**: PRODUCTION CERTIFIED & HARDENED (100% Tests Green, 1,130+ passing).
-- **Core Architecture Modernization (Sprint 1 Complete)**:
-  - Fail-closed gates, metadata silos, spatial audio, storage abstraction, and modular CLI router verified.
-- **Sprint 2: Creative Stamina & Monolith Decomposition (Phases 1, 2, & 3 Complete)**:
-  - **Phase 1 (Creative Stamina)**: Centralized `ChunkingPolicy` (`TRANSLATION_MAX_WORDS = 750`, `SCREENPLAY_MAX_WORDS = 350`, `DRAMATURGY_SCENE_MAX_CHARS = 3500`). `translator.py` chunk ceiling dropped from 2,200 to 750 words; silent exceptions removed. `scene_analyzer.py` decoupled into 2-pass micro-prompts.
-  - **Phase 2 (Monolith Decomposition of Top 4 God Objects)**:
-    - [cinematic_mix/judge.py](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinematic_mix/judge.py): 1,183L -> 481L (decomposed into `remediation_planner.py` & `rules/technical_rules.py`, `acoustic_rules.py`, `cinematic_rules.py`).
-    - [soundscape.py](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape.py): 1,286L -> 53L (facade delegating to `soundscape_engine/probe.py`, `mood_detector.py`, `sound_resolver.py`, `ducking.py`, `whisper_guard.py`, `planner.py`, `mixer.py`).
-    - [script_builder.py](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py): 1,090L -> 27L (facade delegating to `script/normalizer.py`, `dialogue_parser.py`, `staging_enricher.py`, `screenplay_cleaner.py`, `dramatized_builder.py`, `project_generator.py`).
-    - [forced_aligner.py](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/forced_aligner.py): 1,072L -> 35L (facade delegating to `alignment/text_utils.py`, `audio_io.py`, `pause_classifier.py`, `diagnostics.py`, `energy_fallback.py`, `mms_aligner.py`).
-  - **Phase 3 (Hardening & God Object #5 Decomposition)**:
-    - [orchestrator.py](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestrator.py): 723L -> 483L (decomposed into `orchestration/gates.py`, `orchestration/janitor.py`, `orchestration/dialogue_runner.py`).
-    - MMS Aligner CUDA VRAM cleanup (`del waveform, emission; torch.cuda.empty_cache()`).
-    - Cinema engine Windows CLI length guard (8,191-char limit) & safe tempfile unlinking.
-    - FFmpeg agent network loop resilience (`continue` on transient network glitch).
-    - Unified `call_gemini` delegating to `core_call_gemini` with payload errors.
-  - **Verification**: Clean-room production certification harness PASSED (24/24 points, 10 gates in 297s). All 1,130+ unit/integration tests verified green.
-  - `standalone_pipeline.py` strictly isolated and 100% untouched.
-- **Workspace Hygiene**: Zero audio files committed to Git. Ready for production deployment.
+## Live State: Chapter 1 & 2 Produced & 100% Broadcast Certified
+- **Status**: ACTIVE PRODUCTION (Sword of Destiny - Hindi Dramatized Audio Drama).
+- **Chapters Mastered**:
+  - `chapter_001_hi_cinematic.m4a`: 1.11 min. Certified EBU R128 (-18.9 LUFS, TP -2.8 dBTP, DMR +21.2 dB).
+  - `chapter_002_hi_cinematic.m4a`: 13.10 min (785.65s, 71 segments). 100% Broadcast Certified EBU R128 (-19.0 LUFS, TP -1.5 dBTP, Phase r=0.554, DMR +32.1 dB). Zero synthetic noise, zero loop fatigue. 100% Authentic Witcher 3 Studio Library soundscape: Act 1 Cave (`tw3_devpit_06_amb_cave02.wav`, 227.5s), Act 2 Swamp/Road (`tw3_nml_05_exploration_night.wav`, 228.0s), Act 3 Tavern (`tw3_bob_13_tavern_02_MASTER.wav`, 172.8s + `tavern_crowd_murmur.ogg`), 15 Foley cues, Witcher 3 OST underscore (65.5% acoustic silence ratio).
+- **Cast Allocation**:
+  - `Narrator`: `Aoede`, `Geralt`: `Charon`, `Borch Three Jackdaws`: `Puck`, `Alderman`: `Fenrir`, `Thugs`: `Enceladus`/`Algieba`, `Tea/Vea`: `Kore`.
+- **Universal Engine Hardening (Universal Studio Architecture)**:
+  - `LLM Creative Quality & Audit Gates`: Eliminated rubber-stamp heuristic scripts across entire pipeline. Created `BaseLLMJudge` with dynamic `TaskType.AUDITING` model resolution (zero hardcoded models, concurrent health pings, Tier 2 floor, `BLOCK_NONE`). Replaced fake checks with `LLMTranslationJudge` (Gate 0/T2), `audit_gate1_anticensorship_agent` (Gate 1 blocking), `LLMScreenplayAuditor` (Gate 2), `LLMDramaticCritic` (Gate 2.5), `LLMPerceptualPerformanceJudge` (Gate 2.8), and `LLMSoundDesignCritic` (Stage 11). 14/14 tests passing.
+  - `AudioRealityAuditor`: Fail-closed pre-mix auditor (3.5s foley physics cap, 180s anti-repetition cooldown, rogue music purge, fantasy/era filter, multi-scene/layer audit).
+  - Centralized `safety.py`: Universal `BLOCK_NONE` safety filters & dramatic fiction framing across all LLM/TTS endpoints.
+  - `project_classifier.py`: Dynamic genre/era/franchise auto-detection (Witcher = MEDIEVAL_FANTASY / the_witcher).
+  - Self-Healing Telemetry: Auto-registers runs in `production_runs`, records API latency/tokens/costs in `api_telemetry`, accurate non-zero acoustic metrics in `acoustic_telemetry` (785.65s), and incidents in `incident_telemetry`.
+  - Synthetic Audio Purge: Permanently deleted 5 dummy anoisesrc files from disk and sound_bank.db. Category misclassifications (AMB/FOL/MUS) in sound_catalog fixed and FTS5 indexes rebuilt.
+- **Next Sprint**:
+  - Run full production batch on Chapters 3–9 with the newly active fail-closed LLM Creative Audit Gates.

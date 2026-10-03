@@ -23,8 +23,11 @@ def audit_gate2_script(
     script_file: Path,
     allowed_speakers: Optional[Set[str]] = None,
     project_dir: Optional[Path] = None,
+    enable_llm_judge: bool = True,
+    source_file: Optional[Path] = None,
+    strict: bool = True,
 ) -> Dict[str, Any]:
-    """Audit Gate 2: Verifies screenplay script against Pydantic v2 schema, checking canonical speaker keys."""
+    """Audit Gate 2: Verifies screenplay script against schema, speaker keys, and LLM dialogue attribution."""
     script_file = Path(script_file).resolve()
     if not script_file.exists():
         raise GateAuditError(f"Gate 2 Failed: Script file missing at {script_file}")
@@ -33,11 +36,12 @@ def audit_gate2_script(
     if not script.segments:
         raise GateAuditError("Gate 2 Failed: Screenplay has 0 segments!")
 
+    pdir = Path(project_dir).resolve() if project_dir else script_file.parent.parent
+    roster_file = pdir / "character_roster.json"
+    reg_file = pdir / "voice_registry.json"
+
     # Auto-discover project roster and voice registry if allowed_speakers is not explicitly provided
     if allowed_speakers is None:
-        pdir = Path(project_dir).resolve() if project_dir else script_file.parent.parent
-        roster_file = pdir / "character_roster.json"
-        reg_file = pdir / "voice_registry.json"
         discovered: Set[str] = {"Narrator", "Foley"}
         has_catalog = False
 
@@ -131,12 +135,60 @@ def audit_gate2_script(
                 f"Gate 2 Failed: Non-sequential segment index at position {idx} (found index {seg.index})"
             )
 
+    llm_info: Dict[str, Any] = {}
+    if enable_llm_judge:
+        source_text = ""
+        candidate_sources = []
+        if source_file and Path(source_file).exists():
+            candidate_sources.append(Path(source_file))
+
+        # Auto-detect source files from project directories
+        stem_clean = script_file.stem.replace("_hi_script", "").replace("_script", "")
+        candidate_sources.extend([
+            pdir / "translation" / f"{stem_clean}_hi.md",
+            pdir / "translated" / f"{stem_clean}.md",
+            pdir / "extracted" / f"{stem_clean}.md",
+        ])
+        for cs in candidate_sources:
+            if cs.exists():
+                try:
+                    source_text = cs.read_text(encoding="utf-8")
+                    if source_text.strip():
+                        break
+                except Exception:
+                    pass
+
+        if source_text:
+            from audiobook_factory.gates.llm_judge import LLMScreenplayAuditor
+            raw_segments = [s.model_dump() for s in script.segments]
+            roster_data = None
+            if roster_file.exists():
+                try:
+                    with open(roster_file, "r", encoding="utf-8") as rf:
+                        roster_data = json.load(rf)
+                except Exception:
+                    pass
+
+            verdict = LLMScreenplayAuditor.audit_screenplay(
+                source_text=source_text,
+                script_segments=raw_segments,
+                character_roster=roster_data,
+                strict=strict,
+            )
+            llm_info = {
+                "attribution_score": verdict.score,
+                "misattributed_segments": verdict.misattributed_segments,
+                "hallucinated_lines": verdict.hallucinated_lines,
+                "attribution_reason": verdict.reason,
+            }
+
     return {
         "status": "PASS",
         "total_segments": len(script.segments),
         "total_dialogue_segments": len(dialogue_indices),
         "unique_speakers": len(speaker_breakdown),
         "speaker_breakdown": speaker_breakdown,
+        **llm_info,
     }
 
 

@@ -125,10 +125,12 @@ Once tested and successful, output the final graph as a raw string in a markdown
         if not api_key:
             break
         
+        from audiobook_factory.safety import get_universal_safety_settings
         payload = {
             "contents": messages,
             "tools": TOOLS,
-            "generationConfig": {"temperature": 0.2}
+            "generationConfig": {"temperature": 0.2},
+            "safetySettings": get_universal_safety_settings(),
         }
         
         req = urllib.request.Request(
@@ -269,10 +271,12 @@ Output the verified graph in a markdown code block."""
         if not api_key:
             break
 
+        from audiobook_factory.safety import get_universal_safety_settings
         payload = {
             "contents": messages,
             "tools": TOOLS,
-            "generationConfig": {"temperature": 0.2}
+            "generationConfig": {"temperature": 0.2},
+            "safetySettings": get_universal_safety_settings(),
         }
 
         req = urllib.request.Request(

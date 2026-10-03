@@ -7,6 +7,8 @@ Persists `chapter_XXX_cinema_manifest.json` and `chapter_XXX_stem_ledger.json`.
 """
 
 from __future__ import annotations
+import os
+import re
 import math
 import json
 import shutil
@@ -248,6 +250,16 @@ def render_discrete_stems(
 
     ch_id = manifest.chapter_id
 
+    # Fail-Closed Audio Reality Pre-Flight Gate (Durations <= 3.5s, Anti-Repetition, Category Isolation)
+    from audiobook_factory.audio_reality_auditor import AudioRealityAuditor
+    auditor = AudioRealityAuditor(sound_bank=bank)
+    manifest, reality_report = auditor.audit_and_remediate(
+        manifest=manifest,
+        output_dir=out_dir,
+        era=getattr(manifest, "era", "MEDIEVAL_FANTASY"),
+        franchise_affinity=getattr(manifest, "franchise_affinity", None),
+    )
+
     # 1. Probe dialogue duration
     d_metrics = measure_audio_metrics(d_path, ffmpeg=ff)
     total_dur = d_metrics.get("duration_sec", 0.0) or getattr(manifest, "total_duration_sec", 60.0) or 60.0
@@ -255,19 +267,20 @@ def render_discrete_stems(
     stems_meta: Dict[str, StemMetadata] = {}
 
     # --- STEM 1: DX (Dialogue Stem) ---
-    dx_file = out_dir / f"{ch_id}_stem_DX.wav"
+    dx_file = (out_dir / f"{ch_id}_stem_DX.wav").resolve()
     if d_path.exists():
-        cmd_dx = [
-            ff, "-y",
-            "-i", str(d_path),
-            "-af", "aresample=48000",
-            "-ac", "2",
-            "-c:a", "pcm_s16le",
-            str(dx_file),
-        ]
-        res_dx = subprocess.run(cmd_dx, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if res_dx.returncode != 0 or not dx_file.exists():
-            shutil.copyfile(d_path, dx_file)
+        if d_path != dx_file:
+            cmd_dx = [
+                ff, "-y",
+                "-i", str(d_path),
+                "-af", "aresample=48000",
+                "-ac", "2",
+                "-c:a", "pcm_s16le",
+                str(dx_file),
+            ]
+            res_dx = subprocess.run(cmd_dx, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if res_dx.returncode != 0 or not dx_file.exists():
+                shutil.copyfile(d_path, dx_file)
     else:
         # Generate clean silent fallback
         cmd_silence = [ff, "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}", "-c:a", "pcm_s16le", str(dx_file)]
@@ -390,9 +403,30 @@ def render_discrete_stems(
         inputs = ["-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}"]
         filters = []
         for i, (apath, s_ms, e_ms, tlufs, cutoff, width) in enumerate(amb_cues):
-            inputs.extend(["-stream_loop", "-1", "-i", str(apath)])
+            # Probe asset duration for Anti-Looping verification
+            asset_dur = 0.0
+            try:
+                with wave.open(str(apath), "rb") as wf:
+                    asset_dur = wf.getnframes() / float(wf.getframerate())
+            except Exception:
+                pass
+            if asset_dur <= 0.0:
+                m_info = measure_audio_metrics(apath, ffmpeg=ff)
+                asset_dur = m_info.get("duration_sec", 0.0)
+
             dur_ms = max(500, e_ms - s_ms)
             dur_sec = dur_ms / 1000.0
+
+            # Anti-Looping Guard: If asset is short (< 30s) and scene is long (> 45s), do not infinite loop
+            if asset_dur > 0.0 and asset_dur < 30.0 and dur_sec > 45.0:
+                logger.warning(
+                    f"[!] AntiLoopingGuard: Ambience asset '{apath.name}' ({asset_dur:.1f}s) is too short "
+                    f"to loop continuously over {dur_sec:.1f}s scene. Playing once to prevent acoustic loop fatigue."
+                )
+                inputs.extend(["-i", str(apath)])
+            else:
+                inputs.extend(["-stream_loop", "-1", "-i", str(apath)])
+
             st_ms = max(0, s_ms)
             fade_in = min(1.5, dur_sec / 3.0)
             fade_out_st = max(0.1, dur_sec - fade_in)
@@ -738,4 +772,25 @@ def render_discrete_stems(
 
     ledger_path = out_dir / f"{ch_id}_stem_ledger.json"
     ledger.save_to_disk(ledger_path)
+
+    try:
+        from audiobook_factory.telemetry import get_telemetry_ledger
+        chap_num_match = re.search(r"\d+", ch_id)
+        chap_num = int(chap_num_match.group(0)) if chap_num_match else 0
+        measured_dur = float(master_m.get("duration_sec", 0.0) or 0.0)
+        if measured_dur <= 0.0 and master_file.exists():
+            measured_dur = float(measure_audio_metrics(master_file, ffmpeg=ff).get("duration_sec", total_dur))
+
+        get_telemetry_ledger().record_acoustic_metrics(
+            run_id=os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", f"chap_{chap_num}"),
+            chapter_num=chap_num,
+            duration_sec=measured_dur,
+            integrated_lufs=float(master_m.get("integrated_lufs", -19.0)),
+            true_peak_dbtp=float(master_m.get("true_peak_dbtp", -1.5)),
+            loudness_range_lu=float(master_m.get("loudness_range_lu", 0.0) or 0.0),
+            phase_correlation=float(ledger_meta.get("phase_correlation", 0.85) or 0.85),
+        )
+    except Exception as e:
+        logger.warning(f"Acoustic telemetry record failed: {e}")
+
     return ledger

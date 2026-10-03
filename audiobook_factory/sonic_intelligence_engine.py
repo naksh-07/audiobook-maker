@@ -392,6 +392,45 @@ class SonicIntelligenceEngine:
 
         return card
 
+    def get_candidate_cards_for_beat(
+        self,
+        intent: str,
+        era: Optional[str] = None,
+        franchise_affinity: Optional[str] = None,
+        category: str = "FOL",
+        max_duration_sec: float = 4.0,
+        limit: int = 4,
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieves top lightweight, token-efficient sound candidate cards
+        specifically formatted for LLM Director prompt injection.
+        Guarantees strict duration limits and franchise prioritization.
+        """
+        matches = self.bank.search(
+            query=intent,
+            category=category,
+            era=era,
+            franchise_affinity=franchise_affinity,
+            limit=limit * 2,
+        )
+        cards = []
+        for m in matches:
+            dur = float(m.get("duration_sec", 0.0) or 0.0)
+            if max_duration_sec > 0 and dur > max_duration_sec:
+                continue
+            cards.append({
+                "asset_id": m.get("id"),
+                "filename": m.get("filename"),
+                "filepath": m.get("filepath"),
+                "category": m.get("category"),
+                "duration_sec": round(dur, 2),
+                "franchise_affinity": m.get("franchise_affinity"),
+                "description": m.get("description", "") or m.get("tags", ""),
+            })
+            if len(cards) >= limit:
+                break
+        return cards
+
 
 _GLOBAL_SONIC_ENGINE: Optional[SonicIntelligenceEngine] = None
 

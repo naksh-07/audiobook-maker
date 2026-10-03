@@ -144,7 +144,26 @@ def evaluate_semantic_fidelity(
         if pa.issues:
             warnings.extend(pa.issues)
 
-    # Step 3: Dedicated LLM Evaluator (if enabled, Decision A3)
+    # Step 3: Dedicated LLM Evaluator (dynamic model resolution, ADR-043)
+    import os
+    is_mock = os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
+
+    if call_llm_fn is None and not is_mock:
+        from audiobook_factory.llm_client import call_gemini
+        from audiobook_factory.model_manager import TaskType
+
+        def _default_llm(prompt: str, system_instruction: str = "", json_mode: bool = True) -> str:
+            res = call_gemini(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                task_type=TaskType.AUDITING,
+                response_mime_type="application/json" if json_mode else "text/plain",
+                temperature=0.1,
+            )
+            return json.dumps(res) if isinstance(res, (dict, list)) else str(res)
+
+        call_llm_fn = _default_llm
+
     if call_llm_fn is not None:
         props = source_map.propositions
         chunk_size = 20
@@ -218,7 +237,7 @@ Output a JSON object with:
             alignment=alignment,
         )
 
-    # Pure deterministic fallback (zero LLM)
+    # Pure deterministic fallback (strictly for offline mock tests)
     is_val = alignment.is_valid and len(inversions) == 0
     status = "PASS" if is_val and not warnings else ("WARN" if is_val else "FAIL")
 
@@ -228,7 +247,7 @@ Output a JSON object with:
         critical_inversions=inversions,
         affected_paragraphs=sorted(list(set(affected_paragraphs))),
         warnings=warnings,
-        evaluator_notes="Deterministic semantic alignment completed.",
+        evaluator_notes="Deterministic semantic alignment completed (offline mock).",
         target_map=target_map,
         alignment=alignment,
     )

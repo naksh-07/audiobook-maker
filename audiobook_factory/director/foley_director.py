@@ -253,11 +253,15 @@ class FoleyDirectorMixin:
 
         try:
             # Engage hybrid intelligence FTS/Vector query
-            result = self.sound_bank.search_intelligence(intent=intent, limit=3)
+            result = self.sound_bank.search_intelligence(intent=intent, limit=5)
             if result and hasattr(result, "ranked_cards") and result.ranked_cards:
                 for card in result.ranked_cards:
                     if card and getattr(card, "file_path", None):
                         cand = Path(card.file_path)
+                        cand_str = str(cand).lower()
+                        # Strict Music and Long-File Quarantine from Foley bus
+                        if "/music/" in cand_str or "\\music\\" in cand_str or getattr(card, "duration_sec", 0.0) > 4.5:
+                            continue
                         # CATEGORY GUARD: Prohibit weapon/combat assets for non-combat intents
                         is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
                         banned_non_combat = ("sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor", "clash")
@@ -270,12 +274,17 @@ class FoleyDirectorMixin:
             pass
 
         # 2. Basic fallback search if Intelligence didn't yield a valid local path
-        matches = self.sound_bank.search(intent, category="foley", limit=3)
+        fa = getattr(self, "franchise_affinity", None)
+        matches = self.sound_bank.search(intent, category="foley", limit=5, franchise_affinity=fa)
         if not matches:
-            matches = self.sound_bank.search(action_verb, category="foley", limit=2)
+            matches = self.sound_bank.search(action_verb, category="foley", limit=5, franchise_affinity=fa)
         for m in matches:
             if m.get("filepath"):
                 cand = Path(m["filepath"])
+                cand_str = str(cand).lower()
+                dur = float(m.get("duration_sec", 0.0) or 0.0)
+                if "/music/" in cand_str or "\\music\\" in cand_str or dur > 4.5:
+                    continue
                 is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
                 banned_non_combat = ("sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor", "clash")
                 if not is_combat_intent and any(b in cand.name.lower() for b in banned_non_combat):

@@ -216,6 +216,7 @@ def synthesize_gemini_tts(
             if rate_limiter:
                 rate_limiter.acquire()
 
+            t_req_start = time.perf_counter()
             req = urllib.request.Request(
                 url,
                 data=data,
@@ -224,6 +225,7 @@ def synthesize_gemini_tts(
             )
             try:
                 with urllib.request.urlopen(req, timeout=90.0) as resp:
+                    latency_sec = time.perf_counter() - t_req_start
                     resp_json = json.loads(resp.read().decode("utf-8"))
                     candidates = resp_json.get("candidates", [])
                     if not candidates:
@@ -337,6 +339,22 @@ def synthesize_gemini_tts(
 
                         # Record success in persistent key pool
                         pool.record_success(api_key)
+                        run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
+                        try:
+                            from audiobook_factory.telemetry import get_telemetry_ledger
+                            get_telemetry_ledger().record_api_call(
+                                run_id=run_id,
+                                service="gemini-tts",
+                                endpoint=model,
+                                status_code=200,
+                                latency_sec=latency_sec,
+                                is_rate_limit=False,
+                                prompt_tokens=len(text.split()),
+                                completion_tokens=int(dur_sec * 50),
+                                est_cost_usd=0.0,
+                            )
+                        except Exception:
+                            pass
                         return output_file, dur_sec
                     finally:
                         if tmp_file.exists():
@@ -346,6 +364,7 @@ def synthesize_gemini_tts(
                                 pass
 
             except urllib.error.HTTPError as e:
+                latency_sec = time.perf_counter() - t_req_start
                 try:
                     err = e.read().decode("utf-8", errors="ignore")
                 finally:
@@ -354,6 +373,31 @@ def synthesize_gemini_tts(
                     except Exception:
                         pass
                 category, wait_sec, reason = classify_gemini_error(e.code, err)
+
+                run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
+                try:
+                    from audiobook_factory.telemetry import get_telemetry_ledger
+                    t_led = get_telemetry_ledger()
+                    t_led.record_api_call(
+                        run_id=run_id,
+                        service="gemini-tts",
+                        endpoint=model,
+                        status_code=e.code,
+                        latency_sec=latency_sec,
+                        is_rate_limit=(e.code == 429),
+                        prompt_tokens=0,
+                        completion_tokens=0,
+                        est_cost_usd=0.0,
+                    )
+                    if e.code == 429:
+                        t_led.record_incident(
+                            run_id=run_id,
+                            stage_name="Gemini TTS",
+                            incident_type="RATE_LIMIT_429",
+                            details={"model": model, "key": f"...{api_key[-6:]}", "category": category, "wait_sec": wait_sec},
+                        )
+                except Exception:
+                    pass
 
                 if category == "DAILY_QUOTA_EXHAUSTED":
                     pool.mark_daily_quota_exhausted(api_key, err)
@@ -524,6 +568,7 @@ def synthesize_gemini_multispeaker_batch(
             if rate_limiter:
                 rate_limiter.acquire()
 
+            t_req_start = time.perf_counter()
             req = urllib.request.Request(
                 url,
                 data=data,
@@ -532,6 +577,7 @@ def synthesize_gemini_multispeaker_batch(
             )
             try:
                 with urllib.request.urlopen(req, timeout=120.0) as resp:
+                    latency_sec = time.perf_counter() - t_req_start
                     resp_json = json.loads(resp.read().decode("utf-8"))
                     candidates = resp_json.get("candidates", [])
                     if not candidates:
@@ -608,6 +654,22 @@ def synthesize_gemini_multispeaker_batch(
 
                         tmp_file.replace(output_file)
                         pool.record_success(api_key)
+                        run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
+                        try:
+                            from audiobook_factory.telemetry import get_telemetry_ledger
+                            get_telemetry_ledger().record_api_call(
+                                run_id=run_id,
+                                service="gemini-tts-multispeaker",
+                                endpoint=model,
+                                status_code=200,
+                                latency_sec=latency_sec,
+                                is_rate_limit=False,
+                                prompt_tokens=total_words,
+                                completion_tokens=int(dur_sec * 50),
+                                est_cost_usd=0.0,
+                            )
+                        except Exception:
+                            pass
                         return output_file, dur_sec
                     finally:
                         if tmp_file.exists():
@@ -617,6 +679,7 @@ def synthesize_gemini_multispeaker_batch(
                                 pass
 
             except urllib.error.HTTPError as e:
+                latency_sec = time.perf_counter() - t_req_start
                 try:
                     err = e.read().decode("utf-8", errors="ignore")
                 finally:
@@ -625,6 +688,31 @@ def synthesize_gemini_multispeaker_batch(
                     except Exception:
                         pass
                 category, wait_sec, reason = classify_gemini_error(e.code, err)
+
+                run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
+                try:
+                    from audiobook_factory.telemetry import get_telemetry_ledger
+                    t_led = get_telemetry_ledger()
+                    t_led.record_api_call(
+                        run_id=run_id,
+                        service="gemini-tts-multispeaker",
+                        endpoint=model,
+                        status_code=e.code,
+                        latency_sec=latency_sec,
+                        is_rate_limit=(e.code == 429),
+                        prompt_tokens=0,
+                        completion_tokens=0,
+                        est_cost_usd=0.0,
+                    )
+                    if e.code == 429:
+                        t_led.record_incident(
+                            run_id=run_id,
+                            stage_name="Gemini TTS Multi-Speaker",
+                            incident_type="RATE_LIMIT_429",
+                            details={"model": model, "key": f"...{api_key[-6:]}", "category": category, "wait_sec": wait_sec},
+                        )
+                except Exception:
+                    pass
 
                 if category == "DAILY_QUOTA_EXHAUSTED":
                     pool.mark_daily_quota_exhausted(api_key, err)

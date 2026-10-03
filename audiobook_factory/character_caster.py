@@ -16,27 +16,36 @@ from typing import Dict, Any, List, Optional, Set
 
 from audiobook_factory.logger import logger
 from audiobook_factory.key_manager import get_persistent_key_pool
-from audiobook_factory.cadence import get_stealth_sdk_headers
-from audiobook_factory.model_manager import get_model_manager, TaskType
+from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
+from audiobook_factory.llm_client import call_gemini
 
-# Studio Voice Persona Catalogs
+# Studio Voice Persona Catalogs (Verified Gemini TTS API Voices)
 MALE_VOICE_PERSONAS = [
-    "Puck",      # Middle-aged, energetic, expressive, comedic or anxious
-    "Fenrir",    # Authoritative, wise, warm, elder or magical mentor
-    "Charon",    # Deep, gravelly, menacing, stoic or imposing
-    "Zeus",      # Regal, booming, commanding
-    "Orpheus",   # Poetic, thoughtful, youthful, dramatic
-    "Achilles",  # Fierce, warrior, intense
-    "Algenib",   # Calm, observational
-    "Algieba",   # Rustic, rough
-    "Alnilam",   # Direct, resolute
+    "Charon",      # Deep, gravelly, menacing, stoic or imposing (Protagonists, Warriors)
+    "Puck",        # Middle-aged, energetic, expressive, comedic or charismatic
+    "Fenrir",      # Authoritative, wise, warm, elder, scholar or mentor
+    "Enceladus",   # Heavy, deep, booming, powerful
+    "Algieba",     # Rustic, rough, gritty, aggressive
+    "Algenib",     # Calm, steady, observational
+    "Alnilam",     # Direct, resolute, soldierly
+    "Achird",      # Sharp, youthful, agile
+    "Iapetus",     # Dark, solemn, mysterious
+    "Orus",        # Bold, proud, aristocratic
+    "Rasalgethi",  # Raw, rugged, weathered
+    "Schedar",     # Cold, formal, regal
 ]
 
 FEMALE_VOICE_PERSONAS = [
-    "Kore",      # Mature, sharp, prim, observant or commanding
-    "Leda",      # Gentle, maternal, emotional, tender
-    "Zephyr",    # Breezy, youthful, curious, quick-witted
-    "Achernar",  # Deep female, solemn, mystical
+    "Kore",        # Mature, sharp, prim, observant or commanding
+    "Leda",        # Gentle, maternal, emotional, tender
+    "Achernar",    # Deep female, solemn, mystical
+    "Callirrhoe",  # Melodic, lyrical, youthful
+    "Despina",     # Crisp, quick-witted, feisty
+    "Autonoe",     # Regal, proud, aristocratic
+    "Erinome",     # Haunting, quiet, atmospheric
+    "Gacrux",      # Stately, authoritative, mature
+    "Laomedeia",   # Soft, delicate, vulnerable
+    "Sulafat",     # Rich, warm, captivating
 ]
 
 
@@ -81,13 +90,21 @@ class CharacterCaster:
             return {"project_id": f"proj-{project_dir.name}", "characters": {}}
 
         sample_texts = []
-        for cf in chap_files[:3]:
+        for cf in chap_files:
             try:
                 with open(cf, "r", encoding="utf-8") as f:
                     txt = f.read()
-                    sample_texts.append(txt[:4000])
+                lower_txt = txt.lower()
+                if "copyright" in lower_txt or "all rights reserved" in lower_txt or len(txt.split()) < 200:
+                    continue
+                sample_texts.append(txt[:4000])
+                if len(sample_texts) >= 3:
+                    break
             except Exception:
                 pass
+        if not sample_texts and chap_files:
+            # Fallback if all chapters were short
+            sample_texts = [chap_files[0].read_text(encoding="utf-8")[:4000]]
         combined_sample = "\n\n--- NEXT CHAPTER SAMPLE ---\n\n".join(sample_texts)
 
         # Call LLM Casting Director
@@ -143,9 +160,6 @@ Return a JSON array of objects with:
 - "aliases": list of strings (e.g. ["मिस्टर डर्स्ली", "Vernon Dursley", "Mr Dursley"])
 """
 
-        from audiobook_factory.llm_client import call_gemini
-        from audiobook_factory.contracts import TaskType
-        from audiobook_factory.exceptions import LLMUnavailableError
 
         try:
             parsed = call_gemini(
@@ -198,6 +212,8 @@ Return a JSON array of objects with:
         }
         locks = {
             "Narrator": {
+                "character_id": "Narrator",
+                "character_name": "Narrator",
                 "locked": True,
                 "voice_id": default_narrator_voice,
             }
@@ -253,10 +269,12 @@ Return a JSON array of objects with:
                 "speed": speed,
             }
             locks[name] = {
+                "character_id": name,
+                "character_name": name,
                 "locked": True,
                 "voice_id": persona,
             }
 
         roster = {"project_id": project_id, "characters": roster_chars}
-        cast_lock = {"project_id": project_id, "locks": locks}
+        cast_lock = {"project_slug": project_id, "project_id": project_id, "locks": locks}
         return roster, voice_registry, cast_lock

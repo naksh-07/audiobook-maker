@@ -81,11 +81,9 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
             "details": gate35_res.details,
         }
     else:
-        report["gate_3"] = {
-            "status": "PASS",
-            "type": "director_managed",
-            "notice": "No scenes_source or manifest file present; verified script coverage.",
-        }
+        raise GateAuditError(
+            f"Gate 3 Failed: Missing both scenes source ({scenes_file.name}) and creative manifest ({manifest_file.name}) for chapter {chapter_num:03d}. Directing stage must be executed."
+        )
 
     if ledger_file.exists():
         report["gate_4_ledger"] = audit_gate4_ledger(ledger_file, script_file, audio_dir)

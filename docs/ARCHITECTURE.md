@@ -12,20 +12,27 @@ Unlike legacy audiobook generators that simply pipe unformatted text into a Text
 
 ```mermaid
 flowchart TB
+    subgraph Room0["🌍 Pre-Production: Classification & Sonic Bible Generation"]
+        direction TB
+        RawBook["Raw Book File<br/>(EPUB / PDF / TXT / Markdown)"] --> Classifier["Stage 0.5: Universal Project Classifier<br/>(audiobook_factory/project_classifier.py)<br/>• Era, Genre, Franchise Affinity & Acoustic DNA"]
+        Classifier --> BibleGen["Stage 0.6: Automated Sonic Bible Generator<br/>(audiobook_factory/sonic_bible_generator.py)<br/>• sound_bible.json, World Profiles, Leitmotif Matrix"]
+    end
+
     subgraph Room1["🚪 Room 1: Creative Production Room"]
         direction TB
-        RawBook["Raw Book File<br/>(EPUB / PDF / TXT / Markdown)"] --> RawArchive["Sacred Raw Archive<br/>(raw/source_original + SHA-256)"]
+        RawBook --> RawArchive["Sacred Raw Archive<br/>(raw/source_original + SHA-256)"]
         RawArchive --> Extractor["Forensic Ingestion Engine (Pillar 1)<br/>(audiobook_factory/extractor.py)<br/>• Single-pass EPUB DOM & Anchor Slicing<br/>• Layout-Aware PDF + 4-Signal Heuristic<br/>• Non-Destructive Unicode Normalizer"]
         Extractor --> AST["Canonical AST Model<br/>(canonical/book.json & quality_report.json)"]
         AST --> Gate01{"Gate 0.1:<br/>Ingestion Quality Gate<br/>(Fail-Closed on REVIEW)"}
         Gate01 -->|PASS / WARN| Chapters["Projected Chapter Markdown<br/>(extracted/chapter_XXX.md)"]
         Chapters --> Translator["Literary Translation Intelligence Engine (Hardening v2.0)<br/>(audiobook_factory/translation/ & translator.py)<br/>• BookBible v2.0 + EntityDiscoveryEngine<br/>• 3 Concurrent Glossary Agents (ADR-045)<br/>• Context-Calibrated Scene Routing (COMBAT/INTIMATE/DIALOGUE/LORE)<br/>• Contextual Hindustani & 7D Calibrated Intensity<br/>• World & Character Memory 2.0 (Epistemic Continuity)"]
-        Translator --> Certifier{"Gates T0–T15:<br/>4-Tier Certification State Machine &<br/>TieredRepairEngine (L1/L2/L3)"}
-        Certifier -->|Certified + 11-Dim Provenance Seal| Sanitizer["Linguistic Sanitizer & Literary Register Guardrail<br/>(audiobook_factory/sanitizer.py & advisory_lexicon.py)<br/>• Non-Destructive Rustic Voice Preservation"]
-        Sanitizer --> Dramaturgy["Stage 3: Dramaturgy & Screenplay Engine<br/>(audiobook_factory/dramaturgy/ & script_builder.py)<br/>• Two-Pass Decoupled Screenplay Parser (ADR-045)<br/>• Micro-Chunking (~350 Words) & 5-Layer Context Stack<br/>• Organic SceneAnalyzer & Actioning BeatPlanner<br/>• Gate 2 Anti-Swallow Guard & Fail-Closed Halts"]
-        Dramaturgy --> Gate25{"Gate 2.5:<br/>Dramatic Fidelity Audit<br/>(Fail-Closed 8 Pillars)"}
+        Translator --> Certifier{"Gates T0–T15 & LLMTranslationJudge:<br/>4-Tier Certification State Machine &<br/>TieredRepairEngine (L1/L2/L3)"}
+        Certifier -->|Certified + 11-Dim Provenance Seal| AntiCensor{"Gate 1A:<br/>3-Agent Anti-Censorship<br/>(Profanity, Gore, Intimacy)"}
+        AntiCensor -->|PASS| Dramaturgy["Stage 3: Dramaturgy & Screenplay Engine<br/>(audiobook_factory/dramaturgy/ & script_builder.py)<br/>• Two-Pass Decoupled Screenplay Parser (ADR-045)<br/>• Micro-Chunking (~350 Words) & 5-Layer Context Stack<br/>• Organic SceneAnalyzer & Actioning BeatPlanner"]
+        Dramaturgy --> Gate25{"Gate 2.5:<br/>LLMDramaticCritic<br/>(Arc Continuity & Anti-Teleportation)"}
         Gate25 -->|PASS| Scripts["Standardized Screenplay Script JSON<br/>(Speaker, Emotion, Spatial Pan, Intensity, Breath)"]
-        Scripts --> PerfRealization["Dramatic Performance Realization Layer (ADR-032)<br/>(audiobook_factory/performance/)<br/>• PerformanceDirector & TimingRealizer<br/>• ConversationalChemistry Turn Coupling<br/>• Priority Multi-Take Synthesis (TakeBank)<br/>• 8D Evaluator & Intelligent Take Selector"]
+        Scripts --> Gate2{"Gate 2:<br/>LLMScreenplayAuditor<br/>(0% Misattribution + Anti-Swallow)"}
+        Gate2 -->|PASS| PerfRealization["Dramatic Performance Realization Layer (ADR-032)<br/>(audiobook_factory/performance/)<br/>• PerformanceDirector & TimingRealizer<br/>• ConversationalChemistry Turn Coupling<br/>• Priority Multi-Take Synthesis (TakeBank)<br/>• 8D Evaluator & LLMPerceptualPerformanceJudge"]
         PerfRealization --> PronunciationQA["Pronunciation & Spoken QA Subsystem (ADR-022)<br/>(audiobook_factory/pronunciation/)<br/>• Dual-Layer SpokenTextEngine & Tag Shield<br/>• Deterministic 7-Tier Resolver (T1–T7)<br/>• Meta MMS_FA CTC Alignment QA & Repair"]
         PronunciationQA --> Gate28{"Gate 2.8:<br/>Performance Fidelity Gate<br/>(Fail-Closed Pre-Mix QC)"}
         Gate28 -->|PASS| Chunks["Selected Speech Takes (24kHz Mono PCM) &<br/>PerformanceDirection Stems"]
@@ -35,18 +42,21 @@ flowchart TB
 
     subgraph Room2["🚪 Room 2: Agentic Directing Layer (Strict Agent Mandate)"]
         direction TB
-        Bible["Global Lore & Sonic Bible<br/>(sound_bible.json)"] --> Director["AgentDirector Directing Engine<br/>(audiobook_factory/agent_director.py)<br/>• Foley Strictly from SoundSpotter Cue Sheet<br/>• Domestic Regex Guessing Purged (ADR-045)"]
+        BibleGen --> Director["AgentDirector Directing Engine<br/>(audiobook_factory/agent_director.py)<br/>• Foley Strictly from SoundSpotter Cue Sheet<br/>• Domestic Regex Guessing Purged (ADR-045)"]
         Scripts --> Director
         EditedChunks --> Director
         Director --> Pass1["Pass 1: Dramaturgy & Silence Carving<br/>(>= 60.0% Silence Mandate)"]
         Pass1 --> Pass2["Pass 2: Music Director<br/>(FTS5 Search & Character Leitmotifs)"]
         Pass2 --> Pass3["Pass 3: Acoustic Foley Ingestion<br/>(Cue Sheet Synchronization & -6dB Whisper Attenuation)"]
         Pass3 --> Manifest["CreativeManifest v3.0 / CinemaAudioManifest"]
+        Manifest --> SoundCritic["Stage 11: LLMSoundDesignCritic<br/>(Scene Atmosphere Fitness & Era Anachronisms)"]
     end
 
-    subgraph Room3["🚪 Room 3: Acoustic Compositor & DSP Mastering"]
+    subgraph Room3["🚪 Room 3: Acoustic Compositor & Reality Verification"]
         direction TB
-        Manifest --> Renderer["Manifest Soundscape Renderer<br/>(audiobook_factory/manifest_renderer.py)"]
+        SoundCritic --> RealityAuditor["Gate 3.8: AudioRealityAuditor<br/>(audiobook_factory/audio_reality_auditor.py)<br/>• 3.5s Foley Physics Cap & Micro-Fadeout<br/>• 180s Anti-Repetition Cooldown<br/>• Rogue Music Bus Hijack Purge"]
+        RealityAuditor --> BankGate["Gate SB-1: AudioVerificationGate<br/>(Duration Contracts: AMB >= 45s, FOL <= 4.5s)"]
+        BankGate --> Renderer["Manifest Soundscape Renderer<br/>(audiobook_factory/manifest_renderer.py)"]
         SoundBank["SQLite FTS5 Sound Bank<br/>(audiobooks/sound_bank/)"] --> Renderer
         Renderer --> Ducking["Whisper-Safe Sidechain Ducking<br/>(Threshold 0.018 linear / -34.9 dBFS)"]
         Renderer --> Reverb["Dynamic Room Reverb Presets<br/>(Cathedral, Bedroom, Open Road, Stone Hall)"]
@@ -68,6 +78,7 @@ flowchart TB
         MasterEngine --> FullMaster["Certified Cinema Master<br/>(_cinema_master.wav + ledger + report)"]
     end
 
+    Room0 --> Room1
     Room1 --> Room2
     Room2 --> Room3
     Room2 --> Room4
@@ -79,7 +90,22 @@ flowchart TB
 
 ---
 
-## 🚪 Deep-Dive: The Four Production Rooms
+## 🚪 Deep-Dive: The Production Rooms
+
+### 0. Stage 0.5 & Stage 0.6: Universal Project Classification & Sonic Bible Generation
+*Purpose: Automatically detect novel universe acoustic DNA and synthesize project-level sound design policies.*
+
+- **Stage 0.5: Universal Project Classifier ([`audiobook_factory/project_classifier.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/project_classifier.py)):**
+  - Analyzes book title, author, metadata, and opening prose samples to classify:
+    - `era`: `MEDIEVAL_FANTASY`, `SPACE_OPERA_SCIFI`, `RETRO_FUTURE_CYBERPUNK`, `PULP_NOIR_1940S`, `VICTORIAN_EDWARDIAN`, `MODERN_CONTEMPORARY`.
+    - `genre`: `fantasy`, `sci_fi`, `horror_thriller`, `detective_noir`, `historical`, `literary_fiction`.
+    - `franchise_affinity`: Recognizes canonical literary signatures (The Witcher, Dune, Middle-Earth, Sherlock Holmes, Lovecraft Cthulhu).
+    - `primary_acoustic_env`: Sets default acoustic landscape (e.g. `stone_ruins_exterior`, `tavern_interior`, `spaceship_bridge`).
+- **Stage 0.6: Automated Sonic Bible Generator ([`audiobook_factory/sonic_bible_generator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_bible_generator.py)):**
+  - Compiles authoritative project-level `sound_bible.json` establishing:
+    - World Acoustic Profiles and impulse response mappings.
+    - Character Leitmotif Definitions mapped to FTS5 sound bank tracks.
+    - Global Loudness Policies (-19.0 LUFS integrated target, -1.5 dBTP True Peak ceiling, LRA $\le 8.5\text{ LU}$, DMR $\ge 14.0\text{ dB}$, minimum phase correlation $r \ge 0.20$).
 
 ### 1. Room 1: Creative Production Room
 *Purpose: Convert unstructured literature into structured, attributed dramatic screenplay assets.*
@@ -381,6 +407,17 @@ All instances where scripts attempted to simulate creative writing or sound desi
     - Length-aware multi-scale audio intelligence: Centered active-region windowing with 10ms Hann micro-fades and pitch guard for micro-SFX ($<1.0\text{s}$); composite 3-window spectral pooling, multi-window energy-weighted CLAP embeddings, and sliding-window AST event detection for long-form recordings ($>30\text{s}$).
     - Rapid 64KB header SHA-256 fingerprinting for $<0.1\text{ms}$ idempotent resume, stage selectivity (`all`, `metadata_dsp`, `ai_only`), error isolation for corrupt streams, and immediate GPU VRAM eviction.
   - **Bounded LRU Cache & JIT Streaming ([`SoundBankCacheManager`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank_cache.py)):** 1.5 GB configurable disk budget with active-render protection, per-asset striped download mutexes, and zero metadata eviction.
+- **Pillar 4 Millisecond Audio Reality Pre-Mix Auditor ([`AudioRealityAuditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/audio_reality_auditor.py)):**
+  - **Foley Duration Physics Cap:** Clamps excessive Foley durations ($\le 3.5\text{s}$) with automated logarithmic micro-fadeouts, preventing 20-second tableware or footsteps from droning across entire scenes.
+  - **180-Second Anti-Repetition Cooldown:** Enforces a 3-minute cooldown preventing identical Foley assets from repeating monotonically in the same acoustic scene.
+  - **Strict Bus Category Isolation:** Detects rogue background music tracks or orchestral suites erroneously slotted into the Foley bus, rejecting hijacked cues and logging actionable diagnostics.
+  - **Era & Anachronism Filtering:** Screens cue filenames and paths against `ERA_BANNED_SUBSTRINGS` (e.g. blocking modern vehicle engines, phones, sirens, and contemporary chatter from medieval fantasy soundscapes).
+  - Emits canonical audit ledger `chapter_XXX_audio_reality_ledger.json`.
+- **Sound Bank Physical Audio Verification Gate (Gate SB-1) ([`AudioVerificationGate`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/verification_gate.py)):**
+  - Probes audio stream containers via `ffprobe` for header corruption, missing channels, and header defects.
+  - Enforces Category Duration Contracts: Ambience Beds $\ge 45.0\text{s}$, Foley $\le 4.5\text{s}$, SFX impacts $\le 12.0\text{s}$.
+  - Filters out modern era keywords (`ERA_BANNED_KEYWORDS`) and rejects synthetic flanged white noise (`anoisesrc`).
+  - Automatically conforms non-48kHz audio streams to studio 48kHz stereo WAV.
 - **Manifest Soundscape Renderer ([`audiobook_factory/manifest_renderer.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/manifest_renderer.py))**:
   - Constructs complex dynamic FFmpeg `filter_complex` graphs.
   - **Whisper-Safe Sidechain Ducking**: Detector threshold set to `0.018` linear (-34.9 dBFS) with 15ms attack and 350ms release. Seamlessly accommodates **-22.0 dB "Erotic Silence"** ASMR cues and whispered dialogue without false gating or music pumping.

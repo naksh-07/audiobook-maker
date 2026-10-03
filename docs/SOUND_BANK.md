@@ -536,4 +536,28 @@ Enables ingesting massive open-source sound repositories (e.g. BBC 16k collectio
 4. Immediately purges scratch audio files, reclaiming 100% of temporary disk space.
 5. Logs atomic checkpoint progress in `ingestion_batches` for 100% crash-proof resumability.
 
+---
+
+## 🛡️ 10. Phase 6: Physical Audio Verification Gate & Synthetic Noise Cleanse
+
+Phase 6 hardens the Sound Bank against corrupted container headers, category mismatches, and synthetic audio fatigue.
+
+### A. Physical Audio Verification Gate (`AudioVerificationGate`)
+Located in [`audiobook_factory/sound_bank/verification_gate.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/verification_gate.py):
+- **ffprobe Stream Inspection**: Probes audio files for container corruption, missing channels, and header defects before they enter the sound design manifest. Files smaller than 500 bytes or failing probe are immediately rejected (`is_valid=False`).
+- **Category Duration Contracts**:
+  | Category | Duration Contract | Rationale |
+  | :--- | :---: | :--- |
+  | **AMB (Ambience Bed)** | $\ge 45.0\text{s}$ | Rejects short 10–15s loops that cause repetitive acoustic fatigue in background beds. |
+  | **FOL (Tactile Foley)** | $\le 4.5\text{s}$ | Prevents multi-minute ambient recordings or music tracks from hijacking Foley spots. |
+  | **SFX (Combat & Hits)** | $\le 12.0\text{s}$ | Ensures impacts, sword clashes, and spell bursts maintain punchy, realistic transients. |
+- **Era & Anachronism Filtering**: Sweeps keywords against `ERA_BANNED_KEYWORDS`. In `MEDIEVAL_FANTASY`, blocks contemporary terms (`car`, `traffic`, `telephone`, `engine`, `radio`, `airplane`, `siren`, `plastic`), enforcing historical and fantasy immersion.
+- **Automated Sample Rate Conformation**: If an asset's sample rate deviates from 48kHz, the gate auto-conforms the stream to 48kHz stereo PCM using FFmpeg's SOXR sinc resampler.
+
+### B. Permanent Synthetic Audio Cleanse & FTS5 Rebuild
+- **Dummy Asset Purge**: Permanently purged 5 legacy dummy `anoisesrc` synthetic noise files from disk and `sound_bank.db`.
+- **Category Rectification**: Rectified legacy catalog category misclassifications across Ambience, Foley, and Music assets.
+- **FTS5 Virtual Index Rebuild**: Rebuilt `sound_catalog_fts` virtual tables to ensure clean, deterministic full-text and hybrid vector retrieval.
+
+
 

@@ -161,6 +161,16 @@ def audit_gate5_master(
             measured_tp = max(tp_vals) if tp_vals else -1.5
         else:
             measured_tp = -1.5
+        dur_match = re.search(r"Duration:\s+(\d+):(\d+):([\d.]+)", output)
+        if dur_match:
+            h, m, s = dur_match.groups()
+            measured_dur = int(h) * 3600 + int(m) * 60 + float(s)
+        else:
+            try:
+                from audiobook_factory.soundscape import measure_audio_metrics
+                measured_dur = float(measure_audio_metrics(master_file, ffmpeg=ffmpeg_bin).get("duration_sec", 0.0) or 0.0)
+            except Exception:
+                measured_dur = 0.0
     except GateAuditError:
         raise
     except Exception as e:
@@ -179,6 +189,7 @@ def audit_gate5_master(
     return {
         "status": "PASS",
         "master_file": str(master_file),
+        "duration_sec": round(measured_dur, 2),
         "integrated_lufs": measured_lufs,
         "true_peak_dbtp": measured_tp,
         "target_lufs": target_lufs,

@@ -210,7 +210,11 @@ class SceneSoundscapeManifest(BaseModel):
 
                 # Resolve candidate sound assets from sound bank
                 candidates: List[Path] = []
-                banned_stoch = ("jump", "boot", "sword", "blade", "drawbridge", "armor", "clash", "horse", "gallop", "leather", "weapon", "shield")
+                banned_stoch = (
+                    "jump", "boot", "sword", "blade", "drawbridge", "armor", "clash",
+                    "horse", "gallop", "leather", "weapon", "shield", "07018159", "shambling",
+                    "troops", "soldiers", "grader", "santiago", "chile", "march"
+                )
                 if sound_bank is not None:
                     res = sound_bank.resolve_sound(layer.asset_path, category="FOL") or sound_bank.resolve_sound(layer.asset_path)
                     if res and res.exists() and not any(b in res.name.lower() for b in banned_stoch):
@@ -221,6 +225,9 @@ class SceneSoundscapeManifest(BaseModel):
                         if not search_res:
                             search_res = sound_bank.search(q, limit=6)
                         for r in search_res:
+                            dur = float(r.get("duration_sec", 0.0) or 0.0)
+                            if dur > 3.5:
+                                continue
                             fp = Path(r.get("filepath", ""))
                             if fp.exists() and fp not in candidates and not any(b in fp.name.lower() for b in banned_stoch):
                                 candidates.append(fp)

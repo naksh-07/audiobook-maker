@@ -681,12 +681,20 @@ def translate_book_project(
         with open(glossary_file, "r", encoding="utf-8") as f:
             glossary = json.load(f)
     else:
-        first_chap_file = extracted_dir / "chapter_001.md"
-        if not first_chap_file.exists():
+        chap_files = sorted(extracted_dir.glob("chapter_*.md"))
+        if not chap_files:
             chap_files = sorted(extracted_dir.glob("*.md"))
-            if not chap_files:
-                raise FileNotFoundError("No chapter markdown files found in extracted directory.")
-            first_chap_file = chap_files[0]
+        if not chap_files:
+            raise FileNotFoundError("No chapter markdown files found in extracted directory.")
+
+        first_chap_file = chap_files[0]
+        for cf in chap_files:
+            try:
+                if len(cf.read_text(encoding="utf-8").split()) > 300:
+                    first_chap_file = cf
+                    break
+            except Exception:
+                pass
 
         with open(first_chap_file, "r", encoding="utf-8") as f:
             first_chap_text = f.read()

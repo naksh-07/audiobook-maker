@@ -9,13 +9,16 @@ The verification system spans **Gate 0.1**, **Translation & Spoken Language Gate
 ```mermaid
 flowchart LR
     G01["Gate 0.1:<br/>Forensic Ingestion"] --> GT["Gates T0–T15:<br/>Translation & Spoken QA"]
-    GT --> G0["Gate 0:<br/>Translation Parity"]
-    G0 --> G1["Gate 1:<br/>Voice Roster"]
-    G1 --> G2["Gate 2:<br/>Screenplay"]
-    G2 --> G25["Gate 2.5:<br/>Dramatic Fidelity"]
-    G25 --> G28["Gate 2.8:<br/>Performance Fidelity"]
+    GT --> G0["Gate 0 / T2:<br/>LLM Translation Judge"]
+    G0 --> G1A["Gate 1A:<br/>Anti-Censorship Agent"]
+    G1A --> G1["Gate 1:<br/>Voice Roster & Cast Lock"]
+    G1 --> G2["Gate 2:<br/>LLM Screenplay Auditor"]
+    G2 --> G25["Gate 2.5:<br/>LLM Dramatic Critic"]
+    G25 --> G28["Gate 2.8:<br/>LLM Vocal Acting Judge"]
     G28 --> G3["Gate 3 / 3.5:<br/>Manifest Feasibility"]
-    G3 --> G45["Gate 4.5:<br/>Timeline Ledger"]
+    G3 --> G38["Gate 3.8:<br/>Audio Reality Auditor"]
+    G38 --> GSB1["Gate SB-1:<br/>Sound Bank Audio Verification"]
+    GSB1 --> G45["Gate 4.5:<br/>Timeline Ledger"]
     G45 --> G52["Gate 5.2:<br/>Spectral Masking"]
     G52 --> G53["Gate 5.3:<br/>Stereo Phase"]
     G53 --> G5["Gate 5:<br/>Broadcast Master"]
@@ -108,24 +111,27 @@ flowchart LR
 
 ---
 
-### Gate 0: Source Text & Translation Coverage
-- **Function**: `audit_gate0_translation(extracted_file: Path, translation_file: Path) -> Dict[str, Any]`
-- **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
-- **Pipeline Stage**: Inline execution after Stage 2 (Translation).
-- **Audit Rules**:
-  - Both source and target text files must exist and exceed minimum word count ($> 50$ words).
-  - Character and word count ratio between translation and source must fall within $0.50$ and $2.20$.
-  - Catches empty translations, truncated chapters, or hallucinated runaway text loops.
-- **Fail Condition**: Raises `GateAuditError` if text is truncated or missing.
+### Gate 0 / T2: LLM Translation Fidelity & Cadence Judge (Universal Studio Architecture)
+- **Function**: `LLMTranslationJudge.audit_translation(source_text: str, hindi_text: str, chapter_title: str = "", min_score: float = 0.80, strict: bool = True) -> TranslationFidelityVerdict`
+- **Module**: [`audiobook_factory/gates/llm_judge.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py), [`gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
+- **Pipeline Stage**: Inline execution after Stage 2 (Translation) and integrated with Gate T2 scene certification.
+- **Data Models**: [`TranslationFidelityVerdict`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py#L33-L46) (`status`, `score`, `literary_cadence_score`, `action_integrity_score`, `critical_inversions`, `dropped_clauses`, `translatese_passages`, `reason`, `recommendations`)
+- **Audit Rules & Evaluators**:
+  - **Sense-for-Sense Fidelity**: Verifies that dramatic subtext, character motivation, and narrative events are preserved without omission, factual drift, or hallucinated additions.
+  - **Literary Hindustani Cadence**: Rejects stiff, literal English calques ("translatese"), unnatural passive voice, or sterile bureaucratic phrasing. Rewards earthy, rhythmic, spoken cadence (*"Aate mein Namak jitni Urdu"*).
+  - **Action & Negation Integrity**: Flags any inversion where an action was flipped (e.g. "did not enter" translated as "प्रवेश किया") or where subject/object roles were inverted.
+  - **Dialogue Social Register**: Characters must retain their authentic social register and honorifics (`आप`, `तुम`, `तू`).
+  - **Dynamic Model Resolution**: Uses `BaseLLMJudge.resolve_auditing_model()` (`TaskType.AUDITING`), enforcing a **Tier 2 Balanced** floor with concurrent health pings and zero hardcoded model strings.
+- **Fail Condition**: Raises `GateAuditError` if `strict=True` and `verdict.status == "FAIL"` or `verdict.score < min_score` ($< 0.80$) or any critical inversions are detected.
 
 ---
 
-### Gate 1A: Adversarial Anti-Censorship & Translation Fidelity Agent (ADR-045)
+### Gate 1A: 3-Agent Adversarial Anti-Censorship & Translation Fidelity (ADR-045)
 - **Function**: `audit_gate1_anticensorship_agent(english_text: str, hindi_text: str, model: Optional[str] = None) -> Dict[str, Any]`
 - **Module**: [`audiobook_factory/gate_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py)
 - **Pipeline Stage**: Post-translation adversarial audit prior to screenplay drafting.
 - **Architecture (3 Parallel Specialist Checkers)**:
-  - Deconstructs anti-censorship auditing into three concurrent checkers operating across the 100+ rotating API key pool via `ThreadPoolExecutor(max_workers=3)`:
+  - Deconstructs anti-censorship auditing into three concurrent checkers operating across the rotating key pool via `ThreadPoolExecutor(max_workers=3)`:
     1. **Profanity & Curses Checker (`_audit_profanity_agent`):** Audits translation against prudish bowdlerization (e.g. replacing 'bastard' with polite 'दुष्ट' instead of authentic 'हरामी' / 'कमीने'). Enforces the **19-to-21 Amplification Rule**.
     2. **Combat Gore & Violence Checker (`_audit_combat_agent`):** Verifies that bone fractures, blood spray, and visceral strikes are not sanitized into sterile summaries.
     3. **Somatic Intimacy & Passion Checker (`_audit_intimacy_agent`):** Ensures romantic or sensual scenes are rendered with Manto-grade somatic friction and emotional heat, rejecting clinical biology-textbook terms.
@@ -222,6 +228,54 @@ flowchart LR
   - **Legacy Scene Source Path**: If `chapter_XXX_scenes_source.json` exists, verifies dramatic acts and segment coverage against the script.
   - **Director-Managed Autonomous Path**: If neither legacy file exists, verifies script segment coverage and emits `status: PASS` with `type: "director_managed"`. This eliminates brittle pipeline failures when running modern agent-directed workflows.
 - **Fail Condition**: Raises `GateAuditError` if silence mandate is violated, missing assets exceed threshold, or dramatic segments are discontinuous.
+
+---
+
+### Gate 3.8: Millisecond Audio Reality Pre-Mix Gate (AudioRealityAuditor)
+*(See authoritative implementation: [`audiobook_factory/audio_reality_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/audio_reality_auditor.py))*
+- **Function**: `AudioRealityAuditor.audit_and_remediate(manifest: CreativeManifest, output_dir: Optional[Path] = None, era: str = "MEDIEVAL_FANTASY", franchise_affinity: Optional[str] = None) -> Tuple[CreativeManifest, AudioRealityReport]`
+- **Module**: [`audiobook_factory/audio_reality_auditor.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/audio_reality_auditor.py)
+- **Data Models**: [`AuditedCueRecord`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/audio_reality_auditor.py#L26-L39), [`AudioRealityReport`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/audio_reality_auditor.py#L41-L51)
+- **Pipeline Stage**: Executed immediately prior to multitrack compositing in [`ManifestRenderer`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/manifest_renderer.py) and [`CinemaAudioEngine`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/cinema_audio_engine.py).
+- **The 4 Physical Reality Pillars**:
+  1. **Foley Duration Physics Cap ($\le 3.5\text{s}$)**: Clamps any Foley cue exceeding `MAX_FOLEY_DURATION_SEC` ($3.5\text{s}$, with a hard file ceiling of $6.0\text{s}$). Applies an automated logarithmic micro-fadeout (`afade=t=out`), preventing domestic tableware or footsteps from droning across entire scenes.
+  2. **180-Second Anti-Repetition Cooldown**: Tracks `recent_foley_assets` by path. Rejects or quenches any asset attempting to trigger again within 3 minutes ($180,000\text{ms}$) of its prior onset in the same acoustic scene, eliminating monotonic loop fatigue.
+  3. **Strict Bus Category Isolation (Anti-Hijack Guard)**: Detects rogue musical tracks (`/music/` or `\music\` in path, duration $> 20.0\text{s}$, or filenames containing `ost`, `theme`, `soundtrack`, `suite`) erroneously slotted into the Foley bus. Rejects hijacked cues and logs actionable diagnostics.
+  4. **Era & Anachronism Filtering**: Evaluates cue filenames against `ERA_BANNED_SUBSTRINGS[era]`. In `MEDIEVAL_FANTASY`, blocks modern machinery (`grader`, `car`, `automobile`, `engine`, `traffic`, `phone`, `siren`, `subway`, `airplane`, `refrigerator`, `office`).
+- **Ledger Output**: Emits canonical `chapter_XXX_audio_reality_ledger.json` recording pass/remediated/rejected counts and forensic cue records.
+- **Fail Condition**: Fails closed or remediates cues with explicit logging before unverified audio enters the mix bus.
+
+---
+
+### Gate SB-1: Sound Bank Physical Audio Verification Gate (AudioVerificationGate)
+*(See authoritative implementation: [`audiobook_factory/sound_bank/verification_gate.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/verification_gate.py))*
+- **Function**: `AudioVerificationGate.verify_asset(audio_path: Path | str, category: str = "SFX", era: str = "MEDIEVAL_FANTASY", auto_conform: bool = True) -> VerificationResult`
+- **Module**: [`audiobook_factory/sound_bank/verification_gate.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/verification_gate.py)
+- **Data Models**: [`VerificationResult`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/verification_gate.py#L48-L55) (`is_valid`, `reason`, `metrics`, `conformed_path`, `fallback_recommended`)
+- **Pipeline Stage**: Asset ingestion, catalog search resolution, and pre-mix buffer verification.
+- **Audit Rules & Evaluators**:
+  - **Physical Stream Probe**: Executes `ffprobe` json probing to verify container headers, audio stream codecs, sample rate, and non-empty file size ($\ge 500$ bytes).
+  - **Category Duration Contracts**:
+    - `AMB` (Ambience Bed): Strictly $\ge 45.0\text{s}$ (rejects short 10-15s noise loops that fatigue listeners).
+    - `FOL` (Foley): Strictly $\le 4.5\text{s}$ (prevents long beds from leaking into Foley spots).
+    - `SFX` (Impacts/Combat): Strictly $\le 12.0\text{s}$.
+  - **Banned Anachronisms (`ERA_BANNED_KEYWORDS`)**: Banned keyword sweeps per era (e.g. `car`, `traffic`, `telephone`, `engine`, `radio`, `airplane`, `siren`, `plastic` in `MEDIEVAL_FANTASY`).
+  - **Synthetic White Noise Purge**: Detects and disqualifies synthetic flanged noise artifacts or dummy `anoisesrc` files.
+  - **Sample Rate Conformance**: Automatically conforms non-48kHz audio streams to studio 48kHz stereo WAV via `conformed_path`.
+- **Fail Condition**: Sets `is_valid=False`, prevents bad asset from being scheduled into `CreativeManifest`, and suggests clean silence or acoustic fallback.
+
+---
+
+### Stage 11 / Gate 3.5: LLM Sound Design & Atmosphere Critic (LLMSoundDesignCritic)
+- **Function**: `LLMSoundDesignCritic.audit_soundscape(scene_text: str, manifest_summary: Dict[str, Any], active_env: str = "", franchise_era: str = "MEDIEVAL_FANTASY", strict: bool = True) -> SoundDesignAtmosphereVerdict`
+- **Module**: [`audiobook_factory/gates/llm_judge.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py)
+- **Data Models**: [`SoundDesignAtmosphereVerdict`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py#L102-L113) (`status`, `score`, `ambience_scene_fitness`, `music_mood_aligned`, `foley_narrative_plausible`, `clashing_elements`, `era_inconsistencies`, `reason`)
+- **Pipeline Stage**: Executed during Stage 11 multi-stem mix review.
+- **Audit Rules**:
+  - Compares the narrative literary scene excerpt directly against scheduled Ambience, Music, and Foley cues.
+  - Asserts that ambient soundscapes create an immersive, period-accurate atmosphere matching the scene tone.
+  - Identifies clashing mood elements (e.g. cheerful melody during grim execution) or modern era leaks.
+- **Fail Condition**: Raises `GateAuditError` if `strict=True` and `verdict.status == "FAIL"` or tone clashes/era leaks are detected.
 
 ---
 
@@ -333,6 +387,51 @@ flowchart LR
   - Cross-references detected variances against `allowed_exceptions` registry (e.g. intentional disguise, dialect shift, or alias adoption).
   - Fails closed if any unexempted pronunciation drift is detected (`unexempted_drifts == 0`).
 - **Fail Condition**: Fails `audit_book_master` with `gate_6e_pronunciation_consistency: {"passed": False, "drifts_detected": N, "errors": [...]}` and blocks master release.
+
+---
+
+## ⚖️ The Unified LLM Creative Quality & Audit Judge Protocol
+
+### 1. Architectural Motivation: Eliminating Rubber-Stamp Heuristics
+In earlier iterations of automated audiobook pipelines, creative gates frequently relied on brittle regex heuristics or caught exceptions by returning a fake `{"status": "PASS", "score": 1.0}` pass. 
+
+The **Universal Studio Architecture** completely purges these fake passes. All creative auditing is unified under the **Unified LLM Creative Quality & Audit Judge Protocol** ([`audiobook_factory/gates/llm_judge.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py)).
+
+```mermaid
+flowchart TD
+    MM["ModelManager.resolve_active_model(TaskType.AUDITING)"] --> Base["BaseLLMJudge<br/>• Tier 2 Balanced Floor<br/>• BLOCK_NONE Permissive Safety<br/>• Fail-Closed GateAuditError"]
+    Base --> TJ["LLMTranslationJudge<br/>(Gate 0 / T2: Sense-for-Sense & Cadence)"]
+    Base --> AC["audit_gate1_anticensorship_agent<br/>(Gate 1A: 3 Parallel Adversarial Checkers)"]
+    Base --> SA["LLMScreenplayAuditor<br/>(Gate 2: 0% Misattribution & Anti-Swallow)"]
+    Base --> DC["LLMDramaticCritic<br/>(Gate 2.5: Arc Continuity & Anti-Teleportation)"]
+    Base --> PJ["LLMPerceptualPerformanceJudge<br/>(Gate 2.8: Believability & Subtext)"]
+    Base --> SC["LLMSoundDesignCritic<br/>(Stage 11: Scene Atmosphere & Era Consistency)"]
+```
+
+### 2. `BaseLLMJudge` Foundation
+- **Dynamic Model Resolution (ADR-043)**: Evaluators call `BaseLLMJudge.resolve_auditing_model()`, delegating to `ModelManager.resolve_active_model(TaskType.AUDITING)`. This dynamically discovers healthy Gemini models, runs concurrent latency pings, and enforces a strict **Tier 2 Balanced** floor.
+- **Fail-Closed Contract**: If an API call fails, times out, or returns invalid schema data, the evaluator raises a typed [`GateAuditError`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/contracts.py) with full diagnostic traces; silent fallback to fake passing scores is strictly prohibited.
+- **Permissive Safety Governance**: Employs universal `BLOCK_NONE` thresholds and dramatic fiction framing (`audiobook_factory.safety`) across all evaluators to prevent false moderation blocks on combat choreography or rustic slang.
+- **Offline Mock Engine**: When running in automated test environments (`MOCK_OFFLINE=true`), `BaseLLMJudge._generate_mock_verdict()` synthesizes realistic, schema-valid Pydantic verdicts without network overhead, enabling 100% reliable CI/CD verification.
+
+### 3. Specialized Creative Judges Matrix
+
+| Judge Class | Gate Stage | Primary Verification Mandate | Minimum Threshold | Fail Condition |
+| :--- | :--- | :--- | :---: | :--- |
+| **`LLMTranslationJudge`** | Gate 0 & Gate T2 | Sense-for-Sense literary fidelity, Hindustani cadence (*"Aate mein Namak jitni Urdu"*), action & negation parity, honorific preservation (`Aap/Tum/Tu`). | $0.80$ composite | Raises `GateAuditError` on inverted actions or score $< 0.80$. |
+| **`audit_gate1_anticensorship_agent`** | Gate 1A | 3 parallel adversarial agents (`Profanity`, `Combat Gore`, `Somatic Intimacy`) preventing puritanical sanitization. | $0.80$ composite | Sets `status="DILUTED"` or halts with `LLMUnavailableError`. |
+| **`LLMScreenplayAuditor`** | Gate 2 | Attribution integrity (every dialogue turn mapped to true source speaker), zero dialogue swallowed into narration, zero hallucinated dialogue. | $1.00$ attribution | Raises `GateAuditError` if misattributions or swallowed dialogue exist. |
+| **`LLMDramaticCritic`** | Gate 2.5 | Dramatic tension trajectory, causal beat transitions (`therefore/but`), and zero ungrounded emotional teleportation. | $0.80$ composite | Raises `GateAuditError` on emotional teleportation or broken causality. |
+| **`LLMPerceptualPerformanceJudge`** | Gate 2.8 | Actor vocal delivery against director intent: believability, emotional fidelity, subtext nuance, and dialogue reactivity. | $0.70$ composite | Raises `GateAuditError` on flat/robotic delivery or overacting. |
+| **`LLMSoundDesignCritic`** | Stage 11 / Gate 3.5 | Narrative scene atmosphere fitness, period accuracy, mood alignment, and zero modern era leaks. | $0.80$ composite | Raises `GateAuditError` on genre clash or modern sound leak. |
+
+### 4. Structured Pydantic v2 Verdict Schemas
+All judges emit strongly-typed, schema-validated Pydantic v2 verdict objects:
+- `TranslationFidelityVerdict`: `status`, `score`, `literary_cadence_score`, `action_integrity_score`, `critical_inversions`, `dropped_clauses`, `translatese_passages`, `reason`, `recommendations`.
+- `DialogueAttributionVerdict`: `status`, `score`, `total_lines_inspected`, `misattributed_segments`, `hallucinated_lines`, `swallowed_dialogue`, `reason`.
+- `DramaticArcVerdict`: `status`, `score`, `emotional_teleportation_detected`, `teleportation_violations`, `broken_causality_beats`, `reason`.
+- `VocalActingVerdict`: `status`, `overall_acting_score`, `dimension_scores`, `acting_believability`, `emotional_fidelity`, `subtext_fidelity`, `dialogue_reactivity`, `diagnostics`, `take_selection_approved`, `acting_redirections`.
+- `SoundDesignAtmosphereVerdict`: `status`, `score`, `ambience_scene_fitness`, `music_mood_aligned`, `foley_narrative_plausible`, `clashing_elements`, `era_inconsistencies`, `reason`.
 
 ---
 

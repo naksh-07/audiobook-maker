@@ -267,6 +267,52 @@ STANDARD_ENVIRONMENTS: Dict[str, EnvironmentProfile] = {
         occlusion_barrier_hz=1200,
         default_absorption=0.65,
     ),
+    # 6. Ruins, Sci-Fi & Cyberpunk Environments
+    "stone_ruins_exterior": EnvironmentProfile(
+        env_id="stone_ruins_exterior",
+        display_name="Crumbling Stone Ruins (Exterior)",
+        category="outdoor_nature",
+        default_surfaces=["cracked_granite", "rubble", "overgrown_weeds", "dry_dirt"],
+        typical_ambience_layers=["wind_howl.ogg", "amb_castle_hall_hearth.wav"],
+        distant_sounds=["distant_crow_caw", "stone_crumble", "wind_gust"],
+        typical_foley=["boots_gravel", "rubble_kick", "scabbard_creak", "torch_flicker"],
+        typical_walla=None,
+        typical_weather="chilly_wind",
+        typical_creatures=["crows", "ravens", "monster_growl"],
+        estimated_rt60_ms=450,
+        occlusion_barrier_hz=16000,
+        default_absorption=0.75,
+    ),
+    "spaceship_bridge": EnvironmentProfile(
+        env_id="spaceship_bridge",
+        display_name="Spaceship Command Bridge",
+        category="indoor",
+        default_surfaces=["metal_bulkhead", "composite_deck", "console_glass"],
+        typical_ambience_layers=["anoisesrc_room_tone"],
+        distant_sounds=["warp_core_pulse", "distant_airlock_cycle"],
+        typical_foley=["console_chirp", "comm_beep", "hydraulic_door", "boot_deck"],
+        typical_walla="crew_chatter",
+        typical_weather="indoor_conditioned",
+        typical_creatures=[],
+        estimated_rt60_ms=450,
+        occlusion_barrier_hz=800,
+        default_absorption=0.60,
+    ),
+    "cyberpunk_alley_rain": EnvironmentProfile(
+        env_id="cyberpunk_alley_rain",
+        display_name="Cyberpunk Alley in Rain",
+        category="settlement",
+        default_surfaces=["wet_asphalt", "grate_metal", "brick"],
+        typical_ambience_layers=["rain_gentle.ogg", "wind_howl.ogg"],
+        distant_sounds=["distant_siren", "neon_hum", "flying_traffic"],
+        typical_foley=["puddle_splash", "cyberware_whirr", "trash_kick"],
+        typical_walla="distant_crowd",
+        typical_weather="acid_rain",
+        typical_creatures=[],
+        estimated_rt60_ms=350,
+        occlusion_barrier_hz=14000,
+        default_absorption=0.80,
+    ),
     "room_tone": EnvironmentProfile(
         env_id="room_tone",
         display_name="Neutral Room Tone",
@@ -322,47 +368,55 @@ class EnvironmentProfileRegistry:
         raw = text_or_tags.lower()
 
         # Modern / Suburban / Domestic keyword mapping rules
-        if any(w in raw for w in ("privet", "suburban", "driveway", "pavement", "outside", "sidewalk", "street", "road", "drive")):
-            if any(nw in raw for nw in ("night", "dark", "midnight", "dumbledore", "mcgonagall", "lamp", "cat", "evening", "रास्ता", "रात")):
+        if any(w in raw for w in ("suburban", "driveway", "pavement", "sidewalk", "street", "road", "suburb")):
+            if any(nw in raw for nw in ("night", "dark", "midnight", "crickets", "evening", "रास्ता", "रात")):
                 return self._profiles["suburban_street_night"]
             return self._profiles["suburban_street_day"]
-        if any(w in raw for w in ("office", "desk", "building", "drill", "boss", "grunnings", "workplace", "दफ्तर")):
+        if any(w in raw for w in ("office", "desk", "cubicle", "workplace", "corporate", "दफ्तर")):
             return self._profiles["office_commercial"]
         if any(w in raw for w in ("living room", "kitchen", "breakfast", "table", "chair", "house", "home", "bedroom", "कमरा", "घर", "मेज")):
             return self._profiles["domestic_room"]
 
-        # Fantasy / Classic keyword mapping rules
-        if any(w in raw for w in ("tavern", "inn", "pub", "bar", "tankard")):
+        # Sci-Fi / Cyberpunk keyword mapping rules
+        if any(w in raw for w in ("spaceship", "bridge", "warp", "airlock", "bulkhead", "console", "orbit", "starship")):
+            return self._profiles["spaceship_bridge"]
+        if any(w in raw for w in ("cyberpunk", "neon", "cyber", "acid rain", "implant", "megacorp", "alleyway")):
+            return self._profiles["cyberpunk_alley_rain"]
+
+        # Fantasy / Historical / Period keyword mapping rules
+        if any(w in raw for w in ("ruins", "stone_ruins", "rubble", "crumbling", "खंडहर", "मलबा", "सुराख़")):
+            return self._profiles["stone_ruins_exterior"]
+        if any(w in raw for w in ("tavern", "inn", "pub", "bar", "tankard", "brawl", "मदिरालय", "सराय")):
             return self._profiles["tavern_interior"]
-        if any(w in raw for w in ("crypt", "catacomb", "tomb", "sarcophagus", "necropolis")):
+        if any(w in raw for w in ("crypt", "catacomb", "tomb", "sarcophagus", "necropolis", "तहखाना")):
             return self._profiles["crypt_catacomb"]
-        if any(w in raw for w in ("swamp", "bog", "marsh", "mire", "wetland")):
+        if any(w in raw for w in ("swamp", "bog", "marsh", "mire", "wetland", "दलदल")):
             return self._profiles["swamp_marsh_night"]
-        if any(w in raw for w in ("blizzard", "snow", "mountain_pass", "avalanche", "glacier")):
+        if any(w in raw for w in ("blizzard", "snow", "mountain_pass", "avalanche", "glacier", "बर्फ़")):
             return self._profiles["mountain_pass_blizzard"]
-        if any(w in raw for w in ("forest", "woods", "trees", "canopy", "grove", "wilderness")):
+        if any(w in raw for w in ("forest", "woods", "trees", "canopy", "grove", "wilderness", "जंगल")):
             return self._profiles["deep_forest_night"]
-        if any(w in raw for w in ("market", "bazaar", "square", "stalls", "plaza")):
+        if any(w in raw for w in ("market", "bazaar", "square", "stalls", "plaza", "बाज़ार")):
             return self._profiles["city_market_square"]
-        if any(w in raw for w in ("corridor", "hallway", "dungeon", "passage")):
+        if any(w in raw for w in ("corridor", "hallway", "dungeon", "passage", "गलियारा")):
             return self._profiles["castle_stone_corridor"]
-        if any(w in raw for w in ("great hall", "throne", "castle_hall", "banquet")):
+        if any(w in raw for w in ("great hall", "throne", "castle_hall", "banquet", "दरबार")):
             return self._profiles["castle_great_hall"]
-        if any(w in raw for w in ("bedchamber", "bedroom", "chamber", "study")):
+        if any(w in raw for w in ("bedchamber", "chamber", "study")):
             return self._profiles["castle_bedchamber"]
-        if any(w in raw for w in ("library", "archive", "scrolls", "tomes")):
+        if any(w in raw for w in ("library", "archive", "scrolls", "tomes", "ग्रंथालय")):
             return self._profiles["ancient_library"]
-        if any(w in raw for w in ("classroom", "lecture", "academy", "school")):
+        if any(w in raw for w in ("classroom", "lecture", "academy", "school", "कक्षा")):
             return self._profiles["academy_classroom"]
-        if any(w in raw for w in ("carriage", "coach", "wagon", "cart")):
+        if any(w in raw for w in ("carriage", "coach", "wagon", "cart", "बग्गी", "गाड़ी")):
             return self._profiles["horse_carriage_road"]
 
-        # Default fallback - neutral domestic room or room tone
-        return self._profiles.get("domestic_room", self._profiles["room_tone"])
+        # Default fallback - neutral room tone (never force suburban domestic room)
+        return self._profiles.get("room_tone", self._profiles["domestic_room"])
 
     def to_world_acoustic_profile(self, env_id: str) -> WorldAcousticProfile:
         """Converts an EnvironmentProfile into a WorldAcousticProfile for SonicBible interoperability."""
-        prof = self.get_profile(env_id) or self._profiles.get("domestic_room", self._profiles["room_tone"])
+        prof = self.get_profile(env_id) or self._profiles.get("room_tone", self._profiles["domestic_room"])
         space_type = "indoor_large" if prof.category == "indoor" else ("subterranean" if prof.category == "subterranean" else "outdoor_open")
         return WorldAcousticProfile(
             env_id=prof.env_id,

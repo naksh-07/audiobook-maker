@@ -106,6 +106,37 @@ def check_cinematic_intent(
             evidence=evidence,
         )
 
+    # Dynamic LLM Sound Design Critic evaluation
+    stem_summary = {k: str(p.name) for k, p in stems.items()}
+    scene_text = getattr(scene_intent, "narrative_summary", "") or f"Scene focus: {focus}"
+    try:
+        from audiobook_factory.gates.llm_judge import LLMSoundDesignCritic
+        verdict = LLMSoundDesignCritic.audit_soundscape(
+            scene_text=scene_text,
+            manifest_summary={"stems": stem_summary, "focus": focus},
+            active_env=getattr(scene_intent, "acoustic_env", ""),
+            strict=False,
+        )
+        evidence["llm_sound_design"] = {
+            "score": verdict.score,
+            "ambience_scene_fitness": verdict.ambience_scene_fitness,
+            "music_mood_aligned": verdict.music_mood_aligned,
+            "clashing_elements": verdict.clashing_elements,
+            "era_inconsistencies": verdict.era_inconsistencies,
+            "reason": verdict.reason,
+        }
+        if verdict.status == "FAIL" or not verdict.ambience_scene_fitness or not verdict.music_mood_aligned:
+            clash_str = "; ".join(verdict.clashing_elements + verdict.era_inconsistencies) or verdict.reason
+            return CategoryResult(
+                name="cinematic_intent",
+                status="REMIX",
+                score=verdict.score,
+                reason=f"Sound Design Critic rejected atmosphere: {clash_str}",
+                evidence=evidence,
+            )
+    except Exception:
+        pass
+
     return CategoryResult(
         name="cinematic_intent",
         status="PASS",

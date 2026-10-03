@@ -256,9 +256,15 @@ class SceneAcousticsMixin:
 
                 # 3. Crowd Walla
                 if env_prof.typical_walla or any(k in comb_str for k in ("tavern", "crowd", "brawl", "hall", "market", "whisper", "people", "street", "office")):
-                    w_asset = env_prof.typical_walla or "tavern_crowd_murmur.ogg"
-                    if any(k in comb_str for k in ("whisper", "office", "street", "privet", "people")):
-                        w_asset = "07039098.mp3"  # Crowd Whispering in Large Room
+                    if any(k in comb_str for k in ("tavern", "inn", "pub", "brawl", "tankard")):
+                        w_asset = "tavern_crowd_murmur.ogg"
+                    elif any(k in comb_str for k in ("market", "bazaar", "square")):
+                        w_asset = "market_bustle.ogg"
+                    elif any(k in comb_str for k in ("whisper", "office", "court", "secret")):
+                        w_asset = "07039098.mp3"  # Crowd Whispering / Muffled murmur
+                    else:
+                        w_asset = env_prof.typical_walla or "tavern_crowd_murmur.ogg"
+
                     w_res = self.sound_bank.resolve_sound(w_asset, category="AMB") or self.sound_bank.resolve_sound(w_asset)
                     layers.append(
                         AmbienceLayer(
@@ -278,7 +284,7 @@ class SceneAcousticsMixin:
                         if tf_res and not any(b in tf_res.name.lower() for b in ("jump", "boot", "sword", "blade")):
                             stoch_asset = tf_res.name
                             break
-                if any(k in comb_str for k in ("night", "street", "privet", "suburban")):
+                if any(k in comb_str for k in ("crickets", "suburban_night", "owl")):
                     stoch_asset = "07042032.mp3"  # Tawny Owl with crickets
                 elif any(k in comb_str for k in ("water", "dungeon", "crypt")):
                     stoch_asset = "tiny_water-drop-01.wav"

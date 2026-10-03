@@ -70,12 +70,11 @@ class ModelTierFloorBreachError(RuntimeError):
 
 # Default catalog used as offline fallback if API discovery cannot connect
 OFFLINE_CATALOG_FALLBACK: List[str] = [
-    "gemini-3.8-flash",
-    "gemini-3.7-flash",
     "gemini-3.6-flash",
     "gemini-3.5-flash",
-    "gemini-2.5-pro",
-    "gemini-2.5-flash",
+    "gemini-3-flash-preview",
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
     "gemini-flash-latest",
     "gemini-3.1-flash-lite",
     "gemini-flash-lite-latest",
@@ -86,6 +85,8 @@ EXCLUDED_PATTERNS = (
     "-tts",
     "-image",
     "-transcribe",
+    "-2.5-",
+    "gemini-2.5",
     "robotics",
     "lyria",
     "nano-banana",
@@ -174,11 +175,11 @@ class ModelManager:
         if any(x in m for x in ("lite", "flash-lite", "gemma")):
             return ModelTier.TIER_3_UTILITY
 
-        # Tier 1 Flagship: Pro models or cutting-edge high reasoning flash (3.8, 3.7)
-        if any(x in m for x in ("3.8-flash", "3.7-flash", "pro-preview", "2.5-pro", "gemini-pro")):
+        # Tier 1 Flagship: High-performance production models
+        if any(x in m for x in ("3.6-flash", "3.5-flash", "flash-latest", "gemini-pro")):
             return ModelTier.TIER_1_FLAGSHIP
 
-        # Tier 2 Balanced: general flash models (3.6, 3.5, 3-flash, 2.5-flash, flash-latest)
+        # Tier 2 Balanced: Experimental / preview models
         return ModelTier.TIER_2_BALANCED
 
     def get_candidate_models_for_task(self, task: TaskType, refresh: bool = False) -> List[str]:
@@ -279,6 +280,12 @@ class ModelManager:
 
         # 1. Get candidate models satisfying minimum quality floor
         candidates = self.get_candidate_models_for_task(task, refresh=force_refresh)
+        env_pref = os.environ.get("GEMINI_TEXT_MODEL")
+        if env_pref and env_pref in candidates:
+            candidates = [env_pref] + [m for m in candidates if m != env_pref]
+        elif env_pref:
+            candidates.insert(0, env_pref)
+
         floor = TASK_MINIMUM_TIERS.get(task, ModelTier.TIER_2_BALANCED)
         if not candidates:
             raise ModelTierFloorBreachError(
@@ -301,11 +308,12 @@ class ModelManager:
                 logger.info(f"    - {m_name}: {status_str}")
 
             if healthy:
-                # Pick highest tier; within tier, pick lowest latency
-                def _score(item: Tuple[str, bool, float, Optional[str]]) -> Tuple[int, float]:
+                # Pick preferred model first; then by tier and low latency
+                def _score(item: Tuple[str, bool, float, Optional[str]]) -> Tuple[int, int, float]:
                     m_name, _, latency, _ = item
+                    is_pref = 0 if (env_pref and m_name == env_pref) else 1
                     tier = self.classify_model_tier(m_name)
-                    return (tier.value, latency)
+                    return (is_pref, tier.value, latency)
 
                 healthy.sort(key=_score)
                 chosen_model = healthy[0][0]

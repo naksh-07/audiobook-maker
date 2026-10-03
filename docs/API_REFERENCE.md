@@ -1461,3 +1461,307 @@ class DeterministicAudioAnalyzer:
     def extract_temporal_events(self, audio_path: Union[str, Path]) -> List[Dict[str, Any]]: ...
 ```
 
+---
+
+## ⚖️ Unified LLM Creative Quality & Audit Judge Protocol ([`audiobook_factory.gates.llm_judge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py))
+
+### 1. Verdict Schemas
+
+```python
+class TranslationFidelityVerdict(BaseModel):
+    """Verdict for literary translation quality, sense-for-sense fidelity, and cadence."""
+    status: str                         # 'PASS' or 'FAIL'
+    score: float                        # Overall fidelity score [0.0 - 1.0]
+    literary_cadence_score: float = 1.0
+    action_integrity_score: float = 1.0
+    critical_inversions: List[str] = [] # Inverted actions or meanings
+    dropped_clauses: List[str] = []     # Omitted narrative beats
+    translatese_passages: List[str] = []# Literal calques / robotic phrasing
+    reason: str = ""                    # Critique rationale
+    recommendations: List[str] = []     # Actionable rewrite guidance
+
+class DialogueAttributionVerdict(BaseModel):
+    """Verdict for screenplay speaker attribution and dialogue turn isolation."""
+    status: str                         # 'PASS' or 'FAIL'
+    score: float                        # Attribution accuracy score [0.0 - 1.0]
+    total_lines_inspected: int = 0
+    misattributed_segments: List[Dict[str, Any]] = []
+    hallucinated_lines: List[str] = []
+    swallowed_dialogue: List[str] = []  # Dialogue quotes trapped inside narration
+    reason: str = ""
+
+class DramaticArcVerdict(BaseModel):
+    """Verdict for scene emotional tension trajectory and anti-emotional teleportation."""
+    status: str                         # 'PASS' or 'FAIL'
+    score: float
+    emotional_teleportation_detected: bool = False
+    teleportation_violations: List[Dict[str, Any]] = []
+    broken_causality_beats: List[str] = []
+    reason: str = ""
+
+class VocalActingVerdict(BaseModel):
+    """Verdict for perceptual vocal acting quality and emotional delivery."""
+    status: str                         # 'PASS' or 'FAIL'
+    overall_acting_score: float         # [0.0 - 1.0]
+    dimension_scores: Dict[str, float] = {}
+    acting_believability: float = 1.0
+    emotional_fidelity: float = 1.0
+    subtext_fidelity: float = 1.0
+    dialogue_reactivity: float = 1.0
+    diagnostics: List[str] = []
+    take_selection_approved: bool = True
+    acting_redirections: List[str] = []
+
+class SoundDesignAtmosphereVerdict(BaseModel):
+    """Verdict for acoustic scene intent, ambience fitness, and foley plausibility."""
+    status: str                         # 'PASS' or 'FAIL'
+    score: float
+    ambience_scene_fitness: bool = True
+    music_mood_aligned: bool = True
+    foley_narrative_plausible: bool = True
+    clashing_elements: List[str] = []
+    era_inconsistencies: List[str] = []
+    reason: str = ""
+```
+
+### 2. Base & Specialized Evaluator Classes
+
+```python
+class BaseLLMJudge:
+    """Foundational judge resolving active models dynamically via ModelManager."""
+    @classmethod
+    def resolve_auditing_model(cls) -> str:
+        """Resolves TaskType.AUDITING with concurrent health pings and Tier 2 floor."""
+    @classmethod
+    def evaluate_with_llm(
+        cls,
+        prompt: str,
+        system_instruction: str,
+        response_model: Type[T],
+        temperature: float = 0.1,
+        max_retries: int = 3,
+    ) -> T:
+        """Executes fail-closed evaluation pass. Raises GateAuditError on schema error or outage."""
+
+class LLMTranslationJudge(BaseLLMJudge):
+    """Forensic literary evaluator for translated literature (Gates 0 & T2/T9)."""
+    @classmethod
+    def audit_translation(
+        cls,
+        source_text: str,
+        hindi_text: str,
+        chapter_title: str = "",
+        min_score: float = 0.80,
+        strict: bool = True,
+    ) -> TranslationFidelityVerdict: ...
+
+class LLMScreenplayAuditor(BaseLLMJudge):
+    """Forensic dialogue attribution & screenplay structure auditor (Gate 2)."""
+    @classmethod
+    def audit_screenplay(
+        cls,
+        source_text: str,
+        script_segments: List[Dict[str, Any]],
+        character_roster: Optional[Dict[str, Any]] = None,
+        strict: bool = True,
+    ) -> DialogueAttributionVerdict: ...
+
+class LLMDramaticCritic(BaseLLMJudge):
+    """Dramaturgy & dramatic arc continuity judge (Gate 2.5)."""
+    @classmethod
+    def audit_dramatic_arc(
+        cls,
+        segments: List[Dict[str, Any]],
+        dramatic_plan: Optional[Any] = None,
+        source_text: str = "",
+        strict: bool = True,
+    ) -> DramaticArcVerdict: ...
+
+class LLMPerceptualPerformanceJudge(BaseLLMJudge):
+    """Perceptual vocal acting and delivery quality judge (Gate 2.8)."""
+    @classmethod
+    def critique_performance(
+        cls,
+        direction: Any,
+        acoustic_metrics: Dict[str, Any],
+        text: str,
+        prev_speaker: Optional[str] = None,
+        min_score: float = 0.70,
+        strict: bool = False,
+    ) -> VocalActingVerdict: ...
+
+class LLMSoundDesignCritic(BaseLLMJudge):
+    """Cinematic Sound Design & Narrative Atmosphere Critic (Stage 11 & Gate 3.5)."""
+    @classmethod
+    def audit_soundscape(
+        cls,
+        scene_text: str,
+        manifest_summary: Dict[str, Any],
+        active_env: str = "",
+        franchise_era: str = "MEDIEVAL_FANTASY",
+        strict: bool = True,
+    ) -> SoundDesignAtmosphereVerdict: ...
+```
+
+---
+
+## 🛡️ Pre-Mix Reality & Sound Bank Verification Engines
+
+### 1. `AudioRealityAuditor` ([`audiobook_factory.audio_reality_auditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/audio_reality_auditor.py))
+
+```python
+class AuditedCueRecord(BaseModel):
+    cue_id: str
+    bus: str                            # 'FX', 'AMB', 'MX', 'DX'
+    asset_path: str
+    asset_name: str
+    start_ms: int
+    end_ms: int
+    raw_duration_sec: float
+    effective_duration_sec: float
+    volume_db: float
+    was_trimmed: bool = False
+    sanity_status: str = "PASS"         # 'PASS', 'REMEDIATED', 'REJECTED'
+    remediation_notes: str = ""
+
+class AudioRealityReport(BaseModel):
+    chapter_id: str
+    total_cues_inspected: int = 0
+    passed_count: int = 0
+    remediated_count: int = 0
+    rejected_count: int = 0
+    cues: List[AuditedCueRecord] = []
+    era: str = "MEDIEVAL_FANTASY"
+    franchise_affinity: Optional[str] = None
+    summary: Dict[str, Any] = {}
+
+class AudioRealityAuditor:
+    MAX_FOLEY_DURATION_SEC: float = 3.5
+    MAX_FOLEY_FILE_CEILING_SEC: float = 6.0
+    ANTI_REPETITION_COOLDOWN_MS: int = 180000  # 3 minutes
+
+    def __init__(self, sound_bank: Optional[Any] = None): ...
+
+    def audit_and_remediate(
+        self,
+        manifest: CreativeManifest,
+        output_dir: Optional[Path] = None,
+        era: str = "MEDIEVAL_FANTASY",
+        franchise_affinity: Optional[str] = None,
+    ) -> Tuple[CreativeManifest, AudioRealityReport]:
+        """Audits cues, clamps durations, quenches repetition, and purges rogue Foley music."""
+```
+
+### 2. `AudioVerificationGate` ([`audiobook_factory.sound_bank.verification_gate`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/verification_gate.py))
+
+```python
+@dataclass
+class VerificationResult:
+    is_valid: bool
+    reason: str
+    metrics: Dict[str, Any] = field(default_factory=dict)
+    conformed_path: Optional[Path] = None
+    fallback_recommended: bool = False
+
+class AudioVerificationGate:
+    def __init__(self, ffmpeg_bin: Optional[str] = None, ffprobe_bin: Optional[str] = None): ...
+
+    def probe_audio(self, audio_path: Path | str) -> Dict[str, Any]:
+        """Probes file container metadata via ffprobe (duration, sample rate, channels, codec)."""
+
+    def verify_asset(
+        self,
+        audio_path: Path | str,
+        category: str = "SFX",
+        era: str = "MEDIEVAL_FANTASY",
+        auto_conform: bool = True,
+    ) -> VerificationResult:
+        """Verifies physical headers, duration contracts, era keywords, and synthetic noise absence."""
+```
+
+---
+
+## 🌍 Universal Project Classification & Sonic Bible Generation
+
+### 1. `ProjectClassifier` ([`audiobook_factory.project_classifier`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/project_classifier.py))
+
+```python
+@dataclass
+class ProjectClassification:
+    era: str                            # MEDIEVAL_FANTASY, SPACE_OPERA_SCIFI, etc.
+    genre: str                          # fantasy, sci_fi, detective_noir, etc.
+    franchise_affinity: Optional[str]   # 'the_witcher', 'dune', 'tolkien_middle_earth', None
+    primary_acoustic_env: str           # 'stone_ruins_exterior', 'tavern_interior', etc.
+    dramatic_theme: str
+    confidence: float
+
+class ProjectClassifier:
+    @staticmethod
+    def classify(
+        project_dir: Optional[Path] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        sample_prose: Optional[str] = None,
+    ) -> ProjectClassification:
+        """Classifies era, genre, and world acoustic DNA from metadata and text."""
+```
+
+### 2. `SonicBibleGenerator` ([`audiobook_factory.sonic_bible_generator`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_bible_generator.py))
+
+```python
+class SonicBibleGenerator:
+    @classmethod
+    def generate_for_project(
+        cls,
+        project_dir: Path,
+        sound_bank: Optional[SoundBank] = None,
+        force_rebuild: bool = False,
+    ) -> SonicBible:
+        """Compiles production-ready sound_bible.json registering world acoustic spaces and motifs."""
+```
+
+---
+
+## 🛡️ Centralized Permissive Safety Protocol ([`audiobook_factory.safety`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/safety.py))
+
+```python
+UNIVERSAL_BLOCK_NONE_SAFETY_SETTINGS: List[Dict[str, str]] = [
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+]
+
+def get_universal_safety_settings() -> List[Dict[str, str]]:
+    """Returns universal BLOCK_NONE safety thresholds."""
+
+def get_dramatic_fiction_framing(title: Optional[str] = None, author: Optional[str] = None) -> str:
+    """Constructs explicit literary framing context protecting against false moderation blocks."""
+```
+
+---
+
+## 📊 Production Telemetry Ledger ([`audiobook_factory.telemetry`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/telemetry.py))
+
+```python
+class ProductionTelemetryLedger:
+    """Thread-safe SQLite production telemetry ledger in audiobooks/telemetry.db."""
+
+    def __init__(self, db_path: Optional[Path] = None): ...
+
+    def start_run(self, run_id: str, project_id: str, book_title: str = "", config: Optional[Dict[str, Any]] = None) -> None: ...
+
+    def record_stage(self, run_id: str, stage_name: str, stage_num: int, duration_sec: float, status: str = "SUCCESS", metadata: Optional[Dict[str, Any]] = None) -> None: ...
+
+    def record_api_call(self, run_id: str, service: str, endpoint: str, status_code: int, latency_sec: float, is_rate_limit: bool = False, prompt_tokens: int = 0, completion_tokens: int = 0, est_cost_usd: float = 0.0) -> None: ...
+
+    def record_acoustic_metrics(self, run_id: str, chapter_num: int, duration_sec: float, integrated_lufs: float, true_peak_dbtp: float, loudness_range_lu: float, phase_correlation: float) -> None: ...
+
+    def record_incident(self, run_id: str, incident_type: str, stage_name: Optional[str] = None, details: Optional[Dict[str, Any]] = None) -> None: ...
+
+    def complete_run(self, run_id: str, status: str = "COMPLETED", error_message: Optional[str] = None) -> None: ...
+
+    def export_report_json(self, run_id: Optional[str] = None, output_file: Optional[Path] = None) -> Dict[str, Any]:
+        """Generates comprehensive production telemetry summary in TELEMETRY_REPORT.json."""
+```
+
+

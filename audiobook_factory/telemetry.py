@@ -109,9 +109,21 @@ class ProductionTelemetryLedger:
                     FOREIGN KEY(run_id) REFERENCES production_runs(run_id)
                 );
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS incident_telemetry (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    run_id TEXT NOT NULL,
+                    stage_name TEXT,
+                    incident_type TEXT NOT NULL,
+                    details_json TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(run_id) REFERENCES production_runs(run_id)
+                );
+            """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_stage_run ON stage_telemetry(run_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_api_run ON api_telemetry(run_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_acoustic_run ON acoustic_telemetry(run_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_incident_run ON incident_telemetry(run_id);")
             # Auto-reconcile any orphan telemetry records by registering missing production runs
             conn.execute("""
                 INSERT OR IGNORE INTO production_runs (run_id, project_id, start_time, status)
@@ -119,6 +131,19 @@ class ProductionTelemetryLedger:
                 FROM acoustic_telemetry
                 WHERE run_id NOT IN (SELECT run_id FROM production_runs);
             """)
+
+    def _ensure_run_registered(self, conn: sqlite3.Connection, run_id: str) -> None:
+        """Dynamically ensures run_id exists in production_runs to prevent Foreign Key failures."""
+        if not run_id:
+            return
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO production_runs
+            (run_id, project_id, book_title, start_time, status)
+            VALUES (?, 'auto_registered', 'Studio Run', ?, 'RUNNING');
+            """,
+            (run_id, time.time()),
+        )
 
     def start_run(
         self,
@@ -148,8 +173,9 @@ class ProductionTelemetryLedger:
         """Register the completion or failure of a production run."""
         now = time.time()
         with self._lock, self._connection() as conn:
+            self._ensure_run_registered(conn, run_id)
             row = conn.execute("SELECT start_time FROM production_runs WHERE run_id = ?", (run_id,)).fetchone()
-            start_t = row["start_time"] if row else now
+            start_t = row["start_time"] if row and row["start_time"] > 0 else now
             total_dur = round(now - start_t, 2)
             conn.execute(
                 """
@@ -171,6 +197,7 @@ class ProductionTelemetryLedger:
     ) -> None:
         """Record stage execution telemetry."""
         with self._lock, self._connection() as conn:
+            self._ensure_run_registered(conn, run_id)
             conn.execute(
                 """
                 INSERT INTO stage_telemetry
@@ -230,6 +257,7 @@ class ProductionTelemetryLedger:
     ) -> None:
         """Record external API call latency, tokens, cost, and rate-limiting status."""
         with self._lock, self._connection() as conn:
+            self._ensure_run_registered(conn, run_id)
             conn.execute(
                 """
                 INSERT INTO api_telemetry
@@ -261,6 +289,7 @@ class ProductionTelemetryLedger:
     ) -> None:
         """Record master delivery acoustic parameters."""
         with self._lock, self._connection() as conn:
+            self._ensure_run_registered(conn, run_id)
             conn.execute(
                 """
                 INSERT INTO acoustic_telemetry
@@ -275,6 +304,30 @@ class ProductionTelemetryLedger:
                     round(true_peak_dbtp, 2),
                     round(loudness_range_lu, 2),
                     round(phase_correlation, 3),
+                ),
+            )
+
+    def record_incident(
+        self,
+        run_id: str,
+        stage_name: str,
+        incident_type: str,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Persist error, rate limit, or audio anomaly incident to incident_telemetry."""
+        with self._lock, self._connection() as conn:
+            self._ensure_run_registered(conn, run_id)
+            conn.execute(
+                """
+                INSERT INTO incident_telemetry
+                (run_id, stage_name, incident_type, details_json)
+                VALUES (?, ?, ?, ?);
+                """,
+                (
+                    run_id,
+                    stage_name,
+                    incident_type,
+                    json.dumps(details or {}, ensure_ascii=False),
                 ),
             )
 

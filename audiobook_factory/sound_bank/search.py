@@ -204,12 +204,13 @@ class SearchMixin:
         mood: Optional[str] = None,
         limit: int = 5,
         era: Optional[str] = None,
+        franchise_affinity: Optional[str] = None,
         negative_tags: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Executes sub-millisecond FTS5 search against sound bank (local + virtual).
         First tries high-precision AND matching across terms; falls back to OR matching.
-        Enforces optional Era and negative tag filters to prevent cross-genre mismatches.
+        Enforces optional Era and Franchise affinity filters to prioritize canon lore assets.
         """
         raw_words = re.findall(r"[a-zA-Z0-9]+", query.strip())
         if not raw_words:
@@ -222,21 +223,29 @@ class SearchMixin:
         fts_query_or = " OR ".join(f"{w}*" for w in search_words)
 
         def _execute_fts(fts_term: str) -> List[Dict[str, Any]]:
+            franchise_clause = ""
+            order_clause = ""
+            params = [fts_term]
+
             sql = """
                 SELECT c.id, c.filename, c.filepath, c.category, c.subcategory, c.mood, c.tags,
-                       c.duration_sec, c.size_bytes, c.source_url, c.is_downloaded, rank,
+                       c.duration_sec, c.size_bytes, c.source_url, c.is_downloaded,
+                       c.franchise_affinity, c.lore_tags, rank,
                        a.integrated_lufs, a.true_peak_db, a.spectral_centroid_hz
                 FROM sound_catalog_fts f
                 JOIN sound_catalog c ON f.rowid = c.id
                 LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
                 WHERE sound_catalog_fts MATCH ?
             """
-            params = [fts_term]
 
             if category:
                 cat_norm = category.upper()
-                if cat_norm in ("FOLEY", "FOL", "SFX"):
-                    sql += " AND c.category IN ('FOL', 'SFX')"
+                if cat_norm in ("FOLEY", "FOL"):
+                    sql += " AND c.category IN ('FOL', 'SFX') AND (c.duration_sec IS NULL OR c.duration_sec <= 4.5)"
+                    sql += " AND c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'"
+                elif cat_norm == "SFX":
+                    sql += " AND c.category IN ('SFX', 'FOL') AND (c.duration_sec IS NULL OR c.duration_sec <= 6.0)"
+                    sql += " AND c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'"
                 elif cat_norm in ("MUSIC", "MUS"):
                     sql += " AND c.category IN ('MUS', 'LEITMOTIF', 'CHAPTER_BED', 'DYNAMIC_STEM')"
                 elif cat_norm in ("AMBIENCE", "AMB"):
@@ -251,8 +260,12 @@ class SearchMixin:
                 sql += " AND c.mood = ?"
                 params.append(mood.lower())
 
-            sql += " ORDER BY c.is_downloaded DESC, rank LIMIT ?"
-            params.append(limit * 3 if (era or negative_tags) else limit)
+            if franchise_affinity:
+                sql += " ORDER BY (CASE WHEN LOWER(c.franchise_affinity) = LOWER(?) THEN 100 ELSE 0 END) DESC, c.is_downloaded DESC, rank LIMIT ?"
+                params.extend([franchise_affinity, limit * 3 if (era or negative_tags) else limit])
+            else:
+                sql += " ORDER BY c.is_downloaded DESC, rank LIMIT ?"
+                params.append(limit * 3 if (era or negative_tags) else limit)
 
             with self._get_conn() as conn:
                 cur = conn.execute(sql, params)
@@ -264,17 +277,16 @@ class SearchMixin:
             # Broad-recall OR fallback
             results = _execute_fts(fts_query_or)
 
-        # Era & Negative Tag Filtering
+        # Era & Negative Tag Filtering (only ban blatant anachronisms, never narrative props)
         banned = set(negative_tags or [])
-        if era and era.upper() == "MODERN":
-            banned.update({
-                "swamp", "bog", "crypt", "dungeon", "sword", "blade", "armor",
-                "scabbard", "drawbridge", "tavern", "tavern_brawl", "gore", "clash", "parry"
-            })
+        if era and era.upper() in ("MODERN", "MODERN_CONTEMPORARY"):
+            banned.update({"catapult", "drawbridge", "trebuchet", "battering_ram"})
         elif era and era.upper() == "MEDIEVAL_FANTASY":
             banned.update({
                 "car", "automobile", "engine", "traffic", "gunshot", "phone", "telephone",
-                "siren", "computer"
+                "siren", "computer", "subway", "train", "airplane", "helicopter",
+                "grader", "shambling", "studded boots", "troops", "soldiers shambling",
+                "santiago", "chile", "refrigerator", "office"
             })
 
         if banned:
@@ -297,11 +309,12 @@ class SearchMixin:
         target_valence: Optional[float] = None,
         target_arousal: Optional[float] = None,
         limit: int = 5,
+        franchise_affinity: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Dynamically searches the full music soundtrack catalog and energy sections.
         Returns candidate tracks with energy levels, start/end seconds, tags, and Sonic Genome.
-        Zero hardcoded track lists, 100% dynamic FTS5 search across all tracks.
+        Prioritizes canon franchise assets when franchise_affinity is provided.
         """
         raw_words = re.findall(r"[a-zA-Z0-9]+", query.strip())
         if not raw_words:
@@ -310,7 +323,7 @@ class SearchMixin:
 
         sql = """
             SELECT c.id, c.filename, c.filepath, c.mood, c.tags, c.duration_sec, c.sonic_genome,
-                   c.genome_valence, c.genome_arousal,
+                   c.genome_valence, c.genome_arousal, c.franchise_affinity, c.lore_tags,
                    s.id as section_id, s.section_name, s.start_sec, s.end_sec, s.energy_level, s.tempo_bpm, s.tags as section_tags,
                    rank
             FROM sound_catalog_fts f
@@ -337,8 +350,12 @@ class SearchMixin:
             sql += " AND (c.genome_arousal IS NULL OR abs(c.genome_arousal - ?) <= 0.45)"
             params.append(target_arousal)
 
-        sql += " GROUP BY c.id ORDER BY rank LIMIT ?"
-        params.append(limit)
+        if franchise_affinity:
+            sql += " GROUP BY c.id ORDER BY (CASE WHEN LOWER(c.franchise_affinity) = LOWER(?) THEN 1 ELSE 0 END) DESC, rank LIMIT ?"
+            params.extend([franchise_affinity, limit])
+        else:
+            sql += " GROUP BY c.id ORDER BY rank LIMIT ?"
+            params.append(limit)
 
         with self._get_conn() as conn:
             cur = conn.execute(sql, params)

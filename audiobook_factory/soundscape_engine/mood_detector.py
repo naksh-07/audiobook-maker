@@ -45,9 +45,11 @@ def detect_chapter_mood(chapter_text: str, model: str | None = None) -> Dict[str
         "Return ONLY raw valid JSON."
     )
 
+    from audiobook_factory.safety import get_universal_safety_settings
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"},
+        "safetySettings": get_universal_safety_settings(),
     }
 
     req = urllib.request.Request(

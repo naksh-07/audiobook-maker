@@ -27,8 +27,8 @@ class PerceptualJudgeConfig(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
-    enable_external_llm: bool = Field(default=False, description="Whether to call external LLM judge for climactic moments")
-    provider_name: str = Field(default="heuristic", description="Name of the judge provider engine")
+    enable_external_llm: bool = Field(default=True, description="Whether to call external LLM judge for acting critique")
+    provider_name: str = Field(default="hybrid_llm_dsp", description="Name of the judge provider engine")
     confidence_floor: float = Field(default=0.50, description="Minimum confidence assigned to heuristic evaluation")
     dimension_weights: Dict[str, float] = Field(
         default_factory=lambda: {
@@ -332,6 +332,46 @@ class PerceptualPerformanceJudge:
             reason_codes=react_codes,
             evidence={"prev_speaker": prev_take.direction.speaker if prev_take and prev_take.direction else None},
         )
+
+        # Dimension calibration with LLM judge (dynamic model resolution, ADR-043)
+        if self.config.enable_external_llm:
+            try:
+                from audiobook_factory.gates.llm_judge import LLMPerceptualPerformanceJudge
+                dsp_summary = {
+                    "peak_amplitude": getattr(ac_ev, "peak_amplitude", 0.0) if ac_ev else 0.0,
+                    "rms_dbfs": getattr(ac_ev, "rms_dbfs", -20.0) if ac_ev else -20.0,
+                    "spectral_flatness": getattr(ac_ev, "spectral_flatness_mean", 0.0) if ac_ev else 0.0,
+                    "f0_variance": getattr(pr_ev, "f0_variance", 0.0) if pr_ev else 0.0,
+                    "f0_iqr_hz": getattr(pr_ev, "f0_iqr_hz", 0.0) if pr_ev else 0.0,
+                    "is_clipped": getattr(ac_ev, "is_clipped", False) if ac_ev else False,
+                }
+                prev_spk = prev_take.direction.speaker if (prev_take and prev_take.direction) else None
+                llm_verdict = LLMPerceptualPerformanceJudge.critique_performance(
+                    direction=direction,
+                    acoustic_metrics=dsp_summary,
+                    text=text or (take.audio_path.stem if take and take.audio_path else ""),
+                    prev_speaker=prev_spk,
+                    strict=False,
+                )
+                if "acting_believability" in dimensions:
+                    dimensions["acting_believability"].score = round(
+                        (dimensions["acting_believability"].score * 0.4) + (llm_verdict.acting_believability * 0.6), 2
+                    )
+                if "emotional_fidelity" in dimensions:
+                    dimensions["emotional_fidelity"].score = round(
+                        (dimensions["emotional_fidelity"].score * 0.4) + (llm_verdict.emotional_fidelity * 0.6), 2
+                    )
+                if "subtext_fidelity" in dimensions:
+                    dimensions["subtext_fidelity"].score = round(
+                        (dimensions["subtext_fidelity"].score * 0.4) + (llm_verdict.subtext_fidelity * 0.6), 2
+                    )
+                if "dialogue_reactivity" in dimensions:
+                    dimensions["dialogue_reactivity"].score = round(
+                        (dimensions["dialogue_reactivity"].score * 0.4) + (llm_verdict.dialogue_reactivity * 0.6), 2
+                    )
+                all_diagnostics.extend(llm_verdict.diagnostics)
+            except Exception:
+                pass
 
         # Collect diagnostics & reason codes
         for k, dim in dimensions.items():

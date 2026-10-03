@@ -52,7 +52,11 @@ class DramaturgyMixin:
                     lines.append(f"  - [{m_id}] for '{entity}': {t_name} (Intent: {intent})")
                 bible_context = "\nCANONICAL BOOK LEITMOTIFS (Bind these themes when characters/factions appear):\n" + "\n".join(lines) + "\n"
 
+        from audiobook_factory.safety import get_dramatic_fiction_framing
+        framing = get_dramatic_fiction_framing(title=getattr(sonic_bible, "book_title", ""))
+
         prompt = f"""You are an elite Audio Drama Director & Supervising Sound Designer (BBC Radio 4 / Hollywood standard).
+{framing}
 Direct the soundscape and acoustic dramaturgy for {chapter_id} (Total Duration: {total_duration_sec/60:.1f} mins, {len(script_segments)} segments).
 
 SCREENPLAY SAMPLE:
@@ -74,24 +78,23 @@ MANDATORY ACOUSTIC DIRECTING RULES:
 3. SONIC GENOME & DYNAMIC SOUNDTRACK DESCRIPTORS (Do NOT specify filenames or titles):
    - Provide valence: float between -1.0 (grim tragedy, terror, mourning) and +1.0 (triumphant victory, joy, solace).
    - Provide arousal: float between 0.0 (quiet, somber, contemplative, stealth) and 1.0 (violent combat, intense adrenaline, frenzy).
-   - Provide narrative_archetype: string tag (e.g. "MYSTERY_PROLOGUE", "TENSION", "NOCTURNAL_VIGIL", "MAGICAL_DESTINY", "BITTERSWEET_PARTING", "HERO_LEGACY", "ROYAL_CONSPIRACY", "TAVERN_BRAWL").
-   - Provide musical mood, tempo ("slow", "moderate", "fast"), timbre ("solo cello", "dark strings", "brass", "flute", "percussion", "harp", "ethereal choir"), and energy section ("INTRO_BED", "RISING_TENSION", "CLIMAX_DROP", "AFTERMATH_FADE").
+   - Provide narrative_archetype: string tag (e.g. "MYSTERY_PROLOGUE", "TENSION", "NOCTURNAL_VIGIL", "MAGICAL_DESTINY", "BITTERSWEET_PARTING", "HERO_LEGACY", "ROYAL_CONSPIRACY", "TAVERN_BRAWL", "SWORD_DUEL", "MONSTER_HUNT").
+   - Provide musical mood, tempo ("slow", "moderate", "fast"), timbre ("solo cello", "dark strings", "brass", "flute", "percussion", "harp", "ethereal choir", "hurdy-gurdy"), and energy section ("INTRO_BED", "RISING_TENSION", "CLIMAX_DROP", "AFTERMATH_FADE").
    - Provide 3-5 descriptive keyword search terms for SQLite FTS5 search.
 
 4. CONTEXTUAL GRAMMATICAL FOLEY (Physical Interactions Only - Zero Metaphors):
-   - Identify physical actions described in text (e.g. door click, cup clatter, newspaper rustle, lighter click, footsteps).
-   - IMPORTANT: NEVER invent weapons, combat, swords, or medieval sounds in peaceful, domestic, suburban, or contemporary scenes.
+   - Identify physical actions described in text appropriate to the setting (e.g. blade clash, sword draw, door creak, tankard slam, footsteps, items manipulated).
    - Specify: segment_index, action_verb, object_material, anchor_word.
 
 5. CONTINUOUS AMBIENCE BED:
-   - Identify environmental atmosphere (e.g. suburban_street_night, quiet_room, wind_howl, fireplace, tavern_murmur). Target: -32 LUFS.
+   - Identify environmental atmosphere matching the story world (e.g. stone_ruins_exterior, tavern_interior, castle_great_hall, deep_forest_night, spaceship_bridge, room_tone). Target: -32 LUFS.
 
 Output STRICT JSON schema:
 {{
   "dramatic_theme": "Brief 1-sentence dramatic theme",
   "ambience": [
     {{
-      "name": "suburban_street_night" | "domestic_room" | "office_commercial" | "wind_howl" | "fireplace" | "room_tone",
+      "name": "stone_ruins_exterior" | "tavern_interior" | "castle_great_hall" | "deep_forest_night" | "spaceship_bridge" | "suburban_street_night" | "domestic_room" | "room_tone",
       "target_lufs": -32.0,
       "description": "Why this ambient room tone fits the setting"
     }}

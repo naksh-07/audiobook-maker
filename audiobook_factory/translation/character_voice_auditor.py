@@ -41,8 +41,30 @@ def evaluate_character_voices(
     profiles = [get_character_profile(c, book_bible) for c in active_characters]
     profile_descriptions = "\n".join(p.get_prompt_guidelines() for p in profiles)
 
-    if call_llm_fn is not None:
-        prompt = f"""You are an independent voice and dramaturgy QA auditor.
+    if os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes"):
+        return CharacterVoiceAuditResult(
+            is_valid=True,
+            status="PASS",
+            evaluator_notes="Character voice profiles verified (offline mock).",
+        )
+
+    if call_llm_fn is None:
+        from audiobook_factory.llm_client import call_gemini
+        from audiobook_factory.model_manager import TaskType
+
+        def _default_llm(prompt: str, system_instruction: str = "", json_mode: bool = True) -> str:
+            res = call_gemini(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                task_type=TaskType.AUDITING,
+                response_mime_type="application/json" if json_mode else "text/plain",
+                temperature=0.1,
+            )
+            return json.dumps(res) if isinstance(res, (dict, list)) else str(res)
+
+        call_llm_fn = _default_llm
+
+    prompt = f"""You are an independent voice and dramaturgy QA auditor.
 Inspect the dialogue in the TARGET HINDI TRANSLATION against the EXPECTED CHARACTER LINGUISTIC PROFILES.
 
 ### ACTIVE CHARACTER PROFILES:
@@ -62,31 +84,30 @@ Output a JSON object with:
   "evaluator_notes": "brief summary"
 }}
 """
-        try:
-            resp = call_llm_fn(
-                prompt=prompt,
-                system_instruction="You are a strict QA auditor evaluating character linguistic profiles in Hindi literature. Output valid JSON only.",
-                json_mode=True,
-            )
-            data = json.loads(resp)
-            drifts = data.get("character_voice_drifts", [])
-            honorifics = data.get("honorific_mismatches", [])
-            is_val = data.get("is_valid", True) and len(drifts) == 0 and len(honorifics) == 0
-            status = "PASS" if is_val and not data.get("warnings") else ("WARN" if is_val else "FAIL")
+    try:
+        resp = call_llm_fn(
+            prompt=prompt,
+            system_instruction="You are a strict QA auditor evaluating character linguistic profiles in Hindi literature. Output valid JSON only.",
+            json_mode=True,
+        )
+        data = json.loads(resp) if isinstance(resp, str) else resp
+        drifts = data.get("character_voice_drifts", [])
+        honorifics = data.get("honorific_mismatches", [])
+        is_val = data.get("is_valid", True) and len(drifts) == 0 and len(honorifics) == 0
+        status = "PASS" if is_val and not data.get("warnings") else ("WARN" if is_val else "FAIL")
 
-            return CharacterVoiceAuditResult(
-                is_valid=is_val,
-                status=status,
-                character_voice_drifts=drifts,
-                honorific_mismatches=honorifics,
-                warnings=data.get("warnings", []),
-                evaluator_notes=data.get("evaluator_notes", "Character voice audit complete."),
-            )
-        except Exception:
-            pass
-
-    return CharacterVoiceAuditResult(
-        is_valid=True,
-        status="PASS",
-        evaluator_notes="Character voice profiles verified.",
-    )
+        return CharacterVoiceAuditResult(
+            is_valid=is_val,
+            status=status,
+            character_voice_drifts=drifts,
+            honorific_mismatches=honorifics,
+            warnings=data.get("warnings", []),
+            evaluator_notes=data.get("evaluator_notes", "Character voice audit complete."),
+        )
+    except Exception as e:
+        return CharacterVoiceAuditResult(
+            is_valid=False,
+            status="FAIL",
+            character_voice_drifts=[f"Character voice audit failure: {e}"],
+            evaluator_notes=f"Audit failed closed: {e}",
+        )

@@ -117,9 +117,11 @@ Output JSON Schema:
 Return ONLY valid JSON.
 """
 
+    from audiobook_factory.safety import get_universal_safety_settings
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"},
+        "safetySettings": get_universal_safety_settings(),
     }
 
     max_retries = 3

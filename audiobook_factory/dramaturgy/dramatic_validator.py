@@ -239,7 +239,7 @@ class DramaticValidator:
         segments: List[Dict[str, Any]],
         issues: List[DramaticValidationIssue],
     ) -> None:
-        """Detect irrational emotional teleportation between consecutive dialogue lines."""
+        """Detect irrational emotional teleportation between consecutive dialogue lines using LLMDramaticCritic and volatile matrix."""
         prev_speaker = None
         prev_emotion = None
 
@@ -253,7 +253,7 @@ class DramaticValidator:
                     issues.append(
                         DramaticValidationIssue(
                             code="EMOTIONAL_TELEPORTATION",
-                            severity="WARNING",
+                            severity="ERROR",
                             message=f"Character '{spk}' jumped abruptly from '{prev_emotion}' to '{emo}' without dramatic bridge.",
                             segment_uid=seg.get("uid"),
                         )
@@ -263,6 +263,22 @@ class DramaticValidator:
                 prev_speaker = spk
                 prev_emotion = emo
 
+        # LLM-level dramatic arc audit
+        try:
+            from audiobook_factory.gates.llm_judge import LLMDramaticCritic
+            verdict = LLMDramaticCritic.audit_dramatic_arc(segments=segments, strict=False)
+            if verdict.emotional_teleportation_detected:
+                for v in verdict.teleportation_violations:
+                    issues.append(
+                        DramaticValidationIssue(
+                            code="EMOTIONAL_TELEPORTATION",
+                            severity="ERROR",
+                            message=f"Character '{v.get('character', 'Character')}' jumped abruptly from '{v.get('from_emotion', '')}' to '{v.get('to_emotion', '')}': {v.get('reason', '')}",
+                        )
+                    )
+        except Exception:
+            pass
+
     @classmethod
     def _audit_dramatic_fidelity(
         cls,
@@ -271,29 +287,34 @@ class DramaticValidator:
         issues: List[DramaticValidationIssue],
     ) -> None:
         """Verifies dialogue coverage and speaker preservation against source text."""
-        # Simple token presence heuristic: check if major source quotes exist in screenplay
         source_quotes = re.findall(r'["“]([^"”]{12,})["”]', source_text)
         if not source_quotes:
             return
 
         combined_script_text = " ".join(str(s.get("text", "")) for s in segments)
-        dropped_count = 0
-        for quote in source_quotes[:15]:
-            q_clean = re.sub(r"[^\w\s]", "", quote).strip().lower()
-            q_words = q_clean.split()
-            if len(q_words) >= 4:
-                probe = " ".join(q_words[:4])
-                if probe not in combined_script_text.lower():
-                    dropped_count += 1
 
-        if dropped_count >= 3 and len(source_quotes) >= 4:
-            issues.append(
-                DramaticValidationIssue(
-                    code="DROPPED_SOURCE_DIALOGUE",
-                    severity="WARNING",
-                    message=f"Potentially dropped or heavily mutated dialogue detected ({dropped_count} source quotes missing).",
+        # Ensure source text and script share character script (e.g. English vs Devanagari) before token probing
+        is_source_dev = any("\u0900" <= c <= "\u097f" for c in source_text)
+        is_script_dev = any("\u0900" <= c <= "\u097f" for c in combined_script_text)
+
+        if is_source_dev == is_script_dev:
+            dropped_count = 0
+            for quote in source_quotes[:15]:
+                q_clean = re.sub(r"[^\w\s]", "", quote).strip().lower()
+                q_words = q_clean.split()
+                if len(q_words) >= 4:
+                    probe = " ".join(q_words[:4])
+                    if probe not in combined_script_text.lower():
+                        dropped_count += 1
+
+            if dropped_count >= 3 and len(source_quotes) >= 4:
+                issues.append(
+                    DramaticValidationIssue(
+                        code="DROPPED_SOURCE_DIALOGUE",
+                        severity="ERROR",
+                        message=f"Potentially dropped or heavily mutated dialogue detected ({dropped_count} source quotes missing).",
+                    )
                 )
-            )
 
     @classmethod
     def _audit_creative_overreach(

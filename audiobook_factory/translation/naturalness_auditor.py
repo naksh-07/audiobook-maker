@@ -32,9 +32,34 @@ def evaluate_literary_naturalness(
     # Step 1: Deterministic antipattern check
     is_clean, _, det_warnings = audit_literary_register(target_text)
 
-    # Step 2: Dedicated LLM Evaluator (if enabled)
-    if call_llm_fn is not None:
-        prompt = f"""You are an independent, highly critical literary editor for premier Hindi literature.
+    import os
+    if os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes"):
+        return NaturalnessAuditResult(
+            is_valid=is_clean,
+            status="PASS" if is_clean else "WARN",
+            antipatterns_detected=det_warnings,
+            warnings=det_warnings,
+            evaluator_notes="Deterministic literary register check completed (offline mock).",
+        )
+
+    # Step 2: Dedicated LLM Evaluator (dynamic model resolution, ADR-043)
+    if call_llm_fn is None:
+        from audiobook_factory.llm_client import call_gemini
+        from audiobook_factory.model_manager import TaskType
+
+        def _default_llm(prompt: str, system_instruction: str = "", json_mode: bool = True) -> str:
+            res = call_gemini(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                task_type=TaskType.AUDITING,
+                response_mime_type="application/json" if json_mode else "text/plain",
+                temperature=0.1,
+            )
+            return json.dumps(res) if isinstance(res, (dict, list)) else str(res)
+
+        call_llm_fn = _default_llm
+
+    prompt = f"""You are an independent, highly critical literary editor for premier Hindi literature.
 Evaluate this TARGET HINDI TRANSLATION for Spoken Literary Naturalness:
 1. Does it sound like translated English ('translatese')? (e.g. awkward passive voice, literal English clauses)
 2. Are idioms natural to Hindustani or stiff literal translations?
@@ -53,32 +78,31 @@ Output a JSON object with:
   "evaluator_notes": "brief literary critique"
 }}
 """
-        try:
-            resp = call_llm_fn(
-                prompt=prompt,
-                system_instruction="You are a strict Hindi literary editor. Output valid JSON only.",
-                json_mode=True,
-            )
-            data = json.loads(resp)
-            awkward = data.get("translatese_passages", [])
-            is_val = data.get("is_valid", True) and len(awkward) == 0 and is_clean
-            status = "PASS" if is_val and not data.get("warnings") else ("WARN" if is_val else "FAIL")
+    try:
+        resp = call_llm_fn(
+            prompt=prompt,
+            system_instruction="You are a strict Hindi literary editor. Output valid JSON only.",
+            json_mode=True,
+        )
+        data = json.loads(resp) if isinstance(resp, str) else resp
+        awkward = data.get("translatese_passages", [])
+        is_val = data.get("is_valid", True) and len(awkward) == 0 and is_clean
+        status = "PASS" if is_val and not data.get("warnings") else ("WARN" if is_val else "FAIL")
 
-            return NaturalnessAuditResult(
-                is_valid=is_val,
-                status=status,
-                antipatterns_detected=det_warnings,
-                translatese_passages=awkward,
-                warnings=data.get("warnings", []),
-                evaluator_notes=data.get("evaluator_notes", "Naturalness audit complete."),
-            )
-        except Exception:
-            pass
-
-    return NaturalnessAuditResult(
-        is_valid=is_clean,
-        status="PASS" if is_clean else "WARN",
-        antipatterns_detected=det_warnings,
-        warnings=det_warnings,
-        evaluator_notes="Deterministic literary register check completed.",
-    )
+        return NaturalnessAuditResult(
+            is_valid=is_val,
+            status=status,
+            antipatterns_detected=det_warnings,
+            translatese_passages=awkward,
+            warnings=data.get("warnings", []),
+            evaluator_notes=data.get("evaluator_notes", "Naturalness audit complete."),
+        )
+    except Exception as e:
+        return NaturalnessAuditResult(
+            is_valid=False,
+            status="FAIL",
+            antipatterns_detected=det_warnings,
+            translatese_passages=[f"LLM Naturalness Audit error: {e}"],
+            warnings=[str(e)],
+            evaluator_notes=f"Audit failed closed: {e}",
+        )
