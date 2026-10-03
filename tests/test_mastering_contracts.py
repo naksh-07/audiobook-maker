@@ -36,7 +36,7 @@ class TestMasteringContracts(unittest.TestCase):
         """Verify default broadcast mastering values and safety bound enforcement."""
         profile = MasteringProfile()
         self.assertEqual(profile.target_lufs, -19.0)
-        self.assertEqual(profile.true_peak_ceiling_dbtp, -1.5)
+        self.assertEqual(profile.true_peak_ceiling_dbtp, -1.6)
         self.assertEqual(profile.tolerance_lu, 0.5)
         self.assertEqual(profile.subsonic_highpass_hz, 28)
         self.assertTrue(profile.enable_dual_pass_linear)

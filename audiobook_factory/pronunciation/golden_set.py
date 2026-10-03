@@ -80,10 +80,10 @@ GOLDEN_PRONUNCIATION_CASES: List[Dict[str, Any]] = [
     },
     # 5. Foreign Place Names
     {
-        "id": "gold_09_kaer_morhen",
+        "id": "gold_09_baker_street",
         "category": "foreign_place",
-        "literary_input": "वे Kaer Morhen की ओर बढ़े।",
-        "expected_spoken_contains": "केर मॉरहेन",
+        "literary_input": "वे Baker Street की ओर बढ़े।",
+        "expected_spoken_contains": "बेकर स्ट्रीट",
         "expected_lang": SpokenLanguage.FOREIGN,
     },
     # 6. Acronyms & Initialisms

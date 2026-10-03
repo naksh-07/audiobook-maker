@@ -19,6 +19,7 @@ from audiobook_factory.gates.contracts import GateAuditError
 from audiobook_factory.gates.literary import (
     audit_gate0_translation,
     audit_gate1_roster,
+    audit_gate1_anticensorship_agent,
 )
 from audiobook_factory.gates.screenplay import (
     audit_gate2_script,
@@ -66,6 +67,15 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
     report = {}
     report["gate_0"] = audit_gate0_translation(ext_file, trans_file)
     report["gate_1"] = audit_gate1_roster(roster_file, registry_file, active_speakers)
+    if ext_file.exists() and trans_file.exists():
+        try:
+            report["gate_1_anticensorship"] = audit_gate1_anticensorship_agent(
+                ext_file.read_text(encoding="utf-8"),
+                trans_file.read_text(encoding="utf-8"),
+                strict=False,
+            )
+        except Exception as e:
+            logger.warning(f"Chapter {ch_str} Gate 1 anti-censorship notice: {e}")
     report["gate_2"] = audit_gate2_script(script_file, project_dir=pdir)
 
     if scenes_file.exists():

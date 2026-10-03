@@ -232,6 +232,19 @@ def audit_gate1_roster(
     }
 
 
+def _sample_chapter_stratified(text: str, total_chars: int = 12000) -> str:
+    """Samples stratified windows (Head 30%, Middle 40%, Tail 30%) across full chapter."""
+    n = len(text)
+    if n <= total_chars:
+        return text
+    chunk_sz = total_chars // 3
+    head = text[:chunk_sz]
+    mid_start = max(0, (n // 2) - (chunk_sz // 2))
+    mid = text[mid_start : mid_start + chunk_sz]
+    tail = text[-chunk_sz:]
+    return f"{head}\n\n[... ACT 2 INTERMEDIATE EXCERPT ...]\n\n{mid}\n\n[... ACT 3 CLIMAX EXCERPT ...]\n\n{tail}"
+
+
 def _audit_profanity_agent(english_text: str, hindi_text: str) -> Dict[str, Any]:
     """Checker A: Detect prudish bowdlerization of raw curses, medieval insults, and street profanity."""
     from audiobook_factory.llm_client import call_gemini
@@ -244,12 +257,12 @@ def _audit_profanity_agent(english_text: str, hindi_text: str) -> Dict[str, Any]
     )
     prompt = f"""### ENGLISH EXCERPT:
 \"\"\"
-{english_text[:5000]}
+{_sample_chapter_stratified(english_text)}
 \"\"\"
 
 ### HINDUSTANI TRANSLATION:
 \"\"\"
-{hindi_text[:5000]}
+{_sample_chapter_stratified(hindi_text)}
 \"\"\"
 
 Output JSON:
@@ -277,12 +290,12 @@ def _audit_combat_agent(english_text: str, hindi_text: str) -> Dict[str, Any]:
     )
     prompt = f"""### ENGLISH EXCERPT:
 \"\"\"
-{english_text[:5000]}
+{_sample_chapter_stratified(english_text)}
 \"\"\"
 
 ### HINDUSTANI TRANSLATION:
 \"\"\"
-{hindi_text[:5000]}
+{_sample_chapter_stratified(hindi_text)}
 \"\"\"
 
 Output JSON:
@@ -310,12 +323,12 @@ def _audit_intimacy_agent(english_text: str, hindi_text: str) -> Dict[str, Any]:
     )
     prompt = f"""### ENGLISH EXCERPT:
 \"\"\"
-{english_text[:5000]}
+{_sample_chapter_stratified(english_text)}
 \"\"\"
 
 ### HINDUSTANI TRANSLATION:
 \"\"\"
-{hindi_text[:5000]}
+{_sample_chapter_stratified(hindi_text)}
 \"\"\"
 
 Output JSON:

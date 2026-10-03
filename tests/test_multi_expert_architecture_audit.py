@@ -113,9 +113,9 @@ def test_fail_closed_hard_gate():
 def test_read_only_live_audit_harry_potter():
     """Verify live read-only audit on benchmark project with zero disk mutations."""
     proj_dir = Path("audiobooks/projects/dastan_e_hastinapur").resolve()
-    if not (proj_dir / "mastered").exists():
+    if not (proj_dir / "mastered").exists() or not any((proj_dir / "mastered").glob("*.m4a")):
         proj_dir = Path("audiobooks/projects/harry_potter_or_paras_patthar").resolve()
-    if not (proj_dir / "mastered").exists():
+    if not (proj_dir / "mastered").exists() or not any((proj_dir / "mastered").glob("*.m4a")):
         pytest.skip("Certified benchmark project not found or unproduced")
 
     # Snapshot timestamps before audit

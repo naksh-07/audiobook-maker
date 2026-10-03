@@ -149,3 +149,31 @@ class TestSanitizer(unittest.TestCase):
             self.assertIsNotNone(res, f"Segment unexpectedly dropped for {raw_text}")
             self.assertIn(exp_tag, res["text"])
             self.assertIn(exp_word, res["text"])
+
+    def test_phase3_creative_liberation_tags_and_devanagari_translation(self):
+        """Verifies Phase 3 theatrical cues preservation and Devanagari vocal cues translation."""
+        # 1. New English theatrical vocal tags
+        seg_scream = {
+            "index": 20,
+            "type": "dialogue",
+            "speaker": "Villager",
+            "text": "[screaming] बचाओ मुझे! [whimpering] कोई तो रोको इसे!",
+            "emotion": "terror",
+        }
+        res_scream = sanitize_screenplay_segment(seg_scream, is_hindi=True)
+        self.assertIsNotNone(res_scream)
+        self.assertIn("[screaming]", res_scream["text"])
+        self.assertIn("[whimpering]", res_scream["text"])
+
+        # 2. Devanagari vocal cue translation to English Gemini TTS tags
+        seg_dev = {
+            "index": 21,
+            "type": "dialogue",
+            "speaker": "Yennefer",
+            "text": "[फुसफुसाते हुए] शांत रहो, कोई आ रहा है। [चीखते हुए] भागो!",
+            "emotion": "urgent",
+        }
+        res_dev = sanitize_screenplay_segment(seg_dev, is_hindi=True)
+        self.assertIsNotNone(res_dev)
+        self.assertIn("[whispers]", res_dev["text"])
+        self.assertIn("[screaming]", res_dev["text"])

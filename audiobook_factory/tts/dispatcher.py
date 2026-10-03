@@ -92,6 +92,7 @@ class TTSDispatcher:
         rpm: float = DEFAULT_RPM,
         audio_dir: Optional[Path] = None,
         strict_speakers: bool = True,
+        allow_dynamic_cast: Optional[bool] = None,
     ):
         self.project_dir = Path(project_dir).resolve()
         self.audio_dir = Path(audio_dir).resolve() if audio_dir else (self.project_dir / "audio_chunks")
@@ -101,6 +102,10 @@ class TTSDispatcher:
         self.default_backend = default_backend
         self.default_voice = default_voice
         self.strict_speakers = strict_speakers
+        if allow_dynamic_cast is None:
+            self.allow_dynamic_cast = os.environ.get("ALLOW_DYNAMIC_CAST", "false").lower() in ("true", "1", "yes")
+        else:
+            self.allow_dynamic_cast = allow_dynamic_cast
         if max_workers > 1:
             logger.info("  [STEALTH INVARIANT] Multi-worker network requests disabled to prevent IP clustering and quota flags. Operating strictly in 1-worker mode.")
         self.max_workers = 1
@@ -323,6 +328,25 @@ class TTSDispatcher:
         close_hint = f" Did you mean: {', '.join(close)}?" if close else ""
 
         if self.strict_speakers:
+            if self.allow_dynamic_cast:
+                # Dynamic on-the-fly casting with persistent lock (Production Auto-Casting)
+                try:
+                    from audiobook_factory.character_caster import CharacterCaster
+                    p_dir = getattr(self, "project_dir", None) or Path.cwd()
+                    dynamic_cfg = CharacterCaster.cast_single_speaker(
+                        speaker_name=sp_clean,
+                        project_dir=p_dir,
+                        gender=self.gender_map.get(sp_clean),
+                        default_backend=self.default_backend,
+                    )
+                    self.voice_map[sp_clean] = dynamic_cfg
+                    logger.info(
+                        f"[+] Dynamic Cast: Auto-registered '{sp_clean}' -> {dynamic_cfg.get('voice')} "
+                        f"to avoid halting production."
+                    )
+                    return dict(dynamic_cfg)
+                except Exception as e:
+                    logger.warning(f"  [!] Dynamic casting fallback failed for '{sp_clean}': {e}")
             raise UnregisteredSpeakerError(
                 f"Speaker '{sp_clean}' (type: {seg_type}) is not registered in voice_registry.json "
                 f"or character_roster.json!{close_hint} Silent fallback to Narrator is prohibited to prevent voice drift."
@@ -870,6 +894,21 @@ class TTSDispatcher:
                     pass
                 results[idx - 1] = audio_file
                 self.ledger.mark_segment_completed(audio_file.stem, str(audio_file), dur, chapter_num=chapter_num, seg_num=idx)
+                dir_obj = dir_by_idx.get(idx)
+                if dir_obj and hasattr(self, "take_bank"):
+                    try:
+                        cached_take = self.take_bank.create_take(
+                            segment_uid=dir_obj.segment_uid,
+                            segment_index=idx,
+                            variant_type="standard",
+                            audio_file=audio_file,
+                            direction=dir_obj,
+                            duration_sec=dur,
+                        )
+                        cached_take.is_selected = True
+                        cached_take.selection_reason = "cached_on_disk"
+                    except Exception as te:
+                        logger.debug(f"Cached take registration notice: {te}")
                 logger.info(f"  [{idx}/{total}] Cached {speaker} ({audio_file.name}, {dur:.1f}s)")
                 continue
 

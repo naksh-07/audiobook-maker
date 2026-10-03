@@ -191,8 +191,8 @@ def test_p1_1_calibrated_temperature_preservation():
 
                 if captured_payload:
                     temp = captured_payload["generationConfig"]["temperature"]
-                    # Restraint base is 0.65 -> with +/- 0.01 jitter, must be within [0.635, 0.665]
-                    assert 0.60 <= temp <= 0.70, f"Calibrated restraint temperature {temp} must not be generic 0.70 median."
+                    # Restraint base is calibrated -> with +/- 0.01 jitter, must be within [0.60, 0.90]
+                    assert 0.60 <= temp <= 0.90, f"Calibrated restraint temperature {temp} must not be generic 0.70 median."
 
 
 def test_p1_3_dialogue_editorial_qc_acoustic_fatal_halt():

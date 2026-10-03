@@ -11,12 +11,13 @@ from audiobook_factory.key_manager import get_persistent_key_pool
 from audiobook_factory.cadence import get_stealth_sdk_headers
 
 def get_ffmpeg() -> str:
-    return shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
+    from audiobook_factory.tts.constants import get_ffmpeg as _get_ffmpeg
+    return _get_ffmpeg()
 
 def test_filter_graph(filter_complex: str, has_foley: bool = True) -> str:
     """Tool: Tests an FFmpeg filter graph for syntax errors using dummy audio."""
     ffmpeg = get_ffmpeg()
-    if not os.path.exists(ffmpeg):
+    if not (os.path.exists(ffmpeg) or shutil.which(ffmpeg)):
         return "ERROR: ffmpeg executable not found."
 
     # Validate stream references against available inputs

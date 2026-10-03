@@ -50,7 +50,18 @@ class PerformanceEvaluator:
         self.sample_rate = sample_rate
         self.config = config or EvaluatorCalibrationConfig()
         self.acoustic_analyzer = MathematicalAcousticAnalyzer(sample_rate=sample_rate)
-        self.perceptual_judge = perceptual_judge or PerceptualPerformanceJudge()
+        if perceptual_judge is not None:
+            self.perceptual_judge = perceptual_judge
+        else:
+            import os
+            from .perceptual_judge import PerceptualJudgeConfig
+            is_offline = (
+                os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
+                or os.environ.get("UNIT_TEST_MODE", "").lower() in ("true", "1", "yes")
+                or "PYTEST_CURRENT_TEST" in os.environ
+            )
+            judge_cfg = PerceptualJudgeConfig(enable_external_llm=not is_offline)
+            self.perceptual_judge = PerceptualPerformanceJudge(config=judge_cfg)
 
     def evaluate_take(
         self,

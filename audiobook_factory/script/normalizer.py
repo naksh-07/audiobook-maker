@@ -25,13 +25,19 @@ def normalize_speech_text(text: str, is_hindi: bool = False) -> str:
         text = re.sub(r"(\d+)\s*%", r"\1 percent", text)
         text = re.sub(r"(?<!\d)%(?!\d)", " — ", text)
 
+    # Strip markdown headers if present at line start
+    text = re.sub(r"(?m)^#{1,6}\s+", "", text)
+    # Replace # with number only when associated with numeric identifiers (e.g. #1, # 42)
+    num_word = " number " if not is_hindi else " नंबर "
+    text = re.sub(r"#\s*(\d+)", rf"{num_word}\1", text)
+    text = text.replace("#", "")
+
     # Universal symbol replacements
     symbols = {
         "&": " and " if not is_hindi else " और ",
         "$": " dollars " if not is_hindi else " डॉलर ",
         "₹": " rupees " if not is_hindi else " रुपये ",
         "@": " at ",
-        "#": " number " if not is_hindi else " नंबर ",
         "+": " plus " if not is_hindi else " प्लस ",
         "=": " equals " if not is_hindi else " बराबर ",
     }

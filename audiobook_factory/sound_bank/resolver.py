@@ -118,7 +118,7 @@ class ResolverMixin:
             if resolved_p and gate:
                 v_res = gate.verify_asset(
                     resolved_p,
-                    category=category or cand.get("category", ""),
+                    category=category or "",
                     era=era,
                     candidate_meta=cand,
                     is_continuous_bed=is_continuous_bed,
@@ -346,7 +346,8 @@ class ResolverMixin:
         if not track_path.exists():
             raise FileNotFoundError(f"Source soundtrack file not found: {track_path}")
 
-        ffmpeg = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
+        from audiobook_factory.tts.constants import get_ffmpeg
+        ffmpeg = get_ffmpeg()
         target_dur = max(float(target_duration), 1.0)
         s_start = max(0.0, float(start_sec))
 

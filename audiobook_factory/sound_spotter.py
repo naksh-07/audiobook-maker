@@ -380,6 +380,10 @@ Return a JSON array of Music cues where each object has:
             if not verb:
                 continue
 
+            query_tokens = set(verb.lower().split()) | set(mat.lower().split())
+            if banned_tags and (query_tokens & banned_tags):
+                continue
+
             query = f"{verb} {mat}".strip()
             valid_asset = self.sound_bank.resolve_sound(
                 query=query,
@@ -401,6 +405,11 @@ Return a JSON array of Music cues where each object has:
 
             if not valid_asset:
                 continue
+
+            if banned_tags:
+                asset_tokens = set(valid_asset.stem.lower().replace("_", " ").split())
+                if asset_tokens & banned_tags:
+                    continue
 
             seg_start = seg_starts_ms.get(s_idx, 0)
             cue_start_ms = max(0, seg_start + 100)

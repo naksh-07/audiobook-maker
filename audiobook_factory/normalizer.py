@@ -68,8 +68,8 @@ def clean_book_text(text: str, preserve_literary_quotes: bool = False) -> str:
     text = re.sub(r"\[\d{1,3}\]", "", text)
 
     # 4. Remove common running headers/page number lines: e.g. "Page 42 of 300", "- 42 -"
-    text = re.sub(r"^[\s\-\–—]*page\s+\d+(?:\s+of\s+\d+)?[\s\-\–—]*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
-    text = re.sub(r"^[\s\-\–—]*\d+[\s\-\–—]*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
+    text = re.sub(r"^[\s\-\–—]*(?:page|pg\.|p\.)\s+\d+(?:\s+of\s+\d+)?[\s\-\–—]*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
+    text = re.sub(r"^\s*[\-\–—~_]+\s*\d+\s*[\-\–—~_]+\s*$", "", text, flags=re.MULTILINE)
 
     # 5. Collapse excessive whitespace without wiping paragraph boundaries
     text = re.sub(r"[ \t]+", " ", text)

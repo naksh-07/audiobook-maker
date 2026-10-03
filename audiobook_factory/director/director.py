@@ -188,6 +188,7 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
             )
         )
 
+        ai_director_degraded = False
         if has_spotter_cues:
             dramaturgy_plan = {
                 "chapter_id": chapter_id,
@@ -239,6 +240,7 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
             # =====================================================================
             # LEGACY PASS 1: Dramaturgy & Silence Carving (Fallback Heuristic)
             # =====================================================================
+            ai_director_degraded = False
             try:
                 dramaturgy_plan = self._pass1_dramaturgy_and_silence_carving(
                     chapter_id=chapter_id,
@@ -250,7 +252,16 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
             except Exception as ex:
                 if os.environ.get("STRICT_HALT_ON_DIRECTOR_LLM", "false").lower() in ("true", "1", "yes"):
                     raise
-                logger.warning(f"  [!] Pass 1 Dramaturge LLM unavailable ({ex}); engaging deterministic dramaturgy compiler.")
+                ai_director_degraded = True
+                # DEGRADED MODE: Dramaturge LLM is unavailable. Falling back to static keyword matching.
+                # This produces robotic, generic sound design — NOT suitable for final production output.
+                # Set STRICT_HALT_ON_DIRECTOR_LLM=true to halt the pipeline instead of silently degrading.
+                logger.error(
+                    f"  [!] 🛑 DIRECTOR: Pass 1 Dramaturge LLM FAILED ({ex}). "
+                    "Engaging deterministic (keyword-matching) dramaturgy compiler — "
+                    "sound design will be GENERIC and non-cinematic. "
+                    "Set STRICT_HALT_ON_DIRECTOR_LLM=true to halt on this condition."
+                )
                 dramaturgy_plan = self._build_deterministic_dramaturgy_plan(script_segments, total_duration_sec, sonic_bible=active_bible)
                 dramaturgy_plan = self._enforce_silence_carving(dramaturgy_plan, total_duration_sec)
 
@@ -323,6 +334,8 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
             foley_cues=foley_cues,
             metadata={
                 "director": "AgentDirector 3-Pass Creative Workflow v3.0",
+                "director_mode": "DETERMINISTIC_FALLBACK" if ai_director_degraded else "NEURAL_LLM",
+                "ai_director_degraded": ai_director_degraded,
                 "standards": "BBC Radio 4 / Hollywood Cinematic Audio Drama",
                 "dramatic_theme": dramaturgy_plan.get("dramatic_theme", "Grim Dark Fantasy Mystery"),
                 "total_segments": len(script_segments),

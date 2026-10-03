@@ -27,6 +27,7 @@ from audiobook_factory.gate_auditor import (
     audit_gate6b_loudness_continuity,
     audit_gate5_3_stereo_phase,
     AuditResult,
+    GateAuditError,
 )
 from audiobook_factory.mastering import concatenate_and_master_chapter
 from audiobook_factory.orchestrator import PipelineOrchestrator
@@ -64,11 +65,15 @@ class TestPhase3SpatialAndFailClosedGates(unittest.TestCase):
         bad_file.write_bytes(b"\x00" * 2000)  # > 1000 bytes but invalid audio container
 
         # Probe will fail to parse ebur128 output
-        res = audit_gate6b_loudness_continuity([bad_file], strict=True)
+        res = audit_gate6b_loudness_continuity([bad_file], strict=False)
         self.assertFalse(res.passed, "Gate 6B must FAIL when FFmpeg cannot probe audio loudness.")
         self.assertEqual(res.status, "FAIL")
         self.assertTrue(len(res.errors) > 0)
         self.assertIn("probe", res.errors[0].lower())
+
+        # When strict=True, must raise GateAuditError fail-closed
+        with self.assertRaises(GateAuditError):
+            audit_gate6b_loudness_continuity([bad_file], strict=True)
 
     def test_02_spatial_staging_stereo_positioning(self):
         """Verify spatial staging creates stereo separation for characters and keeps Narrator centered."""

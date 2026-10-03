@@ -612,6 +612,7 @@ class TestGoldenNovelContinuity(unittest.TestCase):
                 chapter_title="Epilogue",
                 call_llm_fn=lambda prompt, **kw: "विक्रम और मीरा लौह दुर्ग की प्राचीर पर भोर के उजाले में खड़े थे।",
                 use_cache=False,
+                force_gate=True,
             )
             self.assertIn("विक्रम", hindi_out)
             self.assertGreater(pipeline.memory_store.memory_version, store.memory_version)

@@ -21,13 +21,16 @@ class DramaturgyMixin:
         Strictly enforces the 60-75% Acoustic Silence Mandate:
         Maximum 2-4 cues per chapter, covering at most 25-40% of chapter timeline.
         """
-        # Rich Scene Context: Include all dramatic beats, fights, reveals, and action tags without stride truncation
+        total_segs = len(script_segments)
+        char_cap = 60 if total_segs > 120 else 150
         sample_lines = []
         for i, seg in enumerate(script_segments):
             s_idx = seg.get("index", i + 1)
             speaker = seg.get("speaker", "Narrator")
             seg_type = seg.get("type", "narration")
-            text = seg.get("text", "")[:150]
+            is_action = (seg_type == "action" or bool(seg.get("sfx_cues")))
+            t_cap = 150 if is_action else char_cap
+            text = seg.get("text", "")[:t_cap]
             sfx_list = seg.get("sfx_cues", [])
             sfx_tags = [c.get("tag", str(c)) if isinstance(c, dict) else str(c) for c in sfx_list]
             sfx = f" [SFX: {','.join(sfx_tags)}]" if sfx_tags else ""
@@ -162,7 +165,6 @@ Output STRICT JSON schema:
                 system_instruction=system_instruction,
                 task_type=TaskType.DIRECTING,
                 response_mime_type="application/json",
-                temperature=0.25,
                 max_retries=max_retries,
             )
             if parsed and "music_cues" in parsed:
@@ -202,13 +204,27 @@ Output STRICT JSON schema:
             )
             scale = max_allowed_music_sec / total_music_sec
             for c in cues:
-                c["duration_sec"] = round(float(c.get("duration_sec", 30.0)) * scale, 1)
+                dur = round(float(c.get("duration_sec", 30.0)) * scale, 1)
+                c["duration_sec"] = dur
+                f_in = float(c.get("fade_in_sec", 2.0))
+                f_out = float(c.get("fade_out_sec", 2.0))
+                if (f_in + f_out) > dur and dur > 0:
+                    fade_ratio = (dur * 0.9) / max(0.1, f_in + f_out)
+                    c["fade_in_sec"] = round(f_in * fade_ratio, 2)
+                    c["fade_out_sec"] = round(f_out * fade_ratio, 2)
 
             # Ensure rounding does not breach the 40% maximum allowed music budget
             new_total = sum(float(c.get("duration_sec", 0.0)) for c in cues)
             if new_total > max_allowed_music_sec and cues:
                 excess = round(new_total - max_allowed_music_sec, 1)
-                cues[-1]["duration_sec"] = round(max(1.0, float(cues[-1]["duration_sec"]) - excess), 1)
+                last_dur = round(max(1.0, float(cues[-1]["duration_sec"]) - excess), 1)
+                cues[-1]["duration_sec"] = last_dur
+                f_in = float(cues[-1].get("fade_in_sec", 2.0))
+                f_out = float(cues[-1].get("fade_out_sec", 2.0))
+                if (f_in + f_out) > last_dur and last_dur > 0:
+                    fade_ratio = (last_dur * 0.9) / max(0.1, f_in + f_out)
+                    cues[-1]["fade_in_sec"] = round(f_in * fade_ratio, 2)
+                    cues[-1]["fade_out_sec"] = round(f_out * fade_ratio, 2)
 
         return plan
 

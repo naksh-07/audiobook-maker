@@ -9,6 +9,7 @@ Regression test suite reproducing the 5 independent audit probes for World + Cha
 """
 
 import unittest
+import json
 from audiobook_factory.contracts import ScreenplaySegment
 from audiobook_factory.tts_dispatcher import resolve_speech_metadata_style
 from audiobook_factory.translation.book_bible import BookBible, CharacterEntry, WorldRule

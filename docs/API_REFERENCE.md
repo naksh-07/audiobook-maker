@@ -1719,6 +1719,43 @@ class SonicBibleGenerator:
         """Compiles production-ready sound_bible.json registering world acoustic spaces and motifs."""
 ```
 
+### 3. `CharacterCaster` ([`audiobook_factory.character_caster`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/character_caster.py))
+
+```python
+class CharacterCaster:
+    """Autonomous character discovery, voice persona allocation, and cast lock manager."""
+
+    @classmethod
+    def discover_and_cast_characters(
+        cls,
+        project_dir: Path,
+        novel_title: str = "",
+        author: str = "",
+        force_rebuild: bool = False,
+    ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+        """
+        Executes 5-tier stratified sampling across novel scope (0%, 25%, 50%, 75%, 100%).
+        Calls the LLM Casting Director to discover major/minor characters and assigns
+        unique, non-colliding Gemini voice models and pitch/speed signatures.
+        Emits and persists (character_roster.json, voice_registry.json, cast_lock.json).
+        """
+
+    @classmethod
+    def cast_single_speaker(
+        cls,
+        speaker_name: str,
+        project_dir: Optional[Path] = None,
+        gender: Optional[str] = None,
+        default_backend: str = "gemini_tts",
+    ) -> Dict[str, Any]:
+        """
+        Dynamically registers and casts a single newly discovered character mid-production.
+        Allocates a non-colliding voice from the gender pool with micro-pitch offsets.
+        Persists to voice_registry.json, character_roster.json, and cast_lock.json.
+        Guarantees zero voice drift and zero signature collision.
+        """
+```
+
 ---
 
 ## 🛡️ Centralized Permissive Safety Protocol ([`audiobook_factory.safety`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/safety.py))
@@ -1763,5 +1800,65 @@ class ProductionTelemetryLedger:
     def export_report_json(self, run_id: Optional[str] = None, output_file: Optional[Path] = None) -> Dict[str, Any]:
         """Generates comprehensive production telemetry summary in TELEMETRY_REPORT.json."""
 ```
+
+---
+
+## ⚙️ Environment Variables Reference
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `AUDIOBOOK_RETAIN_CHUNKS` | `bool` | `true` | When `true`, intermediate uncompressed WAV chunks are retained post-certification to shield API quotas for zero-cost DSP remastering. |
+| `AUDIOBOOK_PURGE_CHUNKS` | `bool` | `false` | When explicitly `true` AND all quality gates are 100% certified, permits the chapter janitor to purge raw WAV chunks. |
+| `SCREENPLAY_CHUNK_WORDS` | `int` | `500` | Word ceiling for screenplay beat chunking. Calibrated to prevent dialogue swallowing during dense multi-character banter. |
+| `LLM_SOUND_DESIGN_STRICT` | `bool` | `false` | When `true`, exceptions in `LLMSoundDesignCritic` halt the pipeline (`FAIL`); when `false`, gracefully degrades to `PASS_WITH_WARNINGS` ($0.50$). |
+| `TASK_ADAPTIVE_TEMPERATURES` | `bool` | `true` | Enables task-calibrated LLM generation temperatures: 0.82 for dramaturgy/scene planning, 0.88 for creative beats, 0.20 for auditing. |
+| `GEMINI_API_KEY` | `str` | `""` | Primary Google Gemini API key fallback. Overridden by SQLite rotating key pool. |
+| `GEMINI_TEXT_MODEL` | `str` | `gemini-2.5-flash` | Candidate priority override for text generation and translation intelligence. |
+| `GEMINI_TTS_MODEL` | `str` | `gemini-3.8-flash-tts` | Dedicated Google Gemini Cloud speech synthesis model endpoint. |
+
+---
+
+## 🛠️ Resilient System & Casting Utilities ([`audiobook_factory`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/))
+
+### 1. `CharacterCaster.cast_single_speaker`
+*Dynamically registers and casts newly discovered characters mid-production with zero voice drift.*
+
+```python
+@classmethod
+def cast_single_speaker(
+    cls,
+    speaker_name: str,
+    project_dir: Optional[Path] = None,
+    gender: Optional[str] = None,
+    default_backend: str = "gemini_tts",
+) -> Dict[str, Any]:
+    """
+    Discovers, assigns, and persists an authentic, non-colliding Gemini voice persona
+    for a single character. Atomically synchronizes character_roster.json,
+    voice_registry.json, and cast_lock.json.
+    """
+```
+
+### 2. Cross-Platform Executable Resolvers ([`audiobook_factory.tts.constants`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts/constants.py))
+
+```python
+def get_ffprobe() -> str:
+    """Returns resolved path to ffprobe executable via PATH or project fallback."""
+
+def get_ffmpeg() -> str:
+    """Returns resolved path to ffmpeg executable via PATH or project fallback."""
+```
+
+### 3. Windows Atomic File Promotion ([`audiobook_factory.tts.providers.gemini`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts/providers/gemini.py))
+
+```python
+def _atomic_replace(src: Path, dst: Path, max_attempts: int = 8) -> None:
+    """
+    Atomically promotes src to dst with exponential backoff retry for Windows
+    file-locking defense (WinError 32) and copy2 fallback.
+    """
+```
+
+
 
 

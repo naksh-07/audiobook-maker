@@ -89,7 +89,6 @@ Output JSON: A list of objects where each object has:
         system_instruction=sys_prompt,
         task_type=TaskType.SCREENPLAY,
         response_mime_type="application/json",
-        temperature=0.2,
         max_output_tokens=8192,
         max_retries=4,
     )

@@ -23,14 +23,19 @@ def atomic_write_json(filepath: Path, data: Any, indent: int = 2) -> None:
     try:
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=indent)
-        for attempt in range(5):
+        for attempt in range(8):
             try:
                 os.replace(tmp_path, filepath)
                 break
             except (PermissionError, OSError):
-                if attempt == 4:
-                    raise
-                time.sleep(0.05 * (2 ** attempt))
+                if attempt == 7:
+                    try:
+                        import shutil
+                        shutil.copy2(tmp_path, filepath)
+                        break
+                    except Exception:
+                        raise
+                time.sleep(0.05 * (1.5 ** attempt))
     finally:
         if tmp_path.exists():
             try:
@@ -42,13 +47,6 @@ from audiobook_factory.extractor import process_book_file
 from audiobook_factory.translator import translate_book_project
 from audiobook_factory.script_builder import generate_project_scripts
 from audiobook_factory.tts_dispatcher import TTSDispatcher
-from audiobook_factory.soundscape import (
-    generate_chapter_soundscape_plan,
-    render_chapter_soundscape,
-    apply_dynamic_sidechain_ducking,
-    render_multitrack_chapter_audio,
-    get_audio_duration,
-)
 
 from audiobook_factory.timeline_ledger import build_chapter_timeline_ledger
 from audiobook_factory.sound_bank import get_sound_bank
@@ -323,7 +321,12 @@ class PipelineOrchestrator:
         from audiobook_factory.key_manager import AllKeysExhaustedTodayError
         import sys
         try:
-            dispatcher = TTSDispatcher(project_dir=project_dir, default_voice=voice, max_workers=workers)
+            dispatcher = TTSDispatcher(
+                project_dir=project_dir,
+                default_voice=voice,
+                max_workers=workers,
+                allow_dynamic_cast=True,
+            )
             dispatcher.synthesize_chapter_script(script_file, chapter_num)
         except AllKeysExhaustedTodayError as e:
             if os.environ.get("ENABLE_EMERGENCY_FALLBACK", "").lower() in ("true", "1", "yes"):
@@ -333,7 +336,10 @@ class PipelineOrchestrator:
                 logger.error(f"[!] 🛑 {e}")
                 logger.info(f"[*] Progress Checkpoint safely stored on disk for Chapter {chapter_num:02d}.")
                 logger.info("[*] The system will gracefully halt now. Run the script again tomorrow after 12:30 PM IST (Midnight PT) to automatically resume.")
-                sys.exit(0)
+                raise AllKeysExhaustedTodayError(
+                    f"Supervisor Halt: All TTS API keys exhausted today for Chapter {chapter_num:02d}. "
+                    "Progress safely checkpointed on disk."
+                ) from e
 
         # Gate 2.8: Pre-Mix Performance Fidelity Gate (Fail-Closed)
         verify_performance_fidelity_gate(manifests_dir, chap_stem, chapter_num)
@@ -408,7 +414,11 @@ class PipelineOrchestrator:
         logger.info(f"[*] Stage 11 Mix Judge: {judge_status} (Score: {judge_score})")
         if judge_status == "FAIL":
             judge_audit = stem_ledger.metadata.get("mix_judge_audit", {})
-            logger.warning(f"[!] Stage 11 Mix Judge Flagged Issues: {judge_audit.get('failures', [])}")
+            msg = f"Stage 11 Mix Judge Flagged Issues for Chapter {chapter_num:02d}: {judge_audit.get('failures', [])}"
+            logger.warning(f"[!] {msg}")
+            if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
+                from audiobook_factory.gates.contracts import GateAuditError
+                raise GateAuditError(f"Chapter {chapter_num:02d} failed Stage 11 Mix Judge: {judge_audit.get('failures', [])}")
 
         mastering_status = stem_ledger.metadata.get("mastering_status", "UNKNOWN")
         logger.info(f"[*] Stage 12 Mastering V2: {mastering_status}")
@@ -449,6 +459,9 @@ class PipelineOrchestrator:
             vocal_wav=vocal_wav,
             mx_stem=mx_stem,
         )
+        if not gate5_certified and os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
+            from audiobook_factory.gates.contracts import GateAuditError
+            raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5 Broadcast Master EBU R128 certification.")
 
         # 6. Build Millisecond Timeline Ledger (Canonical in scripts_dir, mirrored to bgm_dir)
         ledger_file = scripts_dir / f"{chap_stem}_timeline_ledger.json"

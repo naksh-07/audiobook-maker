@@ -35,17 +35,16 @@ class TokenBucketRateLimiter:
 
         with self.lock:
             now = time.monotonic()
-            elapsed = now - self.last_update
+            elapsed = max(0.0, now - self.last_update)
             self.tokens = min(self.capacity, self.tokens + elapsed * self.rate_per_sec)
 
             if self.tokens < 1.0:
                 wait_time = (1.0 - self.tokens) / self.rate_per_sec
                 self.tokens = 0.0
-                self.last_update = now + wait_time
             else:
                 self.tokens -= 1.0
-                self.last_update = now
                 wait_time = 0.0
+            self.last_update = now
 
         # Organic anti-bot jitter: random delay between 350ms and 850ms
         jitter = random.uniform(0.35, 0.85)

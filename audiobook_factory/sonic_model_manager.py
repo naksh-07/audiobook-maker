@@ -164,6 +164,14 @@ class SonicModelManager:
 
     def _detect_device(self) -> None:
         """Detect best hardware accelerator (CUDA with fallback to CPU)."""
+        force_cpu = (
+            os.environ.get("SONIC_FORCE_CPU", "").lower() in ("1", "true", "yes")
+            or os.environ.get("UNIT_TEST_MODE", "").lower() in ("1", "true", "yes")
+        )
+        if force_cpu:
+            self._device = "cpu"
+            logger.info("SonicModelManager: Using CPU (test mode / SONIC_FORCE_CPU)")
+            return
         try:
             import torch
             if torch.cuda.is_available():

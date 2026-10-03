@@ -41,6 +41,24 @@ def get_ffmpeg() -> str:
     return "ffmpeg"
 
 
+def get_ffprobe() -> str:
+    """Resolve FFprobe binary path safely across Windows and Linux."""
+    probe_bin = shutil.which("ffprobe")
+    if probe_bin:
+        return probe_bin
+
+    # Windows standard paths
+    fallbacks = [
+        Path("C:/ffmpeg/bin/ffprobe.exe"),
+        Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft/WinGet/Links/ffprobe.exe",
+        Path(os.environ.get("ProgramFiles", "")) / "ffmpeg/bin/ffprobe.exe",
+    ]
+    for fb in fallbacks:
+        if fb.exists():
+            return str(fb)
+    return "ffprobe"
+
+
 def get_gemini_api_key() -> str:
     """Acquires the next eligible active API key from the persistent SQLite quota pool."""
     pool = get_persistent_key_pool()

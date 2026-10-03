@@ -319,13 +319,14 @@ class TestOrchestratorCinemaCutover(unittest.TestCase):
         """Verify produce_chapter generates stems, stem ledger, and preserves dialogue WAV."""
         orchestrator = PipelineOrchestrator(self.tmp_dir)
 
-        with patch("audiobook_factory.orchestrator.TTSDispatcher.synthesize_chapter_script"):
-            with patch("audiobook_factory.orchestrator.get_sound_bank", return_value=self.bank):
-                with patch("audiobook_factory.agent_director.get_sound_bank", return_value=self.bank):
-                    res = orchestrator.produce_chapter(
-                        project_dir=self.project_dir,
-                        chapter_num=1,
-                    )
+        with patch.dict(os.environ, {"AUDIOBOOK_PURGE_CHUNKS": "true"}):
+            with patch("audiobook_factory.orchestrator.TTSDispatcher.synthesize_chapter_script"):
+                with patch("audiobook_factory.orchestrator.get_sound_bank", return_value=self.bank):
+                    with patch("audiobook_factory.agent_director.get_sound_bank", return_value=self.bank):
+                        res = orchestrator.produce_chapter(
+                            project_dir=self.project_dir,
+                            chapter_num=1,
+                        )
 
         # Master deliverable (.m4a)
         master_m4a = res["master_file"]

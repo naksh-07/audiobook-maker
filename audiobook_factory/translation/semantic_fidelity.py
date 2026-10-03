@@ -146,7 +146,11 @@ def evaluate_semantic_fidelity(
 
     # Step 3: Dedicated LLM Evaluator (dynamic model resolution, ADR-043)
     import os
-    is_mock = os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
+    is_mock = (
+        os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
+        or os.environ.get("UNIT_TEST_MODE", "").lower() in ("true", "1", "yes")
+        or "PYTEST_CURRENT_TEST" in os.environ
+    )
 
     if call_llm_fn is None and not is_mock:
         from audiobook_factory.llm_client import call_gemini

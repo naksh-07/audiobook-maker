@@ -14,6 +14,7 @@ Gracefully degrades when individual generators (CLAP, FTS, Classifier) are unava
 
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union

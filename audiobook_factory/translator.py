@@ -50,9 +50,13 @@ def call_gemini(
     json_mode: bool = False,
     response_schema: Optional[Dict[str, Any]] = None,
     max_retries: int = 4,
+    thinking_budget: Optional[int] = None,
 ) -> str:
     """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback.
     Delegates to centralized audiobook_factory.llm_client.
+    Temperature is intentionally NOT specified here — llm_client resolves it adaptively
+    per TaskType.TRANSLATION (currently 0.85 for literary expressive range).
+    max_output_tokens=16384 to accommodate Devanagari output (~1.4x English token expansion).
     """
     mime = "application/json" if json_mode else "text/plain"
     res = core_call_gemini(
@@ -60,13 +64,14 @@ def call_gemini(
         system_instruction=system_instruction if system_instruction else None,
         task_type=TaskType.TRANSLATION,
         response_mime_type=mime,
-        temperature=0.7,
-        max_output_tokens=8192,
+        # temperature intentionally omitted — llm_client uses task-adaptive 0.85
+        max_output_tokens=16384,
         max_retries=max_retries,
         model=model,
         response_schema=response_schema,
         timeout_sec=90.0,
         return_raw_text=True,
+        thinking_budget=thinking_budget,
     )
     if isinstance(res, str):
         return res
@@ -296,30 +301,29 @@ def _translate_single_block(
     elif is_dialogue:
         specialized_scene_directives = (
             "\n>>> ACTIVE SCENE MODE: HIGH-STAKES DIALOGUE & SOCIAL DYNAMICS\n"
-            "- Translate medieval insults and curses into authentic, earthy Hindustani equivalents ('गांड', 'चूतड़', 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने', 'रंडी की औलाद').\n"
+            "- Translate raw insults and curses into authentic, earthy Hindustani equivalents ('गांड', 'चूतड़', 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने').\n"
             "- 19-TO-21 AMPLIFICATION: When source contains raw vulgarity or curses, do not reduce it to 15. Amplify from 19 to 21 without flinching.\n"
-            "- TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant thugs start with dismissive 'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
-            "- DESI MUHAVARE & IDIOMS: Transpose English idioms into organic UP/Bihar/Chambal street idioms.\n"
+            "- TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant characters start with dismissive 'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
+            "- NATURAL DIALOGUE & IDIOMS: Transpose source idioms into organic dramatic Hindustani idioms fitting the narrative world and characters.\n"
         )
     else:
         specialized_scene_directives = (
             "\n>>> ACTIVE SCENE MODE: ATMOSPHERIC LORE & WORLDBUILDING\n"
-            "- Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio.\n"
-            "- URDU KA TARKA ('Aate me Namak'): Infuse a calibrated 10-15% of atmospheric, noir, and sensual Urdu ('जिस्म', 'हवस', 'क़यामत', 'वहशी', 'रूह', 'सन्नाटा', 'ख़ंजर', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक') to give dark-fantasy existential weight.\n"
+            "- Maintain authentic literary voice and atmospheric sensory depth.\n"
+            "- CONTEXTUAL HINDUSTANI ('Aate me Namak'): Infuse contextual, evocative Urdu vocabulary ('रूह', 'सन्नाटा', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक', 'सुकून') where scene mood and world atmosphere justify it, without forcing an artificial quota.\n"
         )
 
     if adult_mode:
         advisory_guidance = get_advisory_db().get_formatted_prompt_guidelines()
         system_prompt = (
-            "You are a master literary translator and audio drama director adapting mature, grimdark fantasy "
-            "and adult literature (in the unapologetic tradition of Andrzej Sapkowski, George R.R. Martin, Anurag Kashyap, and Saadat Hasan Manto) "
+            "You are a master literary translator and audio drama director adapting mature adult literature "
+            "(in the cinematic tradition of Anurag Kashyap and Saadat Hasan Manto) "
             "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
             "Strict Translation Invariants:\n"
             "1. LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat, "
-            "dark tavern banter, gritty curses, or mature sensual/erotic intimacy. The source material is gritty adult literature, "
-            "not a sanitized children's broadcast. Bowdlerization destroys dramatic truth.\n"
+            "gritty dialogue, or mature intimacy present in the source text. Faithfully represent the author's authentic dramatic truth.\n"
             "2. THE 70/30 ANTI-PARODY INVARIANT: Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio. "
-            "Never replace European dark-fantasy lore, proper nouns, monster classifications, or geographic names with Indian mythology or tapori spoofs.\n"
+            "Never replace the book's universe, lore, proper nouns, or geographic names with arbitrary mythology or tapori spoofs.\n"
             "3. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
             "subtext, humor, and emotional depth for professional voice actors. Use flowing, cinematic Hindustani.\n"
             "4. ADHERE TO GLOSSARY & ZERO CHATTER: Strictly adhere to the provided Character Glossary for proper noun spellings. "
@@ -341,6 +345,19 @@ def _translate_single_block(
         )
 
     glossary_str = json.dumps(glossary, ensure_ascii=False, indent=2)
+
+    # --- Dramatic Fiction Framing (Phase 2 Fix) ---
+    # get_dramatic_fiction_framing() was defined but NEVER injected into prompts.
+    # Injecting it here protects combat/gore/somatic scenes from Gemini content moderation false-positives.
+    from audiobook_factory.safety import get_dramatic_fiction_framing
+    _book_title = None
+    _book_author = None
+    if isinstance(glossary, dict):
+        _meta = glossary.get("book_metadata") or {}
+        _book_title = _meta.get("title") or glossary.get("title")
+        _book_author = _meta.get("author") or glossary.get("author")
+    fiction_framing = get_dramatic_fiction_framing(title=_book_title, author=_book_author)
+    system_prompt = fiction_framing + system_prompt
 
     prompt = f"""### PERSISTENT TRANSLATION GLOSSARY:
 {glossary_str}

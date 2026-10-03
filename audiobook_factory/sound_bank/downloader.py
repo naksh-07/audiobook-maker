@@ -14,7 +14,7 @@ import urllib.request
 import urllib.error
 import uuid
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from audiobook_factory.logger import logger
 

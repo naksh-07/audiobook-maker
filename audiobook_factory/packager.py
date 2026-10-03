@@ -26,7 +26,8 @@ from audiobook_factory.gate_auditor import (
 
 def get_audio_duration_ms(file_path: Path) -> int:
     """Get exact duration of an audio file in milliseconds via ffprobe."""
-    ffprobe = shutil.which("ffprobe") or "/usr/bin/ffprobe"
+    from audiobook_factory.tts.constants import get_ffprobe
+    ffprobe = get_ffprobe()
     cmd = [
         ffprobe,
         "-v", "error",
@@ -45,7 +46,8 @@ def get_audio_duration_ms(file_path: Path) -> int:
 
 def probe_audio_stream(file_path: Path) -> Dict[str, Any]:
     """Get audio stream parameters (codec, sample_rate, channels, duration_ms) via ffprobe."""
-    ffprobe = shutil.which("ffprobe") or "/usr/bin/ffprobe"
+    from audiobook_factory.tts.constants import get_ffprobe
+    ffprobe = get_ffprobe()
     cmd = [
         ffprobe,
         "-v", "error",
@@ -167,7 +169,8 @@ def package_m4b_audiobook(
         output_filename = f"{safe_name}.m4b"
 
     final_m4b = output_dir / output_filename
-    ffmpeg = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
+    from audiobook_factory.tts.constants import get_ffmpeg
+    ffmpeg = get_ffmpeg()
 
     # Robust per-chapter resolution: for each chapter, prefer cinematic if available, else mastered
     all_audio = list(mastered_dir.glob("*.m4a")) + list(mastered_dir.glob("*.mp3")) + list(mastered_dir.glob("*.wav"))
@@ -180,14 +183,20 @@ def package_m4b_audiobook(
     chapter_audio_files = []
     if chap_nums:
         for c_num in sorted(chap_nums):
+            # Find all audio files belonging strictly to this exact chapter number
+            def _belongs_to_chapter(path: Path) -> bool:
+                m = re.search(r"chapter[_-]?(\d+)", path.name, re.IGNORECASE)
+                return m is not None and int(m.group(1)) == c_num
+
+            ch_files = [f for f in all_audio if _belongs_to_chapter(f)]
             # 1. Prefer cinematic
-            candidates = sorted(mastered_dir.glob(f"*chapter_{c_num:03d}*_cinematic.*")) or sorted(mastered_dir.glob(f"*chapter_{c_num}*_cinematic.*"))
+            candidates = sorted([f for f in ch_files if "_cinematic." in f.name.lower()])
             if not candidates:
                 # 2. Fall back to mastered
-                candidates = sorted(mastered_dir.glob(f"*chapter_{c_num:03d}*_mastered.*")) or sorted(mastered_dir.glob(f"*chapter_{c_num}*_mastered.*"))
+                candidates = sorted([f for f in ch_files if "_mastered." in f.name.lower()])
             if not candidates:
                 # 3. Fall back to any file with chapter number
-                candidates = sorted(mastered_dir.glob(f"*chapter_{c_num:03d}.*")) or sorted(mastered_dir.glob(f"*chapter_{c_num}.*"))
+                candidates = sorted(ch_files)
             if candidates:
                 for cand in candidates:
                     if cand.exists() and cand.stat().st_size > 1000 and get_audio_duration_ms(cand) > 0:

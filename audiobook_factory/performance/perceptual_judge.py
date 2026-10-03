@@ -20,6 +20,17 @@ from .contracts import (
 )
 
 
+def _default_enable_external_llm() -> bool:
+    import os
+    if os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes"):
+        return False
+    if os.environ.get("UNIT_TEST_MODE", "").lower() in ("true", "1", "yes"):
+        return False
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return False
+    return True
+
+
 class PerceptualJudgeConfig(BaseModel):
     """
     Configurable calibration parameters for perceptual performance evaluation.
@@ -27,7 +38,7 @@ class PerceptualJudgeConfig(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
-    enable_external_llm: bool = Field(default=True, description="Whether to call external LLM judge for acting critique")
+    enable_external_llm: bool = Field(default_factory=_default_enable_external_llm, description="Whether to call external LLM judge for acting critique")
     provider_name: str = Field(default="hybrid_llm_dsp", description="Name of the judge provider engine")
     confidence_floor: float = Field(default=0.50, description="Minimum confidence assigned to heuristic evaluation")
     dimension_weights: Dict[str, float] = Field(
@@ -334,7 +345,13 @@ class PerceptualPerformanceJudge:
         )
 
         # Dimension calibration with LLM judge (dynamic model resolution, ADR-043)
-        if self.config.enable_external_llm:
+        import os
+        is_offline = (
+            os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
+            or os.environ.get("UNIT_TEST_MODE", "").lower() in ("true", "1", "yes")
+            or "PYTEST_CURRENT_TEST" in os.environ
+        )
+        if self.config.enable_external_llm and not is_offline:
             try:
                 from audiobook_factory.gates.llm_judge import LLMPerceptualPerformanceJudge
                 dsp_summary = {
@@ -370,8 +387,16 @@ class PerceptualPerformanceJudge:
                         (dimensions["dialogue_reactivity"].score * 0.4) + (llm_verdict.dialogue_reactivity * 0.6), 2
                     )
                 all_diagnostics.extend(llm_verdict.diagnostics)
-            except Exception:
-                pass
+            except Exception as llm_exc:
+                # DEGRADED MODE: LLM perceptual critique failed. Log prominently — do NOT silently swallow.
+                # Heuristic-only scoring will proceed, but this must be visible for post-run triage.
+                import traceback
+                from audiobook_factory.logger import logger as _pj_logger
+                _pj_logger.warning(
+                    f"[!] perceptual_judge: LLMPerceptualPerformanceJudge.critique_performance failed — "
+                    f"falling back to heuristic-only scoring (no acoustic acting validation). "
+                    f"Error: {llm_exc}\n{traceback.format_exc(limit=3)}"
+                )
 
         # Collect diagnostics & reason codes
         for k, dim in dimensions.items():

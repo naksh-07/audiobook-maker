@@ -31,7 +31,7 @@ FRANCHISE_SIGNATURES: Dict[str, Dict[str, Any]] = {
     "the_witcher": {
         "authors": ["andrzej sapkowski", "sapkowski"],
         "titles": ["sword of destiny", "the last wish", "blood of elves", "time of contempt", "baptism of fire", "tower of the swallow", "lady of the lake", "season of storms"],
-        "keywords": ["geralt", "rivia", "yennefer", "ciri", "witcher", "zerrikanian", "dandelion", "jaskier", "kaer morhen", "novigrad", "skellige", "temeria", "redania", "nilfgaard", "basilisk"],
+        "keywords": ["rivia", "vengerberg", "cintra", "witcher", "zerrikanian", "oxenfurt", "jaskier", "kaer morhen", "novigrad", "skellige", "temeria", "redania", "nilfgaard", "basilisk", "aelirenn"],
         "era": "MEDIEVAL_FANTASY",
         "genre": "fantasy",
         "primary_acoustic_env": "stone_ruins_exterior",

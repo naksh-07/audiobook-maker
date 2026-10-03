@@ -49,10 +49,14 @@ class SearchMixin:
         params = []
 
         fts_match = False
+        fts_clause_idx = -1
+        fts_param_idx = -1
         if meaningful_words:
             fts_query_and = " AND ".join(f'"{w}"*' for w in meaningful_words)
             where_clauses.append("c.id IN (SELECT rowid FROM sound_catalog_fts WHERE sound_catalog_fts MATCH ?)")
+            fts_clause_idx = len(where_clauses) - 1
             params.append(fts_query_and)
+            fts_param_idx = len(params) - 1
             fts_match = True
 
         if category:
@@ -134,10 +138,10 @@ class SearchMixin:
             candidates = [dict(row) for row in cur.fetchall()]
 
         # If strict AND FTS yielded nothing, try broad recall fallback
-        if not candidates and fts_match and len(meaningful_words) > 1:
+        if not candidates and fts_match and len(meaningful_words) > 1 and fts_clause_idx >= 0 and fts_param_idx >= 0:
             fts_query_or = " OR ".join(f"{w}*" for w in meaningful_words)
-            where_clauses[0] = "c.id IN (SELECT rowid FROM sound_catalog_fts WHERE sound_catalog_fts MATCH ?)"
-            params[0] = fts_query_or
+            where_clauses[fts_clause_idx] = "c.id IN (SELECT rowid FROM sound_catalog_fts WHERE sound_catalog_fts MATCH ?)"
+            params[fts_param_idx] = fts_query_or
             sql_fallback = """
                 SELECT c.*,
                        a.integrated_lufs as dsp_lufs,
@@ -241,11 +245,11 @@ class SearchMixin:
             if category:
                 cat_norm = category.upper()
                 if cat_norm in ("FOLEY", "FOL"):
-                    sql += " AND c.category IN ('FOL', 'SFX') AND (c.duration_sec IS NULL OR c.duration_sec <= 4.5)"
-                    sql += " AND c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'"
+                    sql += " AND c.category IN ('FOL', 'SFX') AND (c.duration_sec IS NULL OR c.duration_sec <= 15.0)"
+                    sql += " AND (c.filepath IS NULL OR (c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'))"
                 elif cat_norm == "SFX":
-                    sql += " AND c.category IN ('SFX', 'FOL') AND (c.duration_sec IS NULL OR c.duration_sec <= 6.0)"
-                    sql += " AND c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'"
+                    sql += " AND c.category IN ('SFX', 'FOL') AND (c.duration_sec IS NULL OR c.duration_sec <= 15.0)"
+                    sql += " AND (c.filepath IS NULL OR (c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'))"
                 elif cat_norm in ("MUSIC", "MUS"):
                     sql += " AND c.category IN ('MUS', 'LEITMOTIF', 'CHAPTER_BED', 'DYNAMIC_STEM')"
                 elif cat_norm in ("AMBIENCE", "AMB"):
@@ -285,8 +289,7 @@ class SearchMixin:
             banned.update({
                 "car", "automobile", "engine", "traffic", "gunshot", "phone", "telephone",
                 "siren", "computer", "subway", "train", "airplane", "helicopter",
-                "grader", "shambling", "studded boots", "troops", "soldiers shambling",
-                "santiago", "chile", "refrigerator", "office"
+                "refrigerator", "office"
             })
 
         if banned:
@@ -295,7 +298,8 @@ class SearchMixin:
                 fname = (r.get("filename") or "").lower()
                 ftags = (r.get("tags") or "").lower()
                 fpath = (r.get("filepath") or "").lower()
-                if not any(b in fname or b in ftags or b in fpath for b in banned):
+                clean_target = re.sub(r"[_\-\.\/\\]+", " ", f"{fname} {ftags} {fpath}")
+                if not any(re.search(rf"\b{re.escape(b)}\b", clean_target) for b in banned):
                     filtered.append(r)
             results = filtered[:limit]
 

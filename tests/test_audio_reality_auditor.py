@@ -123,8 +123,8 @@ def test_era_negative_keyword_rejection():
     manifest = CreativeManifest(
         chapter_id="chap_test_04",
         foley_cues=[
-            FoleyCue(cue_id="fc_modern_01", segment_index=1, anchor_word="कदम", asset_path="sfx/07018159_soldiers_shambling_on_gravel.mp3", start_ms=2000, duration_ms=2500),
-            FoleyCue(cue_id="fc_modern_02", segment_index=2, anchor_word="पत्थर", asset_path="sfx/stone_grader_machine.wav", start_ms=10000, duration_ms=3000),
+            FoleyCue(cue_id="fc_modern_01", segment_index=1, anchor_word="गाड़ी", asset_path="sfx/diesel_car_engine.mp3", start_ms=2000, duration_ms=2500),
+            FoleyCue(cue_id="fc_modern_02", segment_index=2, anchor_word="फोन", asset_path="sfx/office_phone_ring.wav", start_ms=10000, duration_ms=3000),
             FoleyCue(cue_id="fc_valid_01", segment_index=3, anchor_word="कवच", asset_path="sfx/leather_armor_movement.wav", start_ms=15000, duration_ms=1200),
         ],
         ambience_scenes=[],

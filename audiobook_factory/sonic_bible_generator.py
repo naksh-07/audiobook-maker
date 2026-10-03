@@ -178,10 +178,10 @@ class SonicBibleGenerator:
                     associated_entity=c_name_clean,
                     track_id=str(t_id),
                     track_name=t_name,
-                    primary_instrument="solo cello / slavic folk" if classification.era == "MEDIEVAL_FANTASY" else "dark strings / orchestra",
+                    primary_instrument="period acoustic instruments / strings" if classification.era == "MEDIEVAL_FANTASY" else "cinematic strings / orchestra",
                     canonical_tempo_bpm=85,
                     dramatic_intent=f"Thematic leitmotif for {c_name_clean} in {classification.dramatic_theme}",
-                    priority_level=8 if "geralt" in slug or "protagonist" in slug else 5,
+                    priority_level=8 if any(k in slug for k in ("protagonist", "lead", "hero", "main")) else 5,
                     default_section_start_sec=0.0,
                 )
                 sonic_bible.register_leitmotif(motif)

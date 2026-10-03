@@ -57,6 +57,15 @@ class MusicCue(BaseModel):
         """Alias for track_name to maintain uniform cue interface across Ambience, Foley, and Music."""
         return self.track_name
 
+    @model_validator(mode="after")
+    def clamp_fade_envelope(self) -> MusicCue:
+        total_fade = (self.fade_in_ms or 0) + (self.fade_out_ms or 0)
+        if self.duration_ms > 0 and total_fade > self.duration_ms:
+            ratio = (self.duration_ms * 0.95) / max(1, total_fade)
+            self.fade_in_ms = int(self.fade_in_ms * ratio)
+            self.fade_out_ms = int(self.fade_out_ms * ratio)
+        return self
+
     def validate_timeline(self) -> None:
         """Structural validation method for timeline consistency."""
         if self.start_ms < 0:

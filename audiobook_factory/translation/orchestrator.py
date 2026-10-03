@@ -9,6 +9,7 @@ Tiered Self-Healing Repair -> Certified Hindi Novel Artifact.
 
 from __future__ import annotations
 import os
+import re
 import json
 import time
 import hashlib
@@ -523,9 +524,14 @@ class IntelligentTranslationPipeline:
                     raise RuntimeError(
                         f"Scene {scene.scene_id} certification BLOCKED: {audit_result.summary}"
                     )
+                elif audit_result.overall_status == "REVIEW_REQUIRED" and not force_gate:
+                    raise RuntimeError(
+                        f"Scene {scene.scene_id} certification failed with REVIEW_REQUIRED: {audit_result.summary}. "
+                        "Uncertified translation cannot proceed to TTS synthesis without explicit force_gate."
+                    )
                 elif audit_result.overall_status == "REVIEW_REQUIRED":
                     print(
-                        f"    [!] REVIEW_REQUIRED: Proceeding with best repaired translation. "
+                        f"    [!] REVIEW_REQUIRED (FORCED): Proceeding with best repaired translation. "
                         f"Details saved to {scene_dir / 'certification.json'}."
                     )
 
@@ -596,6 +602,13 @@ class IntelligentTranslationPipeline:
         with open(tmp_top_md, "w", encoding="utf-8") as f:
             f.write(full_chapter_hindi + "\n")
         os.replace(tmp_top_md, top_level_md_path)
+
+        # Synchronize titled markdown file (e.g. prologue_hi.md) if custom title provided
+        clean_title = re.sub(r"[^\w\-]+", "_", chapter_title).strip("_")
+        if clean_title and clean_title.lower() != f"chapter_{chapter_num:03d}":
+            title_md_path = trans_dir / f"{clean_title}_hi.md"
+            with open(title_md_path, "w", encoding="utf-8") as f:
+                f.write(full_chapter_hindi + "\n")
 
         print(f"[+] Chapter {chapter_num} fully assembled and saved -> {top_level_md_path}")
         return full_chapter_hindi, scene_audit_results

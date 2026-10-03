@@ -8,7 +8,7 @@ voice concurrency limiting (priority stealing), and formant spectral pocketing.
 from __future__ import annotations
 import re
 import logging
-from typing import Dict, Any, List, Optional, Literal, Union
+from typing import Dict, Any, List, Optional, Literal, Union, Tuple
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -150,6 +150,15 @@ def filter_concurrency_window(
     if not cues or len(cues) <= max_concurrency:
         return cues
 
+    # Helper to calculate start and end times for any cue object
+    def _cue_interval(c: Any) -> Tuple[int, int]:
+        start = int(getattr(c, "start_ms", 0) or 0)
+        dur = getattr(c, "duration_ms", None)
+        if dur is None:
+            dur_sec = getattr(c, "duration_sec", None)
+            dur = int(dur_sec * 1000) if dur_sec is not None else window_ms
+        return start, start + max(int(dur), window_ms)
+
     # Sort primarily by timeline start_ms, secondarily by gain/priority
     def _cue_priority(cue: Any) -> float:
         gain = getattr(cue, "gain_dbfs", -15.0)
@@ -160,12 +169,14 @@ def filter_concurrency_window(
     accepted_cues: List[Any] = []
 
     for cue in sorted_cues:
-        c_start = getattr(cue, "start_ms", 0) or 0
-        # Count overlapping cues in sliding window [c_start - window_ms, c_start + window_ms]
-        window_cues = [
-            ac for ac in accepted_cues
-            if abs((getattr(ac, "start_ms", 0) or 0) - c_start) < window_ms
-        ]
+        c_start, c_end = _cue_interval(cue)
+
+        def _overlaps(ac: Any) -> bool:
+            ac_start, ac_end = _cue_interval(ac)
+            # Overlap if intervals intersect, or if triggers are within window_ms proximity
+            return (max(c_start, ac_start) < min(c_end, ac_end)) or (abs(ac_start - c_start) < window_ms)
+
+        window_cues = [ac for ac in accepted_cues if _overlaps(ac)]
 
         if len(window_cues) < max_concurrency:
             accepted_cues.append(cue)

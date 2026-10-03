@@ -117,10 +117,11 @@ def audit_gate6a_voice_continuity(
         except Exception as e:
             logger.debug(f"Could not parse script {sf.name}: {e}")
 
-    multi_chapter_characters = {char: chaps for char, chaps in speaker_chapter_map.items() if len(chaps) > 1}
-    for char, chaps in multi_chapter_characters.items():
+    for char, chaps in speaker_chapter_map.items():
         if char not in canonical_voices:
-            errors.append(f"Character '{char}' speaks across multiple chapters {sorted(list(chaps))} but has no canonical voice assignment.")
+            errors.append(
+                f"Character '{char}' speaks in chapter(s) {sorted(list(chaps))} but has no canonical voice assignment in voice_registry.json."
+            )
         else:
             voice_assignments = character_observed_voices.get(char, {})
             if len(voice_assignments) > 1:
@@ -128,7 +129,9 @@ def audit_gate6a_voice_continuity(
                     f"Voice collision for '{char}': assigned conflicting voices {dict(voice_assignments)} across chapters."
                 )
 
+    multi_chapter_characters = {char: chaps for char, chaps in speaker_chapter_map.items() if len(chaps) > 1}
     details["canonical_voices_count"] = len(canonical_voices)
+    details["all_characters_audited"] = list(speaker_chapter_map.keys())
     details["multi_chapter_characters"] = list(multi_chapter_characters.keys())
     details["total_scripts_audited"] = len(script_files)
 
@@ -187,23 +190,15 @@ def audit_gate6b_loudness_continuity(
         try:
             proc = _get_subprocess().run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
             if proc.returncode != 0:
-                if strict:
-                    errors.append(f"Chapter {c_path.name}: FFmpeg probe returned exit code {proc.returncode}.")
-                    continue
-                else:
-                    m_lufs = target_lufs
-                    m_tp = -1.5
+                errors.append(f"Chapter {c_path.name}: FFmpeg probe returned exit code {proc.returncode}: {proc.stderr[:160]}")
+                continue
             else:
                 output = proc.stderr
                 i_match = re.search(r"Integrated loudness:\s+I:\s+([-\d.]+)\s+LUFS", output)
                 tp_match = re.search(r"True peak:\s+Peak:\s+([-\d.]+)(?:\s+([-\d.]+))?", output) or re.search(r"Peak:\s+([-\d.]+)\s+dBFS", output)
                 if not i_match:
-                    if strict:
-                        errors.append(f"Chapter {c_path.name}: Failed to parse Integrated Loudness from FFmpeg output.")
-                        continue
-                    else:
-                        m_lufs = target_lufs
-                        m_tp = -1.5
+                    errors.append(f"Chapter {c_path.name}: Failed to parse Integrated Loudness from FFmpeg output.")
+                    continue
                 else:
                     m_lufs = float(i_match.group(1))
                     if tp_match:
@@ -212,12 +207,8 @@ def audit_gate6b_loudness_continuity(
                     else:
                         m_tp = -1.5
         except Exception as e:
-            if strict:
-                errors.append(f"Chapter {c_path.name}: FFmpeg loudness probe failed: {e}")
-                continue
-            else:
-                m_lufs = target_lufs
-                m_tp = -1.5
+            errors.append(f"Chapter {c_path.name}: FFmpeg loudness probe failed: {e}")
+            continue
 
         measured_lufs_list.append(m_lufs)
         deviation = abs(m_lufs - target_lufs)
@@ -246,6 +237,8 @@ def audit_gate6b_loudness_continuity(
     }
 
     passed = len(errors) == 0
+    if strict and not passed:
+        raise GateAuditError(f"Gate 6B Loudness Continuity FAILED: {'; '.join(errors)}")
     return AuditResult(
         gate="Gate 6B (Loudness Continuity)",
         status="PASS" if passed else "FAIL",
@@ -350,6 +343,7 @@ def audit_gate6c_toc_monotonicity(
 def audit_gate6d_packaging_specs(
     cover_image: Optional[Path],
     specs: Optional[BookPackagingSpecs] = None,
+    strict: bool = False,
 ) -> AuditResult:
     """
     Gate 6D: Packaging & Container Specifications Auditor.
@@ -377,6 +371,7 @@ def audit_gate6d_packaging_specs(
             errors.append(f"Cover image specified but file not found: {c_path}")
         elif c_path.stat().st_size == 0:
             errors.append(f"Cover image file is empty: {c_path}")
+        else:
             ext = c_path.suffix.lower()
             if ext not in (".jpg", ".jpeg", ".png"):
                 errors.append(f"Invalid cover art format '{ext}'. Must be .jpg, .jpeg, or .png")
@@ -391,8 +386,8 @@ def audit_gate6d_packaging_specs(
                         min_res = getattr(specs_to_check, "min_cover_resolution", 1400) or 1400
                         if w < min_res or h < min_res:
                             errors.append(f"Cover art resolution {w}x{h} below minimum threshold {min_res}x{min_res}")
-                except Exception:
-                    pass
+                except Exception as e:
+                    errors.append(f"Failed to inspect cover art image: {e}")
 
     details["codec"] = specs_to_check.codec
     details["bitrate"] = specs_to_check.bitrate
@@ -401,6 +396,8 @@ def audit_gate6d_packaging_specs(
     details["cover_image_present"] = cover_image is not None
 
     passed = len(errors) == 0
+    if strict and not passed:
+        raise GateAuditError(f"Gate 6D Packaging Specs FAILED: {'; '.join(errors)}")
     return AuditResult(
         gate="Gate 6D (Packaging Specs)",
         status="PASS" if passed else "FAIL",

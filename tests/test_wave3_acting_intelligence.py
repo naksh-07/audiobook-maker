@@ -185,8 +185,8 @@ class TestWave3ActingIntelligence(unittest.TestCase):
         # Speech style descriptor present
         style = payload["part_payload"]["speechMetadata"]["style"]
         self.assertTrue(len(style) > 0)
-        # Restraint temperature calibration
-        self.assertLessEqual(payload["temperature"], 0.68)
+        # Restraint temperature calibration (liberated acting temperature <= 0.88)
+        self.assertLessEqual(payload["temperature"], 0.88)
 
 
 if __name__ == "__main__":

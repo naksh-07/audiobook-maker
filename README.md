@@ -8,7 +8,7 @@
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%203.8%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-Universal%20Director%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-1%2C130%2B%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-1%2C180%2B%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![LLM Creative Gates](https://img.shields.io/badge/Creative%20Gates-Fail--Closed%20LLM%20Judges%20(A%2B)-brightgreen.svg)](docs/QUALITY_GATES.md)
 [![Audio Reality](https://img.shields.io/badge/Audio%20Reality-Pre--Mix%20Audited-purple.svg)](docs/QUALITY_GATES.md#gate-38-audio-reality-pre-mix-gate)
 [![Telemetry](https://img.shields.io/badge/Telemetry-SQLite%20WAL%20Ledger-blue.svg)](docs/API_REFERENCE.md#production-telemetry-ledger)
@@ -44,7 +44,7 @@ flowchart TD
         Translator --> LLMTransJudge["Gate 0 / T2: LLM Translation Judge (Fail-Closed)<br/>(Sense-for-Sense Fidelity + Cadence + Action Parity)"]
         LLMTransJudge --> CharacterCaster["Autonomous Character Caster (ADR-044)<br/>(Voice Persona Allocation + cast_lock.json)"]
         CharacterCaster --> Gate1AntiCensor["Gate 1A: 3-Agent Adversarial Anti-Censorship<br/>(Profanity + Combat Gore + Somatic Passion)"]
-        Gate1AntiCensor --> Dramaturgy["Stage 3: Dramaturgy & Screenplay Engine<br/>(SceneAnalyzer + BeatPlanner + ~350w Micro-Chunking)"]
+        Gate1AntiCensor --> Dramaturgy["Stage 3: Dramaturgy & Screenplay Engine<br/>(SceneAnalyzer + BeatPlanner + 500w Beat-Aligned Chunking)"]
         Dramaturgy --> Gate25LLM["Gate 2.5: LLM Dramatic Critic<br/>(Dramatic Arc Continuity & Anti-Emotional Teleportation)"]
         Gate25LLM --> ScriptBuilder["Sliding-Window Screenplay Script (Pydantic v2)<br/>(Double-Safety Quote Auto-Slicing)"]
         ScriptBuilder --> Gate2LLM["Gate 2: LLM Screenplay Attribution Auditor (Fail-Closed)<br/>(0% Misattribution + Anti-Swallow Dialogue Audit)"]
@@ -107,7 +107,7 @@ The architecture orchestrates an end-to-end multi-stage lifecycle from raw docum
 1. **Stage 1: Forensic Document Ingestion & Canonical AST** ([`docs/FORENSIC_DOCUMENT_INGESTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/FORENSIC_DOCUMENT_INGESTION.md)): Single-pass DOM traversal, layout-aware PDF reading order reconstruction, sacred raw archival, and fail-closed Gate 0.1 extraction audits.
 2. **Stage 2: Literary Translation Intelligence & Memory 2.0 (ADR-045)** ([`docs/LITERARY_TRANSLATION_INTELLIGENCE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md)): Persistent BookBible v2.0, **3 Concurrent Specialist Discovery Agents** (`Character Lexicographer`, `Sociolect Dramaturge`, `World Lore Translator` via `ThreadPoolExecutor`), **Context-Calibrated Scene Prompt Routing** (`COMBAT`, `INTIMATE`, `DIALOGUE`, `LORE`), contextual Hindustani register, 7D calibrated intensity, World & Character Memory 2.0 epistemic continuity, and Gates T0–T15 certification. Audited fail-closed by [`LLMTranslationJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py) and 3-agent adversarial anti-censorship.
 3. **Stage 2.9: Autonomous Character Caster & Voice Lock (ADR-044)** ([`docs/VOICE_CASTING_DIRECTOR_GUIDE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md)): Pre-production book-wide character discovery scanning chapter texts to assign unique, non-colliding Gemini voice models (`Puck`, `Fenrir`, `Charon`, `Kore`, `Aoede`, etc.) into `character_roster.json` and `cast_lock.json`.
-4. **Stage 3: Dramaturgy & Decoupled Two-Pass Screenplay Engine (ADR-045)** ([`docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)): Authentic dramatic comprehension (`SceneAnalyzer` + `BeatPlanner` with canned heuristic templates purged), **~350-word micro-chunking** on beat boundaries, **Two-Pass Decoupled Screenplay Parser** (*Pass 1*: Pure dialogue isolation, character attribution & vocal tags; *Pass 2*: Stanislavski subtext, actioning verbs, dynamic headroom intensity & stereo azimuth panning), deterministic double-safety quote auto-slicing in `clean_screenplay_pass2`, fail-closed **Gate 2 LLM Screenplay Attribution Auditor** ([`LLMScreenplayAuditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py)), and **Gate 2.5 LLM Dramatic Critic** ([`LLMDramaticCritic`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py)).
+4. **Stage 3: Dramaturgy & Decoupled Two-Pass Screenplay Engine (ADR-045 & ADR-050)** ([`docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)): Authentic dramatic comprehension (`SceneAnalyzer` + `BeatPlanner` with canned heuristic templates purged), **500-word beat-aligned chunking** (`SCREENPLAY_CHUNK_WORDS=500`), **Two-Pass Decoupled Screenplay Parser** (*Pass 1*: Pure dialogue isolation, character attribution & vocal tags; *Pass 2*: Stanislavski subtext, actioning verbs, dynamic headroom intensity & stereo azimuth panning), deterministic double-safety quote auto-slicing in `clean_screenplay_pass2`, fail-closed **Gate 2 LLM Screenplay Attribution Auditor** ([`LLMScreenplayAuditor`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py)), and **Gate 2.5 LLM Dramatic Critic** ([`LLMDramaticCritic`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py)).
 5. **Stage 3.5: Specialist Multi-Agent Sound Spotting Engine (ADR-044 & ADR-045)** ([`docs/CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md)): Decoupled acoustic spotting leveraging the 100+ rotating API key pool without prompt bloat. 3 parallel specialist LLM agents (Foley & Prop Spotter, Ambience Bed Designer, Music Scoring Director) synthesize `chapter_XXX_sound_script.json` (Audio Cue Sheet) ingested directly into `CreativeManifest`. Purged all 4-word domestic Foley regex guessing in `AgentDirector`.
 6. **Stage 3.6: Dramatic Performance Realization Layer & Studio Performance QC 2.0 (ADR-032 / ADR-024)** ([`docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md) & [`docs/TTS_GENERATION_ARCHITECTURE.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TTS_GENERATION_ARCHITECTURE.md)): Bridges Stage 3 dramatic beats into moment-level actor performance directions (`PerformanceDirection`), humanized timing and respiration (`TimingRealizer`), provider-neutral synthesis with sacred text immutability (`GeminiTTSPerformanceAdapter`), priority-based multi-take banking (`TakeBank`), **Forced Alignment 2.0** with frame-accurate MMS_FA CTC word token spans and 7 pause classes (`WorkstationForcedAligner`), **Performance Evaluator 2.0** with autocorrelation F0 tracking, crest dynamic range, monotonic pitch-lock detection, and restraint enforcement (`PerformanceEvaluator`), **Hierarchical Evidence Fusion 2.0** with an 8-layer stack and fail-closed technical/alignment/drift layers (`EvidenceFusionEngine`), **Auxiliary Perceptual Judging** ([`LLMPerceptualPerformanceJudge`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/llm_judge.py)), **Take Selection 2.0** with authoritative `NO_ACCEPTABLE_TAKE` decision policies, 6-mode contextual scoring, pairwise judicial deliberation (`PairwiseTakeJudge`), and explainable reason codes (`TakeSelectionResult`), **Whole-Scene Arc Selection** (`select_scene_takes`), conversational chemistry turn coupling (`ConversationalChemistry`), character pace continuity tracking (`PerformanceContinuityTracker`), 18-category golden benchmarks, genuine human calibration ($r, \rho$, FAR, FRR), and fail-closed pre-mix certification via **Gate 2.8: Dramatic Performance Fidelity Gate**.
 7. **Stage 3.8: Pronunciation & Spoken Language QA Subsystem (ADR-022)** ([`docs/PRONUNCIATION_AND_SPOKEN_LANGUAGE_QA.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PRONUNCIATION_AND_SPOKEN_LANGUAGE_QA.md)): Decouples sacred literary prose (`ScreenplaySegment.text` strictly immutable) from phonetically resolved TTS payloads (`ScreenplaySegment.spoken_text`). Deploys the Deterministic 7-Tier Resolver, shields neural acting tags (`[whispers]`), executes post-synthesis acoustic QA with Meta MMS_FA CTC alignment, performs targeted single-take repairs with rhythmic micro-pause anchors and atomic WAV promotion, and enforces project-wide cross-chapter consistency (Gate 6E).
@@ -520,6 +520,51 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - Centralizes `UNIVERSAL_BLOCK_NONE_SAFETY_SETTINGS` configuring `BLOCK_NONE` thresholds across `HARM_CATEGORY_HARASSMENT`, `HARM_CATEGORY_HATE_SPEECH`, `HARM_CATEGORY_SEXUALLY_EXPLICIT`, and `HARM_CATEGORY_DANGEROUS_CONTENT`.
   - Provides `get_dramatic_fiction_framing(title, author)` prefixing explicit dramatic literary context, preventing false-positive content moderation blocks on combat choreography, fantasy violence, rustic Hindi slang, and mature storytelling.
 
+### 30. Universal Engine Hardening, Forensic Remediation & Creative Liberation (ADR-049)
+- **5 P0 Fatal Bugs Fixed**:
+  - `TakeBank` disk cache registration healed (`selection_reason = "cached_on_disk"`): resolves false-positive Gate 2.8 coverage failures on chapter resumes.
+  - Chapter Janitor safety shield inverted: `AUDIOBOOK_RETAIN_CHUNKS=true` by default, retaining uncompressed WAV takes post-certification for zero-cost DSP remastering without burning TTS quotas (`AUDIOBOOK_PURGE_CHUNKS=false`).
+  - Centralized LLM client key leak fixed in `llm_client.py`: rate-limited or quota-exhausted keys are cleanly rotated out before retry, with jittered backoffs and candidate rotation.
+  - Hardened atomic writes with 8 retries and `shutil.copy2` fallback resisting Windows anti-virus/indexer locks.
+  - Fixed markdown `#` header speech corruption in spoken text normalization.
+- **Creative Liberation & Task-Adaptive Calibration**:
+  - Restored dynamic task-calibrated generation temperatures: `0.82` for dramaturgy/scene planning, `0.88` for creative beats, `0.20` for deterministic gate audits.
+  - Expanded `sanitizer.py` neural acting tags whitelist with 21 expressive performance descriptors (`angrily`, `rage`, `cold menace`, `whisper`, `growl`, `snarl`, `crying`, `chuckle`, `deadpan`, `scoff`, `sneer`, `sinisterly`, `wryly`, etc.).
+  - Harmonized `advisory_lexicon.py` preserving rustic tavern curses and colloquial street vitriol (`'बकचोदी'`, `'गांड'`, `'चूतड़'`, `'अंडकोष बधिया करना'`, `'सूअर का पेशाब'`, `'हरामी'`, `'कमीने'`) without puritanical moral policing or TV-serial softening.
+- **Gate Hardening & Dynamic Casting**:
+  - **Stratified Novel Scope Sampling**: 5-tier sampling ($0\%$, $25\%$, $50\%$, $75\%$, $100\%$) in `CharacterCaster` discovers characters introduced late in the book.
+  - **Dynamic Single-Speaker Casting (`CharacterCaster.cast_single_speaker`)**: Discovers and casts minor walk-on characters mid-production with non-colliding Gemini voice models, micro-pitch offsets, and atomic persistence to `voice_registry.json`, `character_roster.json`, and `cast_lock.json`.
+  - Gate 2.8 fail-closed on empty evaluations; fade envelope clipping promoted to fatal errors.
+  - Gate 3 fail-closed when directing artifacts are missing; Stage 11 operates in audited degraded mode with `LLM_SOUND_DESIGN_STRICT` flag.
+- **Archival of 39 Dead & Shadow Modules**: Safely archived legacy `sound_design/` shadow package, legacy `real_audio_*` modules, `krutidev_transcoder.py`, and test scripts to `archive/` with zero data loss.
+- **Master Sound Bank Synthetic Noise Purge**: Permanently purged 5 dummy `anoisesrc` files from disk and `sound_bank.db`. Rebuilt SQLite FTS5 search indexes.
+- **Broadcast Production Milestone**: *Sword of Destiny* Chapter 1 (1.11 min) and Chapter 2 (13.10 min, 785.65s, 71 segments) 100% Broadcast Certified EBU R128 (-19.0 LUFS, TP -1.5 dBTP, Phase $r=0.554$, DMR +32.1 dB). Zero synthetic noise, zero loop fatigue, 100% authentic Witcher 3 Studio Library soundscape.
+
+### 31. Master 5-Phase Controlled Forensic Remediation (ADR-050)
+- **Phase 1: Runtime Integrity & Zero F821 Undefined Names**:
+  - Enhanced [`audiobook_factory/llm_client.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/llm_client.py) with explicit `json_mode` mapping and `**kwargs` support, resolving `TypeError` crashes across translation agents and quality judges.
+  - Eliminated all 22 missing imports (`os`, `sys`, `json`, `wave`, `Set`, `Tuple`, `Any`, `MixAutomation`) across core engines and test suites (`ruff check --select E9,F63,F7,F821` verified with 0 errors).
+- **Phase 2: Quality Gate Hardening & Removal of Placebos**:
+  - Corrected Gate 6D cover art indentation defect ([`audiobook_factory/gates/album.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/album.py)), strictly validating square 1:1 aspect ratio and $\ge 1400\times 1400$ resolution on non-empty files.
+  - Purged Gate 6B fake `-19.0 LUFS` and `-1.5 dBTP` metric forgery on probe failures; gate records true probe diagnostics and fails closed in strict mode.
+  - Replaced Gate 2 unconditional `PASS` placebo ([`audiobook_factory/gates/screenplay.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gates/screenplay.py)) with strict prosody tag coverage validation ($\ge 60.0\%$).
+  - Gate 1 strictly fails closed on `DILUTED` censorship status in [`orchestrator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/orchestrator.py).
+  - Master Mix fails closed upon Stage 11 Mix Judge failure or uncertified Gate 5 broadcast masters.
+- **Phase 3: Creative Liberation & LLM Overload Relief**:
+  - Unlocked multi-speaker batch TTS temperature from a rigid `0.685 - 0.715` clamp to dynamic expressive acting range **`0.90 – 1.10`** in [`gemini.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts/providers/gemini.py).
+  - Broadened performance constraint resolver temperatures to `0.85 – 1.10` (restraint=0.85, exposed=1.10, vulnerable=1.00).
+  - Calibrated screenplay chunking to beat-aligned **500 words** (`SCREENPLAY_CHUNK_WORDS=500`), eliminating dialogue swallowing and token saturation.
+  - Upgraded `CharacterCaster` from 5-chapter/10k-char limits to novel-wide 15-chapter distributed analysis with an 80,000-character prompt window.
+  - Model-aware `thinkingConfig`: automatically strips thinking payloads on non-thinking models (Gemini 1.5) and falls back on HTTP 400.
+  - Expanded `sanitizer.py` with 40+ theatrical cues and `DEVANAGARI_TTS_TAG_MAP` to translate Devanagari cues (`[फुसफुसाते हुए]` $\rightarrow$ `[whispers]`, `[चीखते हुए]` $\rightarrow$ `[screaming]`).
+- **Phase 4: Workstation Resilience & Concurrency Guardrails**:
+  - Wrapped audio promotions in `_atomic_replace()` with 8-attempt exponential backoff retry and `shutil.copy2` fallback, immune to Windows file indexer and antivirus locks (`WinError 32`).
+  - Added cross-platform `get_ffprobe()` and `get_ffmpeg()` resolving system `PATH`, eliminating hardcoded `/usr/bin/` paths across packager, ffmpeg_agent, mastering, and sound bank.
+- **Phase 5: Dead Code Pruning & Full Green Suite Baseline**:
+  - Safely isolated 39 legacy files to `archive/` while dynamically injecting `archive/` subdirectories into `audiobook_factory.__path__` inside `__init__.py`.
+  - Clamped FFmpeg loudnorm delta adjustments to `[-5.0, 5.0]` LU and bounded targets to `[-35.0, -10.0]` LUFS in [`mastering_engine.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/mastering_engine.py), preventing fatal positive LUFS filter crashes on ambient/quiet tracks.
+  - Master test suite verified: **82/82 master remediation unit and regression tests passing (100% green)**.
+
 ---
 
 ## 📚 Complete Documentation Hub
@@ -541,7 +586,7 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
 | **[🎛️ Audio Engineering & DSP Mastering (Stage 12)](docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, Stage 11 premaster boundary decoupling, Mastering V2 4-stage DSP core, P1 Intelligence, P4 Perceptual Critic, and 5-pillar Certification. |
 | **[🛡️ Mastering V2 Complete Audit & Blueprint](MASTERING_V2_AUDIT.md)** | Comprehensive audit report covering Missions 1–4, DSP baseline, Stage 11/12 boundary decoupling, contracts, closed-loop remediation, and 109 passing tests. |
 | **[🛡️ Quality Gates Manual](docs/QUALITY_GATES.md)** | Complete specification of Gates 0.1 through 6E and Translation Gates T0 through T15, thresholds, and CLI audit syntax. |
-| **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Comprehensive engineering report on P0-P3 fixes and all 13 ADR-020 forensic audit remediations. |
+| **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Comprehensive engineering report on Phases 1–5: P0-P3, ADR-020 (13 defects), ADR-021 (Zero Voice Drift), ADR-022 (Audio Sync), and ADR-049 (Forensic Flaw, Sham Gate Elimination & Universal Engine Hardening). |
 | **[🎹 Sonic Intelligence Catalog & Master Sound Bank](docs/SOUND_BANK.md)** | SQLite FTS5 database schema, 61,048 master tracks, 44,940 CLAP vectors, IP Lore & Franchise Affinity System, Witcher 3 Studio Audio Vault, and Ephemeral Streaming Ingest. |
 | **[🤖 AI Agent & MCP Integration](docs/MCP_AGENT_INTEGRATION.md)** | Autonomous agent workflows, Agent Skills (`novel-audiobook-factory`, `audio-engineer-ffmpeg`), and MCP tools. |
 | **[🛠️ Developer Guide](docs/DEVELOPER_GUIDE.md)** | Development environment setup, testing standards, and contribution guide. |
@@ -621,9 +666,12 @@ python audiobook_cli.py bank ingest-source path/to/sound_archive/ --source sonni
 
 ## 🧪 Verification & Test Suite
 
-The codebase maintains **1,000+ passed unit and integration tests (100% green, 0 regressions)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant:
+The codebase maintains **1,180+ passed unit and integration tests (100% green, 0 regressions)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant:
 
 ```powershell
+# Run Universal Engine Hardening & Audit Remediation Sprint suite (ADR-049)
+python -m unittest tests/test_audit_remediation_sprint.py -v
+
 # Run Stage 12 Mastering V2 Full Suite (64 tests across Missions 1–4)
 pytest tests/test_mastering_contracts.py tests/test_mastering_analyzer.py tests/test_mastering_engine.py tests/test_mastering_closed_loop.py tests/test_mastering_judge.py tests/test_dialogue_protection.py tests/test_book_master_profile.py tests/test_chapter_consistency.py tests/test_perceptual_critic.py tests/test_reference_mastering.py tests/test_scene_aware_mastering.py tests/test_mastering_certification.py tests/test_golden_mastering_regression.py -v
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from audiobook_factory.packager import package_m4b_audiobook
-from audiobook_factory.gate_auditor import audit_chapter_gates, audit_gate5_master
+from audiobook_factory.gate_auditor import audit_chapter_gates, audit_gate5_master, GateAuditError
 from audiobook_factory.key_manager import _load_env_fallback
 from audiobook_factory.soundscape import detect_chapter_mood
 from audiobook_factory.contracts import CreativeManifest
@@ -56,10 +56,10 @@ class TestAuditRemediationSprint(unittest.TestCase):
                 f'[{{"index": 1, "speaker": "Narrator", "text": "{sample_hi}"}}]', encoding="utf-8"
             )
 
-            # Test 1: Neither legacy scenes nor manifest -> PASS notice (director-managed)
-            report = audit_chapter_gates(pdir, 1)
-            self.assertEqual(report["gate_3"]["status"], "PASS")
-            self.assertEqual(report["gate_3"]["type"], "director_managed")
+            # Test 1: Neither legacy scenes nor manifest -> Fail closed (Directing stage must be executed)
+            with self.assertRaises(GateAuditError) as ctx:
+                audit_chapter_gates(pdir, 1)
+            self.assertIn("Gate 3 Failed", str(ctx.exception))
 
             # Test 2: CreativeManifest present -> PASS feasibility
             manifest = CreativeManifest(
@@ -113,6 +113,93 @@ class TestAuditRemediationSprint(unittest.TestCase):
             parsed_chapters.append(int(m.group(1)) if m else 1)
 
         self.assertEqual(parsed_chapters, [5, 12, 1])
+
+    def test_packager_chapter_exact_number_matching(self):
+        """Verifies that chapter 1 does NOT resolve to chapter 10 audio in packager."""
+        import re
+        all_audio = [
+            Path("chapter_10_cinematic.m4a"),
+            Path("chapter_1_cinematic.m4a"),
+            Path("chapter_100_cinematic.m4a"),
+        ]
+
+        def resolve_for_chapter(c_num):
+            def _belongs_to_chapter(path: Path) -> bool:
+                m = re.search(r"chapter[_-]?(\d+)", path.name, re.IGNORECASE)
+                return m is not None and int(m.group(1)) == c_num
+
+            ch_files = [f for f in all_audio if _belongs_to_chapter(f)]
+            return sorted([f for f in ch_files if "_cinematic." in f.name.lower()])
+
+        self.assertEqual(resolve_for_chapter(1), [Path("chapter_1_cinematic.m4a")])
+        self.assertEqual(resolve_for_chapter(10), [Path("chapter_10_cinematic.m4a")])
+        self.assertEqual(resolve_for_chapter(100), [Path("chapter_100_cinematic.m4a")])
+
+    def test_verification_gate_word_boundary_anachronism(self):
+        """Verifies that combat cues and carriages pass, while diesel trucks/cars are rejected."""
+        from audiobook_factory.sound_bank.verification_gate import AudioVerificationGate
+
+        gate = AudioVerificationGate()
+        with tempfile.TemporaryDirectory() as td:
+            # 1. Medieval combat SFX ("struck" contains "truck")
+            combat_f = Path(td) / "sword_struck_shield.wav"
+            combat_f.write_bytes(b"RIFF" + b"\x00" * 2000)
+
+            # 2. Medieval carriage ("carriage" contains "car")
+            carriage_f = Path(td) / "horse_carriage.wav"
+            carriage_f.write_bytes(b"RIFF" + b"\x00" * 2000)
+
+            # 3. Modern car
+            car_f = Path(td) / "sports_car_rev.wav"
+            car_f.write_bytes(b"RIFF" + b"\x00" * 2000)
+
+            with patch.object(gate, "probe_audio", return_value={"duration_sec": 3.0, "format": "wav"}):
+                res_combat = gate.verify_asset(combat_f, era="MEDIEVAL_FANTASY", category="SFX")
+                self.assertTrue(res_combat.is_valid, f"Combat failed: {res_combat.reason}")
+
+                res_carriage = gate.verify_asset(carriage_f, era="MEDIEVAL_FANTASY", category="SFX")
+                self.assertTrue(res_carriage.is_valid, f"Carriage failed: {res_carriage.reason}")
+
+                res_car = gate.verify_asset(car_f, era="MEDIEVAL_FANTASY", category="SFX")
+                self.assertFalse(res_car.is_valid, "Modern car should have been banned")
+                self.assertIn("Anachronism Detected", res_car.reason)
+
+    def test_chapter_segmenter_extended_word_numbers(self):
+        """Verifies that chapter_segmenter recognizes numbers up to 100 with compound words."""
+        from audiobook_factory.chapter_segmenter import CHAPTER_PATTERNS
+        import re
+
+        word_pattern = CHAPTER_PATTERNS[-1]  # word-number pattern
+        test_headers = [
+            "ONE",
+            "TWENTY-TWO",
+            "THIRTY-FOUR: The Awakening",
+            "FORTY",
+            "FIFTY-SIX",
+            "HUNDRED",
+        ]
+        for header in test_headers:
+            self.assertTrue(
+                bool(re.match(word_pattern, header, re.IGNORECASE)),
+                f"Failed to match valid chapter header: '{header}'"
+            )
+
+    def test_acoustic_bus_matrix_duration_overlap(self):
+        """Verifies that filter_concurrency_window detects overlapping durations, not just start times."""
+        from audiobook_factory.acoustic_bus_matrix import filter_concurrency_window
+        from types import SimpleNamespace
+
+        # 3 long overlapping cues (duration 5s, staggered by 1s)
+        cue1 = SimpleNamespace(start_ms=1000, duration_ms=5000, gain_dbfs=-10.0)
+        cue2 = SimpleNamespace(start_ms=2000, duration_ms=5000, gain_dbfs=-15.0)
+        cue3 = SimpleNamespace(start_ms=3000, duration_ms=5000, gain_dbfs=-20.0)
+
+        # Max concurrency = 2 -> weakest cue3 should be dropped
+        accepted = filter_concurrency_window([cue1, cue2, cue3], window_ms=200, max_concurrency=2)
+        self.assertEqual(len(accepted), 2)
+        self.assertIn(cue1, accepted)
+        self.assertIn(cue2, accepted)
+        self.assertNotIn(cue3, accepted)
 
 
 if __name__ == "__main__":

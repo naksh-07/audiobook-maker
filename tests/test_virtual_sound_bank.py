@@ -55,9 +55,18 @@ class TestVirtualSoundBank(unittest.TestCase):
 
     @patch("urllib.request.urlopen")
     def test_jit_download(self, mock_urlopen):
-        # Mock HTTP response for audio download (must return b"" on second call for copyfileobj)
+        # Mock HTTP response for audio download with valid PCM WAV bytes (>= 1000 bytes)
+        import io, wave
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(24000)
+            wf.writeframes(b"\x00\x00" * 24000)
+        valid_wav = buf.getvalue()
+
         mock_resp = MagicMock()
-        mock_resp.read.side_effect = [b"MOCK_OGG_AUDIO_BYTES_TEST", b""]
+        mock_resp.read.side_effect = [valid_wav, b""]
         mock_resp.__enter__.return_value = mock_resp
         mock_urlopen.return_value = mock_resp
 
@@ -66,7 +75,7 @@ class TestVirtualSoundBank(unittest.TestCase):
             conn.execute("""
                 INSERT INTO sound_catalog
                 (filename, filepath, category, subcategory, mood, tags, duration_sec, size_bytes, format, source_url, is_downloaded)
-                VALUES ('virtual_dagger.ogg', 'virtual/test/virtual_dagger.ogg', 'FOL', 'Combat', 'tense', 'dagger blade test', 1.5, 0, '.ogg', 'https://example.com/virtual_dagger.ogg', 0)
+                VALUES ('virtual_dagger.wav', 'virtual/test/virtual_dagger.wav', 'FOL', 'Combat', 'tense', 'dagger blade test', 1.0, 48044, '.wav', 'https://example.com/virtual_dagger.wav', 0)
             """)
 
         # Call resolve_sound which should trigger JIT download
@@ -76,7 +85,7 @@ class TestVirtualSoundBank(unittest.TestCase):
 
         # Verify database was updated to is_downloaded = 1
         with self.bank._get_conn() as conn:
-            row = conn.execute("SELECT is_downloaded, filepath FROM sound_catalog WHERE filename = 'virtual_dagger.ogg'").fetchone()
+            row = conn.execute("SELECT is_downloaded, filepath FROM sound_catalog WHERE filename = 'virtual_dagger.wav'").fetchone()
             self.assertEqual(row["is_downloaded"], 1)
             self.assertIn("cache", row["filepath"])
 

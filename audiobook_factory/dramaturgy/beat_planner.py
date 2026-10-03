@@ -136,7 +136,6 @@ class BeatPlanner:
                 system_instruction=system_instruction,
                 task_type=TaskType.DRAMATURGY,
                 response_mime_type="application/json",
-                temperature=0.2,
                 max_retries=4,
             )
 

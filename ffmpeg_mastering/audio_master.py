@@ -24,7 +24,7 @@ else:
 
 def run_cmd(cmd):
     if isinstance(cmd, str):
-        cmd = shlex.split(cmd)
+        cmd = shlex.split(cmd, posix=(sys.platform != "win32"))
     result = subprocess.run(cmd, shell=False, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"Command failed (code {result.returncode}):\n{result.stderr}")
@@ -56,7 +56,8 @@ def master_vocal(
 
     filters = ["highpass=f=60"]
     if use_rnnoise and os.path.exists(RNNOISE_DEFAULT_MODEL):
-        filters.append(f"arnndn=m={RNNOISE_DEFAULT_MODEL}")
+        model_escaped = str(RNNOISE_DEFAULT_MODEL).replace("\\", "/").replace(":", "\\:")
+        filters.append(f"arnndn=m='{model_escaped}'")
     else:
         filters.append("afftdn=nr=10:nf=-35")
 
@@ -161,8 +162,9 @@ def probe_audio(input_path: str) -> dict:
         "-of", "json", input_path
     ]
     res = run_cmd(probe_cmd)
-    info = json.loads(res.stdout)
-    stream = info.get("streams", [{}])[0]
+    info = json.loads(res.stdout) if res.stdout else {}
+    streams = info.get("streams", [])
+    stream = streams[0] if streams else {}
 
     # Astats dynamic analysis
     stats_cmd = [

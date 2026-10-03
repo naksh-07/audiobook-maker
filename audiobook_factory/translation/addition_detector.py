@@ -8,7 +8,7 @@ or invented backstory.
 from __future__ import annotations
 import re
 import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from .source_semantic_map import SourceSemanticMap, TargetSemanticMap
@@ -47,16 +47,22 @@ def deterministic_addition_check(
         )
 
     # Check for LLM chatter / meta comments in target text
+    # FIX: \b fails on Devanagari — removed \b anchors. re.search scans the full string,
+    # so bare Devanagari patterns match correctly anywhere without boundary anchors.
+    # Multi-word phrases use Unicode space/punct lookarounds for precision.
+    _dev_b  = r"(?:(?<=[^a-zA-Z\u0900-\u097F])|^)"
+    _dev_be = r"(?=[^a-zA-Z\u0900-\u097F]|$)"
     chatter_patterns = [
-        r"\bयहाँ\s+अनुवाद\s+है\b",
-        r"\bटिप्पणी\b",
-        r"\bअनुवादक\b",
-        r"\bनोट\b",
+        _dev_b + r"यहाँ\s+अनुवाद\s+है" + _dev_be,   # "Here is the translation"
+        r"टिप्पणी",                                    # "note/comment" — bare match is safe
+        r"अनुवादक",                                    # "translator" — bare match is safe
+        _dev_b + r"नोट" + _dev_be,                     # "note" — boundary prevents partial matches
     ]
     for pat in chatter_patterns:
-        if re.search(pat, target_text):
+        if re.search(pat, target_text, re.UNICODE):
             warnings.append("Detected possible translator notes or conversational meta-chatter.")
             break
+
 
     is_valid = expansion_ratio <= 2.4 and len(warnings) == 0
     return is_valid, warnings, affected_paragraphs, expansion_ratio

@@ -26,7 +26,7 @@ class ResolvedPerformanceConstraints(BaseModel):
     primary_intention: str = Field(..., description="Lead actioning and delivery emotion")
     secondary_modifiers: List[str] = Field(default_factory=list, description="At most 2-3 essential modifiers")
     forbidden_behaviors: List[str] = Field(default_factory=list, description="Styles that must NOT occur")
-    effective_temperature: float = Field(default=0.70, ge=0.5, le=1.0)
+    effective_temperature: float = Field(default=0.95, ge=0.5, le=1.4)
     clean_style_descriptor: str = Field(..., description="Concise, non-contradictory style descriptor for TTS API")
 
 
@@ -142,14 +142,15 @@ class PerformanceConstraintResolver:
         # Clean style descriptor string
         clean_descriptor = ", ".join(style_parts)
 
-        # 6. Temperature Micro-Entropy Calibration
-        temp = 0.70
+        # 6. Temperature Micro-Entropy Calibration (Phase 3 Creative Liberation)
+        # Broaden from narrow monotone 0.65-0.76 to expressive acting range 0.85-1.10
+        temp = 0.95
         if restraint >= 0.75 or variant_type == "restraint":
-            temp = 0.65  # Tighter acoustic stability
+            temp = 0.85  # Tighter acoustic stability under emotional restraint
         elif variant_type == "exposed" or (scene_vector and scene_vector.energy > 0.85):
-            temp = 0.76  # Dynamic acting variance
+            temp = 1.10  # Full dramatic acting variance for high-energy/exposed beats
         elif variant_type == "vulnerable":
-            temp = 0.72
+            temp = 1.00  # Raw vulnerability with heightened vocal inflection
 
         return ResolvedPerformanceConstraints(
             primary_intention=primary,

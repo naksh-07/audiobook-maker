@@ -257,9 +257,19 @@ def clean_screenplay_pass2(
                 entry["narrative_mode"] = "narrator_exposition"
             elif seg_type == "dialogue":
                 txt_check = cleaned_text.lower()
+                _dev_b = r"(?:(?<=[^a-zA-Z\u0900-\u097F])|^)"
+                _dev_be = r"(?=[^a-zA-Z\u0900-\u097F]|$)"
+                _is_reported = (
+                    re.search(r'\b(?:said that|told them that)\b', cleaned_text, re.IGNORECASE)
+                    or re.search(
+                        _dev_b + r"(?:बता रहा था कि|कहा कि)" + _dev_be,
+                        cleaned_text,
+                        re.UNICODE,
+                    )
+                )
                 if "(मन में:" in cleaned_text or "binaural_whisper" in str(entry.get("acoustic_env", "")) or "[whispers] (" in cleaned_text:
                     entry["narrative_mode"] = "internal_monologue"
-                elif re.search(r'\b(?:said that|told them that|बता रहा था कि|कहा कि)\b', cleaned_text, re.IGNORECASE):
+                elif _is_reported:
                     entry["narrative_mode"] = "reported_speech"
                 else:
                     entry["narrative_mode"] = "direct_dialogue"

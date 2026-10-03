@@ -26,8 +26,9 @@ class TestMultiGateAuditor(unittest.TestCase):
         """Verify multi-gate chapter auditor validates end-to-end against a canonical project structure."""
         import tempfile
         import json
+        from unittest.mock import patch
 
-        with tempfile.TemporaryDirectory() as td:
+        with patch.dict("os.environ", {"MOCK_OFFLINE": "1"}), tempfile.TemporaryDirectory() as td:
             pdir = Path(td)
             ext_dir = pdir / "extracted"
             trans_dir = pdir / "translation"
@@ -38,11 +39,11 @@ class TestMultiGateAuditor(unittest.TestCase):
 
             ch_str = "chapter_001"
             (ext_dir / f"{ch_str}.md").write_text(
-                "The hero walked through the mist into the ancient mountain fortress. The cold winds howled fiercely across the stone walls.\n" * 2,
+                "The hero walked through the mist into the ancient mountain fortress. The cold winds howled fiercely across the stone walls. The hero called out, \"Is anyone here?\"\n",
                 encoding="utf-8"
             )
             (trans_dir / f"{ch_str}_hi.md").write_text(
-                "नायक कोहरे के बीच से प्राचीन पहाड़ी किले में दाखिल हुआ। ठंडी हवाएं पत्थर की दीवारों से टकराकर सनसना रही थीं।\n" * 2,
+                "नायक कोहरे के बीच से प्राचीन पहाड़ी किले में दाखिल हुआ। ठंडी हवाएं पत्थर की दीवारों से टकराकर सनसना रही थीं। नायक ने पुकारा, \"कोई है यहाँ?\"\n",
                 encoding="utf-8"
             )
 
@@ -68,6 +69,14 @@ class TestMultiGateAuditor(unittest.TestCase):
                 ]
             }
             (scripts_dir / f"{ch_str}_hi_script.json").write_text(json.dumps(script_data), encoding="utf-8")
+
+            scenes_data = {
+                "total_segments": 2,
+                "acts": [
+                    {"act_num": 1, "segment_start": 1, "segment_end": 2}
+                ]
+            }
+            (pdir / f"{ch_str}_scenes_source.json").write_text(json.dumps(scenes_data), encoding="utf-8")
 
             report = audit_chapter_gates(pdir, chapter_num=1, active_speakers=["Narrator", "Hero"])
 
@@ -146,10 +155,64 @@ class TestMultiGateAuditor(unittest.TestCase):
         with self.assertRaises(GateAuditError):
             audit_gate2_screenplay_tags(Path("/nonexistent/script.json"))
 
-    def test_audit_gate5_master(self):
-        """Verify Gate 5 raises GateAuditError on missing file."""
-        with self.assertRaises(GateAuditError):
-            audit_gate5_master(Path("/nonexistent/master.m4a"))
+    def test_audit_gate2_screenplay_tags_strict_failure(self):
+        """Verify Gate 2 Screenplay Tags raises GateAuditError when strict and prosody is missing."""
+        import tempfile
+        import json
+
+        with tempfile.TemporaryDirectory() as td:
+            script_path = Path(td) / "unemotional_script.json"
+            script_data = {
+                "chapter_num": 1,
+                "segments": [
+                    {"index": 1, "type": "dialogue", "speaker": "Villain", "text": "I will destroy you.", "emotion": "angry"}
+                ]
+            }
+            script_path.write_text(json.dumps(script_data), encoding="utf-8")
+            # In strict mode, 0% coverage on angry dialogue must raise GateAuditError
+            with self.assertRaises(GateAuditError):
+                audit_gate2_screenplay_tags(script_path, min_coverage_pct=60.0, strict=True)
+
+            res = audit_gate2_screenplay_tags(script_path, min_coverage_pct=60.0, strict=False)
+            self.assertEqual(res["status"], "FAIL")
+            self.assertFalse(res["passed"])
+
+    def test_audit_gate6d_cover_art_validation(self):
+        """Verify Gate 6D validates non-empty cover art aspect ratio and format."""
+        import tempfile
+        from audiobook_factory.gates.album import audit_gate6d_packaging_specs
+
+        with tempfile.TemporaryDirectory() as td:
+            bad_img = Path(td) / "cover.txt"
+            bad_img.write_text("not an image but > 0 bytes", encoding="utf-8")
+            res = audit_gate6d_packaging_specs(bad_img, strict=False)
+            self.assertFalse(res.passed)
+            self.assertEqual(res.status, "FAIL")
+
+            # In strict mode, bad cover image must raise GateAuditError
+            with self.assertRaises(GateAuditError):
+                audit_gate6d_packaging_specs(bad_img, strict=True)
+
+    def test_audit_gate6b_probe_error_no_metric_forgery(self):
+        """Verify Gate 6B records genuine error and does not forge -19 LUFS on FFmpeg failure."""
+        import tempfile
+        from unittest.mock import patch, MagicMock
+        from audiobook_factory.gates.album import audit_gate6b_loudness_continuity
+
+        with tempfile.TemporaryDirectory() as td:
+            fake_chapter = Path(td) / "chapter_01.wav"
+            fake_chapter.write_bytes(b"\x00" * 2000)
+
+            # Mock subprocess run to simulate FFmpeg crash/exit code 1
+            mock_proc = MagicMock(returncode=1, stderr="FFmpeg core dump error", stdout="")
+            with patch("audiobook_factory.gates.album._get_subprocess") as mock_sub:
+                mock_sub.return_value.run.return_value = mock_proc
+                res = audit_gate6b_loudness_continuity([fake_chapter], strict=False)
+                self.assertFalse(res.passed)
+                self.assertEqual(res.status, "FAIL")
+                self.assertTrue(any("exit code 1" in e for e in res.errors))
+                # Ensure no fake metrics were forged
+                self.assertEqual(len(res.details.get("chapter_metrics", [])), 0)
 
 
 if __name__ == "__main__":

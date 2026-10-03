@@ -7,6 +7,7 @@ are locked and handed over to CinemaAudioEngine.
 """
 
 from __future__ import annotations
+import os
 import datetime
 from typing import List, Dict
 
@@ -149,12 +150,18 @@ class PerformanceFidelityGate:
 
         # Gate decision: Fail closed if ANY critical defect exists, regardless of allow_warnings
         has_critical = len(critical_defects) > 0
+        is_mock = os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
+        has_valid_eval = (len(eval_scores) > 0 and avg_score >= 0.70) or (is_mock and not eval_scores)
         passed = (
             (not has_critical)
             and (teleportation_violations == 0)
-            and (avg_score >= 0.70 or not eval_scores)
+            and has_valid_eval
             and (len(issues) == 0 or allow_warnings)
         )
+
+        if not eval_scores and not is_mock:
+            passed = False
+            critical_defects.append("[CRITICAL] Zero performance evaluation scores recorded for chapter takes")
 
         # Critical fails: teleportation or missing takes
         if teleportation_violations > 0:

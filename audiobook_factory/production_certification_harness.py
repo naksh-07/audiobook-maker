@@ -15,13 +15,10 @@ import json
 import shutil
 import hashlib
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
-# Set local environment for deterministic run
-os.environ["TTS_PRIMARY_BACKEND"] = "local_winrt"
-os.environ["ENABLE_EMERGENCY_FALLBACK"] = "true"
-os.environ["AUDIOBOOK_RETAIN_CHUNKS"] = "true"
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -73,7 +70,19 @@ class ProductionCertificationHarness:
     def __init__(self, workspace_root: Optional[Path] = None):
         self.root = Path(workspace_root or ROOT_DIR).resolve()
         self.inputs_dir = self.root / "audiobooks" / "inputs"
-        self.projects_dir = self.root / "audiobooks" / "projects"
+        self.project_id = "dastan_e_hastinapur"
+        is_test_env = (
+            os.environ.get("UNIT_TEST_MODE", "").lower() in ("true", "1", "yes")
+            or "PYTEST_CURRENT_TEST" in os.environ
+            or os.environ.get("ISOLATE_HARNESS", "").lower() in ("true", "1", "yes")
+        )
+        if is_test_env:
+            self._temp_dir_obj = tempfile.TemporaryDirectory(prefix="cert_harness_")
+            self.projects_dir = Path(self._temp_dir_obj.name)
+        else:
+            self._temp_dir_obj = None
+            self.projects_dir = self.root / "audiobooks" / "projects"
+        self.project_dir = self.projects_dir / self.project_id
         self.outputs_dir = self.root / "audiobooks" / "outputs"
         self.outputs_dir.mkdir(parents=True, exist_ok=True)
         self.book_input = self.inputs_dir / "dastan_e_hastinapur.txt"
@@ -81,8 +90,6 @@ class ProductionCertificationHarness:
             fixture_input = self.root / "tests" / "fixtures" / "dastan_e_hastinapur.txt"
             if fixture_input.exists():
                 self.book_input = fixture_input
-        self.project_id = "dastan_e_hastinapur"
-        self.project_dir = self.projects_dir / self.project_id
 
         # Certification Identity
         self.run_id = f"cert_run_{int(time.time())}"
@@ -110,13 +117,39 @@ class ProductionCertificationHarness:
 
     def execute_clean_room_production(self) -> Dict[str, Any]:
         """Runs the complete production pipeline from clean state."""
+        orig_backend = os.environ.get("TTS_PRIMARY_BACKEND")
+        orig_emergency = os.environ.get("ENABLE_EMERGENCY_FALLBACK")
+        orig_retain = os.environ.get("AUDIOBOOK_RETAIN_CHUNKS")
+        os.environ["TTS_PRIMARY_BACKEND"] = "local_winrt"
+        os.environ["ENABLE_EMERGENCY_FALLBACK"] = "true"
+        os.environ["AUDIOBOOK_RETAIN_CHUNKS"] = "true"
+        try:
+            return self._execute_clean_room_production_core()
+        finally:
+            if orig_backend is not None:
+                os.environ["TTS_PRIMARY_BACKEND"] = orig_backend
+            else:
+                os.environ.pop("TTS_PRIMARY_BACKEND", None)
+            if orig_emergency is not None:
+                os.environ["ENABLE_EMERGENCY_FALLBACK"] = orig_emergency
+            else:
+                os.environ.pop("ENABLE_EMERGENCY_FALLBACK", None)
+            if orig_retain is not None:
+                os.environ["AUDIOBOOK_RETAIN_CHUNKS"] = orig_retain
+            else:
+                os.environ.pop("AUDIOBOOK_RETAIN_CHUNKS", None)
+
+    def _execute_clean_room_production_core(self) -> Dict[str, Any]:
         logger.info(f"=== Starting Clean-Room Production Run: {self.run_id} ===")
         t0 = time.time()
 
         # Phase 1 & 2: Clean room setup
         if self.project_dir.exists():
-            logger.info(f"[*] Removing existing project directory to enforce clean-room state: {self.project_dir}")
-            shutil.rmtree(self.project_dir, ignore_errors=True)
+            if self._temp_dir_obj is not None or os.environ.get("FORCE_CLEAN_ROOM_WIPE", "false").lower() in ("true", "1", "yes"):
+                logger.info(f"[*] Removing existing project directory to enforce clean-room state: {self.project_dir}")
+                shutil.rmtree(self.project_dir, ignore_errors=True)
+            else:
+                logger.info(f"[*] Preserving production directory on disk (set FORCE_CLEAN_ROOM_WIPE=1 to wipe): {self.project_dir}")
 
         self.project_dir.mkdir(parents=True, exist_ok=True)
         input_hash = compute_sha256(self.book_input)

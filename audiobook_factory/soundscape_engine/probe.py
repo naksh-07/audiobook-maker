@@ -14,17 +14,19 @@ from typing import Dict, Any, Optional, List
 
 
 def get_ffmpeg() -> str:
-    ffmpeg_bin = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
-    if not os.path.exists(ffmpeg_bin):
-        raise FileNotFoundError("FFmpeg executable not found in PATH.")
+    from audiobook_factory.tts.constants import get_ffmpeg as _get_ffmpeg
+    ffmpeg_bin = _get_ffmpeg()
+    if not (os.path.exists(ffmpeg_bin) or shutil.which(ffmpeg_bin)):
+        raise FileNotFoundError("FFmpeg executable not found in PATH or standard system locations.")
     return ffmpeg_bin
 
 
 def get_audio_duration(file_path: Path) -> float:
     """Extract audio duration in seconds using ffprobe or ffmpeg."""
     file_path = Path(file_path).resolve()
-    ffprobe = shutil.which("ffprobe") or "/usr/bin/ffprobe"
-    if os.path.exists(ffprobe):
+    from audiobook_factory.tts.constants import get_ffprobe
+    ffprobe = get_ffprobe()
+    if os.path.exists(ffprobe) or shutil.which(ffprobe):
         cmd = [
             ffprobe, "-v", "error",
             "-show_entries", "format=duration",

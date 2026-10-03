@@ -14,9 +14,10 @@ import numpy as np
 
 
 def get_ffmpeg() -> str:
-    ffmpeg_bin = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
-    if not os.path.exists(ffmpeg_bin):
-        raise FileNotFoundError("FFmpeg executable not found in PATH.")
+    from audiobook_factory.tts.constants import get_ffmpeg as _get_ffmpeg
+    ffmpeg_bin = _get_ffmpeg()
+    if not (os.path.exists(ffmpeg_bin) or shutil.which(ffmpeg_bin)):
+        raise FileNotFoundError("FFmpeg executable not found in PATH or standard system locations.")
     return ffmpeg_bin
 
 

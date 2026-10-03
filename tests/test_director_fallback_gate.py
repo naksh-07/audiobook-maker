@@ -9,7 +9,7 @@ from audiobook_factory.director.director import AgentDirector
 
 
 def test_director_fallback_gate_on_empty_cues():
-    pdir = Path("audiobooks/projects/sword_of_destiny")
+    pdir = Path("archive/witcher/sword_of_destiny")
     director = AgentDirector(project_dir=pdir)
 
     script_segments = [

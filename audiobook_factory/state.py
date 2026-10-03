@@ -105,7 +105,7 @@ class ProjectStateLedger:
             return cur.rowcount
 
     def set_meta(self, key: str, value: Any):
-        val_str = json.dumps(value) if not isinstance(value, str) else value
+        val_str = json.dumps(value)
         with self._connection() as conn:
             conn.execute(
                 "INSERT INTO project_meta (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) "

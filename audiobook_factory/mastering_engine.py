@@ -448,9 +448,10 @@ class MasteringEngineV2:
                 if measured_lufs is not None:
                     lufs_diff = measured_lufs - active_profile.target_lufs
                     if qc_result.checks.get("loudness") in ("FAIL", "WARN") or abs(lufs_diff) > active_profile.tolerance_lu:
-                        # Adjust target offset inverse to measured delta
+                        # Adjust target offset inverse to measured delta with bounded feedback
                         adjustment = lufs_diff if abs(lufs_diff) > 0.05 else 0.5
-                        new_target = round(target_lufs - adjustment, 2)
+                        bounded_adj = max(-5.0, min(5.0, adjustment))
+                        new_target = max(-35.0, min(-10.0, round(target_lufs - bounded_adj, 2)))
                         remediation_actions.append({
                             "attempt": attempt,
                             "type": "loudness_offset_compensation",

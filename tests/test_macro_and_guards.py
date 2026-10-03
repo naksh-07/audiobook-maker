@@ -12,9 +12,13 @@ Tests:
 
 import os
 import json
+import math
+import wave
+import struct
 import tempfile
 import unittest
 from pathlib import Path
+from PIL import Image
 
 from audiobook_factory.contracts import (
     CharacterProfile,
@@ -405,11 +409,18 @@ class TestGate6Suite(unittest.TestCase):
             pdir = Path(td)
             f1 = pdir / "ch1.wav"
             f2 = pdir / "ch2.wav"
-            # Create mock wav files > 1000 bytes
-            f1.write_bytes(b"RIFF" + b"\x00" * 2000)
-            f2.write_bytes(b"RIFF" + b"\x00" * 2000)
+            # Create valid synthetic mono PCM WAV files calibrated to -19.2 LUFS
+            for fp in (f1, f2):
+                with wave.open(str(fp), "wb") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)
+                    wf.setframerate(24000)
+                    samples = bytearray()
+                    for i in range(72000):
+                        v = int(5500 * math.sin(2 * math.pi * 440 * (i / 24000)))
+                        samples.extend(struct.pack("<h", v))
+                    wf.writeframes(samples)
 
-            # In test environment where ffprobe/ebur128 defaults to target_lufs
             res = audit_gate6b_loudness_continuity([f1, f2], target_lufs=-19.0, max_variance=1.0)
             self.assertTrue(res.passed)
             self.assertEqual(res.status, "PASS")
@@ -474,7 +485,8 @@ class TestGate6Suite(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             pdir = Path(td)
             cover = pdir / "cover.jpg"
-            cover.write_bytes(b"\xFF\xD8\xFF\xE0" + b"\x00" * 5000)
+            img = Image.new("RGB", (2400, 2400), color=(100, 150, 200))
+            img.save(cover, format="JPEG")
 
             valid_specs = BookPackagingSpecs(codec="aac", bitrate="192k", faststart=True)
             res = audit_gate6d_packaging_specs(cover_image=cover, specs=valid_specs)
@@ -494,8 +506,16 @@ class TestGate6Suite(unittest.TestCase):
             mastered_dir.mkdir()
             scripts_dir.mkdir()
 
-            ch1_audio = mastered_dir / "chapter_001_cinematic.m4a"
-            ch1_audio.write_bytes(b"M4A " + b"\x00" * 2000)
+            ch1_audio = mastered_dir / "chapter_001_cinematic.wav"
+            with wave.open(str(ch1_audio), "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(24000)
+                samples = bytearray()
+                for i in range(72000):
+                    v = int(5500 * math.sin(2 * math.pi * 440 * (i / 24000)))
+                    samples.extend(struct.pack("<h", v))
+                wf.writeframes(samples)
 
             ch1_script = ScreenplayScript(segments=[
                 ScreenplaySegment(index=1, type="dialogue", speaker="Geralt", text="I am ready."),
@@ -507,7 +527,8 @@ class TestGate6Suite(unittest.TestCase):
                 json.dump({"Geralt": {"voice": "Fenrir"}}, f)
 
             cover = pdir / "cover.jpg"
-            cover.write_bytes(b"\xFF\xD8\xFF\xE0" + b"\x00" * 2000)
+            img = Image.new("RGB", (2400, 2400), color=(100, 150, 200))
+            img.save(cover, format="JPEG")
 
             report = audit_book_master(pdir)
             self.assertEqual(report["overall_status"], "PASS")

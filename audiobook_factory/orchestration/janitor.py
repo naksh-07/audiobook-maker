@@ -20,13 +20,13 @@ def cleanup_chapter_chunks(
     if any Gate 5.x check failed, or unless PURGE_INTERMEDIATE_CHUNKS=true is explicitly set.
     By default, chunks are preserved for zero-cost DSP remastering without burning TTS quota.
     """
-    retain_chunks_flag = os.environ.get("AUDIOBOOK_RETAIN_CHUNKS", "").lower() in ("1", "true", "yes")
+    purge_chunks_flag = os.environ.get("AUDIOBOOK_PURGE_CHUNKS", "false").lower() in ("1", "true", "yes")
 
     chunk_pattern = f"c{chapter_num:03d}_*.wav"
     all_chunks = list(audio_dir.glob(chunk_pattern))
 
-    if retain_chunks_flag:
-        logger.info(f"  [JANITOR SHIELD] Retaining {len(all_chunks)} raw WAV chunks for chapter {chapter_num:02d} (Zero-cost remaster shield enabled).")
+    if not purge_chunks_flag:
+        logger.info(f"  [JANITOR SHIELD] Retaining {len(all_chunks)} raw WAV chunks for chapter {chapter_num:02d} (Zero-cost remaster shield default).")
     elif not all_gates_certified:
         logger.warning(
             f"  [JANITOR SHIELD] Master render uncertified or Gate 5/5.2/5.3 failed for chapter {chapter_num:02d}. "

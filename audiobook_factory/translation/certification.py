@@ -461,7 +461,7 @@ class TranslationCertifier:
             only_term_or_anti = all(k in ("T5_terminology", "T9_naturalness") for k in fail_gates)
             if only_term_or_anti and not critical_warns:
                 overall = "AUTO_REPAIR"
-                certified = True
+                certified = False
             else:
                 overall = "REVIEW_REQUIRED"
                 certified = False

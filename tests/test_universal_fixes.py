@@ -27,7 +27,7 @@ def test_dramatic_fiction_framing():
 
 
 def test_project_classifier_witcher():
-    pdir = Path("audiobooks/projects/sword_of_destiny")
+    pdir = Path("archive/witcher/sword_of_destiny")
     res = ProjectClassifier.classify(project_dir=pdir)
     assert res.era == "MEDIEVAL_FANTASY"
     assert res.genre == "fantasy"
@@ -77,7 +77,7 @@ def test_franchise_affinity_search():
 
 
 def test_sonic_bible_generation():
-    pdir = Path("audiobooks/projects/sword_of_destiny")
+    pdir = Path("archive/witcher/sword_of_destiny")
     bible = SonicBibleGenerator.generate_for_project(pdir, force_rebuild=False)
     assert bible.book_title == "Sword of Destiny"
     assert len(bible.leitmotifs) > 0

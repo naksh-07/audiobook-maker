@@ -17,6 +17,7 @@ Enforces:
 
 from __future__ import annotations
 import os
+import re
 import shutil
 import subprocess
 import json
@@ -128,8 +129,11 @@ class AudioVerificationGate:
         # ---------------------------------------------------------------------
         active_era = (era or "").upper()
         banned_words = ERA_BANNED_KEYWORDS.get(active_era, [])
+        clean_fname = re.sub(r"[_\-\.\/\\]+", " ", fname_lower)
+        clean_tags = re.sub(r"[_\-\.\/\\]+", " ", tags_lower)
         for bw in banned_words:
-            if bw in fname_lower or f" {bw} " in f" {tags_lower} ":
+            bw_pat = rf"\b{re.escape(bw)}\b"
+            if re.search(bw_pat, clean_fname) or re.search(bw_pat, clean_tags):
                 return VerificationResult(
                     is_valid=False,
                     reason=f"Anachronism Detected: Banned keyword '{bw}' found in asset '{p.name}' for era '{active_era}'",
@@ -153,10 +157,9 @@ class AudioVerificationGate:
 
         dur = probe["duration_sec"]
         cat_upper = (category or "").upper()
-        active_era = (era or "").upper()
-        banned_words = ERA_BANNED_KEYWORDS.get(active_era, [])
         for bw in banned_words:
-            if bw in fname_lower or f" {bw} " in f" {tags_lower} ":
+            bw_pat = rf"\b{re.escape(bw)}\b"
+            if re.search(bw_pat, clean_fname) or re.search(bw_pat, clean_tags):
                 return VerificationResult(
                     is_valid=False,
                     reason=f"Anachronism Detected: Banned keyword '{bw}' found in asset '{p.name}' for era '{active_era}'",

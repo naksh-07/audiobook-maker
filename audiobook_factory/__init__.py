@@ -32,6 +32,13 @@ def _load_env_file():
 
 _load_env_file()
 
+# Backward-compatible resolution for archived modules
+_archive_dir = Path(__file__).resolve().parent.parent / "archive"
+for _sub in ("real_audio", "sound_design"):
+    _sub_path = _archive_dir / _sub
+    if _sub_path.is_dir() and str(_sub_path) not in __path__:
+        __path__.append(str(_sub_path))
+
 from .extractor import (
     process_book_file,
     extract_chapters,
@@ -170,6 +177,3 @@ from .dialogue_editing import (
 )
 
 __version__ = "4.0.0b1"
-
-
-

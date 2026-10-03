@@ -89,7 +89,7 @@ class CharacterCaster:
             logger.warning("  [!] CharacterCaster: No chapter markdown files found for casting analysis.")
             return {"project_id": f"proj-{project_dir.name}", "characters": {}}
 
-        sample_texts = []
+        valid_chaps = []
         for cf in chap_files:
             try:
                 with open(cf, "r", encoding="utf-8") as f:
@@ -97,14 +97,23 @@ class CharacterCaster:
                 lower_txt = txt.lower()
                 if "copyright" in lower_txt or "all rights reserved" in lower_txt or len(txt.split()) < 200:
                     continue
-                sample_texts.append(txt[:4000])
-                if len(sample_texts) >= 3:
-                    break
+                valid_chaps.append(txt)
             except Exception:
                 pass
-        if not sample_texts and chap_files:
-            # Fallback if all chapters were short
-            sample_texts = [chap_files[0].read_text(encoding="utf-8")[:4000]]
+
+        if not valid_chaps and chap_files:
+            valid_chaps = [chap_files[0].read_text(encoding="utf-8")]
+
+        # Comprehensive sampling across novel scope (up to 15 chapters distributed across beginning, middle, climax, end)
+        if len(valid_chaps) <= 15:
+            selected_chaps = valid_chaps
+        else:
+            step = len(valid_chaps) / 15.0
+            indices = [int(i * step) for i in range(15)]
+            indices.append(len(valid_chaps) - 1)
+            selected_chaps = [valid_chaps[i] for i in sorted(set(indices))]
+
+        sample_texts = [txt[:5000] for txt in selected_chaps]
         combined_sample = "\n\n--- NEXT CHAPTER SAMPLE ---\n\n".join(sample_texts)
 
         # Call LLM Casting Director
@@ -149,7 +158,7 @@ class CharacterCaster:
         prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 Prose Samples:
 \"\"\"
-{text_sample[:10000]}
+{text_sample[:80000]}
 \"\"\"
 
 Return a JSON array of objects with:
@@ -278,3 +287,124 @@ Return a JSON array of objects with:
         roster = {"project_id": project_id, "characters": roster_chars}
         cast_lock = {"project_slug": project_id, "project_id": project_id, "locks": locks}
         return roster, voice_registry, cast_lock
+
+    @classmethod
+    def cast_single_speaker(
+        cls,
+        speaker_name: str,
+        project_dir: Optional[Path] = None,
+        gender: Optional[str] = None,
+        default_backend: str = "gemini_tts",
+    ) -> Dict[str, Any]:
+        """
+        Dynamically registers and casts a single newly discovered character.
+        Persists to voice_registry.json, character_roster.json, and cast_lock.json.
+        Guarantees zero voice drift and zero signature collision.
+        """
+        sp_clean = speaker_name.strip()
+        if not sp_clean:
+            return {"backend": default_backend, "voice": "Aoede", "pitch": 1.0, "speed": 1.0}
+
+        p_dir = Path(project_dir) if project_dir else Path.cwd()
+        roster_path = p_dir / "character_roster.json"
+        registry_path = p_dir / "voice_registry.json"
+        lock_path = p_dir / "cast_lock.json"
+
+        # Load existing files or create empty
+        roster: Dict[str, Any] = {"project_id": f"proj-{p_dir.name}", "characters": {}}
+        registry: Dict[str, Any] = {}
+        locks: Dict[str, Any] = {"project_slug": f"proj-{p_dir.name}", "locks": {}}
+
+        if roster_path.exists():
+            try:
+                roster = json.loads(roster_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        if registry_path.exists():
+            try:
+                registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        if lock_path.exists():
+            try:
+                locks = json.loads(lock_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        # If already present in registry, return it
+        if sp_clean in registry:
+            cfg = registry[sp_clean]
+            return {
+                "backend": cfg.get("backend", default_backend),
+                "voice": cfg.get("voice", "Aoede"),
+                "pitch": cfg.get("pitch", 1.0),
+                "speed": cfg.get("speed", 1.0),
+            }
+
+        # Collect existing voice signatures
+        used_signatures = set()
+        for k, v in registry.items():
+            if isinstance(v, dict):
+                vox = v.get("voice", "Aoede")
+                p = v.get("pitch", 1.0)
+                s = v.get("speed", 1.0)
+                used_signatures.add(f"{vox}_p{p:.2f}_s{s:.2f}")
+
+        # Determine gender heuristic if not provided
+        g = (gender or "neutral").lower()
+        if g not in ("male", "female"):
+            female_indicators = ("girl", "woman", "lady", "queen", "princess", "madam", "mrs", "miss", "sister", "mother", "daughter")
+            if any(ind in sp_clean.lower() for ind in female_indicators):
+                g = "female"
+            else:
+                g = "male"
+
+        pool = FEMALE_VOICE_PERSONAS if g == "female" else MALE_VOICE_PERSONAS
+        existing_count = sum(1 for v in registry.values() if isinstance(v, dict) and v.get("voice") in pool)
+        persona = pool[existing_count % len(pool)]
+        pitch_offset = (existing_count // len(pool)) * 0.04
+        pitch = round(1.0 + pitch_offset, 2)
+        speed = 1.0
+        sig = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
+
+        counter = 1
+        while sig in used_signatures:
+            pitch = round(pitch + 0.02 * counter, 2)
+            sig = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
+            counter += 1
+
+        new_config = {
+            "backend": default_backend,
+            "voice": persona,
+            "pitch": pitch,
+            "speed": speed,
+        }
+
+        # Update and save
+        registry[sp_clean] = new_config
+        chars = roster.setdefault("characters", {})
+        chars[sp_clean] = {
+            "english_name": sp_clean,
+            "display_name": sp_clean,
+            "gender": g,
+            "assigned_voice_id": persona,
+            "aliases": [sp_clean],
+            "archetype": "dynamically_cast_character",
+        }
+        lock_dict = locks.setdefault("locks", {})
+        lock_dict[sp_clean] = {
+            "character_id": sp_clean,
+            "character_name": sp_clean,
+            "locked": True,
+            "voice_id": persona,
+        }
+
+        try:
+            roster_path.write_text(json.dumps(roster, ensure_ascii=False, indent=2), encoding="utf-8")
+            registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8")
+            lock_path.write_text(json.dumps(locks, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info(f"[+] CharacterCaster: Dynamically cast '{sp_clean}' -> {persona} (pitch: {pitch}, speed: {speed}). Registry updated.")
+        except Exception as e:
+            logger.warning(f"  [!] Notice saving dynamic cast for {sp_clean}: {e}")
+
+        return new_config

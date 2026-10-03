@@ -371,7 +371,7 @@ The repository maintains a permanent, regression-tested Golden Pronunciation Sui
 | `gold_06` | Sanskrit Tatsama | संपूर्ण अस्तित्व उस एक क्षण पर टिका था। | `"अस्तित्व"` | `SANSKRIT` |
 | `gold_07` | Urdu Nukta Preservation | यह ज़िंदगी बहुत अजीब है। | `"ज़िंदगी"` | `URDU` |
 | `gold_08` | Urdu Nukta Preservation | वक़्त किसी का इंतज़ार नहीं करता। | `"वक़्त"` | `URDU` |
-| `gold_09` | Foreign Fantasy Place | वे Kaer Morhen की ओर बढ़े। | `"केर मॉरहेन"` | `FOREIGN` |
+| `gold_09` | Foreign Place | वे Baker Street की ओर बढ़े। | `"बेकर स्ट्रीट"` | `FOREIGN` |
 | `gold_10` | Acronym Initialism | FBI के एजेंट बाहर खड़े थे। | `"एफ़.बी.आई."` | `ENGLISH` |
 | `gold_11` | Acronym Initialism | मामला CBI को सौंप दिया गया। | `"सी.बी.आई."` | `HINDI` |
 | `gold_12` | Acronym Initialism | वह एक VIP मेहमान था। | `"वी.आई.पी."` | `ENGLISH` |

@@ -43,13 +43,28 @@ def verify_pre_synthesis_gates(
         logger.error("[!] Screenplay contains non-canonical speakers, schema violations, or misattributed dialogue. Aborting synthesis.")
         raise
     except Exception as e:
-        logger.warning(f"[!] Gate 2 Script Audit notice for Chapter {chapter_num:02d}: {e}")
+        # FAIL-CLOSED: An unexpected auditor crash must not silently pass a broken screenplay to TTS.
+        logger.error(
+            f"[!] 🛑 GATE 2 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            "Aborting to prevent corrupted script from reaching synthesis."
+        )
+        raise GateAuditError(f"Gate 2 Script Audit raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
 
     # Gate 2.5: Dramatic Beat Fidelity & Character Arc Validator
     dramatic_plan_file = project_dir / "dramaturgy" / f"{chap_stem}_dramatic_plan.json"
-    source_chap_file = project_dir / "translated" / f"{chap_stem}.md"
+    # FIX: translator.py writes to `translation/` (not `translated/`) with suffix `_hi.md`.
+    # Probe canonical path first, then bare-name fallback, then extracted fallback.
+    _translation_dir = project_dir / "translation"
+    source_chap_file = _translation_dir / f"{chap_stem}_hi.md"
+    if not source_chap_file.exists():
+        source_chap_file = _translation_dir / f"{chap_stem}.md"
     if not source_chap_file.exists():
         source_chap_file = project_dir / "extracted" / f"{chap_stem}.md"
+        if source_chap_file.exists():
+            logger.warning(
+                f"[!] Gate 2.5: No translated file found in '{_translation_dir}' for '{chap_stem}'. "
+                "Falling back to raw extracted source — dramatic fidelity check may be inaccurate."
+            )
     try:
         gate2_5_res = audit_gate2_5_dramatic_fidelity(
             script_file=script_file,
@@ -62,7 +77,12 @@ def verify_pre_synthesis_gates(
         logger.error(f"\n[!] 🛑 GATE 2.5 DRAMATIC FIDELITY FAILED for Chapter {chapter_num:02d}: {e}")
         raise
     except Exception as e:
-        logger.warning(f"[!] Gate 2.5 Dramatic Fidelity notice for Chapter {chapter_num:02d}: {e}")
+        # FAIL-CLOSED: Unexpected crash in dramatic fidelity auditor must not silently pass.
+        logger.error(
+            f"[!] 🛑 GATE 2.5 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            "Aborting to prevent un-validated screenplay from reaching synthesis."
+        )
+        raise GateAuditError(f"Gate 2.5 Dramatic Fidelity raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
 
 
 def verify_performance_fidelity_gate(
@@ -74,27 +94,43 @@ def verify_performance_fidelity_gate(
     perf_report_file = manifests_dir / f"chapter_{chapter_num:03d}_performance_report.json"
     if not perf_report_file.exists():
         perf_report_file = manifests_dir / f"{chap_stem}_performance_report.json"
-    if perf_report_file.exists():
-        try:
-            from audiobook_factory.performance.contracts import PerformanceFidelityReport
-            with open(perf_report_file, "r", encoding="utf-8") as rf:
-                rep_dict = json.load(rf)
-            rep = PerformanceFidelityReport.model_validate(rep_dict)
-            if rep.passed:
-                logger.info(f"[*] Gate 2.8 Performance Fidelity: PASSED for Chapter {chapter_num:02d} (Avg Score: {rep.avg_evaluation_score:.2f})")
+    if not perf_report_file.exists():
+        strict_perf = os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("true", "1", "yes")
+        if strict_perf and os.environ.get("MOCK_OFFLINE", "").lower() not in ("true", "1", "yes") and os.environ.get("BYPASS_PERFORMANCE_GATE", "").lower() not in ("true", "1"):
+            raise GateAuditError(
+                f"Gate 2.8 Performance Fidelity FAILED: Missing performance report '{perf_report_file.name}' for Chapter {chapter_num:02d}. "
+                "TTS performance was not audited."
+            )
+        logger.warning(
+            f"[!] Gate 2.8 Performance Fidelity: Performance report '{perf_report_file.name}' not found for Chapter {chapter_num:02d}. "
+            "Skipping pre-mix fidelity verification."
+        )
+        return
+    try:
+        from audiobook_factory.performance.contracts import PerformanceFidelityReport
+        with open(perf_report_file, "r", encoding="utf-8") as rf:
+            rep_dict = json.load(rf)
+        rep = PerformanceFidelityReport.model_validate(rep_dict)
+        if rep.passed:
+            logger.info(f"[*] Gate 2.8 Performance Fidelity: PASSED for Chapter {chapter_num:02d} (Avg Score: {rep.avg_evaluation_score:.2f})")
+        else:
+            force_perf = os.environ.get("FORCE_PERFORMANCE_GATE", "false").lower() in ("true", "1", "yes")
+            if force_perf:
+                logger.warning(f"[!] Gate 2.8 Performance Fidelity FORCED for Chapter {chapter_num:02d}: {rep.unresolved_issues}")
             else:
-                force_perf = os.environ.get("FORCE_PERFORMANCE_GATE", "false").lower() in ("true", "1", "yes")
-                if force_perf:
-                    logger.warning(f"[!] Gate 2.8 Performance Fidelity FORCED for Chapter {chapter_num:02d}: {rep.unresolved_issues}")
-                else:
-                    raise GateAuditError(
-                        f"Gate 2.8 Performance Fidelity Failed for Chapter {chapter_num:02d}: "
-                        f"{'; '.join(rep.unresolved_issues[:3]) if rep.unresolved_issues else 'Low evaluation score'}"
-                    )
-        except GateAuditError:
-            raise
-        except Exception as e:
-            logger.warning(f"[!] Gate 2.8 Performance Fidelity notice for Chapter {chapter_num:02d}: {e}")
+                raise GateAuditError(
+                    f"Gate 2.8 Performance Fidelity Failed for Chapter {chapter_num:02d}: "
+                    f"{'; '.join(rep.unresolved_issues[:3]) if rep.unresolved_issues else 'Low evaluation score'}"
+                )
+    except GateAuditError:
+        raise
+    except Exception as e:
+        # FAIL-CLOSED: Crash reading the performance report must not silently pass.
+        logger.error(
+            f"[!] 🛑 GATE 2.8 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            "Performance fidelity cannot be verified — aborting."
+        )
+        raise GateAuditError(f"Gate 2.8 Performance Fidelity raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
 
 
 def verify_acoustic_feasibility_gate(
@@ -113,7 +149,12 @@ def verify_acoustic_feasibility_gate(
     except GateAuditError:
         raise
     except Exception as e:
-        logger.warning(f"[!] Gate 3.5 Feasibility notice: {e}")
+        # FAIL-CLOSED: Auditor crash must not let silent/clipped audio proceed to render.
+        logger.error(
+            f"[!] 🛑 GATE 3.5 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            "Acoustic feasibility cannot be verified — aborting."
+        )
+        raise GateAuditError(f"Gate 3.5 Acoustic Feasibility raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
 
 
 def verify_post_mix_master_gates(
@@ -133,7 +174,8 @@ def verify_post_mix_master_gates(
     strict_gates = os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes")
 
     # Gate 5.2: Spectral Masking (Dialogue vs Music DMR)
-    gate52_passed = True
+    gate52_passed = False
+    is_offline = os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
     if mx_stem.exists() and vocal_wav.exists():
         try:
             gate52_res = audit_gate5_2_spectral_masking(vocal_wav, mx_stem, min_dmr_db=12.0)
@@ -151,9 +193,16 @@ def verify_post_mix_master_gates(
             gate52_passed = False
             if strict_gates:
                 raise GateAuditError(f"Gate 5.2 audit probe error: {e}")
+    else:
+        if is_offline:
+            gate52_passed = True
+        else:
+            logger.error(f"[!] 🛑 Gate 5.2 FAILED: Missing stems (mx={mx_stem.exists()}, vocal={vocal_wav.exists()})")
+            if strict_gates:
+                raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.2: Missing mx_stem or vocal_wav stems.")
 
     # Gate 5.3: Stereo Phase Correlation
-    gate53_passed = True
+    gate53_passed = False
     phase_corr = 1.0
     if master_wav.exists():
         try:
@@ -173,6 +222,13 @@ def verify_post_mix_master_gates(
             gate53_passed = False
             if strict_gates:
                 raise GateAuditError(f"Gate 5.3 audit probe error: {e}")
+    else:
+        if is_offline:
+            gate53_passed = True
+        else:
+            logger.error(f"[!] 🛑 Gate 5.3 FAILED: master_wav does not exist ({master_wav})")
+            if strict_gates:
+                raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.3: master_wav missing.")
 
     # Gate 5: Broadcast Master EBU R128 Probe
     gate5_certified = False
@@ -221,19 +277,39 @@ def verify_translation_coverage_gates(project_dir: Path, strict: bool = True) ->
         tf = translation_dir / f"{ef.stem}_hi.md"
         if not tf.exists():
             tf = translation_dir / ef.name
-        if tf.exists():
-            g0_res = audit_gate0_translation(ef, tf, enable_llm_judge=True, strict=strict)
-            logger.info(
-                f"[*] Gate 0 Translation Coverage: PASSED for {ef.name} "
-                f"({g0_res.get('translation_chars')} chars, ratio {g0_res.get('length_ratio')}, "
-                f"fidelity: {g0_res.get('fidelity_score', 'N/A')})"
-            )
+        if not tf.exists():
+            if strict:
+                raise GateAuditError(
+                    f"Gate 0 Translation Coverage FAILED: Missing translated file for {ef.name}. "
+                    f"Expected '{ef.stem}_hi.md' in {translation_dir}."
+                )
+            else:
+                logger.warning(f"[!] Gate 0 Translation Coverage: Missing translated file for {ef.name}.")
+                continue
 
-            # Gate 1 Anti-Censorship (Adversarial Profanity, Combat Gore, Somatic Intimacy)
-            ext_text = ef.read_text(encoding="utf-8")
-            trans_text = tf.read_text(encoding="utf-8")
-            g1_anti = audit_gate1_anticensorship_agent(ext_text, trans_text, strict=strict)
-            logger.info(f"[*] Gate 1 Anti-Censorship Audit: PASSED for {ef.name} (Status: {g1_anti.get('status')})")
+        g0_res = audit_gate0_translation(ef, tf, enable_llm_judge=True, strict=strict)
+        logger.info(
+            f"[*] Gate 0 Translation Coverage: PASSED for {ef.name} "
+            f"({g0_res.get('translation_chars')} chars, ratio {g0_res.get('length_ratio')}, "
+            f"fidelity: {g0_res.get('fidelity_score', 'N/A')})"
+        )
+
+        # Gate 1 Anti-Censorship (Adversarial Profanity, Combat Gore, Somatic Intimacy)
+        ext_text = ef.read_text(encoding="utf-8")
+        trans_text = tf.read_text(encoding="utf-8")
+        g1_anti = audit_gate1_anticensorship_agent(ext_text, trans_text, strict=strict)
+        anti_status = g1_anti.get("status", "UNKNOWN")
+        if anti_status == "PASS":
+            logger.info(f"[*] Gate 1 Anti-Censorship Audit: PASSED for {ef.name}")
+        else:
+            flagged = g1_anti.get("flagged", [])
+            msg = f"Gate 1 Anti-Censorship Audit flagged {len(flagged)} dilution issues in {ef.name} (Status: {anti_status})"
+            if strict:
+                logger.error(f"[!] 🛑 {msg}")
+                reasons = "; ".join(f"{f.get('english', '')}->{f.get('hindi', '')}: {f.get('reason', '')}" for f in flagged)
+                raise GateAuditError(f"Gate 1 Anti-Censorship FAILED for {ef.name}: {reasons}")
+            else:
+                logger.warning(f"[!] {msg}")
 
 
 def verify_screenplay_project_gates(project_dir: Path) -> None:
@@ -260,6 +336,19 @@ def verify_packaging_gates(project_dir: Path) -> None:
         if g6c_res.passed:
             logger.info("[*] Gate 6C Table of Contents Monotonicity: PASSED")
         else:
-            logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {g6c_res.errors}")
+            # FAIL-CLOSED: Out-of-order chapters must not be silently packaged into M4B.
+            logger.error(f"[!] 🛑 GATE 6C TOC MONOTONICITY FAILED: {g6c_res.errors}")
+            raise GateAuditError(
+                f"Gate 6C TOC Monotonicity Failed — chapter timestamps are non-monotonic or boundaries overlap: "
+                f"{'; '.join(str(e) for e in g6c_res.errors)}"
+            )
+    except GateAuditError:
+        raise
     except Exception as e:
-        logger.warning(f"[!] Gate 6C TOC Monotonicity notice: {e}")
+        # FAIL-CLOSED: Auditor crash must not silently produce a malformed M4B TOC.
+        logger.error(
+            f"[!] 🛑 GATE 6C UNEXPECTED CRASH: {e}. "
+            "TOC monotonicity cannot be verified — aborting packaging."
+        )
+        raise GateAuditError(f"Gate 6C TOC Monotonicity raised an unexpected error: {e}") from e
+

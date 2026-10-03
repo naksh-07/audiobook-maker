@@ -324,6 +324,8 @@ class TestCinemaQualityGates(unittest.TestCase):
                     section_start_sec=0.5,
                     start_ms=1000,
                     duration_ms=1500,
+                    fade_in_ms=500,
+                    fade_out_ms=500,
                 )
             ],
             foley_cues=[

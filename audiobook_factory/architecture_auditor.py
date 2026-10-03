@@ -21,7 +21,7 @@ import os
 import json
 import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Set
 
 from audiobook_factory.logger import logger
 from audiobook_factory.sound_bank import SoundBank, get_sound_bank
@@ -351,13 +351,16 @@ class ArchitectureAuditor:
                     if q:
                         all_music_queries.append({"query": q, "category": "music"})
 
-                # Collect foley queries
+                # Check for fantasy sound leaks only in explicitly modern environments
+                is_modern_scene = (
+                    mdata.get("era", "").upper() in ("MODERN", "MODERN_CONTEMPORARY")
+                    or (mdata.get("scene_intent", {}) or {}).get("era", "").upper() in ("MODERN", "MODERN_CONTEMPORARY")
+                )
                 for fc in mdata.get("foley_cues", []):
                     anchor = fc.get("anchor_word", "")
                     tag = fc.get("asset_name", "")
-                    # Check for fantasy sound leaks in muggle/modern environments
                     lower_name = (tag + " " + anchor).lower()
-                    if any(w in lower_name for w in ("sword", "blade", "dagger", "axe", "witcher", "magic_blast")):
+                    if is_modern_scene and any(w in lower_name for w in ("sword", "blade", "dagger", "axe", "magic_blast", "spell")):
                         fantasy_cues_in_modern_scenes += 1
                     if anchor and anchor != "[STOCHASTIC]":
                         all_foley_queries.append({"query": anchor, "category": "foley"})

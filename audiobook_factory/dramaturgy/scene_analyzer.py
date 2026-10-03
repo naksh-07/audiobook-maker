@@ -36,12 +36,14 @@ class SceneAnalyzer:
     TIME_PATTERNS = [
         r"\b(?:the next morning|at dawn|by dusk|later that evening|several hours later|at midnight|next day|the following day)\b",
         r"\b(?:in the morning|after sunset|as darkness fell|days passed|weeks passed|a moment later|hours passed)\b",
-        r"\b(?:अगली\s+सुबह|दोपहर\s+को|शाम\s+ढलते\s+ही|रात\s+के\s+वक्त|कुछ\s+देर\s+बाद|कई\s+दिनों\s+बाद)\b",
+        # FIX: \b fails on Devanagari text — replaced with Unicode-aware space/boundary lookarounds.
+        r"(?:(?<=[^a-zA-Z\u0900-\u097F])|^)(?:अगली\s+सुबह|दोपहर\s+को|शाम\s+ढलते\s+ही|रात\s+के\s+वक्त|कुछ\s+देर\s+बाद|कई\s+दिनों\s+बाद)(?=[^a-zA-Z\u0900-\u097F]|$)",
     ]
     LOCATION_PATTERNS = [
         r"\b(?:left the|entered the|arrived at|walked into|stepped outside|in the courtyard|in the temple|in the tavern|in the library)\b",
         r"\b(?:at the gates?|on the road|by the river|in the forest|under the bridge|into the chamber|in the alley)\b",
-        r"\b(?:कमरे\s+से\s+बाहर|सड़क\s+पर|दरवाजे\s+पर|जंगल\s+में|महल\s+के\s+भीतर|सराय\s+में|नदी\s+किनारे)\b",
+        # FIX: \b fails on Devanagari text — replaced with Unicode-aware space/boundary lookarounds.
+        r"(?:(?<=[^a-zA-Z\u0900-\u097F])|^)(?:कमरे\s+से\s+बाहर|सड़क\s+पर|दरवाजे\s+पर|जंगल\s+में|महल\s+के\s+भीतर|सराय\s+में|नदी\s+किनारे)(?=[^a-zA-Z\u0900-\u097F]|$)",
     ]
     DIVIDER_PATTERNS = [r"^\s*[-*_~]{3,}\s*$", r"^\s*\*\s*\*\s*\*\s*$"]
 
@@ -178,7 +180,6 @@ class SceneAnalyzer:
                 system_instruction=pass1_sys,
                 task_type=TaskType.DRAMATURGY,
                 response_mime_type="application/json",
-                temperature=0.2,
                 max_retries=3,
             )
 
@@ -221,7 +222,6 @@ class SceneAnalyzer:
                     system_instruction=pass2_sys,
                     task_type=TaskType.DRAMATURGY,
                     response_mime_type="application/json",
-                    temperature=0.2,
                     max_retries=3,
                 )
             except Exception as e2:
@@ -634,10 +634,18 @@ class SceneAnalyzer:
 
         # Decisions made
         decisions: List[str] = []
+        # FIX: \b fails on Devanagari tokens — split decision detection into English and Hindi patterns.
+        _dev_b = r"(?:(?<=[^a-zA-Z\u0900-\u097F])|(?<=^))"
+        _dev_b_end = r"(?=[^a-zA-Z\u0900-\u097F]|$)"
         dec_matches = re.findall(
-            r"\b(?:decided|chose|agreed|refused|swore|vowed|resolved|फैसला किया|तय किया)\s+([^.,;\n]{8,40})",
+            r"\b(?:decided|chose|agreed|refused|swore|vowed|resolved)\s+([^.,;\n]{8,40})",
             scene_text,
             re.IGNORECASE,
+        )
+        dec_matches += re.findall(
+            _dev_b + r"(?:फैसला किया|तय किया)" + _dev_b_end + r"\s*([^।\n]{4,40})",
+            scene_text,
+            re.UNICODE,
         )
         for m in dec_matches[:3]:
             decisions.append(f"Committed: '{m.strip()}'")
@@ -692,8 +700,19 @@ class SceneAnalyzer:
         # Strip dialogue quotes to inspect narrative voice alone
         narrative_only = re.sub(r'["“][^"”]*["”]', '', scene_text)
 
-        first_person_tokens = len(re.findall(r"\b(?:I|my|mine|we|our|मैंने|मुझे|हम|मेरा)\b", narrative_only, re.IGNORECASE))
-        third_person_tokens = len(re.findall(r"\b(?:he|she|his|her|they|their|उसने|उसका|उसकी|वे|उनका)\b", narrative_only, re.IGNORECASE))
+        # FIX: \b fails on Devanagari tokens — split into separate English and Devanagari findall passes.
+        # Devanagari boundary: match tokens at start of string or after non-Devanagari/non-ASCII-word chars.
+        _dv_b  = r"(?:(?<=[^a-zA-Z\u0900-\u097F])|^)"
+        _dv_be = r"(?=[^a-zA-Z\u0900-\u097F]|$)"
+        first_person_tokens = (
+            len(re.findall(r"\b(?:I|my|mine|we|our)\b", narrative_only, re.IGNORECASE))
+            + len(re.findall(_dv_b + r"(?:मैंने|मुझे|हम|मेरा)" + _dv_be, narrative_only, re.UNICODE))
+        )
+        third_person_tokens = (
+            len(re.findall(r"\b(?:he|she|his|her|they|their)\b", narrative_only, re.IGNORECASE))
+            + len(re.findall(_dv_b + r"(?:उसने|उसका|उसकी|वे|उनका)" + _dv_be, narrative_only, re.UNICODE))
+        )
+
 
         pov_char = active_chars[0] if active_chars else None
 

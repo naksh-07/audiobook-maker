@@ -121,10 +121,12 @@ def cmd_produce(args):
         scripts_dir = project_dir / "scripts"
         scripts = sorted(scripts_dir.glob("chapter_*_script.json"))
         print(f"[*] Producing all {len(scripts)} chapters for '{args.book}'...")
-        for idx in range(1, len(scripts) + 1):
+        for s_file in scripts:
+            m = re.search(r"chapter_(\d+)", s_file.stem, re.IGNORECASE)
+            ch_num = int(m.group(1)) if m else 1
             orchestrator.produce_chapter(
                 project_dir=project_dir,
-                chapter_num=idx,
+                chapter_num=ch_num,
                 voice=args.voice,
                 workers=args.workers,
                 duck_db=args.duck_db,

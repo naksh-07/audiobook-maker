@@ -71,6 +71,34 @@ def _resolve_cadence_controller():
     return get_human_cadence_controller()
 
 
+def _atomic_replace(src: Path, dst: Path, max_attempts: int = 8) -> None:
+    """
+    Atomically promotes src to dst with Windows file-locking retry backoff
+    and fallback to copy2 + unlink.
+    """
+    dst = Path(dst)
+    src = Path(src)
+    for attempt in range(max_attempts):
+        try:
+            src.replace(dst)
+            return
+        except (PermissionError, OSError) as e:
+            if attempt == max_attempts - 1:
+                try:
+                    import shutil
+                    shutil.copy2(src, dst)
+                    try:
+                        src.unlink()
+                    except OSError:
+                        pass
+                    return
+                except Exception as final_e:
+                    logger.error(f"  [ATOMIC REPLACE FAILED] Could not replace {dst.name}: {final_e}")
+                    raise final_e
+            sleep_sec = 0.05 * (2 ** attempt) + random.uniform(0.01, 0.05)
+            time.sleep(sleep_sec)
+
+
 def resolve_speech_metadata_style(
     acting: Any,
     emotion: str = "neutral",
@@ -177,13 +205,16 @@ def synthesize_gemini_tts(
         ],
     }
 
-    # Subtle temperature micro-entropy around calibrated director temperature (or default median)
+    # --- TTS Temperature (Phase 2 Fix) ---
+    # Old clamp: max(0.2, min(1.0, ...)) — floor of 0.2 kills expressive TTS performance.
+    # Gemini TTS valid range is [0.0, 2.0]; dramatic audiobook range should be [0.70, 1.40].
+    # Default spread widened from [0.685, 0.715] to [0.90, 1.10] for dramatic vocal range.
     gen_config = payload["generationConfig"]
     if base_temp is not None:
-        jitter = random.uniform(-0.01, 0.01)
-        gen_config["temperature"] = round(max(0.2, min(1.0, float(base_temp) + jitter)), 3)
+        jitter = random.uniform(-0.02, 0.02)
+        gen_config["temperature"] = round(max(0.70, min(1.40, float(base_temp) + jitter)), 3)
     else:
-        gen_config["temperature"] = round(random.uniform(0.685, 0.715), 3)
+        gen_config["temperature"] = round(random.uniform(0.90, 1.10), 3)
 
     data = json.dumps(payload).encode("utf-8")
     cadence = _resolve_cadence_controller()
@@ -287,7 +318,7 @@ def synthesize_gemini_tts(
                             else:
                                 consec = 0
                         is_clipped = (max_consec >= 6)
-                        faint_limit = 8.0 if ("[whispers]" in text.lower() or "whisper" in emotion.lower() or "tender" in emotion.lower()) else 20.0
+                        faint_limit = 8.0 if ("whisper" in text.lower() or "whisper" in emotion.lower() or "tender" in emotion.lower() or "intimate" in emotion.lower() or "breathy" in emotion.lower()) else 20.0
                         is_silent_faint = (peak_amp > 0 and word_count >= 3 and rms < faint_limit)
                         is_dc_corrupted = (peak_amp > 0 and dur_sec >= 2.0 and dc_offset > 1500.0)
                         is_stutter = (word_count > 3 and ratio > 3.2 and dur_sec >= 15.0)
@@ -334,8 +365,8 @@ def synthesize_gemini_tts(
                                     f"(dur={dur_sec:.1f}s, words={word_count}, peak={peak_amp}, rms={rms:.1f})"
                                 )
 
-                        # Atomically promote verified audio to target destination
-                        tmp_file.replace(output_file)
+                        # Atomically promote verified audio to target destination (Windows-resilient)
+                        _atomic_replace(tmp_file, output_file)
 
                         # Record success in persistent key pool
                         pool.record_success(api_key)
@@ -344,7 +375,7 @@ def synthesize_gemini_tts(
                             from audiobook_factory.telemetry import get_telemetry_ledger
                             get_telemetry_ledger().record_api_call(
                                 run_id=run_id,
-                                service="gemini-tts",
+                                service="gemini_tts",
                                 endpoint=model,
                                 status_code=200,
                                 latency_sec=latency_sec,
@@ -380,7 +411,7 @@ def synthesize_gemini_tts(
                     t_led = get_telemetry_ledger()
                     t_led.record_api_call(
                         run_id=run_id,
-                        service="gemini-tts",
+                        service="gemini_tts",
                         endpoint=model,
                         status_code=e.code,
                         latency_sec=latency_sec,
@@ -462,6 +493,7 @@ def synthesize_gemini_multispeaker_batch(
     voice_map: Dict[str, str],
     model: str = DEFAULT_MODEL,
     rate_limiter: Optional[TokenBucketRateLimiter] = None,
+    temperature: Optional[float] = None,
 ) -> Tuple[Path, float]:
     """
     Synthesizes a multi-speaker dialogue batch using Gemini 3.8 Flash TTS
@@ -518,6 +550,13 @@ def synthesize_gemini_multispeaker_batch(
             }
         })
 
+    # Expressive acting temperature for multi-speaker drama (Phase 3 Fix)
+    if temperature is not None:
+        jitter = random.uniform(-0.02, 0.02)
+        batch_temp = round(max(0.70, min(1.40, float(temperature) + jitter)), 3)
+    else:
+        batch_temp = round(random.uniform(0.90, 1.10), 3)
+
     payload = {
         "contents": [{
             "role": "user",
@@ -530,7 +569,7 @@ def synthesize_gemini_multispeaker_batch(
                     "speakerVoiceConfigs": spk_configs
                 }
             },
-            "temperature": round(random.uniform(0.685, 0.715), 3)
+            "temperature": batch_temp
         },
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -652,14 +691,14 @@ def synthesize_gemini_multispeaker_batch(
                                     f"SNR Gatekeeper rejected batch audio after 3 attempts ({defect})"
                                 )
 
-                        tmp_file.replace(output_file)
+                        _atomic_replace(tmp_file, output_file)
                         pool.record_success(api_key)
                         run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
                         try:
                             from audiobook_factory.telemetry import get_telemetry_ledger
                             get_telemetry_ledger().record_api_call(
                                 run_id=run_id,
-                                service="gemini-tts-multispeaker",
+                                service="gemini_tts_multispeaker",
                                 endpoint=model,
                                 status_code=200,
                                 latency_sec=latency_sec,
@@ -695,7 +734,7 @@ def synthesize_gemini_multispeaker_batch(
                     t_led = get_telemetry_ledger()
                     t_led.record_api_call(
                         run_id=run_id,
-                        service="gemini-tts-multispeaker",
+                        service="gemini_tts_multispeaker",
                         endpoint=model,
                         status_code=e.code,
                         latency_sec=latency_sec,

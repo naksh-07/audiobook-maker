@@ -156,13 +156,13 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
             temp = resolved.effective_temperature
         except Exception:
             style_desc = self.compose_style_descriptor(direction, variant_type=variant_type)
-            temp = 0.70
+            temp = 0.95
             if variant_type == "restraint":
-                temp = 0.65
+                temp = 0.85
             elif variant_type == "exposed":
-                temp = 0.76
+                temp = 1.10
             elif variant_type == "vulnerable":
-                temp = 0.72
+                temp = 1.00
 
         part_payload: Dict[str, Any] = {"text": clean_text}
         if style_desc and style_desc.lower() not in ("neutral", "standard"):

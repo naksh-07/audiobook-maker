@@ -9,8 +9,9 @@ Persisted as dedicated `chapter_XXX_scene_acoustics.json`.
 from __future__ import annotations
 import json
 import logging
+import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Literal, Union
+from typing import Dict, Any, List, Optional, Literal, Union, Set
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
@@ -211,13 +212,15 @@ class SceneSoundscapeManifest(BaseModel):
                 # Resolve candidate sound assets from sound bank
                 candidates: List[Path] = []
                 banned_stoch = (
-                    "jump", "boot", "sword", "blade", "drawbridge", "armor", "clash",
-                    "horse", "gallop", "leather", "weapon", "shield", "07018159", "shambling",
-                    "troops", "soldiers", "grader", "santiago", "chile", "march"
+                    "sword", "blade", "drawbridge", "clash", "gunshot", "explosion"
                 )
+                def _is_banned_stoch(p: Path) -> bool:
+                    cname = re.sub(r"[_\-\.\/\\]+", " ", p.name.lower())
+                    return any(re.search(rf"\b{re.escape(b)}\b", cname) for b in banned_stoch)
+
                 if sound_bank is not None:
                     res = sound_bank.resolve_sound(layer.asset_path, category="FOL") or sound_bank.resolve_sound(layer.asset_path)
-                    if res and res.exists() and not any(b in res.name.lower() for b in banned_stoch):
+                    if res and res.exists() and not _is_banned_stoch(res):
                         candidates.append(res)
                     else:
                         q = layer.asset_path.replace("_", " ").strip() or "wood creak"
@@ -229,7 +232,7 @@ class SceneSoundscapeManifest(BaseModel):
                             if dur > 3.5:
                                 continue
                             fp = Path(r.get("filepath", ""))
-                            if fp.exists() and fp not in candidates and not any(b in fp.name.lower() for b in banned_stoch):
+                            if fp.exists() and fp not in candidates and not _is_banned_stoch(fp):
                                 candidates.append(fp)
 
                 # If no valid subtle candidate exists, skip this layer to preserve clean silence

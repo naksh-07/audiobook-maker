@@ -26,8 +26,8 @@ CHAPTER_PATTERNS = [
     r"^(?:\s*#+\s*)?(?:अध्याय|भाग|खंड|काण्ड|प्रस्तावना|उपसंहार)\s*(?:\d+|[०-९]+|[a-z]+)?\b.*$",
     # Roman numeral standalone headers (e.g. "IV.", "XIV", "I - The Awakening") preceded and followed by blank lines
     r"^(?:[IVXLCDM]{1,8}(?:\.|\s*[\-–—]\s*[A-Z][^\n]{2,60})?)$",
-    # Word-number standalone headers (e.g. "ONE", "TWENTY-TWO", "THREE: The Journey")
-    r"^(?:(?:ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|ELEVEN|TWELVE|THIRTEEN|FOURTEEN|FIFTEEN|SIXTEEN|SEVENTEEN|EIGHTEEN|NINETEEN|TWENTY)(?:\s*[\:\-–—]\s*[A-Z][^\n]{2,60})?)$",
+    # Word-number standalone headers (e.g. "ONE", "TWENTY-TWO", "THREE: The Journey", "THIRTY-FOUR")
+    r"^(?:(?:(?:ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|ELEVEN|TWELVE|THIRTEEN|FOURTEEN|FIFTEEN|SIXTEEN|SEVENTEEN|EIGHTEEN|NINETEEN)|(?:TWENTY|THIRTY|FORTY|FIFTY|SIXTY|SEVENTY|EIGHTY|NINETY)(?:[\s\-]+(?:ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE))?|HUNDRED)(?:\s*[\:\-–—]\s*[A-Z][^\n]{2,60})?)$",
 ]
 
 COMBINED_CHAPTER_REGEX = "|".join(f"(?:{p})" for p in CHAPTER_PATTERNS)

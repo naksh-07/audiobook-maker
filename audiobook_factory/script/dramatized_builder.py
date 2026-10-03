@@ -5,6 +5,7 @@ Coordinates beat-aligned chunking, two-pass parsing, and dramatic validation.
 """
 
 from __future__ import annotations
+import os
 import hashlib
 import logging
 from typing import List, Dict, Any, Optional
@@ -95,8 +96,8 @@ def build_dramatized_script_llm(
         else ""
     )
 
-    # 2. Granular Micro-Chunking (~350 words ceiling) to eliminate token fatigue & ensure turn-level attribution
-    max_chunk_words = 350
+    # 2. Optimized Beat-Aligned Chunking (~500 words ceiling) for rich context & zero dialogue swallowing (Phase 3 Fix)
+    max_chunk_words = int(os.environ.get("SCREENPLAY_CHUNK_WORDS", "500"))
     words_count = len(chapter_text.split())
 
     if words_count <= max_chunk_words:

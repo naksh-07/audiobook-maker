@@ -111,10 +111,12 @@ def check_cinematic_intent(
     scene_text = getattr(scene_intent, "narrative_summary", "") or f"Scene focus: {focus}"
     try:
         from audiobook_factory.gates.llm_judge import LLMSoundDesignCritic
+        intent_era = getattr(scene_intent, "era", None) or getattr(scene_intent, "franchise_era", None) or "UNIVERSAL_CONTEMPORARY"
         verdict = LLMSoundDesignCritic.audit_soundscape(
             scene_text=scene_text,
             manifest_summary={"stems": stem_summary, "focus": focus},
             active_env=getattr(scene_intent, "acoustic_env", ""),
+            franchise_era=intent_era,
             strict=False,
         )
         evidence["llm_sound_design"] = {
@@ -134,8 +136,42 @@ def check_cinematic_intent(
                 reason=f"Sound Design Critic rejected atmosphere: {clash_str}",
                 evidence=evidence,
             )
-    except Exception:
-        pass
+    except Exception as llm_exc:
+        # FAIL-CLOSED: LLM critic crash must NEVER silently award a perfect score.
+        # Log prominently and record degraded mode in evidence so it is auditable.
+        import traceback
+        from audiobook_factory.logger import logger as _logger
+        _logger.warning(
+            f"[!] cinematic_intent: LLMSoundDesignCritic crashed — operating in DEGRADED mode. "
+            f"Stems: {list(stem_summary.keys())}. Error: {llm_exc}\n{traceback.format_exc(limit=4)}"
+        )
+        evidence["llm_sound_design"] = {
+            "score": None,
+            "bypass_reason": f"LLM critic unavailable: {llm_exc}",
+            "degraded_mode": True,
+        }
+        # If strict mode is enabled via env, escalate to a hard FAIL so the pipeline halts.
+        import os
+        if os.environ.get("LLM_SOUND_DESIGN_STRICT", "false").lower() in ("true", "1", "yes"):
+            return CategoryResult(
+                name="cinematic_intent",
+                status="FAIL",
+                score=0.0,
+                critical=True,
+                reason=f"LLMSoundDesignCritic is required (LLM_SOUND_DESIGN_STRICT=true) but crashed: {llm_exc}",
+                evidence=evidence,
+            )
+        # Otherwise: degrade gracefully — record a reduced score and flag bypass for post-run review.
+        return CategoryResult(
+            name="cinematic_intent",
+            status="PASS_WITH_WARNINGS",
+            score=0.50,
+            reason=(
+                f"Sound Design Critic unavailable (LLM error); stem hierarchy not LLM-validated. "
+                f"Structural check only passed for '{focus}' intent. Set LLM_SOUND_DESIGN_STRICT=true to escalate."
+            ),
+            evidence=evidence,
+        )
 
     return CategoryResult(
         name="cinematic_intent",

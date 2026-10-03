@@ -113,7 +113,7 @@ class FTSCandidateGenerator(BaseCandidateGenerator):
                     ORDER BY f.rank ASC LIMIT ?
                 """
                 rows = conn.execute(sql, (fts_and, limit)).fetchall()
-                if not rows and len(search_tokens) > 1:
+                if not rows and len(sanitized_tokens) > 1:
                     # 2. Broad recall OR fallback
                     rows = conn.execute(sql, (fts_or, limit)).fetchall()
 

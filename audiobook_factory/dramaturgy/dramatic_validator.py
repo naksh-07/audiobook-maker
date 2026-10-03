@@ -300,7 +300,16 @@ class DramaticValidator:
         if is_source_dev == is_script_dev:
             dropped_count = 0
             for quote in source_quotes[:15]:
-                q_clean = re.sub(r"[^\w\s]", "", quote).strip().lower()
+                # FIX: [^\w\s] strips Devanagari matras/viramas (U+0900-U+097F combining chars)
+                # because Python's re treats them as non-word in default ASCII mode.
+                # Instead: keep Unicode letters, digits, whitespace, AND full Devanagari block.
+                # Strip only ASCII punctuation (U+0000-U+007F non-alnum-non-space) and smart quotes.
+                q_clean = re.sub(
+                    r"[^\w\s\u0900-\u097F\u200C\u200D]",  # keep Devanagari + ZWJ/ZWNJ
+                    "",
+                    quote,
+                    flags=re.UNICODE,
+                ).strip().lower()
                 q_words = q_clean.split()
                 if len(q_words) >= 4:
                     probe = " ".join(q_words[:4])
@@ -451,7 +460,17 @@ class DramaticValidator:
                     for seg in segments:
                         if seg.get("scene_id") == sc.scene_id and seg.get("type") == "narration":
                             txt = seg.get("text", "")
-                            if re.search(r"\b(?:I thought|I felt|I realized|I saw|मैंने सोचा|मैंने देखा)\b", txt, re.IGNORECASE):
+                            # FIX: \b fails on Devanagari tokens — split into separate English and Devanagari patterns.
+                            # English POV tokens: standard \b works on ASCII word chars.
+                            # Devanagari POV tokens: boundary is start-of-string or any non-Devanagari/non-word character.
+                            _dev_boundary = r"(?:(?<=[^\w\u0900-\u097F])|^)"
+                            _dev_boundary_end = r"(?=[^\w\u0900-\u097F]|$)"
+                            _en_pov_pat = re.compile(r"\b(?:I thought|I felt|I realized|I saw)\b", re.IGNORECASE)
+                            _hi_pov_pat = re.compile(
+                                _dev_boundary + r"(?:मैंने सोचा|मैंने देखा)" + _dev_boundary_end,
+                                re.UNICODE,
+                            )
+                            if _en_pov_pat.search(txt) or _hi_pov_pat.search(txt):
                                 issues.append(
                                     DramaticValidationIssue(
                                         code="NARRATIVE_POV_VIOLATION",

@@ -11,13 +11,14 @@ import os
 import re
 import math
 import json
+import wave
 import shutil
 import logging
 import datetime
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Literal, Union
+from typing import Dict, Any, List, Optional, Literal, Union, Tuple
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -256,7 +257,12 @@ def render_discrete_stems(
     manifest, reality_report = auditor.audit_and_remediate(
         manifest=manifest,
         output_dir=out_dir,
-        era=getattr(manifest, "era", "MEDIEVAL_FANTASY"),
+        era=(
+            getattr(manifest, "era", None)
+            or (getattr(manifest, "scene_intent", None) and getattr(manifest.scene_intent, "era", None))
+            or (manifest.metadata.get("era") if hasattr(manifest, "metadata") and isinstance(manifest.metadata, dict) else None)
+            or "UNIVERSAL_CONTEMPORARY"
+        ),
         franchise_affinity=getattr(manifest, "franchise_affinity", None),
     )
 

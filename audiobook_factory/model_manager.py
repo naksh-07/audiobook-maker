@@ -175,11 +175,11 @@ class ModelManager:
         if any(x in m for x in ("lite", "flash-lite", "gemma")):
             return ModelTier.TIER_3_UTILITY
 
-        # Tier 1 Flagship: High-performance production models
-        if any(x in m for x in ("3.6-flash", "3.5-flash", "flash-latest", "gemini-pro")):
+        # Tier 1 Flagship: High reasoning models and pro previews
+        if any(x in m for x in ("3.8-flash", "3.7-flash", "-pro", "pro-preview", "gemini-pro")):
             return ModelTier.TIER_1_FLAGSHIP
 
-        # Tier 2 Balanced: Experimental / preview models
+        # Tier 2 Balanced: Standard balanced flash models
         return ModelTier.TIER_2_BALANCED
 
     def get_candidate_models_for_task(self, task: TaskType, refresh: bool = False) -> List[str]:
@@ -283,8 +283,6 @@ class ModelManager:
         env_pref = os.environ.get("GEMINI_TEXT_MODEL")
         if env_pref and env_pref in candidates:
             candidates = [env_pref] + [m for m in candidates if m != env_pref]
-        elif env_pref:
-            candidates.insert(0, env_pref)
 
         floor = TASK_MINIMUM_TIERS.get(task, ModelTier.TIER_2_BALANCED)
         if not candidates:

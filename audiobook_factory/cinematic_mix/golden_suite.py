@@ -48,6 +48,7 @@ from audiobook_factory.cinematic_mix.attention_map import AttentionMap, Attentio
 from audiobook_factory.cinematic_mix.perspective import AcousticPerspective
 from audiobook_factory.cinematic_mix.silence import SilenceEvent
 from audiobook_factory.cinematic_mix.impact import ImpactEvent
+from audiobook_factory.cinematic_mix.automation import MixAutomation
 from audiobook_factory.cinematic_mix.planner import AutomationPlanner
 from audiobook_factory.cinematic_mix.judge import MixJudge, MixJudgeResult
 

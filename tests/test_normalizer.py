@@ -30,7 +30,7 @@ class TestNormalizer(unittest.TestCase):
 
     def test_running_headers_and_page_numbers(self):
         raw = """
-Chapter 1: The Voice of Reason
+1
 
 Page 42 of 300
 
@@ -43,7 +43,7 @@ A boat emerged from the reeds.
         cleaned = clean_book_text(raw)
         self.assertNotIn("Page 42", cleaned)
         self.assertNotIn("- 43 -", cleaned)
-        self.assertIn("The evening mist", cleaned)
+        self.assertIn("1\n\nThe evening mist", cleaned)
         self.assertIn("A boat emerged", cleaned)
 
     def test_preserve_literary_quotes_flag(self):

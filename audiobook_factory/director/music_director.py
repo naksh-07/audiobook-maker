@@ -168,6 +168,13 @@ class MusicDirectorMixin:
 
             accumulated_music_ms += dur_ms
 
+            f_in = int(float(cue_data.get("fade_in_sec", 3.0)) * 1000)
+            f_out = int(float(cue_data.get("fade_out_sec", 4.0)) * 1000)
+            if (f_in + f_out) > dur_ms and dur_ms > 0:
+                fade_scale = (dur_ms * 0.95) / max(1, f_in + f_out)
+                f_in = int(f_in * fade_scale)
+                f_out = int(f_out * fade_scale)
+
             music_cues.append(
                 MusicCue(
                     cue_id=cue_data.get("cue_id", f"mc_{idx+1:03d}"),
@@ -178,8 +185,8 @@ class MusicDirectorMixin:
                     section_start_sec=section_start_sec,
                     start_ms=start_ms,
                     duration_ms=dur_ms,
-                    fade_in_ms=int(float(cue_data.get("fade_in_sec", 3.0)) * 1000),
-                    fade_out_ms=int(float(cue_data.get("fade_out_sec", 4.0)) * 1000),
+                    fade_in_ms=f_in,
+                    fade_out_ms=f_out,
                     volume_db=min(-18.0, float(cue_data.get("volume_db", -20.0))),
                     dramatic_justification=cue_data.get("dramatic_justification", ""),
                     leitmotif_ref=lm_ref or (getattr(resolved_motif, "motif_id", "") if resolved_motif else ""),

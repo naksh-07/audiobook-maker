@@ -247,7 +247,7 @@ def audit_gate3_5_acoustic_feasibility(
         fade_out_ms = getattr(cue, "fade_out_ms", 0) or 0
         dur_ms = getattr(cue, "duration_ms", 0) or 0
         if (fade_in_ms + fade_out_ms) > dur_ms and dur_ms > 0:
-            warnings.append(f"Music cue '{getattr(cue, 'cue_id', '')}' fade times ({fade_in_ms + fade_out_ms}ms) exceed cue duration ({dur_ms}ms).")
+            errors.append(f"Music cue '{getattr(cue, 'cue_id', '')}' envelope violation: fade times ({fade_in_ms + fade_out_ms}ms) exceed cue duration ({dur_ms}ms).")
 
     # 2. Audit Foley Cues
     for cue in foley_cues:
@@ -358,14 +358,13 @@ def audit_gate5_2_spectral_masking(
             warnings=warnings,
         )
 
-    # If music is silent (< -60 LUFS), DMR is effectively infinite -> PASS
-    if m_lufs <= -60.0:
+    if d_lufs <= -60.0:
+        dmr_db = -99.0
+        errors.append("Dialogue stem silent or unvoiced (< -60.0 LUFS) in vocal corridor. Audio synthesis failure.")
+        status_note = "Dialogue unvoiced (fatal)."
+    elif m_lufs <= -60.0:
         dmr_db = 99.0
         status_note = "Music stem silent or unvoiced in vocal corridor (zero masking)."
-    elif d_lufs <= -60.0:
-        dmr_db = -99.0
-        warnings.append("Dialogue stem silent in vocal corridor.")
-        status_note = "Dialogue unvoiced."
     else:
         dmr_db = round(d_lufs - m_lufs, 2)
         status_note = f"Measured DMR: +{dmr_db:.1f} dB"
@@ -408,6 +407,7 @@ def audit_gate5_3_stereo_phase(
     a_path = Path(audio_file).resolve()
 
     errors: List[str] = []
+    warnings: List[str] = []
     details: Dict[str, Any] = {}
 
     if not a_path.exists():
@@ -464,6 +464,7 @@ def audit_gate5_3_stereo_phase(
     if is_mono:
         mean_phase = 1.0
         details["channel_layout"] = "mono"
+        warnings.append("Audio master is mono downmix. Stereo spatial imaging is collapsed.")
     elif phase_values:
         mean_phase = sum(phase_values) / len(phase_values)
         details["channel_layout"] = "stereo"
@@ -491,4 +492,5 @@ def audit_gate5_3_stereo_phase(
         passed=passed,
         details=details,
         errors=errors,
+        warnings=warnings,
     )

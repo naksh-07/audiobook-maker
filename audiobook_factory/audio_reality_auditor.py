@@ -14,6 +14,7 @@ before multitrack mixing. Enforces strict physics:
 from __future__ import annotations
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Union
 
@@ -45,7 +46,7 @@ class AudioRealityReport(BaseModel):
     remediated_count: int = 0
     rejected_count: int = 0
     cues: List[AuditedCueRecord] = Field(default_factory=list)
-    era: str = "MEDIEVAL_FANTASY"
+    era: str = "UNIVERSAL_CONTEMPORARY"
     franchise_affinity: Optional[str] = None
     summary: Dict[str, Any] = Field(default_factory=dict)
 
@@ -62,10 +63,14 @@ class AudioRealityAuditor:
 
     ERA_BANNED_SUBSTRINGS = {
         "MEDIEVAL_FANTASY": (
-            "grader", "shambling", "studded boots", "troops", "soldiers shambling",
-            "santiago", "chile", "refrigerator", "office", "car", "automobile",
+            "refrigerator", "office", "car", "automobile",
             "engine", "traffic", "phone", "siren", "subway", "airplane"
         ),
+        "HISTORICAL_PERIOD": (
+            "refrigerator", "office", "car", "automobile",
+            "engine", "traffic", "phone", "siren", "subway", "airplane", "computer"
+        ),
+        "UNIVERSAL_CONTEMPORARY": (),
         "MODERN": (
             "catapult", "trebuchet", "battering_ram"
         )
@@ -78,7 +83,7 @@ class AudioRealityAuditor:
         self,
         manifest: CreativeManifest,
         output_dir: Optional[Path] = None,
-        era: str = "MEDIEVAL_FANTASY",
+        era: str = "UNIVERSAL_CONTEMPORARY",
         franchise_affinity: Optional[str] = None,
     ) -> Tuple[CreativeManifest, AudioRealityReport]:
         """
@@ -161,7 +166,12 @@ class AudioRealityAuditor:
                 continue
 
             # CHECK B: Era anachronisms (e.g. modern construction machines, modern street march)
-            if any(term in fname_lower or term in fpath_str.lower() for term in banned_terms):
+            clean_target = re.sub(r"[_\-\.\/\\]+", " ", f"{fname_lower} {fpath_str.lower()}")
+            matched_term = next(
+                (term for term in banned_terms if re.search(rf"\b{re.escape(term)}\b", clean_target)),
+                None
+            )
+            if matched_term:
                 report.rejected_count += 1
                 report.cues.append(
                     AuditedCueRecord(
@@ -175,7 +185,7 @@ class AudioRealityAuditor:
                         effective_duration_sec=0.0,
                         volume_db=getattr(fc, "gain_dbfs", -16.0),
                         sanity_status="REJECTED",
-                        remediation_notes=f"Era violation: Asset contains banned term for {era}.",
+                        remediation_notes=f"Era violation: Asset contains banned term '{matched_term}' for {era}.",
                     )
                 )
                 continue

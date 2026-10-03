@@ -79,9 +79,9 @@ class LiteraryAdvisoryDB:
                 (
                     "salutations",
                     "greetings / hello / courtesies",
-                    "In dark-fantasy Hindustani audio drama, textbook Hindi 'नमस्ते' or religious 'राम-राम' completely destroys medieval grit and immersion. Use universe-grounded Hindustani: 'सलाम, [नाम]', 'कहो, [नाम]', 'आदाब', or 'और भाई [नाम]'.",
-                    json.dumps(["सलाम", "कहो", "आदाब", "और भाई"], ensure_ascii=False),
-                    json.dumps(["नमस्ते", "राम-राम", "नमस्कार"], ensure_ascii=False),
+                    "Align salutations dynamically with the active novel's cultural setting and character relationships. In Indic or formal literary works, use natural honorifics ('प्रणाम', 'नमस्ते', 'नमस्कार'). In informal, Nawabi, or rustic Hindustani dialogue, use appropriate spoken greetings ('आदाब', 'सलाम', 'कहो', 'और भाई'). Never force modern telephonic robotic phrasing like 'हेलो दोस्त'.",
+                    json.dumps(["प्रणाम", "नमस्ते", "नमस्कार", "आदाब", "सलाम", "कहो"], ensure_ascii=False),
+                    json.dumps(["हेलो दोस्त", "हाय मित्र"], ensure_ascii=False),
                     "dialogue",
                 ),
                 (
@@ -102,10 +102,10 @@ class LiteraryAdvisoryDB:
                 ),
                 (
                     "profanity_grit",
-                    "tavern banter & gritty insult amplification",
-                    "Translate medieval insults with earthy rustic Hindustani grit ('बकचोदी बंद करो', 'हरामी', 'कमीने', 'गांड', 'अंडकोष बधिया करना', 'सूअर का पेशाब'). Maintain organic raw emotion while avoiding textbook TV-serial softening.",
-                    json.dumps(["बकचोदी", "गांड", "अंडकोष बधिया करना", "सूअर का पेशाब", "हरामी", "कमीने"], ensure_ascii=False),
-                    json.dumps(["दुष्ट", "बुरी स्त्री", "नितंब", "चूतड़"], ensure_ascii=False),
+                    "dialogue conflict & insult translation",
+                    "Translate insults and conflict dialogue with authentic spoken cadence matching the source author's intensity. If the source is visceral or vulgar, preserve that raw intensity without artificial bowdlerization; if the source is mild or dignified, preserve its exact level without injecting gratuitous street profanity.",
+                    json.dumps(["कमीने", "हरामी", "बदमाश", "नालायक", "गांड", "चूतड़"], ensure_ascii=False),
+                    json.dumps(["हे दुराचारी मानव", "ओ पापी व्यक्ति"], ensure_ascii=False),
                     "dialogue",
                 ),
                 (

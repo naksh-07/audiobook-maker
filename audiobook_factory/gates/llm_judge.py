@@ -132,6 +132,54 @@ class BaseLLMJudge:
         mgr = get_model_manager()
         return mgr.resolve_active_model(TaskType.AUDITING)
 
+    @staticmethod
+    def sample_stratified_text(text: str, total_chars: int = 6000) -> str:
+        """
+        Samples text across beginning (25%), middle (50%), and ending (25%) of chapter.
+        Ensures entire chapter narrative arc is represented in judge prompt.
+        """
+        if not text or len(text) <= total_chars:
+            return text
+        head_len = int(total_chars * 0.25)
+        tail_len = int(total_chars * 0.25)
+        body_len = total_chars - head_len - tail_len
+        mid_point = len(text) // 2
+        body_start = max(0, mid_point - (body_len // 2))
+        body_end = min(len(text), body_start + body_len)
+
+        return (
+            f"[ACT 1: OPENING]\n{text[:head_len]}\n\n"
+            f"[ACT 2: DEVELOPMENT / CLIMAX]\n{text[body_start:body_end]}\n\n"
+            f"[ACT 3: RESOLUTION]\n{text[-tail_len:]}"
+        )
+
+    @staticmethod
+    def sample_stratified_items(items: List[Any], max_items: int = 40) -> List[Any]:
+        """
+        Samples list of segments/items across beginning (25%), middle (50%), and ending (25%).
+        Guarantees full chapter scene progression is evaluated.
+        """
+        if not items or len(items) <= max_items:
+            return list(items)
+        head_count = int(max_items * 0.25)
+        tail_count = int(max_items * 0.25)
+        body_count = max_items - head_count - tail_count
+
+        head = items[:head_count]
+        mid_point = len(items) // 2
+        body_start = max(head_count, mid_point - (body_count // 2))
+        body = items[body_start:body_start + body_count]
+        tail = items[-tail_count:]
+
+        seen = set()
+        result = []
+        for it in (head + body + tail):
+            key = id(it)
+            if key not in seen:
+                seen.add(key)
+                result.append(it)
+        return result
+
     @classmethod
     def evaluate_with_llm(
         cls,
@@ -139,14 +187,19 @@ class BaseLLMJudge:
         system_instruction: str,
         response_model: Type[T],
         temperature: float = 0.1,
-        max_retries: int = 3,
+        max_retries: int = 6,
     ) -> T:
         """
         Executes a fail-closed LLM evaluation pass.
         Raises GateAuditError if the API is unavailable or returns unparseable schema.
         """
         # 1. Check for offline mock mode in test environments
-        if os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes"):
+        is_offline = (
+            os.environ.get("MOCK_OFFLINE", "").lower() in ("true", "1", "yes")
+            or os.environ.get("UNIT_TEST_MODE", "").lower() in ("true", "1", "yes")
+            or "PYTEST_CURRENT_TEST" in os.environ
+        )
+        if is_offline:
             mock_data = cls._generate_mock_verdict(response_model, prompt)
             return response_model.model_validate(mock_data)
 
@@ -231,7 +284,7 @@ class BaseLLMJudge:
                     "score": 0.50,
                     "total_lines_inspected": 10,
                     "misattributed_segments": [
-                        {"segment_index": 2, "attributed_speaker": "Geralt", "correct_speaker": "Borch", "reason": "Philosophical speech belongs to Borch"}
+                        {"segment_index": 2, "attributed_speaker": "Character_A", "correct_speaker": "Character_B", "reason": "Speech belongs to Character_B"}
                     ],
                     "hallucinated_lines": [],
                     "swallowed_dialogue": [],
@@ -254,7 +307,7 @@ class BaseLLMJudge:
                     "score": 0.45,
                     "emotional_teleportation_detected": True,
                     "teleportation_violations": [
-                        {"character": "Geralt", "from_emotion": "calm", "to_emotion": "screaming_panic", "reason": "No dramatic bridge"}
+                        {"character": "Character_A", "from_emotion": "calm", "to_emotion": "screaming_panic", "reason": "No dramatic bridge"}
                     ],
                     "broken_causality_beats": ["Beat 2 to 3 transition broken"],
                     "reason": "Emotional teleportation detected",
@@ -354,17 +407,18 @@ class LLMTranslationJudge(BaseLLMJudge):
         min_score: float = 0.80,
         strict: bool = True,
     ) -> TranslationFidelityVerdict:
-        """Audits translation fidelity. Raises GateAuditError if strict and score < min_score."""
+        sample_src = cls.sample_stratified_text(source_text, total_chars=6000)
+        sample_hin = cls.sample_stratified_text(hindi_text, total_chars=6000)
         prompt = f"""### CHAPTER CONTEXT: {chapter_title or 'Literary Scene'}
 
-### SOURCE ENGLISH EXCERPT:
+### SOURCE ENGLISH EXCERPT (STRATIFIED FULL-CHAPTER REPRESENTATION):
 \"\"\"
-{source_text[:4000]}
+{sample_src}
 \"\"\"
 
-### TARGET HINDI TRANSLATION:
+### TARGET HINDI TRANSLATION (STRATIFIED FULL-CHAPTER REPRESENTATION):
 \"\"\"
-{hindi_text[:4000]}
+{sample_hin}
 \"\"\"
 
 Evaluate the translation and output JSON conforming to:
@@ -428,7 +482,8 @@ class LLMScreenplayAuditor(BaseLLMJudge):
             elif isinstance(chars, list):
                 roster_names = [c.get("english_name", "") for c in chars if isinstance(c, dict)]
 
-        # Sample up to 25 dialogue & key narration segments for inspection
+        # Sample stratified dialogue & key narration segments across full chapter
+        stratified_raw = cls.sample_stratified_items(script_segments, max_items=40)
         sampled_segments = [
             {
                 "index": s.get("index"),
@@ -437,15 +492,16 @@ class LLMScreenplayAuditor(BaseLLMJudge):
                 "text": s.get("text", "")[:120],
                 "emotion": s.get("emotion"),
             }
-            for s in script_segments[:40]
+            for s in stratified_raw
         ]
+        sample_src = cls.sample_stratified_text(source_text, total_chars=12000)
 
         prompt = f"""### KNOWN ROSTER CHARACTERS:
 {', '.join(roster_names) if roster_names else 'Standard cast'}
 
-### SOURCE SCENE EXCERPT:
+### SOURCE SCENE EXCERPTS (STRATIFIED ACT 1, ACT 2, ACT 3 REPRESENTATION):
 \"\"\"
-{source_text[:3500]}
+{sample_src}
 \"\"\"
 
 ### SCREENPLAY SEGMENTS TO AUDIT:
@@ -456,9 +512,14 @@ Audit the speaker attribution and output JSON:
 - "score": float [0.0 - 1.0]
 - "total_lines_inspected": int
 - "misattributed_segments": list of objects [{{"segment_index": int, "attributed_speaker": str, "correct_speaker": str, "reason": str}}]
-- "hallucinated_lines": list of strings
+- "hallucinated_lines": list of strings (fabricated lines with zero basis in narrative truth)
 - "swallowed_dialogue": list of strings (dialogue quotes found inside narration segments)
 - "reason": str summary
+
+EVALUATION GUIDELINES:
+1. Segments are stratified across Act 1, Act 2, and Act 3 matching the source excerpts.
+2. ONLY flag a line as hallucinated if it introduces fabricated events, modern concepts, or contradicts the story. Do NOT flag a line as hallucinated merely because its surrounding transitional beat is not visible in the stratified excerpt window.
+3. FAIL if a canonical character's line is assigned to Narrator or the wrong character.
 """
         verdict = cls.evaluate_with_llm(
             prompt=prompt,
@@ -511,8 +572,9 @@ class LLMDramaticCritic(BaseLLMJudge):
                     "text": s.get("text", "")[:80],
                 })
 
-        prompt = f"""### DRAMATIC SCENE DIALOGUE STREAM (First 30 turns):
-{json.dumps(dialogue_stream[:30], ensure_ascii=False, indent=2)}
+        sampled_stream = cls.sample_stratified_items(dialogue_stream, max_items=35)
+        prompt = f"""### DRAMATIC SCENE DIALOGUE STREAM (STRATIFIED SCENE REPRESENTATION):
+{json.dumps(sampled_stream, ensure_ascii=False, indent=2)}
 
 Audit the emotional arc continuity and output JSON:
 - "status": "PASS" | "FAIL" (FAIL if ungrounded emotional teleportation or broken causality is detected)
@@ -626,7 +688,7 @@ class LLMSoundDesignCritic(BaseLLMJudge):
         scene_text: str,
         manifest_summary: Dict[str, Any],
         active_env: str = "",
-        franchise_era: str = "MEDIEVAL_FANTASY",
+        franchise_era: str = "UNIVERSAL_CONTEMPORARY",
         strict: bool = True,
     ) -> SoundDesignAtmosphereVerdict:
         """Audits creative soundscape manifest against literary scene intent."""

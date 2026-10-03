@@ -2,21 +2,36 @@
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
-# Active Context: Sword of Destiny Audio Drama Production
+# Active Context: Audiobook Maker Production Engine & Flaw Remediation
 
-## Live State: Chapter 1 & 2 Produced & 100% Broadcast Certified
-- **Status**: ACTIVE PRODUCTION (Sword of Destiny - Hindi Dramatized Audio Drama).
-- **Chapters Mastered**:
-  - `chapter_001_hi_cinematic.m4a`: 1.11 min. Certified EBU R128 (-18.9 LUFS, TP -2.8 dBTP, DMR +21.2 dB).
-  - `chapter_002_hi_cinematic.m4a`: 13.10 min (785.65s, 71 segments). 100% Broadcast Certified EBU R128 (-19.0 LUFS, TP -1.5 dBTP, Phase r=0.554, DMR +32.1 dB). Zero synthetic noise, zero loop fatigue. 100% Authentic Witcher 3 Studio Library soundscape: Act 1 Cave (`tw3_devpit_06_amb_cave02.wav`, 227.5s), Act 2 Swamp/Road (`tw3_nml_05_exploration_night.wav`, 228.0s), Act 3 Tavern (`tw3_bob_13_tavern_02_MASTER.wav`, 172.8s + `tavern_crowd_murmur.ogg`), 15 Foley cues, Witcher 3 OST underscore (65.5% acoustic silence ratio).
-- **Cast Allocation**:
-  - `Narrator`: `Aoede`, `Geralt`: `Charon`, `Borch Three Jackdaws`: `Puck`, `Alderman`: `Fenrir`, `Thugs`: `Enceladus`/`Algieba`, `Tea/Vea`: `Kore`.
-- **Universal Engine Hardening (Universal Studio Architecture)**:
-  - `LLM Creative Quality & Audit Gates`: Eliminated rubber-stamp heuristic scripts across entire pipeline. Created `BaseLLMJudge` with dynamic `TaskType.AUDITING` model resolution (zero hardcoded models, concurrent health pings, Tier 2 floor, `BLOCK_NONE`). Replaced fake checks with `LLMTranslationJudge` (Gate 0/T2), `audit_gate1_anticensorship_agent` (Gate 1 blocking), `LLMScreenplayAuditor` (Gate 2), `LLMDramaticCritic` (Gate 2.5), `LLMPerceptualPerformanceJudge` (Gate 2.8), and `LLMSoundDesignCritic` (Stage 11). 14/14 tests passing.
-  - `AudioRealityAuditor`: Fail-closed pre-mix auditor (3.5s foley physics cap, 180s anti-repetition cooldown, rogue music purge, fantasy/era filter, multi-scene/layer audit).
-  - Centralized `safety.py`: Universal `BLOCK_NONE` safety filters & dramatic fiction framing across all LLM/TTS endpoints.
-  - `project_classifier.py`: Dynamic genre/era/franchise auto-detection (Witcher = MEDIEVAL_FANTASY / the_witcher).
-  - Self-Healing Telemetry: Auto-registers runs in `production_runs`, records API latency/tokens/costs in `api_telemetry`, accurate non-zero acoustic metrics in `acoustic_telemetry` (785.65s), and incidents in `incident_telemetry`.
-  - Synthetic Audio Purge: Permanently deleted 5 dummy anoisesrc files from disk and sound_bank.db. Category misclassifications (AMB/FOL/MUS) in sound_catalog fixed and FTS5 indexes rebuilt.
-- **Next Sprint**:
-  - Run full production batch on Chapters 3–9 with the newly active fail-closed LLM Creative Audit Gates.
+## Live State: 10 Production Flaws Remediated & Fully Verified
+- **Status**: PRODUCTION CERTIFIED & ZERO DEFECT (1,180+ passed, 0 failures, 0 errors).
+- **10 Latent Production Flaws Patched**:
+  1. `packager.py`: Exact chapter integer parsing `int(m.group(1)) == c_num` prevents `chapter_10` overwriting `chapter_1` in M4B containers.
+  2. `verification_gate.py` & `search.py`: Word-boundary regex (`\b{bw}\b`) prevents false-positive bans on combat cues (`sword_struck_shield`) and carriages (`horse_carriage`).
+  3. `dialogue_runner.py`: Take deduplication by segment index `_s(\d{4})_` keeping latest `st_mtime` prevents duplicate dialogue takes in master audio.
+  4. `chapter_segmenter.py`: Word-number regex expanded up to `HUNDRED` with compound numbers (`TWENTY-TWO`, `THIRTY-FOUR`).
+  5. `translation/orchestrator.py`: Synchronized titled translation files (`prologue_hi.md`) alongside `chapter_000_hi.md`.
+  6. `ffmpeg_mastering/audio_master.py`: Added `posix=(sys.platform != "win32")` to `shlex.split` preserving Windows backslash paths.
+  7. `cli/commands/pipeline.py`: Parsed chapter number dynamically from script filename in `cmd_produce --all`, supporting `chapter_000` (Prologue) and non-contiguous runs.
+  8. `acoustic_bus_matrix.py`: True time-interval overlap detection using cue durations in `filter_concurrency_window`.
+  9. `tts/dispatcher.py`: Clarified stealth cadence logging for cloud Gemini TTS vs multi-worker expectations.
+  10. `sound_bank/search.py`: Dynamic FTS clause index tracking instead of hardcoded index 0.
+- **Verification Telemetry**: Added 10 new regression tests in `test_audit_remediation_sprint.py`. All tests passing green (10/10 passed in 1.45s, full suite green).
+
+## Milestone: Universal Novel-Agnostic Hardcoding Elimination (Zero Single-Book Bias)
+- **Status**: COMPLETE & VERIFIED.
+- **De-biased Components**:
+  1. `advisory_lexicon.py`: Reseeded SQLite advisory DB removing dark-fantasy bias against formal/Indic greetings (`नमस्ते`, `नमस्कार`).
+  2. `translator.py`: Replaced single-universe author lore assumptions with universal 70/30 Anti-Parody Invariant and Anurag Kashyap / Manto stylistic benchmarks for raw Hindustani prose.
+  3. `llm_judge.py` & `cinematic_rules.py`: Switched default franchise era from `MEDIEVAL_FANTASY` to `UNIVERSAL_CONTEMPORARY`, dynamically reading scene intent era.
+  4. `scene_acoustics.py`, `audio_reality_auditor.py`, `sound_bank/search.py`: Purged BBC-specific asset IDs (`07018159`) and hardcoded terms (`santiago`, `chile`, `grader`, `troops`, `shambling`); enforced regex `\b` word boundaries for anachronisms.
+  5. `pronunciation/lexicon.py` & `golden_set.py`: Replaced Witcher-specific `Kaer Morhen` in seed defaults with public domain canonical `Baker Street`.
+  6. `architecture_auditor.py` & `sonic_bible_generator.py`: Conditioned fantasy cue leak detection strictly on modern scenes; generalized Slavic instrument tags to period strings.
+  7. `AGENTS.md` & `QUALITY_GATES.md`: Codified the Universal Novel-Agnostic Invariant across architecture and QA docs.
+
+## Milestone: Witcher Artifact Archival
+- **Status**: COMPLETE & VERIFIED.
+- **Archived Locations**: `archive/witcher/sword_of_destiny/`, `archive/witcher/inputs/`, `archive/witcher/tools/`. Active workspace and `audiobooks/projects/` are completely unpolluted.
+- **Next Step**: Deliver final update to user.
+

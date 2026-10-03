@@ -81,15 +81,19 @@ class MockSoundBank:
             })
         return results
 
-    def search_music_catalog(self, query, section_type="INTRO_BED", limit=3):
-        return [{
-            "id": 10,
-            "filename": "subtle_tension_theme.wav",
-            "filepath": str(self.music_wav),
-            "start_sec": 0.0,
-            "energy_level": 3,
-            "tags": "subtle tension strings",
-        }]
+    def resolve_sound(self, query=None, category=None, sound_name=None, era=None, franchise_affinity=None, verify=True, is_continuous_bed=False, **kwargs):
+        q = query or sound_name or ""
+        results = self.search(q, category=category, era=era)
+        if not results:
+            return None
+        from pathlib import Path
+        for r in results:
+            p = Path(r["filepath"])
+            if era and era.upper() == "MODERN" and "medieval" in r.get("tags", ""):
+                continue
+            if p.exists():
+                return p
+        return Path(results[0]["filepath"])
 
 
 def test_era_banned_tags_modern():

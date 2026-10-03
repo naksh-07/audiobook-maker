@@ -37,15 +37,19 @@ COMPILED_META_PATTERNS = [re.compile(p, re.IGNORECASE) for p in REFUSAL_AND_META
 
 # Permitted expressive vocal tags recognized natively by Gemini 3.1 Flash TTS
 SUPPORTED_TTS_TAG_PATTERNS = [
-    r"whispers?",
-    r"shouting",
-    r"shouts?",
-    r"sighs?",
-    r"gasp",
-    r"laughs?",
+    r"whisper(?:s|ing)?(?:\s+(?:softly|quietly|gently|hoarsely|intimately|in\s+terror))?",
+    r"shout(?:s|ing)?(?:\s+(?:angrily|loudly|furiously))?",
+    r"scream(?:s|ing)?(?:\s+(?:in\s+terror|in\s+pain|in\s+horror|loudly|wildly))?",
+    r"yell(?:s|ing)?(?:\s+(?:angrily|loudly|furiously))?",
+    r"sigh(?:s|ing)?(?:\s+(?:deeply|wearily|softly))?",
+    r"gasp(?:s|ing)?(?:\s+(?:for\s+air|in\s+horror|in\s+shock|in\s+pain))?",
+    r"laugh(?:s|ing)?(?:\s+(?:softly|bitterly|nervously|mockingly))?",
     r"giggles?",
     r"crying",
-    r"trembling(?:\s+voice)?",
+    r"sob(?:s|bing)?(?:\s+quietly)?",
+    r"whimper(?:s|ing)?",
+    r"weep(?:s|ing)?",
+    r"trembl(?:e|es|ing)(?:\s+(?:voice|with\s+fear|with\s+rage))?",
     r"cold\s+menace",
     r"intimate(?:,\s*breathy)?",
     r"excitedly?",
@@ -60,33 +64,82 @@ SUPPORTED_TTS_TAG_PATTERNS = [
     r"tired",
     r"pause(?:=\d+(?:\.\d+)?)?",
     r"very\s+(?:fast|slow)",
-    r"growl",
-    r"groan",
+    r"growl(?:s|ing)?",
+    r"groan(?:s|ing)?(?:\s+in\s+pain)?",
     r"spits?(?:\s+blood)?",
+    r"snarl(?:s|ing)?",
     r"bellowing\s+rage",
     r"bellowing\s+battlecry",
     r"breathless[\s_]+exhaustion",
     r"combat[\s_]+strain",
     r"diaphragm[\s_]+strain",
-    r"choked\s+gasp",
+    r"choked(?:\s+(?:gasp|sob|voice|whisper|up))?",
     r"guttural\s+grunt(?:\s+on\s+blade\s+deflect)?",
     r"ragged\s+heaving\s+pant",
     r"slow[\s_]+motion",
+    r"chuckle(?:s|ing)?(?:\s+(?:darkly|softly|wryly|quietly))?",
     r"mocking\s+chuckle",
     r"clears?\s+throat",
     r"coughs?",
     r"snickers?",
     r"panting",
+    r"breathless(?:ly)?",
+    r"mutter(?:s|ing)?(?:\s+(?:under\s+breath|darkly|softly))?",
+    r"murmur(?:s|ing)?(?:\s+(?:softly|darkly|quietly))?",
+    r"stammer(?:s|ing)?",
+    r"stutter(?:s|ing)?",
+    r"hiss(?:es|ing)?",
+    r"barks?(?:\s+out)?",
     r"(?:short|long)\s+pause",
+    r"angrily?",
+    r"rage",
+    r"furious(?:ly)?",
+    r"mocking(?:ly)?",
+    r"tearful(?:ly)?",
+    r"hesitant(?:ly)?",
+    r"sinister(?:ly)?",
+    r"deadpan",
+    r"scoff(?:s|ing)?",
+    r"sneer(?:s|ing)?",
+    r"coldly",
+    r"softly",
+    r"wry(?:ly)?",
+    r"menacing(?:ly)?",
+    r"desperate(?:ly)?",
+    r"triumphant(?:ly)?",
+    r"nervous(?:ly)?",
+    r"matter-of-fact",
+    r"grimly",
+    r"wistful(?:ly)?",
 ]
 COMPILED_TTS_TAG_RE = re.compile(rf"^\[\s*(?:{'|'.join(SUPPORTED_TTS_TAG_PATTERNS)})\s*\]$", re.IGNORECASE)
 
+DEVANAGARI_TTS_TAG_MAP: Dict[str, str] = {
+    r"फुसफुसा(?:ते\s+हुए|हट)?": "whispers",
+    r"चीख(?:ते\s+हुए)?": "screaming",
+    r"चिल्ला(?:ते\s+हुए)?": "shouting",
+    r"रो(?:ते\s+हुए)?": "sobbing",
+    r"(?:काँप|कांप)(?:ते\s+हुए|\s+हुई\s+आवाज़)?": "trembling voice",
+    r"(?:हँस|हंस)(?:ते\s+हुए)?": "laughing",
+    r"गंभीर(?:\s+आवाज़\s+में)?": "serious",
+    r"(?:क्रोध|गुस्से)\s+में": "angrily",
+    r"धीमी\s+आवाज़(?:\s+में)?": "whisper softly",
+    r"डर(?:\s+के\s+मारे)?": "whisper in terror",
+    r"दर्द\s+में": "groan in pain",
+}
+
 
 def filter_bracketed_tags(match: re.Match) -> str:
-    """Preserve valid Gemini TTS expressive tags and SFX/ACTION cues; strip leaked Devanagari stage cues."""
+    """Preserve valid Gemini TTS expressive tags, translate Devanagari acting cues, and preserve SFX/ACTION cues."""
     tag_str = match.group(0).strip()
     if COMPILED_TTS_TAG_RE.match(tag_str) or "SFX" in tag_str.upper() or "ACTION" in tag_str.upper():
         return tag_str
+
+    inner = tag_str[1:-1].strip()
+    for dev_pattern, eng_tag in DEVANAGARI_TTS_TAG_MAP.items():
+        if re.search(dev_pattern, inner, re.IGNORECASE):
+            return f"[{eng_tag}]"
+
     return ""
 
 
