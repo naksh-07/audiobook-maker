@@ -90,7 +90,7 @@ Output JSON: A list of objects where each object has:
         task_type=TaskType.SCREENPLAY,
         response_mime_type="application/json",
         max_output_tokens=8192,
-        max_retries=4,
+        max_retries=8,
     )
     if isinstance(res, list):
         return res

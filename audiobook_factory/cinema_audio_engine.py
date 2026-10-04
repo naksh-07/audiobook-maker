@@ -391,6 +391,7 @@ def render_discrete_stems(
         af_filters = ["volume=-12dB", "afade=t=in:ss=0:d=2.0", f"afade=t=out:st={max(0.1, total_dur - 2.0):.2f}:d=2.0"]
         if cutoff < 18000:
             af_filters.append(f"lowpass=f={cutoff}")
+        af_filters.append("highshelf=f=6500:gain=-3.5:width=0.7")
         if width > 1.05:
             af_filters.append("stereotools=mlev=1.00:slev=1.15")
         af_filters.append("aresample=48000")
@@ -446,6 +447,8 @@ def render_discrete_stems(
             ]
             if cutoff < 18000:
                 cue_filters.append(f"lowpass=f={cutoff}")
+            # Ambience high-shelf air damping (soften > 6.5kHz hiss to protect vocal sibilance clarity)
+            cue_filters.append("highshelf=f=6500:gain=-3.5:width=0.7")
             if width > 1.05:
                 cue_filters.append("stereotools=mlev=1.00:slev=1.15")
             cue_filters.append(f"adelay={st_ms}|{st_ms}")
@@ -597,7 +600,7 @@ def render_discrete_stems(
         "-i", str(me_file),
         "-filter_complex",
         f"[1:a]adelay=20|20[delayed_me];"
-        f"[delayed_me][0:a]sidechaincompress=threshold=0.018:knee=2.8:ratio=2.2:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
+        f"[delayed_me][0:a]sidechaincompress=threshold=0.018:knee={getattr(ducking_prof, 'knee', 2.8)}:ratio={getattr(ducking_prof, 'ratio', 3.2)}:attack={ducking_prof.attack_ms}:release={ducking_prof.release_ms}[ducked_me];"
         f"[0:a][ducked_me]amix=inputs=2:duration=first:normalize=0,aresample=48000,volume=-1.5dB,alimiter=limit=0.85:attack=5:release=50[premaster_out]",
         "-map", "[premaster_out]",
         "-c:a", "pcm_s24le",

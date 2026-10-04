@@ -220,7 +220,15 @@ class SceneSoundscapeManifest(BaseModel):
 
                 if sound_bank is not None:
                     res = sound_bank.resolve_sound(layer.asset_path, category="FOL") or sound_bank.resolve_sound(layer.asset_path)
-                    if res and res.exists() and not _is_banned_stoch(res):
+                    res_dur = 0.0
+                    if res and res.exists():
+                        try:
+                            from audiobook_factory.soundscape import get_audio_duration
+                            res_dur = get_audio_duration(res)
+                        except Exception:
+                            res_dur = 0.0
+                    # Strict duration limit: stochastic spot cues must be <= 3.5s transients
+                    if res and res.exists() and res_dur <= 3.5 and not _is_banned_stoch(res):
                         candidates.append(res)
                     else:
                         q = layer.asset_path.replace("_", " ").strip() or "wood creak"

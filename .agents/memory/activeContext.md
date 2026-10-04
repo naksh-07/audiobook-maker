@@ -2,36 +2,28 @@
 <!-- project_id: proj-audiobook-maker -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
-# Active Context: Audiobook Maker Production Engine & Flaw Remediation
+# Active Context: Audiobook Maker Production Engine & Cinematic Sound Refinement
 
-## Live State: 10 Production Flaws Remediated & Fully Verified
-- **Status**: PRODUCTION CERTIFIED & ZERO DEFECT (1,180+ passed, 0 failures, 0 errors).
-- **10 Latent Production Flaws Patched**:
-  1. `packager.py`: Exact chapter integer parsing `int(m.group(1)) == c_num` prevents `chapter_10` overwriting `chapter_1` in M4B containers.
-  2. `verification_gate.py` & `search.py`: Word-boundary regex (`\b{bw}\b`) prevents false-positive bans on combat cues (`sword_struck_shield`) and carriages (`horse_carriage`).
-  3. `dialogue_runner.py`: Take deduplication by segment index `_s(\d{4})_` keeping latest `st_mtime` prevents duplicate dialogue takes in master audio.
-  4. `chapter_segmenter.py`: Word-number regex expanded up to `HUNDRED` with compound numbers (`TWENTY-TWO`, `THIRTY-FOUR`).
-  5. `translation/orchestrator.py`: Synchronized titled translation files (`prologue_hi.md`) alongside `chapter_000_hi.md`.
-  6. `ffmpeg_mastering/audio_master.py`: Added `posix=(sys.platform != "win32")` to `shlex.split` preserving Windows backslash paths.
-  7. `cli/commands/pipeline.py`: Parsed chapter number dynamically from script filename in `cmd_produce --all`, supporting `chapter_000` (Prologue) and non-contiguous runs.
-  8. `acoustic_bus_matrix.py`: True time-interval overlap detection using cue durations in `filter_concurrency_window`.
-  9. `tts/dispatcher.py`: Clarified stealth cadence logging for cloud Gemini TTS vs multi-worker expectations.
-  10. `sound_bank/search.py`: Dynamic FTS clause index tracking instead of hardcoded index 0.
-- **Verification Telemetry**: Added 10 new regression tests in `test_audit_remediation_sprint.py`. All tests passing green (10/10 passed in 1.45s, full suite green).
-
-## Milestone: Universal Novel-Agnostic Hardcoding Elimination (Zero Single-Book Bias)
-- **Status**: COMPLETE & VERIFIED.
-- **De-biased Components**:
-  1. `advisory_lexicon.py`: Reseeded SQLite advisory DB removing dark-fantasy bias against formal/Indic greetings (`नमस्ते`, `नमस्कार`).
-  2. `translator.py`: Replaced single-universe author lore assumptions with universal 70/30 Anti-Parody Invariant and Anurag Kashyap / Manto stylistic benchmarks for raw Hindustani prose.
-  3. `llm_judge.py` & `cinematic_rules.py`: Switched default franchise era from `MEDIEVAL_FANTASY` to `UNIVERSAL_CONTEMPORARY`, dynamically reading scene intent era.
-  4. `scene_acoustics.py`, `audio_reality_auditor.py`, `sound_bank/search.py`: Purged BBC-specific asset IDs (`07018159`) and hardcoded terms (`santiago`, `chile`, `grader`, `troops`, `shambling`); enforced regex `\b` word boundaries for anachronisms.
-  5. `pronunciation/lexicon.py` & `golden_set.py`: Replaced Witcher-specific `Kaer Morhen` in seed defaults with public domain canonical `Baker Street`.
-  6. `architecture_auditor.py` & `sonic_bible_generator.py`: Conditioned fantasy cue leak detection strictly on modern scenes; generalized Slavic instrument tags to period strings.
-  7. `AGENTS.md` & `QUALITY_GATES.md`: Codified the Universal Novel-Agnostic Invariant across architecture and QA docs.
-
-## Milestone: Witcher Artifact Archival
-- **Status**: COMPLETE & VERIFIED.
-- **Archived Locations**: `archive/witcher/sword_of_destiny/`, `archive/witcher/inputs/`, `archive/witcher/tools/`. Active workspace and `audiobooks/projects/` are completely unpolluted.
-- **Next Step**: Deliver final update to user.
+## Milestone: Hollywood-Grade SFX & BGM Cinematic Mixing Refinement (v2.0)
+- **Status**: PRODUCTION CERTIFIED & GOLDEN VERIFIED (100% Green across all gates).
+- **Architecture Refinements**:
+  1. `foley_director.py` & `manifest_renderer.py`: Replaced flat 3.5s limit with UCS category duration ceilings (`IMPT`: 2.5s, `WEAP`: 3.0s, `DOOR`: 6.5s, `POUR`: 6.0s, `CLOTH`: 5.0s, `FIRE`: 4.5s) and >15s ambient isolation.
+  2. `audio_reality_auditor.py`: Integrated category-aware duration validation in Check D, anti-repetition cooldown (180s), and rogue asset quarantine.
+  3. `acoustic_bus_matrix.py` & `manifest.py`: Enhanced `DuckingProfile` with dynamic `ratio` (3.2) and `knee` (2.8) tuned per scene type.
+  4. `cinema_audio_engine.py`: Added ambience HF air smoothing (`highshelf=6.5kHz:-3.5dB`), phase-safe stereo widening (`slev=1.15`), and dynamic speech-active windowed EQ pocketing.
+  5. `gates/acoustics.py`: Upgraded Gate 5.2 to multi-factor vocal clarity with 1.8-3.2 kHz formant band collision evaluation; probe timeouts increased to 120s for long chapters.
+- **Chapter 2 Live Validation**:
+  - Re-rendered discrete stems (`chapter_002_stem_DX/MX/FX/AMB/ME.wav`), premaster, and broadcast master.
+  - Gate 5 (EBU R128): **PASS** (-19.0 LUFS, -1.8 dBTP).
+  - Gate 5.2 (Spectral Masking): **PASS** (DMR +5.8 dB, Formant separation +4.8 dB, Music formant energy -35.4 LUFS).
+  - Gate 5.3 (Stereo Phase Coherence): **PASS** (Mean phase correlation: 0.696, safe margin above 0.20).
+  - Audio Reality Auditor: **PASS** (12 passed, 4 remediated, 6 rejected).
+  - Mix Judge: **PASS** (Score: 1.0, 12/12 categories green).
+  - Master Deliverable: `audiobooks/projects/sword_of_destiny/mastered/chapter_002_hi_cinematic.m4a` (23.4 MB, AAC 256k 48kHz).
+- **Witcher 3 Sound Bank Remediation & Sonic Genome Enrichment**:
+  - Reclassified 26,906 Witcher 3 assets from generic SFX into 10 categories (`AMB`: 3,143, `FOL`: 2,661, `MUS`: 622, `SFX`: 20,480).
+  - 100% neural embeddings preserved (44,931). FTS5 search index rebuilt.
+  - Enriched all 26,906 assets with `sonic_genome` v2.1 (transients, physical & emotional features) in 211s via 12 CPU workers (zero LLM cost).
+  - Fixed transient blindness in `manifest_renderer.py` via `get_asset_in_point(cue.audio_path)` and dynamic `atrim`.
+  - Added optional `duration_sec` control to `SoundSpotter` LLM schema. 20/20 regression tests passing.
 

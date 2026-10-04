@@ -253,6 +253,7 @@ Return a JSON array of physical Foley events where each object has:
 - "action_verb": string (e.g. "sword_draw", "tankard_slam", "door_creak", "footsteps", "blade_clash", "coin_drop")
 - "object_material": string (e.g. "metal", "wood", "glass", "stone", "leather", "gravel")
 - "anchor_word": string (specific word or tag in the segment text anchoring the sound)
+- "duration_sec": optional float (desired dramatic duration in seconds, e.g. 1.5 for a quick hit, 3.5 for prolonged movement; null for natural decay)
 - "gain_dbfs": float (-14.0 to -22.0)
 - "pan": float (-0.6 to 0.6)
 - "description": string (brief description)
@@ -424,7 +425,7 @@ Return a JSON array of Music cues where each object has:
                 "gain_dbfs": float(ev.get("gain_dbfs", -16.0)),
                 "azimuth_pan": float(ev.get("pan", 0.0)),
                 "start_ms": cue_start_ms,
-                "duration_ms": 0,
+                "duration_ms": int(float(ev.get("duration_sec", 0.0) or 0.0) * 1000),
                 "ucs_category": "MISCGnl",
             })
         return resolved

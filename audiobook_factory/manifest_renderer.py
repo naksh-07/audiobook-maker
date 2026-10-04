@@ -133,11 +133,27 @@ def render_foley_bus_reel_chunked(
                 if getattr(cue, "is_lfe_sub_drop", False):
                     extra_fx = "lowpass=f=120,equalizer=f=52:t=q:w=2.0:g=6.0,"
 
-                # Strict Foley Transient Physics Cap (max 3.5s with clean micro-fadeout)
+                # Category-Aware Foley Transient Physics Cap with clean micro-fadeout
+                ucs = str(getattr(cue, "ucs_category", "DEFAULT") or "DEFAULT")
+                ucs_pfx = ucs[:4] if len(ucs) >= 4 else ucs
+                cat_dur_map = {
+                    "IMPT": 2.5, "WEAP": 3.0, "FOLE": 3.5, "DOMETabl": 4.5,
+                    "DOOR": 6.5, "POUR": 6.0, "CLOTH": 5.0, "FIRE": 4.5, "DEFAULT": 3.5,
+                }
+                max_cat_sec = cat_dur_map.get(ucs) or cat_dur_map.get(ucs_pfx) or cat_dur_map.get("DEFAULT", 3.5)
                 cue_dur_req = float(getattr(cue, "duration_ms", 0) or 0) / 1000.0
-                max_foley_sec = min(3.5, cue_dur_req) if cue_dur_req > 0.1 else 3.5
+                max_foley_sec = min(max_cat_sec, cue_dur_req) if cue_dur_req > 0.1 else max_cat_sec
+
+                # Universal transient-aware in-point extraction (prevents dropped transients from late attacks)
+                in_point = 0.0
+                if getattr(cue, "in_point_ms", None) and cue.in_point_ms > 0:
+                    in_point = float(cue.in_point_ms) / 1000.0
+                elif hasattr(sound_bank, "get_asset_in_point"):
+                    in_point = sound_bank.get_asset_in_point(apath)
+
+                out_point = in_point + max_foley_sec
                 fade_start = max(0.05, max_foley_sec - 0.20)
-                trim_filter = f"atrim=0:{max_foley_sec:.2f},afade=t=out:st={fade_start:.2f}:d=0.20,"
+                trim_filter = f"atrim={in_point:.2f}:{out_point:.2f},asetpts=PTS-STARTPTS,afade=t=out:st={fade_start:.2f}:d=0.20,"
 
                 filters.append(
                     f"[{i+1}:a]{trim_filter}{extra_fx}{pan_filter}volume={cue_gain:.3f},adelay={cue_start_ms}|{cue_start_ms}[cue_{i}]"

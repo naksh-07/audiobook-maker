@@ -26,51 +26,63 @@ class DuckingProfile(BaseModel):
         ..., description="Dramatic voice level profile"
     )
     attenuation_db: float = Field(default=-16.0, ge=-40.0, le=-3.0, description="Music/ambience attenuation gain while dialogue speaks in dB")
-    attack_ms: int = Field(default=15, ge=1, le=200, description="Compressor attack time in milliseconds")
-    release_ms: int = Field(default=350, ge=50, le=5000, description="Compressor release time in milliseconds")
+    attack_ms: int = Field(default=140, ge=1, le=500, description="Compressor attack time in milliseconds")
+    release_ms: int = Field(default=850, ge=50, le=5000, description="Compressor release time in milliseconds")
+    ratio: float = Field(default=3.2, ge=1.5, le=10.0, description="Compression ratio")
+    knee: float = Field(default=2.8, ge=1.0, le=5.0, description="Compression knee smoothness")
     spectral_carve_hz: int = Field(default=2400, ge=800, le=5000, description="Center frequency for vocal formant notch pocket in Hz")
     spectral_carve_depth_db: float = Field(default=-6.0, ge=-18.0, le=-1.0, description="Notch attenuation gain in dB")
 
 
-# Standard Calibrated Industry Presets
+# Standard Calibrated Industry Presets (Calibrated to Hollywood / Audible Audio Drama)
 DUCKING_PRESETS: Dict[str, DuckingProfile] = {
     "intimate_dialogue": DuckingProfile(
         profile_name="intimate_dialogue",
         attenuation_db=-6.0,
-        attack_ms=30,
-        release_ms=600,
+        attack_ms=220,
+        release_ms=1100,
+        ratio=2.5,
+        knee=3.2,
         spectral_carve_hz=2200,
         spectral_carve_depth_db=-4.0,
     ),
     "standard_speech": DuckingProfile(
         profile_name="standard_speech",
-        attenuation_db=-7.5,
-        attack_ms=15,
-        release_ms=350,
+        attenuation_db=-8.0,
+        attack_ms=140,
+        release_ms=850,
+        ratio=3.2,
+        knee=2.8,
         spectral_carve_hz=2400,
-        spectral_carve_depth_db=-6.0,
+        spectral_carve_depth_db=-5.0,
     ),
     "combat_shouting": DuckingProfile(
         profile_name="combat_shouting",
         attenuation_db=-22.0,
-        attack_ms=8,
-        release_ms=250,
+        attack_ms=35,
+        release_ms=450,
+        ratio=4.2,
+        knee=1.8,
         spectral_carve_hz=2600,
-        spectral_carve_depth_db=-8.0,
+        spectral_carve_depth_db=-7.5,
     ),
     "heavy_impact": DuckingProfile(
         profile_name="heavy_impact",
-        attenuation_db=-26.0,
-        attack_ms=5,
-        release_ms=800,
+        attenuation_db=-24.0,
+        attack_ms=15,
+        release_ms=650,
+        ratio=5.0,
+        knee=1.5,
         spectral_carve_hz=1500,
-        spectral_carve_depth_db=-10.0,
+        spectral_carve_depth_db=-9.0,
     ),
     "combat_shock": DuckingProfile(
         profile_name="combat_shock",
-        attenuation_db=-24.0,
-        attack_ms=8,
-        release_ms=4000,
+        attenuation_db=-26.0,
+        attack_ms=10,
+        release_ms=3200,
+        ratio=6.0,
+        knee=1.2,
         spectral_carve_hz=2600,
         spectral_carve_depth_db=-10.0,
     ),

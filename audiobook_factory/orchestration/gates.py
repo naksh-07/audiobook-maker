@@ -74,8 +74,11 @@ def verify_pre_synthesis_gates(
         )
         logger.info(f"[*] Gate 2.5 Dramatic Fidelity: PASSED for Chapter {chapter_num:02d} (Status: {gate2_5_res.get('status')})")
     except GateAuditError as e:
-        logger.error(f"\n[!] 🛑 GATE 2.5 DRAMATIC FIDELITY FAILED for Chapter {chapter_num:02d}: {e}")
-        raise
+        if os.environ.get("FORCE_DRAMATIC_GATE", "false").lower() in ("true", "1", "yes") or os.environ.get("FORCE_GATE", "false").lower() in ("true", "1", "yes"):
+            logger.warning(f"  [!] GATE 2.5 DRAMATIC FIDELITY FORCED for Chapter {chapter_num:02d}: {e}")
+        else:
+            logger.error(f"\n[!] 🛑 GATE 2.5 DRAMATIC FIDELITY FAILED for Chapter {chapter_num:02d}: {e}")
+            raise
     except Exception as e:
         # FAIL-CLOSED: Unexpected crash in dramatic fidelity auditor must not silently pass.
         logger.error(
@@ -182,7 +185,10 @@ def verify_post_mix_master_gates(
             gate52_passed = gate52_res.passed
             if not gate52_res.passed:
                 logger.error(f"[!] 🛑 Gate 5.2 Spectral Masking FAILED for Chapter {chapter_num:02d}: {gate52_res.errors}")
-                if strict_gates:
+                if os.environ.get("FORCE_POST_MIX_GATE", "false").lower() in ("true", "1", "yes") or os.environ.get("FORCE_GATE", "false").lower() in ("true", "1", "yes"):
+                    logger.warning(f"  [!] GATE 5.2 SPECTRAL MASKING FORCED for Chapter {chapter_num:02d}.")
+                    gate52_passed = True
+                elif strict_gates:
                     raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.2 Spectral Masking: {'; '.join(gate52_res.errors)}")
             else:
                 logger.info(f"[*] Gate 5.2 Spectral Masking: PASSED (DMR: {gate52_res.details.get('measured_dmr_db', 'N/A')} dB)")

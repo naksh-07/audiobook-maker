@@ -84,6 +84,9 @@ class PerformanceFidelityGate:
         unselected_by_seg = {t.segment_uid: t for t in selected_takes if not t.is_selected}
 
         for d in directions:
+            # Action beats / Foley cues don't generate spoken vocal takes
+            if d.speaker == "Foley":
+                continue
             take = take_by_seg.get(d.segment_uid)
             if not take:
                 unselected = unselected_by_seg.get(d.segment_uid)

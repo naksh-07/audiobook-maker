@@ -150,6 +150,8 @@ class MasteringConfig(BaseModel):
     ducking_attenuation_db: float = Field(default=-7.5, description="Music attenuation gain while dialogue speaks in dB")
     ducking_attack_ms: int = Field(default=120, ge=1, le=500, description="Sidechain compressor attack time in milliseconds")
     ducking_release_ms: int = Field(default=750, ge=10, le=2000, description="Sidechain compressor release time in milliseconds")
+    ducking_ratio: float = Field(default=3.2, ge=1.0, le=20.0, description="Sidechain compressor ratio")
+    ducking_knee: float = Field(default=2.8, ge=0.0, le=10.0, description="Sidechain compressor knee in dB")
     spectral_carve_hz: int = Field(default=2200, ge=500, le=8000, description="Center frequency for vocal dialogue spectral notch filter")
     spectral_carve_gain_db: float = Field(default=-5.5, le=0.0, description="Spectral notch filter gain attenuation in dB")
     acoustic_ir: Optional[Dict[str, Any]] = Field(default=None, description="Impulse response parameters for convolution reverb")
@@ -325,6 +327,8 @@ class LegacyCreativeManifestAdapter:
                 attenuation_db=legacy.mastering.ducking_attenuation_db,
                 attack_ms=legacy.mastering.ducking_attack_ms,
                 release_ms=legacy.mastering.ducking_release_ms,
+                ratio=getattr(legacy.mastering, "ducking_ratio", PROFILE_STANDARD.ratio),
+                knee=getattr(legacy.mastering, "ducking_knee", PROFILE_STANDARD.knee),
                 spectral_carve_hz=legacy.mastering.spectral_carve_hz,
                 spectral_carve_depth_db=legacy.mastering.spectral_carve_gain_db,
             )

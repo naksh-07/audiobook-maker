@@ -49,7 +49,7 @@ def call_gemini(
     model: Optional[str] = None,
     json_mode: bool = False,
     response_schema: Optional[Dict[str, Any]] = None,
-    max_retries: int = 4,
+    max_retries: int = 8,
     thinking_budget: Optional[int] = None,
 ) -> str:
     """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback.

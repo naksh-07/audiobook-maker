@@ -40,17 +40,33 @@ def build_stem_filter_chain(
     filters: List[str] = []
     target_norm = target.strip().upper()
 
-    # 1. Evaluate Dynamic Masking / EQ depth for MX stem
+    # 1. Evaluate Dynamic Masking / EQ depth for MX stem (Dynamic Vocal Corridor Pocketing)
     if target_norm == "MX":
         eq_events = automation.get_events_for_target("MX", "eq_depth")
-        if eq_events:
-            # Find the deepest required notch across the scene
-            deepest_event = min(eq_events, key=lambda e: e.value)
+        # Filter to meaningful cuts (< -0.2 dB)
+        active_eq_events = [e for e in eq_events if e.value < -0.2]
+        if active_eq_events:
+            deepest_event = min(active_eq_events, key=lambda e: e.value)
             depth_db = max(SAFETY_LIMIT_MAX_NOTCH_DB, min(0.0, deepest_event.value))
-            if depth_db < -0.1:
-                freq_hz = deepest_event.metadata.get("frequency_hz", 2400)
-                q_val = deepest_event.metadata.get("q", 1.5)
-                filters.append(f"equalizer=f={int(freq_hz)}:t=q:w={float(q_val):.2f}:g={depth_db:.2f}")
+            freq_hz = deepest_event.metadata.get("frequency_hz", 2400)
+            q_val = deepest_event.metadata.get("q", 1.5)
+
+            # Check if events span distinct time intervals or entire scene
+            # If windows are provided, apply speech-gated dynamic equalizer via 'enable'
+            enable_terms = []
+            for ev in active_eq_events[:12]:
+                if ev.start is not None and ev.end is not None and ev.end > ev.start:
+                    enable_terms.append(f"between(t,{ev.start:.2f},{ev.end:.2f})")
+
+            if enable_terms:
+                enable_expr = "+".join(enable_terms)
+                filters.append(
+                    f"equalizer=f={int(freq_hz)}:width_type=q:w={float(q_val):.2f}:g={depth_db:.2f}:enable='gt({enable_expr},0)'"
+                )
+            else:
+                filters.append(
+                    f"equalizer=f={int(freq_hz)}:width_type=q:w={float(q_val):.2f}:g={depth_db:.2f}"
+                )
 
     # 2. Evaluate Gain / Attenuation events
     gain_events = automation.get_events_for_target(target_norm, "gain")

@@ -58,6 +58,17 @@ class AudioRealityAuditor:
     """
 
     MAX_FOLEY_DURATION_SEC = 3.5
+    CATEGORY_DURATION_CEILINGS: Dict[str, float] = {
+        "IMPT": 2.5,     # Impacts, hits, falls, body slams: sharp point transients
+        "WEAP": 3.0,     # Blade clashes, weapon draws, arrow swishes: short micro-transients
+        "FOLE": 3.5,     # Footsteps, gear shifts, body rustle
+        "DOMETabl": 4.5, # Cups, tankards, cutlery, dish clatter
+        "DOOR": 6.5,     # Door opening, heavy gate swinging, creaking latches
+        "POUR": 6.0,     # Liquid pouring, drinking
+        "CLOTH": 5.0,    # Garment handling, cloak swishes
+        "FIRE": 4.5,     # Torch ignition, flame burst
+        "DEFAULT": 3.5,  # Conservative fallback for generic physical foley
+    }
     MAX_FOLEY_FILE_CEILING_SEC = 6.0
     ANTI_REPETITION_COOLDOWN_MS = 180000  # 3 minutes
 
@@ -211,11 +222,19 @@ class AudioRealityAuditor:
                 )
                 continue
 
-            # CHECK D: Strict Duration Cap & Trimming
+            # CHECK D: Category-Aware Duration Cap & Trimming
+            ucs_code = getattr(fc, "ucs_category", "") or ""
+            ucs_prefix = ucs_code[:4] if len(ucs_code) >= 4 else ucs_code
+            ceiling = (
+                self.CATEGORY_DURATION_CEILINGS.get(ucs_code) or
+                self.CATEGORY_DURATION_CEILINGS.get(ucs_prefix) or
+                self.CATEGORY_DURATION_CEILINGS.get("DEFAULT", self.MAX_FOLEY_DURATION_SEC)
+            )
+
             was_trimmed = False
             effective_dur = raw_dur
-            if raw_dur > self.MAX_FOLEY_DURATION_SEC:
-                effective_dur = self.MAX_FOLEY_DURATION_SEC
+            if raw_dur > ceiling:
+                effective_dur = ceiling
                 was_trimmed = True
 
             recent_foley_assets[fname_lower] = start_ms
@@ -242,7 +261,7 @@ class AudioRealityAuditor:
                     volume_db=getattr(fc, "gain_dbfs", -16.0),
                     was_trimmed=was_trimmed,
                     sanity_status=status,
-                    remediation_notes="Trimmed to strict foley cap" if was_trimmed else "Passed sanity check",
+                    remediation_notes=f"Trimmed to category foley cap ({ceiling:.1f}s)" if was_trimmed else "Passed sanity check",
                 )
             )
 

@@ -221,7 +221,7 @@ class SceneAcousticsMixin:
                         layer_type="base_room_tone",
                         asset_path=base_path,
                         target_lufs=-34.0,
-                        stereo_width=1.35,
+                        stereo_width=1.15,
                         loop=True,
                     )
                 )
@@ -249,7 +249,7 @@ class SceneAcousticsMixin:
                             layer_type="weather_elements",
                             asset_path=weather_path,
                             target_lufs=-32.0,
-                            stereo_width=1.40,
+                            stereo_width=1.15,
                             loop=True,
                         )
                     )
@@ -271,7 +271,7 @@ class SceneAcousticsMixin:
                             layer_type="crowd_wallah",
                             asset_path=w_res.name if w_res else w_asset,
                             target_lufs=-30.0,
-                            stereo_width=1.30,
+                            stereo_width=1.15,
                             loop=True,
                         )
                     )
@@ -324,6 +324,7 @@ class SceneAcousticsMixin:
                 self.sound_bank.resolve_sound(base_asset_name, category="AMB") or
                 self.sound_bank.resolve_sound(f"{primary_name}.ogg", category="AMB") or
                 self.sound_bank.resolve_sound(primary_name, category="AMB") or
+                self.sound_bank.resolve_sound(primary_name) or
                 self.sound_bank.resolve_sound("room_tone", category="AMB") or
                 self.sound_bank.resolve_sound("amb_castle_hall_hearth.wav", category="AMB")
             )
@@ -333,7 +334,7 @@ class SceneAcousticsMixin:
                     layer_type="base_room_tone",
                     asset_path=base_path,
                     target_lufs=-34.0,
-                    stereo_width=1.35,
+                    stereo_width=1.15,
                     loop=True,
                 )
             )
@@ -360,7 +361,7 @@ class SceneAcousticsMixin:
                         layer_type="weather_elements",
                         asset_path=weather_path,
                         target_lufs=-32.0,
-                        stereo_width=1.40,
+                        stereo_width=1.15,
                         loop=True,
                     )
                 )
@@ -373,7 +374,7 @@ class SceneAcousticsMixin:
                         layer_type="crowd_wallah",
                         asset_path=w_res.name if w_res else "tavern_crowd_murmur.ogg",
                         target_lufs=-30.0,
-                        stereo_width=1.30,
+                        stereo_width=1.15,
                         loop=True,
                     )
                 )

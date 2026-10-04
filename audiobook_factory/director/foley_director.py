@@ -245,32 +245,64 @@ class FoleyDirectorMixin:
             return int(seg_dur_ms * 0.75)
         return int(seg_dur_ms * 0.15)
 
+    CATEGORY_DURATION_CEILINGS: Dict[str, float] = {
+        "IMPT": 2.5,     # Impacts, hits, falls, body slams: sharp point transients
+        "WEAP": 3.0,     # Blade clashes, weapon draws, arrow swishes: short micro-transients
+        "FOLE": 3.5,     # Footsteps, gear shifts, body rustle
+        "DOMETabl": 4.5, # Cups, tankards, cutlery, dish clatter
+        "DOOR": 6.5,     # Door opening, heavy gate swinging, creaking latches
+        "POUR": 6.0,     # Liquid pouring, drinking
+        "CLOTH": 5.0,    # Garment handling, cloak swishes
+        "FIRE": 4.5,     # Torch ignition, flame burst
+        "DEFAULT": 3.5,  # Conservative fallback for generic physical foley
+    }
+
     def _resolve_foley_asset(self, action_verb: str, object_material: str) -> Optional[Path]:
-        """Resolves sound asset from sound bank using Sonic Intelligence Engine semantic intent queries."""
+        """Resolves sound asset from sound bank using Sonic Intelligence Engine semantic intent queries with category-aware duration validation."""
         intent = f"{action_verb} {object_material}".strip()
         if not intent:
             return None
 
+        # Determine category duration ceiling using UCS category derivation
+        from audiobook_factory.acoustic_bus_matrix import derive_ucs_category
+        ucs_code = derive_ucs_category(action_verb, object_material)
+        ucs_prefix = ucs_code[:4] if len(ucs_code) >= 4 else ucs_code
+        dur_ceiling = (
+            self.CATEGORY_DURATION_CEILINGS.get(ucs_code) or
+            self.CATEGORY_DURATION_CEILINGS.get(ucs_prefix) or
+            self.CATEGORY_DURATION_CEILINGS.get("DEFAULT", 3.5)
+        )
+
+        def _is_valid_candidate(cand: Path, cand_dur: float) -> bool:
+            cand_str = str(cand).lower()
+            # Strict Music and ambient long-file quarantine from Foley bus
+            if "/music/" in cand_str or "\\music\\" in cand_str or "/amb/" in cand_str or "\\amb\\" in cand_str:
+                return False
+            # If asset duration exceeds specific category ceiling or is an ambient file (> 15s)
+            if cand_dur > dur_ceiling or cand_dur > 15.0:
+                logger.debug(
+                    f"Quarantining asset '{cand.name}' from Foley bus: duration {cand_dur:.1f}s "
+                    f"exceeds category '{ucs_code}' ceiling {dur_ceiling:.1f}s"
+                )
+                return False
+            # CATEGORY GUARD: Prohibit weapon/combat assets for non-combat intents
+            is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
+            banned_non_combat = ("sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor", "clash")
+            if not is_combat_intent and any(b in cand.name.lower() for b in banned_non_combat):
+                return False
+            return cand.exists()
+
         try:
-            # Engage hybrid intelligence FTS/Vector query
+            # 1. Engage hybrid intelligence FTS/Vector query
             result = self.sound_bank.search_intelligence(intent=intent, limit=5)
             if result and hasattr(result, "ranked_cards") and result.ranked_cards:
                 for card in result.ranked_cards:
                     if card and getattr(card, "file_path", None):
                         cand = Path(card.file_path)
-                        cand_str = str(cand).lower()
-                        # Strict Music and Long-File Quarantine from Foley bus
-                        if "/music/" in cand_str or "\\music\\" in cand_str or getattr(card, "duration_sec", 0.0) > 4.5:
-                            continue
-                        # CATEGORY GUARD: Prohibit weapon/combat assets for non-combat intents
-                        is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
-                        banned_non_combat = ("sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor", "clash")
-                        if not is_combat_intent and any(b in cand.name.lower() for b in banned_non_combat):
-                            continue
-                        if cand.exists():
+                        cand_dur = float(getattr(card, "duration_sec", 0.0) or 0.0)
+                        if _is_valid_candidate(cand, cand_dur):
                             return cand
-        except Exception as e:
-            # Fallback to basic search if intelligence engine fails
+        except Exception:
             pass
 
         # 2. Basic fallback search if Intelligence didn't yield a valid local path
@@ -281,15 +313,8 @@ class FoleyDirectorMixin:
         for m in matches:
             if m.get("filepath"):
                 cand = Path(m["filepath"])
-                cand_str = str(cand).lower()
-                dur = float(m.get("duration_sec", 0.0) or 0.0)
-                if "/music/" in cand_str or "\\music\\" in cand_str or dur > 4.5:
-                    continue
-                is_combat_intent = any(w in intent.lower() for w in ("sword", "blade", "dagger", "axe", "weapon", "clash"))
-                banned_non_combat = ("sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor", "clash")
-                if not is_combat_intent and any(b in cand.name.lower() for b in banned_non_combat):
-                    continue
-                if cand.exists():
+                cand_dur = float(m.get("duration_sec", 0.0) or 0.0)
+                if _is_valid_candidate(cand, cand_dur):
                     return cand
 
         # 3. Sonic Intelligence Bridge: Relaxed / Bilingual resolution
@@ -303,9 +328,17 @@ class FoleyDirectorMixin:
                 is_combat_scene=is_combat_intent,
             )
             if cand_path and cand_path.exists():
-                return cand_path
+                cand_dur = 0.0
+                try:
+                    from audiobook_factory.soundscape import get_audio_duration
+                    cand_dur = get_audio_duration(cand_path)
+                except Exception:
+                    pass
+                if _is_valid_candidate(cand_path, cand_dur):
+                    return cand_path
         except Exception:
             pass
 
         return None
+
 

@@ -58,6 +58,65 @@ def test_foley_duration_capping_and_trimming():
         assert report.cues[0].effective_duration_sec == 3.5
 
 
+def test_category_aware_foley_duration_capping():
+    """Verifies category-aware duration validation (e.g. DOOR up to 6.5s, IMPT up to 2.5s)."""
+    auditor = AudioRealityAuditor()
+
+    manifest = CreativeManifest(
+        chapter_id="chap_test_cat_foley",
+        foley_cues=[
+            # DOOR allows up to 6.5s -> 5.0s should pass untrimmed
+            FoleyCue(
+                cue_id="fc_door_01",
+                segment_index=1,
+                anchor_word="दरवाजा",
+                asset_path="sfx/heavy_stone_door.wav",
+                ucs_category="DOOR",
+                start_ms=1000,
+                duration_ms=5000,
+            ),
+            # DOOR exceeding 6.5s -> should clamp to 6500ms
+            FoleyCue(
+                cue_id="fc_door_02",
+                segment_index=2,
+                anchor_word="दरवाजा",
+                asset_path="sfx/gate_opening.wav",
+                ucs_category="DOOR",
+                start_ms=10000,
+                duration_ms=9000,
+            ),
+            # IMPT capped at 2.5s -> 3.0s should clamp to 2500ms
+            FoleyCue(
+                cue_id="fc_impt_01",
+                segment_index=3,
+                anchor_word="पटक",
+                asset_path="sfx/body_slam.wav",
+                ucs_category="IMPTBody",
+                start_ms=25000,
+                duration_ms=3000,
+            ),
+        ],
+        ambience_scenes=[],
+        music_cues=[],
+    )
+
+    with tempfile.TemporaryDirectory() as td:
+        sanitized_manifest, report = auditor.audit_and_remediate(
+            manifest,
+            output_dir=Path(td),
+            era="MEDIEVAL_FANTASY",
+        )
+
+        assert report.total_cues_inspected == 3
+        assert report.passed_count == 1
+        assert report.remediated_count == 2
+
+        cues_by_id = {c.cue_id: c for c in sanitized_manifest.foley_cues}
+        assert cues_by_id["fc_door_01"].duration_ms == 5000
+        assert cues_by_id["fc_door_02"].duration_ms == 6500
+        assert cues_by_id["fc_impt_01"].duration_ms == 2500
+
+
 def test_anti_repetition_cooldown():
     """Verifies that identical foley assets within 180s (180000ms) cooldown are purged."""
     auditor = AudioRealityAuditor()
