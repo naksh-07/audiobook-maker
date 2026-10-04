@@ -143,9 +143,9 @@ class MultiAgentDirector:
                 author=author,
             )
 
-            foley_plan = future_foley.result(timeout=120.0)
-            music_plan = future_music.result(timeout=120.0)
-            wallah_plan = future_wallah.result(timeout=120.0)
+            foley_plan = future_foley.result(timeout=300.0)
+            music_plan = future_music.result(timeout=300.0)
+            wallah_plan = future_wallah.result(timeout=300.0)
 
         # ---------------------------------------------------------------------
         # STEP 4: Asset Resolution against Sound Bank (44,900+ sounds)
@@ -275,9 +275,10 @@ class MultiAgentDirector:
                 continue
 
             query = f"{event.action_verb} {event.object_material}".strip()
+            # If is_micro_foley is True, try FOL first, then SFX
             res = self.sound_bank.resolve_sound(
                 query,
-                category="SFX" if not event.is_micro_foley else "FOL",
+                category="FOL" if event.is_micro_foley else "SFX",
                 franchise_affinity=franchise_affinity,
             )
             asset_path = self._extract_asset_path(res)
@@ -285,7 +286,15 @@ class MultiAgentDirector:
             # Fallback to broader search if exact resolution fails
             if not asset_path:
                 res = self.sound_bank.resolve_sound(
-                    event.action_verb,
+                    event.action_verb.replace("_", " "),
+                    category="FOL" if event.is_micro_foley else "SFX",
+                    franchise_affinity=franchise_affinity,
+                )
+                asset_path = self._extract_asset_path(res)
+
+            if not asset_path:
+                res = self.sound_bank.resolve_sound(
+                    event.action_verb.replace("_", " "),
                     category="SFX",
                     franchise_affinity=franchise_affinity,
                 )
@@ -297,36 +306,69 @@ class MultiAgentDirector:
             s_start = seg_starts_ms.get(s_idx, 0)
             dur_ms = int(segment_durations_sec.get(s_idx, 4.0) * 1000)
 
-            # Calculate word-level anchor offset
-            anchor = event.anchor_word.strip()
-            anchor_offset_ms = 0
+            # Determine cue placement timing based on beat_timing and trigger_mode
+            beat_timing = getattr(event, "beat_timing", "post_speech")
+            trigger_mode = getattr(event, "trigger_mode", "implicit_scene_physics")
+            rel_pos = getattr(event, "relative_position", 0.5)
+
+            anchor = (event.anchor_word or "").strip()
             text = (seg.get("text") or "").lower()
-            if anchor and anchor.lower() in text:
+
+            if trigger_mode == "explicit_anchor" and anchor and anchor.lower() in text:
+                # Explicit anchor aligned to word position in segment text
                 char_pos = text.find(anchor.lower())
                 ratio = max(0.0, min(1.0, char_pos / max(1, len(text))))
-                anchor_offset_ms = int(dur_ms * ratio)
-            elif event.is_micro_foley:
-                # Distribute micro-foley slightly into the segment
-                anchor_offset_ms = min(400, dur_ms // 3)
+                cue_start_ms = max(0, s_start + int(dur_ms * ratio) - 50)
+            elif beat_timing == "pre_speech":
+                # Fires right before dialogue line (e.g. setting down drink, chair creak, sharp inhale)
+                cue_start_ms = max(0, s_start - 200)
+            elif beat_timing == "post_speech":
+                # Fires right after speech ends (e.g. taking a drink, sighing, coin drop, sheath click)
+                cue_start_ms = max(0, s_start + max(100, dur_ms - 80))
+            elif beat_timing == "mid_speech_pause":
+                # Fires during mid-sentence pause or hesitation
+                pause_ratio = rel_pos
+                for punct in ("...", "—", "--", ",", ";", ":", "?", "!"):
+                    if punct in text:
+                        p_pos = text.find(punct)
+                        pause_ratio = max(0.2, min(0.8, p_pos / max(1, len(text))))
+                        break
+                cue_start_ms = max(0, s_start + int(dur_ms * pause_ratio))
+            elif beat_timing == "under_speech":
+                # Continuous subtle texture under speech (e.g. gentle hearth crackle, rain, subtle cloth)
+                cue_start_ms = max(0, s_start + int(dur_ms * max(0.1, min(0.4, rel_pos))))
+            else:
+                cue_start_ms = max(0, s_start + int(dur_ms * max(0.0, min(1.0, rel_pos))))
 
-            cue_start_ms = max(0, s_start + anchor_offset_ms - 50)
+            # Calibrate gain: under_speech must never mask spoken dialogue
+            effective_gain = event.gain_dbfs
+            if beat_timing == "under_speech":
+                effective_gain = min(effective_gain, -22.0)
 
             cue = FoleyCue(
                 cue_id=f"fc_{s_idx:04d}_{idx:03d}",
                 segment_index=s_idx,
                 anchor_word=anchor or event.action_verb,
+                trigger_mode=trigger_mode,
+                beat_timing=beat_timing,
+                relative_position=rel_pos,
                 pre_roll_ms=50,
                 asset_id=res.get("id", 0) if isinstance(res, dict) else 0,
                 asset_path=str(asset_path).replace("\\", "/"),
                 asset_name=asset_path.name,
-                gain_dbfs=event.gain_dbfs,
+                gain_dbfs=effective_gain,
                 azimuth_pan=event.pan,
                 reverb_send=0.15,
                 start_ms=cue_start_ms,
                 duration_ms=int(event.duration_sec * 1000) if event.duration_sec else 0,
                 ucs_category="FOLEMov" if event.is_micro_foley else "MISCGnl",
                 is_micro_foley=event.is_micro_foley,
-                foley_type="tableware" if "mug" in query or "tankard" in query or "pour" in query else ("clothing" if "cloth" in query or "leather" in query else "prop"),
+                foley_type="tableware" if any(w in query for w in ("mug", "tankard", "pour", "drink", "cup", "bowl", "fork", "knife")) else (
+                    "clothing" if any(w in query for w in ("cloth", "leather", "armor", "cloak", "scabbard")) else (
+                        "furniture" if any(w in query for w in ("chair", "stool", "table", "bench", "door")) else "prop"
+                    )
+                ),
+                dramatic_justification=getattr(event, "dramatic_justification", "") or getattr(event, "description", ""),
             )
             resolved.append(cue)
 

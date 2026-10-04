@@ -55,8 +55,8 @@ flowchart TD
         MR["MemoryRetriever (7-Tier + Salience)<br/>& NarrativeContinuityState"]
     end
 
-    subgraph DraftAndCertify ["4. Literary Draft, Target Mapping & 12-Gate Certification"]
-        DRAFT["Pass 1: Literary Scene Translation<br/>(Gemini Flash / Tiered Model)"]
+    subgraph DraftAndCertify ["4. 4-Agent Literary Collective, Target Mapping & 12-Gate Certification"]
+        DRAFT["Room 2: 4-Agent Translation Collective (ADR-049)<br/>(Draft -> CadenceSpecialist -> IdiomDramaturge -> QualityCritic)"]
         TSM["TargetSemanticMapEngine<br/>(Devanagari proposition extraction)"]
         ALIGN["SemanticAligner.align()<br/>(Beat-to-beat alignment, proportional mapping & affected_paragraphs)"]
         CERT["Pass 2: TranslationCertifier<br/>(Gates T0 – T11 | 4-Tier State Machine:<br/>PASS, PASS_WITH_WARNINGS, REVIEW_REQUIRED, BLOCKED)"]

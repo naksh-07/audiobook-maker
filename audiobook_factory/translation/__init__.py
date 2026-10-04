@@ -51,6 +51,14 @@ from .memory import (
     MemoryContext,
     MemoryRetriever,
 )
+from .agents import (
+    LiteraryDraftTranslator,
+    HindustaniCadenceSpecialist,
+    SubtextAndIdiomDramaturge,
+    TranslationQualityCritic,
+    MultiAgentTranslationCollective,
+    get_translation_collective,
+)
 
 __all__ = [
     "TranslationPolicyConfig",
@@ -111,5 +119,11 @@ __all__ = [
     "MemoryStore",
     "MemoryContext",
     "MemoryRetriever",
+    "LiteraryDraftTranslator",
+    "HindustaniCadenceSpecialist",
+    "SubtextAndIdiomDramaturge",
+    "TranslationQualityCritic",
+    "MultiAgentTranslationCollective",
+    "get_translation_collective",
 ]
 

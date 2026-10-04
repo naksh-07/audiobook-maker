@@ -33,8 +33,8 @@ flowchart TD
         Analyzer --> Blueprint["02: SceneAudioBlueprintBuilder<br/>(Director Instruction Sheet)"]
         
         Blueprint --> AmbienceEng["04, 05: Layered Ambience Engine<br/>(5 Decoupled Tiers & Cross-Scene Continuity)"]
-        Blueprint --> WallaEng["06: Walla & Crowd Engine<br/>(Subordination & Solitary Restraint)"]
-        Blueprint --> FoleyEng["07, 08, 09: Foley & Material Matrix<br/>(Narrative Relevance & Tableware Isolation)"]
+        Blueprint --> WallaEng["06: Walla & Crowd Engine<br/>(Subordination & Speech-Reactive Breathing)"]
+        Blueprint --> FoleyEng["07, 08, 09: Implicit Scene Physics Foley Matrix (ADR-049)<br/>(Decoupled from Nouns | Beat Timing: pre/mid/post/under-speech)"]
         Blueprint --> HardSFXEng["10, 12: Narrative Hard SFX & Creature Engine<br/>(Concussive Impacts & Behavioral States)"]
         Blueprint --> MagicEng["11: Supernatural Sound Engine<br/>(Charge -> Release -> Impact Grammar)"]
         Blueprint --> MusicDir["13, 14, 15: Music Motif Director<br/>(6 Variation Modes & Adaptive Placement)"]

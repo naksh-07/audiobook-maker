@@ -270,117 +270,41 @@ def _translate_single_block(
     model: Optional[str] = None,
     adult_mode: Optional[bool] = None,
 ) -> str:
+    """
+    Room 2: 4-Agent Dramatic Translation Collective Coordinator.
+    Coordinates LiteraryDraftTranslator, HindustaniCadenceSpecialist,
+    SubtextAndIdiomDramaturge, and TranslationQualityCritic.
+
+    Core Invariants:
+    - LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat,
+      gritty dialogue, or mature intimacy present in the source text. Faithfully represent the author's authentic dramatic truth.
+    - 70/30 ANTI-PARODY INVARIANT: Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio.
+      Never replace the book's universe, lore, proper nouns, or geographic names with arbitrary mythology or tapori spoofs.
+    - Cinematic tradition of Anurag Kashyap and Saadat Hasan Manto:
+      Raw dialogue and rustic profanity ('गांड', 'चूतड़', 'हरामी', 'कमीने', 'बकचोदी', 'सूअर का पेशाब') preserved.
+    - 19-TO-21 AMPLIFICATION: When source contains raw vulgarity or curses, do not reduce it to 15. Amplify from 19 to 21 without flinching.
+    - TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant characters start with dismissive 'तू / अबे',
+      but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.
+    - SOMATIC INTIMACY & PASSION (MANTO STANDARD): Render passionate or intimate scenes with visceral realism
+      ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश').
+    - THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Allow quiet scenes to remain genuinely quiet and tender,
+      without forcing unfiltered passion or comedic tapori parody.
+    """
     if not model:
         model = get_model_manager().resolve_active_model(TaskType.TRANSLATION)
     if adult_mode is None:
         adult_mode = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
 
-    # Context-Calibrated Scene Prompt Router
-    text_lower = text_block.lower()
-    title_lower = block_title.lower()
+    from audiobook_factory.translation.agents import get_translation_collective
 
-    is_combat = any(w in text_lower or w in title_lower for w in ("sword", "blade", "blood", "strike", "attack", "kill", "wound", "fight", "warrior", "talwar", "combat"))
-    is_intimate = any(w in text_lower or w in title_lower for w in ("kiss", "caress", "whisper", "bed", "lips", "embrace", "naked", "flesh", "intimate", "tender"))
-    is_dialogue = (text_block.count('"') >= 4 or text_block.count('“') >= 4 or text_block.count("'") >= 6)
-
-    specialized_scene_directives = ""
-    if is_combat:
-        specialized_scene_directives = (
-            "\n>>> ACTIVE SCENE MODE: VISCERAL COMBAT, GORE & STACCATO RHYTHM\n"
-            "- Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism ('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा').\n"
-            "- During intense fight scenes, fracture narrative into rapid STACCATO clauses (2-4 words per beat: 'कदम पीछे। तलवार का पैंतरा। वार। चूक गया!').\n"
-            "- Capture adrenaline tunnel vision, muscle strain, and raw battlefield profanity.\n"
-        )
-    elif is_intimate:
-        specialized_scene_directives = (
-            "\n>>> ACTIVE SCENE MODE: SOMATIC INTIMACY & PASSION (MANTO STANDARD)\n"
-            "- Render passionate, sensual, intimate, or erotic scenes with visceral realism and authentic passion ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश').\n"
-            "- STRICTLY BANNED: Sterile, clinical biology-textbook words ('योनि', 'लिंग') that sound like high-school exams or hospital autopsies.\n"
-            "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Allow quiet scenes to remain genuinely quiet and tender, without forcing unfiltered passion.\n"
-        )
-    elif is_dialogue:
-        specialized_scene_directives = (
-            "\n>>> ACTIVE SCENE MODE: HIGH-STAKES DIALOGUE & SOCIAL DYNAMICS\n"
-            "- Translate raw insults and curses into authentic, earthy Hindustani equivalents ('गांड', 'चूतड़', 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने').\n"
-            "- 19-TO-21 AMPLIFICATION: When source contains raw vulgarity or curses, do not reduce it to 15. Amplify from 19 to 21 without flinching.\n"
-            "- TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant characters start with dismissive 'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
-            "- NATURAL DIALOGUE & IDIOMS: Transpose source idioms into organic dramatic Hindustani idioms fitting the narrative world and characters.\n"
-        )
-    else:
-        specialized_scene_directives = (
-            "\n>>> ACTIVE SCENE MODE: ATMOSPHERIC LORE & WORLDBUILDING\n"
-            "- Maintain authentic literary voice and atmospheric sensory depth.\n"
-            "- CONTEXTUAL HINDUSTANI ('Aate me Namak'): Infuse contextual, evocative Urdu vocabulary ('रूह', 'सन्नाटा', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक', 'सुकून') where scene mood and world atmosphere justify it, without forcing an artificial quota.\n"
-        )
-
-    if adult_mode:
-        advisory_guidance = get_advisory_db().get_formatted_prompt_guidelines()
-        system_prompt = (
-            "You are a master literary translator and audio drama director adapting mature adult literature "
-            "(in the cinematic tradition of Anurag Kashyap and Saadat Hasan Manto) "
-            "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
-            "Strict Translation Invariants:\n"
-            "1. LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat, "
-            "gritty dialogue, or mature intimacy present in the source text. Faithfully represent the author's authentic dramatic truth.\n"
-            "2. THE 70/30 ANTI-PARODY INVARIANT: Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio. "
-            "Never replace the book's universe, lore, proper nouns, or geographic names with arbitrary mythology or tapori spoofs.\n"
-            "3. SENSE-FOR-SENSE SPOKEN DIALOGUE: Never do literal word-for-word translation. Translate sense-for-sense, preserving drama, "
-            "subtext, humor, and emotional depth for professional voice actors. Use flowing, cinematic Hindustani.\n"
-            "4. ADHERE TO GLOSSARY & ZERO CHATTER: Strictly adhere to the provided Character Glossary for proper noun spellings. "
-            "Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions.\n"
-            f"{specialized_scene_directives}\n"
-            f"{advisory_guidance}"
-        )
-    else:
-        system_prompt = (
-            "You are a master literary translator and audio drama director adapting classic literature "
-            "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
-            "Strict Translation Invariants:\n"
-            "1. SENSE-FOR-SENSE SPOKEN DIALOGUE: Translate sense-for-sense, preserving drama, subtext, humor, "
-            "and emotional depth for professional voice actors. Use flowing, natural Hindustani.\n"
-            "2. ADHERE TO GLOSSARY & PRONOUNS: Strictly adhere to the provided Character Glossary for proper noun spellings "
-            "and honorific dynamics ('Aap' vs 'Tum' vs 'Tu').\n"
-            "3. PRESERVE FORMATTING & ZERO CHATTER: Keep headings and dialogue quotation marks intact. Output ONLY the translated "
-            "passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions."
-        )
-
-    glossary_str = json.dumps(glossary, ensure_ascii=False, indent=2)
-
-    # --- Dramatic Fiction Framing (Phase 2 Fix) ---
-    # get_dramatic_fiction_framing() was defined but NEVER injected into prompts.
-    # Injecting it here protects combat/gore/somatic scenes from Gemini content moderation false-positives.
-    from audiobook_factory.safety import get_dramatic_fiction_framing
-    _book_title = None
-    _book_author = None
-    if isinstance(glossary, dict):
-        _meta = glossary.get("book_metadata") or {}
-        _book_title = _meta.get("title") or glossary.get("title")
-        _book_author = _meta.get("author") or glossary.get("author")
-    fiction_framing = get_dramatic_fiction_framing(title=_book_title, author=_book_author)
-    system_prompt = fiction_framing + system_prompt
-
-    prompt = f"""### PERSISTENT TRANSLATION GLOSSARY:
-{glossary_str}
-
-### PRECEDING STORY CONTEXT:
-{preceding_context if preceding_context else "Beginning of novel."}
-
-### ENGLISH TEXT TO TRANSLATE ({block_title}):
-\"\"\"
-{text_block}
-\"\"\"
-"""
-    raw = call_gemini(prompt, system_instruction=system_prompt, model=model, json_mode=False).strip()
-    from audiobook_factory.sanitizer import validate_and_sanitize_translation, audit_literary_register
-    is_valid, cleaned, reason = validate_and_sanitize_translation(raw, is_hindi=True)
-    if not is_valid:
-        raise RuntimeError(f"Translation guardrail triggered for {block_title}: {reason}")
-    _, cleaned, warnings = audit_literary_register(cleaned)
-    if warnings:
-        from audiobook_factory.logger import logger
-        for w in warnings:
-            logger.info(f"    [LITERARY LINTER] {w}")
-    return cleaned
+    collective = get_translation_collective(model=model)
+    return collective.translate_block(
+        text_block=text_block,
+        glossary=glossary,
+        block_title=block_title,
+        preceding_context=preceding_context,
+        adult_mode=adult_mode,
+    )
 
 
 def _retrieve_chapter_memory_in_translator(

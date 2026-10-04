@@ -282,3 +282,114 @@ def test_multi_agent_director_orchestration(tmp_path):
         assert manifest.acoustic_staging["act_001"].preset_name == "tavern_timber_small"
         assert len(manifest.wallah_automations) == 1
         assert manifest.silence_percentage >= 60.0
+
+
+def test_implicit_scene_physics_context_matrix():
+    """Verifies that the Scene Physics Matrix dynamically generates rich tactile props for various environments."""
+    from audiobook_factory.director.agents.micro_foley_agent import build_scene_physics_context_matrix
+
+    tavern_matrix = build_scene_physics_context_matrix("Rusty Tankard Inn", "tavern_interior", "MEDIEVAL_FANTASY")
+    assert "ale tankards" in tavern_matrix.lower()
+    assert "pre_speech" in tavern_matrix
+    assert "mid_speech_pause" in tavern_matrix
+    assert "post_speech" in tavern_matrix
+
+    crypt_matrix = build_scene_physics_context_matrix("Ancient Tomb", "stone_chamber", "MEDIEVAL_FANTASY")
+    assert "flagstones" in crypt_matrix.lower() or "stone" in crypt_matrix.lower()
+
+    forest_matrix = build_scene_physics_context_matrix("Deep Pine Woods", "outdoor_forest", "MEDIEVAL_FANTASY")
+    assert "pine needles" in forest_matrix.lower() or "twigs" in forest_matrix.lower()
+
+
+def test_implicit_scene_physics_timing_resolution(tmp_path):
+    """Verifies that MultiAgentDirector correctly positions implicit foley cues across pre_speech, mid_speech_pause, post_speech, and under_speech."""
+    mock_bank = MagicMock()
+    mock_bank.resolve_sound.return_value = tmp_path / "foley_sound.wav"
+
+    director = MultiAgentDirector(sound_bank=mock_bank)
+
+    # Segments:
+    # Seg 1: 0ms to 4000ms ("Tell me, what do you see?")
+    # Seg 2: 4500ms to 9500ms ("I see darkness... and blood.")
+    script_segments = [
+        {"index": 1, "speaker": "GERALT", "text": "Tell me, what do you see?"},
+        {"index": 2, "speaker": "DANDILION", "text": "I see darkness... and blood."},
+    ]
+    seg_starts_ms = {1: 0, 2: 4500}
+    segment_durations_sec = {1: 4.0, 2: 5.0}
+
+    # Directives with various beat timings and trigger modes:
+    events = [
+        # Pre-speech: drink set down before Geralt speaks
+        FoleyEventDirective(
+            segment_index=1,
+            action_verb="tankard_thump",
+            object_material="wood",
+            trigger_mode="implicit_scene_physics",
+            beat_timing="pre_speech",
+            gain_dbfs=-18.0,
+            anchor_word="",
+            is_micro_foley=True,
+        ),
+        # Mid-speech pause: aligned with ellipsis in "I see darkness... and blood."
+        FoleyEventDirective(
+            segment_index=2,
+            action_verb="chair_creak",
+            object_material="wood",
+            trigger_mode="implicit_scene_physics",
+            beat_timing="mid_speech_pause",
+            relative_position=0.5,
+            gain_dbfs=-20.0,
+            anchor_word="",
+            is_micro_foley=True,
+        ),
+        # Post-speech: swallowing ale after line 2
+        FoleyEventDirective(
+            segment_index=2,
+            action_verb="ale_swallow",
+            object_material="water",
+            trigger_mode="implicit_scene_physics",
+            beat_timing="post_speech",
+            gain_dbfs=-18.0,
+            anchor_word="",
+            is_micro_foley=True,
+        ),
+        # Under-speech: hearth crackle under line 1, should be attenuated
+        FoleyEventDirective(
+            segment_index=1,
+            action_verb="fire_crackle",
+            object_material="fire",
+            trigger_mode="implicit_scene_physics",
+            beat_timing="under_speech",
+            gain_dbfs=-16.0,  # Requesting -16, should be clamped to <= -22
+            anchor_word="",
+            is_micro_foley=True,
+        ),
+    ]
+
+    foley_plan = MicroFoleyPlan(chapter_id="test_chap", events=events)
+    cues = director._resolve_foley_cues(
+        foley_plan=foley_plan,
+        script_segments=script_segments,
+        seg_starts_ms=seg_starts_ms,
+        segment_durations_sec=segment_durations_sec,
+    )
+
+    assert len(cues) == 4
+
+    # 1. Pre-speech cue: triggers right before segment 1 (0ms)
+    pre_cue = next(c for c in cues if c.beat_timing == "pre_speech")
+    assert pre_cue.start_ms == 0  # max(0, 0 - 200)
+
+    # 2. Mid-speech pause cue: placed near ellipsis in segment 2 (around 4500 + pause)
+    mid_cue = next(c for c in cues if c.beat_timing == "mid_speech_pause")
+    assert 4500 < mid_cue.start_ms < 9500
+
+    # 3. Post-speech cue: placed near end of segment 2 (close to 9500ms)
+    post_cue = next(c for c in cues if c.beat_timing == "post_speech")
+    assert post_cue.start_ms >= 4500 + 5000 - 150
+
+    # 4. Under-speech cue: gain must be capped at <= -22.0 to protect vocal clarity
+    under_cue = next(c for c in cues if c.beat_timing == "under_speech")
+    assert under_cue.gain_dbfs <= -22.0
+

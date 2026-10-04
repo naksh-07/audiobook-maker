@@ -26,6 +26,14 @@ from audiobook_factory.script.dramatized_builder import (
 from audiobook_factory.script.project_generator import (
     generate_project_scripts,
 )
+from audiobook_factory.script.agents import (
+    DialogueTurnIsolator,
+    StanislavskiSubtextDirector,
+    PhysicalBlockingDirector,
+    DramaturgyConsistencyJudge,
+    ScreenplayDramaturgyRoom,
+    get_screenplay_room,
+)
 
 __all__ = [
     "normalize_speech_text",
@@ -36,4 +44,10 @@ __all__ = [
     "clean_screenplay_pass2",
     "build_dramatized_script_llm",
     "generate_project_scripts",
+    "DialogueTurnIsolator",
+    "StanislavskiSubtextDirector",
+    "PhysicalBlockingDirector",
+    "DramaturgyConsistencyJudge",
+    "ScreenplayDramaturgyRoom",
+    "get_screenplay_room",
 ]

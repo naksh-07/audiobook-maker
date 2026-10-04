@@ -121,6 +121,13 @@ Output JSON: A list of objects where each object corresponds by "index" to the i
             if e.get("acoustic_env"):
                 seg["acoustic_env"] = e["acoustic_env"]
 
+    try:
+        from audiobook_factory.script.agents.dramaturgy_judge import DramaturgyConsistencyJudge
+        judge = DramaturgyConsistencyJudge()
+        segments, _ = judge.audit_and_certify(segments, chunk_title="Enriched Segment")
+    except Exception:
+        pass
+
     return segments
 
 
@@ -135,11 +142,28 @@ def _parse_dramatized_chunk_llm(
     dramatic_context: str = "",
 ) -> List[Dict[str, Any]]:
     """
-    Two-Pass Decoupled Screenplay Parser:
-    Pass 1: Pure Dialogue Isolation & Speaker Attribution.
-    Pass 2: Performance Director & Spatial Audio Staging.
+    Room 3: Screenplay Dramaturgy & Spatial Staging Room.
+    Pass 1: Dialogue isolation and speaker attribution.
+    Pass 2A: Stanislavski psychological subtext, actioning verbs, intensity headroom.
+    Pass 2B: Physical character blocking, proximity, and azimuth pan (-0.8 to +0.8).
+    Pass 3: Dramaturgy consistency audit, narrator centering, and spatial smoothing.
     """
-    # Pass 1: Dialogue isolation and speaker attribution
+    try:
+        from audiobook_factory.script.agents import get_screenplay_room
+        room = get_screenplay_room(model=model if model else None)
+        turns = room.process_chunk(
+            chunk_text=chunk_text,
+            preceding_context=preceding_context,
+            dramatic_context=dramatic_context,
+            is_hindi=is_hindi,
+            character_roster=character_roster,
+        )
+        if turns:
+            return turns
+    except Exception as e:
+        logger.warning(f"  [!] ScreenplayDramaturgyRoom notice: {e}. Falling back to baseline two-pass parser.")
+
+    # Fallback to baseline two-pass parsing
     pass1_turns = _parse_dialogue_turns_llm(
         chunk_text=chunk_text,
         preceding_context=preceding_context,
@@ -154,7 +178,6 @@ def _parse_dramatized_chunk_llm(
             )
         return []
 
-    # Pass 2: Performance Director & Spatial Staging enrichment
     enriched_turns = _enrich_performance_and_staging_llm(
         segments=pass1_turns,
         dramatic_context=dramatic_context,

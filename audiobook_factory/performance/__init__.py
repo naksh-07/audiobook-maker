@@ -55,6 +55,7 @@ from .golden_suite import (
     GoldenSceneEvaluationResult,
     GoldenSuiteReport,
 )
+from .take_critic import TakeAuditionCritic
 
 __all__ = [
     "PerformanceDirection",
@@ -109,4 +110,5 @@ __all__ = [
     "GoldenSceneDefinition",
     "GoldenSceneEvaluationResult",
     "GoldenSuiteReport",
+    "TakeAuditionCritic",
 ]

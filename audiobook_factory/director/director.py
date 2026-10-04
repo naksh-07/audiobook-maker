@@ -137,7 +137,8 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
         # =====================================================================
         check_pdir = project_dir or self.project_dir
         sound_script_data = None
-        if check_pdir:
+        force_rebuild = os.environ.get("FORCE_REBUILD_MANIFEST", "false").lower() in ("true", "1", "yes")
+        if check_pdir and not force_rebuild:
             manifests_dir = Path(check_pdir) / "manifests"
             sound_script_file = manifests_dir / f"{chapter_id}_sound_script.json"
             if sound_script_file.exists():

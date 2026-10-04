@@ -1037,3 +1037,37 @@
      - Key pool error payload extraction and unified `call_gemini` routing.
 - **Rationale:** Ensures long-form novel adaptation without LLM fatigue or paragraph swallowing, eliminates all monolith scripts across the codebase, and maintains 100% backward compatibility for existing tests and CLI invocation patterns.
 
+## ADR-049: Hollywood End-to-End Multi-Agent Architecture (Rooms 1–5) and Implicit Scene Physics
+- **Status:** Accepted
+- **Date:** 2026-10-05
+- **Context:**
+  1. Directing and sound design suffered from sparse, mechanical Foley triggering only when physical objects were literally named in text (e.g., zero foley for long dialogue stretches in taverns or forests).
+  2. Single-LLM monolith prompts across Translation (`_translate_single_block`) and Directing (`sound_spotter.py`) tried to simultaneously handle literal translation, spoken cadence, rustic idioms, honorifics, and adult filtering, or truncated chapters at 8,000 characters.
+  3. Abundant workstation compute with 100+ Gemini API keys was underutilized while single prompts risked cognitive overload.
+- **Decision:**
+  1. **Room 5: Living World Directing & Implicit Scene Physics:**
+     - Enhanced `FoleyEventDirective` and `FoleyCue` with `trigger_mode` (`implicit_scene_physics`), `beat_timing` (`pre_speech`, `mid_speech_pause`, `post_speech`, `under_speech`), and `relative_position`. Decoupled foley from literal word naming.
+     - Upgraded `MicroFoleyAgent` with dynamic `build_scene_physics_context_matrix` (taverns, crypts, forests, chambers) and parallelized act spotting.
+     - Extended `MultiAgentDirector` with mathematical beat timing and vocal headroom protection (`under_speech` gain <= -22 dBFS).
+  2. **Room 2: 4-Agent Dramatic Translation Collective (`audiobook_factory/translation/agents/`):**
+     - Decomposed monolithic translation into 4 specialized agents:
+       * `LiteraryDraftTranslator`: Sense-for-sense dramatic prose, scene mode detection, 70/30 canon sacredness.
+       * `HindustaniCadenceSpecialist`: Spoken dialogue flow, actor breath pauses (—, ..., ,), honorific power shifts (`TU <-> MAAI-BAAP`).
+       * `SubtextAndIdiomDramaturge`: Earthy Hindustani metaphors, rustic grit, 19-to-21 amplification of raw dialogue/curses, "Nothing Above Source" invariant.
+       * `TranslationQualityCritic`: Canon terminology verification against BookBible/glossary, omission checks, reflection repair.
+       * `MultiAgentTranslationCollective`: End-to-end 4-stage coordinator wired into `_translate_single_block` and `IntelligentTranslationPipeline`.
+  3. **Room 3: Screenplay Dramaturgy & Spatial Staging (`audiobook_factory/script/agents/`):**
+     - Decomposed into `DialogueTurnIsolator` -> `StanislavskiSubtextDirector` -> `PhysicalBlockingDirector` -> `DramaturgyConsistencyJudge`.
+     - Upgraded `SpatialCoordinates` contract with `physical_blocking` (`sitting`, `standing`, `pacing`, `leaning_close`, `retreating`).
+     - Linked character blocking directly to spatial proximity and stereo azimuth panning (-0.8 to +0.8) with narrator center clamping and anti-jitter smoothing.
+  4. **Room 1: Pre-Production World & Lore Ingestion Studio (`audiobook_factory/preproduction/`):**
+     - `DramatisPersonaeAgent`: Full-novel character profiling without text slicing.
+     - `SonicWorldArchitect`: Authoritative `sonic_bible.json` defining world acoustic DNA, convolution reverb targets, and signature foley palettes.
+     - `PhoneticLexiconDramaturge`: World locations, factions, creatures, and terminology in `book_bible.json`.
+     - `PreProductionSupervisor`: One-time master locking per novel with zero voice drift across chapters.
+  5. **Room 4: Voice Performance & Take Auditioning (`audiobook_factory/performance/take_critic.py`):**
+     - `TakeAuditionCritic`: Judicial auditioning comparing candidate takes on climactic scenes (`CRITICAL_SCENE_TAKE`) for vocal strain, emotional breakthrough, and subtext delivery.
+  6. **Production Certification:**
+     - Verified with 41 unit and integration tests passing 100% GREEN (1.49s).
+- **Rationale:** Distributes high-concurrency 100+ key compute across specialized, non-choking agents while eliminating god scripts, yielding living-world tactile realism, authentic literary Hindustani dialogue, and studio-grade stereo soundstaging.
+

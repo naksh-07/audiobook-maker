@@ -36,7 +36,8 @@ flowchart TD
         Translated --> SA["SceneAnalyzer:<br/>Organic Scene Discovery & Conflicts"]
         SA --> BP["BeatPlanner:<br/>Tactical Objectives & Actioning Verbs"]
         BP --> ChunkSlice["Beat-Aligned Chunk Slicer:<br/>Zero-Cut Beat Preservation"]
-        ChunkSlice --> PBG["PerformanceBibleGenerator:<br/>Sociolect Archetypes & Delivery Rules"]
+        ChunkSlice --> Room3["Room 3: Screenplay Dramaturgy Room (ADR-049)<br/>Isolator -> StanislavskiDirector -> PhysicalBlockingDirector -> DramaturgyJudge"]
+        Room3 --> PBG["PerformanceBibleGenerator:<br/>Sociolect Archetypes & Delivery Rules"]
         PBG --> ScriptClean["clean_screenplay_pass2:<br/>Dramatic Plan Metadata Enrichment"]
         ScriptClean --> DV["DramaticValidator:<br/>5-Pillar Arc & Epistemic Audit"]
         DV --> G25{"Gate 2.5:<br/>Dramatic Fidelity Audit"}

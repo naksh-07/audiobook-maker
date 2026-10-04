@@ -213,7 +213,7 @@ class ModelManager:
         self,
         candidates: List[str],
         api_key: Optional[str] = None,
-        timeout: float = 6.0,
+        timeout: float = 12.0,
     ) -> List[Tuple[str, bool, float, Optional[str]]]:
         """
         Concurrently pings 2-3 candidate models with a minimal dry-run request.
@@ -297,7 +297,7 @@ class ModelManager:
         for i in range(0, min(len(candidates), 6), batch_size):
             batch = candidates[i:i + batch_size]
             logger.info(f"[*] Model Manager: Concurrently pinging favorable candidates for {task.value}: {batch}")
-            probe_results = self.ping_candidate_models(batch, api_key=api_key, timeout=7.0)
+            probe_results = self.ping_candidate_models(batch, api_key=api_key, timeout=12.0)
             all_probed_results.extend(probe_results)
 
             healthy = [r for r in probe_results if r[1] is True]

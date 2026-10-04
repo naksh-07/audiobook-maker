@@ -77,12 +77,27 @@ class MusicCue(BaseModel):
 class FoleyCue(BaseModel):
     """
     Foley / SFX cue instruction anchored to dialogue timestamps with calibrated spatial coordinates.
+    Supports both explicit word anchors and implicit scene physics (unvoiced physical world actions).
     """
     model_config = ConfigDict(extra="ignore")
 
     cue_id: str = Field(..., description="Unique cue identifier (e.g. 'fc_001')")
     segment_index: int = Field(..., ge=0, description="Index of dialogue segment triggering the sound")
-    anchor_word: str = Field(..., description="Exact dialogue word triggering the physical sound")
+    anchor_word: str = Field(default="", description="Exact dialogue word triggering the physical sound if explicit")
+    trigger_mode: Literal["explicit_anchor", "implicit_scene_physics", "atmospheric_event"] = Field(
+        default="implicit_scene_physics",
+        description="Whether sound is anchored to a literal word or generated from implicit scene context"
+    )
+    beat_timing: Literal["pre_speech", "mid_speech_pause", "post_speech", "under_speech"] = Field(
+        default="post_speech",
+        description="Temporal placement relative to spoken dialogue delivery"
+    )
+    relative_position: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Fractional timeline offset within the segment duration (0.0=start, 1.0=end)"
+    )
     pre_roll_ms: int = Field(default=100, ge=0, description="Lead-in time before anchor word in milliseconds")
     asset_id: int = Field(default=0, ge=0, description="Database asset identifier of foley sound")
     asset_path: str = Field(default="", description="Filesystem path to sound asset file")
@@ -104,6 +119,7 @@ class FoleyCue(BaseModel):
     )
     is_micro_foley: bool = Field(default=False, description="Whether cue is ambient living-world micro-foley (cups, cloth, chairs)")
     foley_type: str = Field(default="prop", description="Foley sub-type: prop, clothing, tableware, footstep, environmental")
+    dramatic_justification: str = Field(default="", description="Artistic rationale for implicit physical action")
 
     @field_validator("azimuth_pan")
     @classmethod
