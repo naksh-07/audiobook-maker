@@ -59,7 +59,7 @@ class LiteraryDraftTranslator:
             text_block.count('"') >= 4 or text_block.count('“') >= 4 or text_block.count("'") >= 6
         )
 
-        # 1. CLASSIC REVERENT MODE (Premchand, Tagore, Classic Literature)
+        # 1. CLASSIC REVERENT MODE (Heritage, Dignified Classical Literature)
         if fidelity_tier == "CLASSIC_REVERENT" or profanity_policy == "STRICTLY_CLEAN_REVERENT":
             if is_dialogue:
                 return (
@@ -85,7 +85,7 @@ class LiteraryDraftTranslator:
                     f"- Maintain deep narrative elegance in {cadence}, honoring classic literary cadence.\n"
                 )
 
-        # 2. RAW UNRATED MODE (Manto, Sapkowski, George R.R. Martin, Crime/Dark Fantasy)
+        # 2. RAW UNRATED MODE (Visceral Realism, Gritty Action, Unrated Dramatic Fiction)
         if fidelity_tier == "RAW_UNRATED" or profanity_policy == "UNRATED_AUTHENTIC_KASHYAP":
             if is_combat:
                 return (
@@ -96,7 +96,7 @@ class LiteraryDraftTranslator:
                 )
             elif is_intimate:
                 return (
-                    f"\n>>> ACTIVE SCENE MODE: SOMATIC INTIMACY & PASSION (MANTO STANDARD)\n"
+                    f"\n>>> ACTIVE SCENE MODE: SOMATIC INTIMACY & PASSION (VISCERAL REALISM STANDARD)\n"
                     "- Render passionate, sensual, intimate, or erotic scenes with visceral realism and authentic passion ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपish').\n"
                     "- STRICTLY BANNED: Sterile, clinical biology-textbook words ('योनि', 'लिंग') that sound like high-school exams or hospital autopsies.\n"
                     "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Allow quiet scenes to remain genuinely quiet and tender, without forcing unfiltered passion.\n"

@@ -2,7 +2,7 @@
 """
 Audiobook Factory - Room 2 Agent C: Subtext & Idiom Dramaturge.
 Injects earthy Hindustani metaphors, rustic dramatic grit, and unsparing literary authenticity
-in the tradition of Saadat Hasan Manto and Anurag Kashyap, enforcing the 19-to-21 Amplification rule.
+in the tradition of visceral dramatic realism and gritty cinematic fiction, enforcing the 19-to-21 Amplification rule.
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ class SubtextAndIdiomDramaturge:
             system_instruction = (
                 fiction_framing +
                 f"You are a master Dramaturge and Literary Dialect Stylist in the dramatic tradition of "
-                f"Saadat Hasan Manto and Anurag Kashyap ({tradition}).\n"
+                f"visceral dramatic realism and gritty cinematic fiction ({tradition}).\n"
                 f"Your task is to enrich a spoken Hindi audiobook passage with authentic Hindustani idioms, "
                 f"rustic grit, and cinematic subtext ({cadence}).\n\n"
                 "Key Creative Principles:\n"

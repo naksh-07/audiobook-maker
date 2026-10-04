@@ -51,6 +51,7 @@ def call_gemini(
     return_raw_text: bool = False,
     thinking_budget: Optional[int] = None,
     json_mode: Optional[bool] = None,
+    tools: Optional[List[Dict[str, Any]]] = None,
     **kwargs: Any,
 ) -> Any:
     """
@@ -117,6 +118,8 @@ def call_gemini(
             p["generationConfig"]["thinkingConfig"] = {
                 "thinkingBudget": current_thinking_budget
             }
+        if tools:
+            p["tools"] = tools
         return p
 
     # Resolve effective thinking budget for this call

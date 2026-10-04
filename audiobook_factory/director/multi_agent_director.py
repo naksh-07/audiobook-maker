@@ -68,7 +68,7 @@ class MultiAgentDirector:
         segment_durations_sec: Dict[int, float],
         seg_starts_ms: Dict[int, int],
         total_duration_sec: float,
-        era: str = "MEDIEVAL_FANTASY",
+        era: str = "UNIVERSAL_CONTEMPORARY",
         franchise_affinity: Optional[str] = None,
         dramatic_theme: str = "Cinematic Audio Drama",
         title: str = "",

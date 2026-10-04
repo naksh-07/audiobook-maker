@@ -117,7 +117,7 @@ STOP_WORDS_FTS = {
 COMBAT_TERMS = {
     "sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor",
     "clash", "spear", "shield", "mace", "crossbow", "warrior", "combat", "blood",
-    "slashing", "witcher", "monster", "beast", "battle"
+    "slashing", "warrior", "monster", "beast", "battle"
 }
 
 

@@ -162,11 +162,11 @@ Prose Samples:
 \"\"\"
 
 Return a JSON array of objects with:
-- "canonical_name": string (e.g. "Mr. Dursley", "Professor McGonagall", "Albus Dumbledore")
-- "hindi_name": string (Devanagari spelling if applicable, e.g. "मिस्टर डर्स्ली")
+- "canonical_name": string (e.g. "Protagonist Name", "Village Elder", "Lead Detective")
+- "hindi_name": string (Devanagari spelling if applicable, e.g. "मुख्य पात्र")
 - "gender": "male" | "female" | "neutral"
-- "archetype": string (e.g. "nervous suburban director", "stern Scottish transfiguration professor", "wise elderly headmaster")
-- "aliases": list of strings (e.g. ["मिस्टर डर्स्ली", "Vernon Dursley", "Mr Dursley"])
+- "archetype": string (e.g. "stoic rural farmer", "shrewd urban detective", "wise elderly mentor", "rebellious youth")
+- "aliases": list of strings (e.g. ["मुख्य पात्र", "Character Full Name", "Nickname"])
 """
 
 
@@ -238,7 +238,7 @@ Return a JSON array of objects with:
                 presence_boost = 1.8
                 clarity_cut = 2.0
                 lowpass = 0
-            elif any(w in arch for w in ("lead", "protagonist", "hero", "hunter", "witcher", "cynic", "detective")):
+            elif any(w in arch for w in ("lead", "protagonist", "hero", "hunter", "warrior", "mercenary", "cynic", "detective")):
                 pitch = round(0.95 + (index % 2) * 0.02, 2)  # 0.95 - 0.97
                 speed = 0.99
                 bass_boost = 2.0

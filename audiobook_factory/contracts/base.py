@@ -28,7 +28,7 @@ class ProjectConfig(BaseModel):
     assets_dir: str = Field(..., description="Root directory path for all project media assets")
     ebu_r128_lufs: float = Field(default=-19.0, description="EBU R128 integrated loudness target in LUFS")
     true_peak_db: float = Field(default=-1.5, description="Maximum allowable True Peak in dBTP")
-    adult_literary_mode: bool = Field(default=True, description="Enables unfiltered Gangs-of-Wasseypur / Manto grade raw adult literary fidelity")
+    adult_literary_mode: bool = Field(default=True, description="Enables unfiltered visceral adult dramatic literary fidelity")
 
     @field_validator("ebu_r128_lufs")
     @classmethod

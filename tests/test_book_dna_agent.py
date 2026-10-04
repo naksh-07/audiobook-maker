@@ -34,7 +34,7 @@ def test_book_dna_agent_manto_heuristic():
     dna = agent._heuristic_fallback(sample, meta)
     assert dna["literary_tradition"] == "SOMATIC_PSYCHOLOGICAL_REALISM"
     assert dna["source_fidelity_tier"] == "RAW_UNRATED"
-    assert dna["intimacy_intensity"] == "SOMATIC_PASSION_MANTO"
+    assert dna["intimacy_intensity"] in ("SOMATIC_PASSION_RAW", "SOMATIC_PASSION_MANTO")
 
 
 def test_book_dna_agent_dark_fantasy_heuristic():

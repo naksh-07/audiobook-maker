@@ -19,7 +19,7 @@ class ChunkingPolicy:
     # Literary Translation (Pillar 2):
     # 650-750 words (~1,000 input tokens) produces ~1,500 Devanagari output tokens.
     # Eliminates attention drift and allows Gemini/Claude to maintain authentic
-    # Manto-grade visceral intimacy, rustic curses, and poetic Urdu/Bhojpuri cadence.
+    # visceral somatic intimacy, rustic curses, and poetic regional cadence.
     TRANSLATION_MAX_WORDS: int = 750
     TRANSLATION_TARGET_WORDS: int = 650
 

@@ -137,7 +137,7 @@ class PipelineOrchestrator:
         logger.info(f"   Target Book: {input_file.name}")
         logger.info(f"   Mode       : {'Literary Hindi' if hindi else 'Original Language'}")
         logger.info(f"   Style      : {'Full-Cast Dramatized' if dramatized else 'Single Narrator'}")
-        logger.info(f"   Adult Mode : {'Active (GOW / Manto Unfiltered)' if adult_literary_mode else 'Standard'}")
+        logger.info(f"   Adult Mode : {'Active (Raw Unrated Adult Fidelity)' if adult_literary_mode else 'Standard'}")
         logger.info(f"   Voice Lead : {voice}")
         if stage_start:
             logger.info(f"   Stage Start: {stage_start} (Stage {start_stage_num})")

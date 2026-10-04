@@ -3,14 +3,15 @@
 Audiobook Factory - Stage 0.5: Universal Project Classifier & World Resolver.
 =============================================================================
 Dynamically classifies book era, genre, franchise affinity, and world acoustic DNA
-from title, author, book bible, and narrative prose with zero hardcoded single-book biases.
+from title, author, book bible, web research, and narrative prose with zero hardcoded
+single-book biases or franchise tables.
 """
 
 from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass, asdict
 
 from audiobook_factory.logger import logger
@@ -18,72 +19,93 @@ from audiobook_factory.logger import logger
 
 @dataclass
 class ProjectClassification:
-    era: str  # MEDIEVAL_FANTASY, SPACE_OPERA_SCIFI, RETRO_FUTURE_CYBERPUNK, PULP_NOIR_1940S, VICTORIAN_EDWARDIAN, MODERN_CONTEMPORARY, GENERAL_DRAMA
-    genre: str  # fantasy, sci_fi, horror_thriller, detective_noir, historical, literary_fiction, contemporary
-    franchise_affinity: Optional[str]  # e.g. "the_witcher", "dune", "tolkien_middle_earth", None
-    primary_acoustic_env: str  # e.g. "stone_ruins_exterior", "tavern_interior", "spaceship_bridge", "domestic_room_quiet"
+    era: str  # MEDIEVAL_FANTASY, SPACE_OPERA_SCIFI, RETRO_FUTURE_CYBERPUNK, PULP_NOIR_1940S, VICTORIAN_EDWARDIAN, RURAL_HISTORICAL, MODERN_CONTEMPORARY, GENERAL_DRAMA
+    genre: str  # fantasy, sci_fi, horror_thriller, detective_noir, historical, rural_realism, literary_fiction, contemporary
+    franchise_affinity: Optional[str]  # Dynamically discovered literary universe name, or None
+    primary_acoustic_env: str  # e.g. "stone_ruins_exterior", "tavern_interior", "spaceship_bridge", "rural_village_outdoors", "domestic_room"
     dramatic_theme: str
     confidence: float
 
 
-# Recognizable Literary Franchises & Lore Indicators
-FRANCHISE_SIGNATURES: Dict[str, Dict[str, Any]] = {
-    "the_witcher": {
-        "authors": ["andrzej sapkowski", "sapkowski"],
-        "titles": ["sword of destiny", "the last wish", "blood of elves", "time of contempt", "baptism of fire", "tower of the swallow", "lady of the lake", "season of storms"],
-        "keywords": ["rivia", "vengerberg", "cintra", "witcher", "zerrikanian", "oxenfurt", "jaskier", "kaer morhen", "novigrad", "skellige", "temeria", "redania", "nilfgaard", "basilisk", "aelirenn"],
-        "era": "MEDIEVAL_FANTASY",
-        "genre": "fantasy",
-        "primary_acoustic_env": "stone_ruins_exterior",
-        "theme": "Dark Slavic Witcher Fantasy",
-    },
-    "dune": {
-        "authors": ["frank herbert"],
-        "titles": ["dune", "dune messiah", "children of dune", "god emperor of dune"],
-        "keywords": ["paul atreides", "arrakis", "harkonnen", "fremen", "shai-hulud", "bene gesserit", "caladan", "melange", "spice"],
-        "era": "SPACE_OPERA_SCIFI",
-        "genre": "sci_fi",
-        "primary_acoustic_env": "desert_dunes_wind",
-        "theme": "Epic Desert Space Opera",
-    },
-    "tolkien_middle_earth": {
-        "authors": ["j.r.r. tolkien", "tolkien"],
-        "titles": ["the hobbit", "the fellowship of the ring", "the two towers", "the return of the king", "the silmarillion"],
-        "keywords": ["frodo", "bilbo", "gandalf", "mordor", "shire", "aragorn", "legolas", "gimli", "rivendell", "sauron", "orc", "hobbit"],
-        "era": "MEDIEVAL_FANTASY",
-        "genre": "fantasy",
-        "primary_acoustic_env": "deep_forest_night",
-        "theme": "High Epic Fantasy",
-    },
-    "sherlock_holmes": {
-        "authors": ["arthur conan doyle", "conan doyle"],
-        "titles": ["a study in scarlet", "the sign of the four", "the hound of the baskervilles", "the valley of fear"],
-        "keywords": ["sherlock", "holmes", "dr. watson", "baker street", "moriarty", "lestrade", "scotland yard"],
-        "era": "VICTORIAN_EDWARDIAN",
-        "genre": "detective_noir",
-        "primary_acoustic_env": "victorian_parlor_fire",
-        "theme": "Victorian Gaslight Detective Mystery",
-    },
-    "lovecraft_cthulhu": {
-        "authors": ["h.p. lovecraft", "lovecraft"],
-        "titles": ["the call of cthulhu", "at the mountains of madness", "the shadow over innsmouth"],
-        "keywords": ["cthulhu", "arkham", "necronomicon", "miskatonic", "innsmouth", "shoggoth", "yog-sothoth", "elder god"],
-        "era": "PULP_NOIR_1940S",
-        "genre": "horror_thriller",
-        "primary_acoustic_env": "crypt_catacomb",
-        "theme": "Cosmic Horror & Eldritch Dread",
-    },
-}
-
-
 class ProjectClassifier:
-    """Universal analyzer that determines novel era, genre, and world acoustic DNA."""
+    """Universal analyzer that determines novel era, genre, and world acoustic DNA without hardcoding."""
 
-    @staticmethod
+    @classmethod
+    def _dynamic_llm_classify(
+        cls,
+        title: str,
+        author: str,
+        sample_text: str,
+    ) -> Optional[ProjectClassification]:
+        """
+        Dynamically classifies book using Gemini LLM with Google Search Grounding.
+        Queries the internet in real time to discover book background, era, and tone.
+        """
+        try:
+            from audiobook_factory.llm_client import call_gemini
+            from audiobook_factory.model_manager import TaskType
+
+            has_book_info = bool(title and title.lower() not in ("unknown", "untitled"))
+            search_instruction = (
+                f"Perform a live web search for the published book '{title}' by '{author or 'Unknown Author'}'. "
+                if has_book_info else ""
+            )
+
+            prompt = f"""You are an elite Literary Dramaturge and World Acoustic Classifier.
+{search_instruction}Analyze and classify the novel's era, genre, and acoustic world.
+
+Book Title: {title or 'Unknown'}
+Author: {author or 'Unknown'}
+
+Prose Excerpt:
+\"\"\"
+{sample_text[:15000]}
+\"\"\"
+
+Output JSON:
+{{
+  "era": "MEDIEVAL_FANTASY" | "SPACE_OPERA_SCIFI" | "RETRO_FUTURE_CYBERPUNK" | "PULP_NOIR_1940S" | "VICTORIAN_EDWARDIAN" | "RURAL_HISTORICAL" | "MODERN_CONTEMPORARY" | "GENERAL_DRAMA",
+  "genre": "fantasy" | "sci_fi" | "horror_thriller" | "detective_noir" | "historical" | "rural_realism" | "literary_fiction" | "contemporary",
+  "franchise_affinity": "string or null (name of literary universe if part of a series, or null)",
+  "primary_acoustic_env": "tavern_interior" | "stone_ruins_exterior" | "spaceship_bridge" | "rural_village_outdoors" | "cyberpunk_alley_rain" | "detective_office" | "victorian_parlor_fire" | "room_tone",
+  "dramatic_theme": "string (concise 4-8 word description of sonic and dramatic theme)",
+  "confidence": 0.95
+}}"""
+            # Enable Google Search Grounding tool if book title is known
+            tools = [{"googleSearch": {}}] if has_book_info else None
+
+            res = call_gemini(
+                prompt=prompt,
+                task_type=TaskType.EXTRACTION,
+                response_mime_type="application/json",
+                max_output_tokens=1024,
+                tools=tools,
+                timeout_sec=20.0,
+            )
+            if isinstance(res, dict) and res.get("era") and res.get("genre"):
+                logger.info(
+                    f"[+] ProjectClassifier: Dynamic LLM/Web discovery -> "
+                    f"Era: {res.get('era')}, Genre: {res.get('genre')}, Universe: {res.get('franchise_affinity') or 'Standalone'}"
+                )
+                return ProjectClassification(
+                    era=str(res["era"]).upper(),
+                    genre=str(res["genre"]).lower(),
+                    franchise_affinity=res.get("franchise_affinity") if res.get("franchise_affinity") != "null" else None,
+                    primary_acoustic_env=res.get("primary_acoustic_env", "room_tone"),
+                    dramatic_theme=res.get("dramatic_theme", f"{res.get('genre', 'General').title()} Audio Drama"),
+                    confidence=float(res.get("confidence", 0.92)),
+                )
+        except Exception as e:
+            logger.debug(f"ProjectClassifier: dynamic LLM/web lookup skipped or failed ({e}); using heuristic fallback.")
+        return None
+
+    @classmethod
     def classify(
+        cls,
         project_dir: Optional[Path] = None,
         metadata: Optional[Dict[str, Any]] = None,
         sample_prose: Optional[str] = None,
+        enable_web_discovery: bool = True,
     ) -> ProjectClassification:
         meta = metadata or {}
         pdir = Path(project_dir) if project_dir else None
@@ -109,14 +131,13 @@ class ProjectClassifier:
                 confidence=1.0,
             )
 
-        title = str(meta.get("title", "")).lower().strip()
-        author = str(meta.get("author", "")).lower().strip()
-        narrative_voice = str(meta.get("narrative_voice", "")).lower().strip()
+        title = str(meta.get("title", "")).strip()
+        author = str(meta.get("author", "")).strip()
+        narrative_voice = str(meta.get("narrative_voice", "")).strip()
 
         # Gather sample text if none provided
         text_corpus = sample_prose or ""
         if not text_corpus and pdir:
-            # Try reading book_bible.json or first chapter
             bb_file = pdir / "book_bible.json"
             if bb_file.exists():
                 try:
@@ -133,46 +154,15 @@ class ProjectClassifier:
                     except Exception:
                         pass
 
-        combined_search = f"{title} {author} {narrative_voice} {text_corpus[:10000]}".lower()
+        # 2. Dynamic Web Research & LLM Discovery (Highest Fidelity, Zero Hardcoding)
+        if enable_web_discovery and (title or text_corpus):
+            dyn_class = cls._dynamic_llm_classify(title=title, author=author, sample_text=text_corpus)
+            if dyn_class:
+                return dyn_class
 
-        # 2. Check Franchise Signatures first (highest fidelity)
-        for franchise_key, sig in FRANCHISE_SIGNATURES.items():
-            if any(a in author for a in sig["authors"]):
-                logger.info(f"[+] ProjectClassifier: Match author '{author}' -> Franchise '{franchise_key}'")
-                return ProjectClassification(
-                    era=sig["era"],
-                    genre=sig["genre"],
-                    franchise_affinity=franchise_key,
-                    primary_acoustic_env=sig["primary_acoustic_env"],
-                    dramatic_theme=sig["theme"],
-                    confidence=0.98,
-                )
+        # 3. Universal Era & Genre NLP Heuristic Analysis (Offline / Fail-Safe Mode)
+        combined_search = f"{title} {author} {narrative_voice} {text_corpus[:15000]}".lower()
 
-            if any(t in title for t in sig["titles"]):
-                logger.info(f"[+] ProjectClassifier: Match title '{title}' -> Franchise '{franchise_key}'")
-                return ProjectClassification(
-                    era=sig["era"],
-                    genre=sig["genre"],
-                    franchise_affinity=franchise_key,
-                    primary_acoustic_env=sig["primary_acoustic_env"],
-                    dramatic_theme=sig["theme"],
-                    confidence=0.95,
-                )
-
-            # Keyword density check
-            kw_hits = sum(1 for kw in sig["keywords"] if re.search(r"\b" + re.escape(kw) + r"\b", combined_search))
-            if kw_hits >= 2:
-                logger.info(f"[+] ProjectClassifier: Keyword signature hits ({kw_hits}) -> Franchise '{franchise_key}'")
-                return ProjectClassification(
-                    era=sig["era"],
-                    genre=sig["genre"],
-                    franchise_affinity=franchise_key,
-                    primary_acoustic_env=sig["primary_acoustic_env"],
-                    dramatic_theme=sig["theme"],
-                    confidence=0.90,
-                )
-
-        # 3. Universal Era & Genre Heuristic Analysis (for standalone novels)
         fantasy_keywords = [
             "sword", "blade", "sorcerer", "wizard", "magic", "dragon", "tavern", "castle",
             "shield", "scabbard", "king", "queen", "dungeon", "crypt", "monster", "beast",
@@ -191,6 +181,10 @@ class ProjectClassifier:
         historical_keywords = [
             "carriage", "horse", "coach", "petticoat", "regiment", "musket", "emperor", "monarchy"
         ]
+        rural_keywords = [
+            "farmer", "peasant", "village", "zamindar", "panchayat", "plow", "harvest", "bullock",
+            "kisan", "fields", "pastoral", "खेत", "गांव", "किसान", "बैल", "पंचायत", "चौपाल", "कुआं"
+        ]
 
         scores = {
             "MEDIEVAL_FANTASY": sum(1 for w in fantasy_keywords if re.search(r"\b" + re.escape(w) + r"\b", combined_search)),
@@ -198,6 +192,7 @@ class ProjectClassifier:
             "RETRO_FUTURE_CYBERPUNK": sum(1 for w in cyberpunk_keywords if re.search(r"\b" + re.escape(w) + r"\b", combined_search)),
             "PULP_NOIR_1940S": sum(1 for w in noir_keywords if re.search(r"\b" + re.escape(w) + r"\b", combined_search)),
             "VICTORIAN_EDWARDIAN": sum(1 for w in historical_keywords if re.search(r"\b" + re.escape(w) + r"\b", combined_search)),
+            "RURAL_HISTORICAL": sum(1 for w in rural_keywords if re.search(r"\b" + re.escape(w) + r"\b", combined_search)),
         }
 
         best_era = max(scores, key=scores.get)
@@ -210,6 +205,7 @@ class ProjectClassifier:
                 "RETRO_FUTURE_CYBERPUNK": ("cyberpunk", "cyberpunk_alley_rain", "Gritty Cyberpunk Noir"),
                 "PULP_NOIR_1940S": ("detective_noir", "detective_office", "Hardboiled Noir Drama"),
                 "VICTORIAN_EDWARDIAN": ("historical", "victorian_parlor_fire", "Period Historical Drama"),
+                "RURAL_HISTORICAL": ("rural_realism", "rural_village_outdoors", "Pastoral Rural Realism Audio Drama"),
             }
             genre, env, theme = genre_map[best_era]
             return ProjectClassification(
@@ -256,6 +252,6 @@ class ProjectClassifier:
 
         logger.info(
             f"[+] ProjectClassifier: Authoritatively persisted book profile -> "
-            f"Era: {classification.era}, Genre: {classification.genre}, Franchise: {classification.franchise_affinity or 'None'}"
+            f"Era: {classification.era}, Genre: {classification.genre}, Universe: {classification.franchise_affinity or 'Standalone'}"
         )
         return classification

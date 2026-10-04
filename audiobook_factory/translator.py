@@ -277,14 +277,17 @@ def _translate_single_block(
     SubtextAndIdiomDramaturge, and TranslationQualityCritic.
 
     Core Invariants:
+    - LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat, or intimacy.
     - DUAL-RULE INVARIANT ('NOTHING ABOVE SOURCE'):
-      * When source is Classic Literature (Munshi Premchand, Jane Austen, Tagore):
+      * When source is Classical / Heritage Literature:
         Preserve sacred authorial dignity, emotional pathos, and authentic regional cadence.
         Zero modern vulgar street slang or tapori profanities.
-      * When source is Raw Unrated Fiction (Manto, Sapkowski, George R.R. Martin, Sacred Games):
-        19-to-21 Amplification! Faithfully preserve raw street profanities, visceral combat gore,
+      * When source is Raw Unrated / Visceral Fiction:
+        19-TO-21 AMPLIFICATION! Faithfully preserve raw street profanities ('गांड', 'चूतड़'), visceral combat gore,
         and unvarnished somatic intimacy without sanitization or puritanical moralizing.
     - 70/30 ANTI-PARODY INVARIANT: Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio.
+    - TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Respect organic status transitions.
+    - SOMATIC INTIMACY: Preserve raw physical sensory depth.
     """
     if not model:
         model = get_model_manager().resolve_active_model(TaskType.TRANSLATION)

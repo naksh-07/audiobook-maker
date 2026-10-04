@@ -38,7 +38,7 @@ SPEECH_VERBS: Set[str] = {
 }
 
 GENERIC_ROLES: Set[str] = {
-    "poet", "bard", "witcher", "hunter", "priestess", "priest", "mother superior",
+    "poet", "bard", "hunter", "priestess", "priest", "mother superior",
     "abbess", "alderman", "mayor", "peasant", "peasants", "knight", "king",
     "queen", "sorceress", "sorcerer", "mage", "girl", "boy", "man", "woman",
     "monster", "creature", "beast", "devil", "stranger", "guard", "guards",
