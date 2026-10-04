@@ -27,6 +27,8 @@ from audiobook_factory.contracts import (
     MusicCue,
     FoleyCue,
     AmbienceScene,
+    ConvolutionIRConfig,
+    WallahAutomationPoint,
 )
 from audiobook_factory.scene_acoustics import SceneSoundscapeManifest, SceneAcousticProfile
 from audiobook_factory.acoustic_bus_matrix import (
@@ -59,6 +61,78 @@ from audiobook_factory.mastering_contracts import MasteringRequest, MasteringPro
 from audiobook_factory.mastering_engine import MasteringEngineV2
 
 logger = logging.getLogger("audiobook_factory.cinema_audio_engine")
+
+ACOUSTIC_IR_PRESETS: Dict[str, Dict[str, Any]] = {
+    "tavern_timber_small": {
+        "delays": "18|36|54",
+        "decays": "0.18|0.14|0.09",
+        "hpf": 180,
+        "lpf": 7500,
+        "default_wet": 0.12,
+    },
+    "stone_crypt_damp": {
+        "delays": "28|56|84",
+        "decays": "0.22|0.16|0.11",
+        "hpf": 160,
+        "lpf": 6000,
+        "default_wet": 0.15,
+    },
+    "great_hall_stone": {
+        "delays": "35|70|105",
+        "decays": "0.24|0.18|0.12",
+        "hpf": 150,
+        "lpf": 7000,
+        "default_wet": 0.14,
+    },
+    "forest_open_mist": {
+        "delays": "30|60",
+        "decays": "0.08|0.04",
+        "hpf": 200,
+        "lpf": 5000,
+        "default_wet": 0.06,
+    },
+    "domestic_room": {
+        "delays": "14|28|42",
+        "decays": "0.15|0.10|0.06",
+        "hpf": 180,
+        "lpf": 8000,
+        "default_wet": 0.09,
+    },
+    "cave_catacomb": {
+        "delays": "32|64|96",
+        "decays": "0.25|0.19|0.14",
+        "hpf": 140,
+        "lpf": 5500,
+        "default_wet": 0.15,
+    },
+}
+
+
+def build_spatial_early_reflection_filter(staging_config: Any) -> str:
+    """
+    Constructs an FFmpeg filter_complex graph string for physical room convolution early reflections.
+    Convolves room physical geometry onto DX vocal track to eliminate anechoic isolation booth dryness.
+    """
+    preset_name = getattr(staging_config, "preset_name", "tavern_timber_small") if staging_config else "tavern_timber_small"
+    preset = ACOUSTIC_IR_PRESETS.get(preset_name, ACOUSTIC_IR_PRESETS["tavern_timber_small"])
+
+    wet_ratio = getattr(staging_config, "wet_dry_ratio", None)
+    if wet_ratio is None or wet_ratio <= 0.0:
+        wet_ratio = preset["default_wet"]
+    wet = max(0.04, min(0.22, float(wet_ratio)))
+    dry = round(max(0.70, 1.0 - wet), 2)
+
+    lpf = getattr(staging_config, "high_cut_hz", None) or preset["lpf"]
+    hpf = preset.get("hpf", 180)
+    delays = preset["delays"]
+    decays = preset["decays"]
+
+    return (
+        f"[0:a]asplit=2[dry][wet_in];"
+        f"[wet_in]aecho=0.8:0.88:{delays}:{decays},highpass=f={hpf},lowpass=f={lpf},volume={wet:.2f}[wet_refl];"
+        f"[dry][wet_refl]amix=inputs=2:weights={dry:.2f} {wet:.2f},aresample=48000[dx_out]"
+    )
+
 
 
 class StemMetadata(BaseModel):
@@ -131,6 +205,8 @@ class CinemaAudioManifest(BaseModel):
     )
     music_cues: List[MusicCue] = Field(default_factory=list)
     foley_cues: List[FoleyCue] = Field(default_factory=list)
+    acoustic_staging: Dict[str, Any] = Field(default_factory=dict, description="Scene acoustic convolution staging configs")
+    wallah_automations: List[Any] = Field(default_factory=list, description="Dynamic crowd breathing envelope points")
     ducking_policy: DuckingProfile = Field(default_factory=lambda: PROFILE_STANDARD)
     total_duration_sec: float = Field(default=0.0, ge=0.0)
     silence_percentage: float = Field(default=100.0, ge=0.0, le=100.0)
@@ -274,19 +350,60 @@ def render_discrete_stems(
 
     # --- STEM 1: DX (Dialogue Stem) ---
     dx_file = (out_dir / f"{ch_id}_stem_DX.wav").resolve()
+
+    # Check for acoustic staging convolution parameters
+    acoustic_staging = getattr(manifest, "acoustic_staging", None)
+    staging_cfg = None
+    if isinstance(acoustic_staging, dict) and acoustic_staging:
+        staging_cfg = next((c for c in acoustic_staging.values() if getattr(c, "enabled", True)), None)
+
     if d_path.exists():
-        if d_path != dx_file:
+        target_dest = dx_file
+        temp_rendered = None
+        if d_path == dx_file:
+            temp_rendered = out_dir / f"{ch_id}_stem_DX_spatial.wav"
+            target_dest = temp_rendered
+
+        if staging_cfg is not None:
+            sp_filter = build_spatial_early_reflection_filter(staging_cfg)
             cmd_dx = [
                 ff, "-y",
                 "-i", str(d_path),
-                "-af", "aresample=48000",
+                "-filter_complex", sp_filter,
+                "-map", "[dx_out]",
                 "-ac", "2",
                 "-c:a", "pcm_s16le",
-                str(dx_file),
+                str(target_dest),
             ]
             res_dx = subprocess.run(cmd_dx, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if res_dx.returncode != 0 or not dx_file.exists():
-                shutil.copyfile(d_path, dx_file)
+            if res_dx.returncode != 0 or not target_dest.exists():
+                err_msg = res_dx.stderr.decode("utf-8", errors="ignore")[:200] if res_dx.stderr else "unknown error"
+                logger.warning(f"Spatial DX reflection warning ({res_dx.returncode}): {err_msg}. Falling back to clean resample.")
+                cmd_dx = [
+                    ff, "-y",
+                    "-i", str(d_path),
+                    "-af", "aresample=48000",
+                    "-ac", "2",
+                    "-c:a", "pcm_s16le",
+                    str(target_dest),
+                ]
+                subprocess.run(cmd_dx, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            if d_path != dx_file:
+                cmd_dx = [
+                    ff, "-y",
+                    "-i", str(d_path),
+                    "-af", "aresample=48000",
+                    "-ac", "2",
+                    "-c:a", "pcm_s16le",
+                    str(target_dest),
+                ]
+                res_dx = subprocess.run(cmd_dx, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if res_dx.returncode != 0 or not target_dest.exists():
+                    shutil.copyfile(d_path, target_dest)
+
+        if temp_rendered and temp_rendered.exists():
+            shutil.move(str(temp_rendered), str(dx_file))
     else:
         # Generate clean silent fallback
         cmd_silence = [ff, "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total_dur:.2f}", "-c:a", "pcm_s16le", str(dx_file)]
@@ -488,6 +605,24 @@ def render_discrete_stems(
         finally:
             if filter_script and filter_script.exists():
                 filter_script.unlink(missing_ok=True)
+
+    # Dynamic Wallah & Crowd Breathing (Speech Ducking -6dB & Natural Recovery During Pauses)
+    wallah_auto = getattr(manifest, "wallah_automations", None)
+    if wallah_auto and dx_file.exists() and amb_file.exists() and dx_m.get("duration_sec", 0) > 0.5:
+        tmp_ducked_amb = out_dir / f"{ch_id}_stem_AMB_breathed.wav"
+        cmd_breath = [
+            ff, "-y",
+            "-i", str(amb_file),
+            "-i", str(dx_file),
+            "-filter_complex",
+            "[0:a][1:a]sidechaincompress=threshold=0.015:knee=2.5:ratio=2.6:attack=25:release=350[breathed]",
+            "-map", "[breathed]",
+            "-c:a", "pcm_s16le",
+            str(tmp_ducked_amb),
+        ]
+        res_breath = subprocess.run(cmd_breath, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if res_breath.returncode == 0 and tmp_ducked_amb.exists() and tmp_ducked_amb.stat().st_size > 1000:
+            shutil.move(str(tmp_ducked_amb), str(amb_file))
 
     amb_m = measure_audio_metrics(amb_file, ffmpeg=ff)
     stems_meta["AMB"] = StemMetadata(

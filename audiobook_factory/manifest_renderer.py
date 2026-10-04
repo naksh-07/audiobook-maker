@@ -149,7 +149,9 @@ def render_foley_bus_reel_chunked(
                 if getattr(cue, "in_point_ms", None) and cue.in_point_ms > 0:
                     in_point = float(cue.in_point_ms) / 1000.0
                 elif hasattr(sound_bank, "get_asset_in_point"):
-                    in_point = sound_bank.get_asset_in_point(apath)
+                    val = sound_bank.get_asset_in_point(apath)
+                    if isinstance(val, (int, float)):
+                        in_point = float(val)
 
                 out_point = in_point + max_foley_sec
                 fade_start = max(0.05, max_foley_sec - 0.20)

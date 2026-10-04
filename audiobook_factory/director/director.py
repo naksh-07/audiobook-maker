@@ -332,6 +332,8 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
             scene_acoustics=scene_acoustics,
             music_cues=music_cues,
             foley_cues=foley_cues,
+            acoustic_staging=sound_script_data.get("acoustic_staging", {}) if sound_script_data else {},
+            wallah_automations=sound_script_data.get("wallah_automations", []) if sound_script_data else [],
             metadata={
                 "director": "AgentDirector 3-Pass Creative Workflow v3.0",
                 "director_mode": "DETERMINISTIC_FALLBACK" if ai_director_degraded else "NEURAL_LLM",

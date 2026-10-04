@@ -136,7 +136,7 @@ class AssetSemanticParser:
             arousal = 0.8
             tension = 0.7
             archetypes.extend(["COMBAT", "PHYSICAL_ACTION"])
-        elif any(t in tokens for t in ["monster", "creature", "beast", "drowner", "leshen", "griffin", "bruxa", "fiend"]):
+        elif any(t in tokens for t in ["monster", "creature", "beast", "drowner", "leshen", "griffin", "banshee", "fiend"]):
             dramatic_role = "threat_foreshadowing"
             valence = -0.5
             arousal = 0.85
@@ -164,7 +164,7 @@ class AssetSemanticParser:
             archetypes.extend(["CHARACTER_MOVEMENT"])
 
         # Add monster name to archetypes if detected
-        monsters = ["griffin", "drowner", "leshen", "bruxa", "fiend", "nekker", "golem", "wraith", "ghoul", "harpy", "siren", "vampire", "werewolf", "striga"]
+        monsters = ["griffin", "drowner", "leshen", "banshee", "fiend", "nekker", "golem", "wraith", "ghoul", "harpy", "siren", "vampire", "werewolf", "striga"]
         for m in monsters:
             if m in tokens:
                 archetypes.append(m.upper())

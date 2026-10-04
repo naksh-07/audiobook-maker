@@ -876,7 +876,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "frame_energy_gate_v1",
-          "metadata": "{\"silence_threshold_db\": -60.0}",
+          "metadata": {
+            "silence_threshold_db": -60.0
+          },
           "created_at": "2026-09-26 22:25:14"
         }
       ],

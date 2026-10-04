@@ -122,7 +122,53 @@ class SoundSpotter:
             prose_lines.append(f"[{s_idx:03d} | {styp.upper()} | {spk}]: {txt}")
         scene_prose = "\n".join(prose_lines)
 
-        # Concurrent execution of the 3 specialist agents across key pool
+        # ---------------------------------------------------------------------
+        # Hollywood-Grade Multi-Agent Directing Room (v5.0)
+        # ---------------------------------------------------------------------
+        use_hollywood = os.environ.get("USE_HOLLYWOOD_DIRECTOR", "true").lower() in ("true", "1", "yes")
+        if use_hollywood:
+            try:
+                from audiobook_factory.director.multi_agent_director import MultiAgentDirector
+                mad = MultiAgentDirector(sound_bank=self.sound_bank, project_dir=project_dir)
+                hollywood_manifest = mad.direct_chapter(
+                    chapter_id=chapter_id,
+                    script_segments=script_segments,
+                    segment_durations_sec=segment_durations_sec,
+                    seg_starts_ms=seg_starts_ms,
+                    total_duration_sec=total_duration_sec,
+                    era=active_era,
+                    franchise_affinity=franchise_affinity,
+                    title=title,
+                    author=author,
+                )
+                sound_script = {
+                    "chapter_id": chapter_id,
+                    "era": active_era,
+                    "franchise_affinity": franchise_affinity,
+                    "total_duration_ms": total_duration_ms,
+                    "foley_cues": [c.model_dump() for c in hollywood_manifest.foley_cues],
+                    "ambience_scenes": [s.model_dump() for s in hollywood_manifest.ambience_scenes],
+                    "music_cues": [c.model_dump() for c in hollywood_manifest.music_cues],
+                    "acoustic_staging": {k: v.model_dump() for k, v in hollywood_manifest.acoustic_staging.items()},
+                    "wallah_automations": [w.model_dump() for w in hollywood_manifest.wallah_automations],
+                    "metadata": hollywood_manifest.metadata,
+                }
+                if project_dir:
+                    manifests_dir = Path(project_dir) / "manifests"
+                    manifests_dir.mkdir(parents=True, exist_ok=True)
+                    out_file = manifests_dir / f"{chapter_id}_sound_script.json"
+                    out_file.write_text(json.dumps(sound_script, indent=2, ensure_ascii=False), encoding="utf-8")
+                    m_file = manifests_dir / f"{chapter_id}_manifest.json"
+                    m_hi_file = manifests_dir / f"{chapter_id}_hi_manifest.json"
+                    m_json = hollywood_manifest.model_dump_json(indent=2)
+                    m_file.write_text(m_json, encoding="utf-8")
+                    m_hi_file.write_text(m_json, encoding="utf-8")
+                    logger.info(f"[+] MultiAgentDirector: Hollywood Manifest persisted -> {m_file.name}")
+                return sound_script
+            except Exception as mad_err:
+                logger.warning(f"  [!] MultiAgentDirector session notice: {mad_err}. Falling back to standard spotter.")
+
+        # Fallback concurrent execution of legacy agents across key pool
         foley_events = []
         ambience_scenes = []
         music_cues = []
@@ -245,7 +291,7 @@ class SoundSpotter:
 
         prompt = f"""Scene Text:
 \"\"\"
-{scene_prose[:8000]}
+{scene_prose}
 \"\"\"
 
 Return a JSON array of physical Foley events where each object has:
@@ -292,7 +338,7 @@ Return a JSON array of physical Foley events where each object has:
 
         prompt = f"""Scene Text:
 \"\"\"
-{scene_prose[:8000]}
+{scene_prose}
 \"\"\"
 
 Return a JSON array of Ambience beds where each object has:
@@ -322,7 +368,7 @@ Return a JSON array of Ambience beds where each object has:
 
         prompt = f"""Scene Text:
 \"\"\"
-{scene_prose[:8000]}
+{scene_prose}
 \"\"\"
 
 Return a JSON array of Music cues where each object has:

@@ -73,6 +73,8 @@ from .manifest import (
     AmbienceScene,
     MasteringConfig,
     MasteringSettings,
+    ConvolutionIRConfig,
+    WallahAutomationPoint,
     CreativeManifest,
     LegacyCreativeManifestAdapter,
 )
@@ -205,6 +207,8 @@ __all__ = [
     "AmbienceScene",
     "MasteringConfig",
     "MasteringSettings",
+    "ConvolutionIRConfig",
+    "WallahAutomationPoint",
     "CreativeManifest",
     "LegacyCreativeManifestAdapter",
     # Album

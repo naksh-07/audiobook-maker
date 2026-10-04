@@ -102,6 +102,8 @@ class FoleyCue(BaseModel):
     trajectory: Literal["static", "left_to_right", "right_to_left", "center_zoom"] = Field(
         default="static", description="Spatial vector panning trajectory for projectiles or swings"
     )
+    is_micro_foley: bool = Field(default=False, description="Whether cue is ambient living-world micro-foley (cups, cloth, chairs)")
+    foley_type: str = Field(default="prop", description="Foley sub-type: prop, clothing, tableware, footstep, environmental")
 
     @field_validator("azimuth_pan")
     @classmethod
@@ -133,6 +135,29 @@ class AmbienceScene(BaseModel):
                 f"Invalid time bounds for AmbienceScene {self.scene_id}: start_ms ({self.start_ms}) must be < end_ms ({self.end_ms})"
             )
         return self
+
+
+class ConvolutionIRConfig(BaseModel):
+    """Acoustic convolution impulse response parameters for spatial room staging."""
+    model_config = ConfigDict(extra="ignore")
+
+    preset_name: str = Field(default="room", description="Standard IR preset name")
+    ir_asset_path: Optional[str] = Field(default=None, description="Filesystem path to WAV impulse response")
+    wet_dry_ratio: float = Field(default=0.12, ge=0.0, le=0.50, description="Wet-to-dry mix ratio for dialogue bus (0.10 to 0.15 nominal)")
+    early_reflections_decay_ms: int = Field(default=220, description="Early reflection decay time in ms")
+    high_cut_hz: Optional[int] = Field(default=8500, description="High frequency damping cutoff")
+    enabled: bool = Field(default=True, description="Whether convolution reverb staging is active")
+
+
+class WallahAutomationPoint(BaseModel):
+    """Dynamic speech-reactive crowd murmur / ambient breathing automation point."""
+    model_config = ConfigDict(extra="ignore")
+
+    start_ms: int = Field(..., ge=0, description="Start offset on timeline in ms")
+    end_ms: int = Field(..., gt=0, description="End offset on timeline in ms")
+    target_attenuation_db: float = Field(default=-6.0, description="Attenuation during speech (e.g. -6dB)")
+    swell_during_pause_db: float = Field(default=3.0, description="Swell boost during pause >= 1.0s (e.g. +3dB)")
+    is_pause_swell: bool = Field(default=False, description="Whether point represents a dramatic pause swell")
 
 
 class MasteringConfig(BaseModel):
@@ -183,6 +208,8 @@ class CreativeManifest(BaseModel):
     scene_acoustics: Optional[Any] = Field(default=None, description="Decoupled 4-stem SceneSoundscapeManifest")
     music_cues: List[MusicCue] = Field(default_factory=list, description="Surgical musical score cues")
     foley_cues: List[FoleyCue] = Field(default_factory=list, description="Physical foley sound cues")
+    acoustic_staging: Dict[str, ConvolutionIRConfig] = Field(default_factory=dict, description="Scene acoustic convolution staging configs")
+    wallah_automations: List[WallahAutomationPoint] = Field(default_factory=list, description="Dynamic crowd breathing envelope points")
     scene_intent: Optional[Any] = Field(default=None, description="Stage 11 Scene Mix Intent")
     attention_map: Optional[Any] = Field(default=None, description="Stage 11 Time-aware Listener Attention Map")
     total_duration_ms: Optional[int] = Field(default=0, ge=0, description="Total chapter duration in milliseconds")
@@ -345,5 +372,7 @@ class LegacyCreativeManifestAdapter:
             ducking_policy=ducking_policy,
             total_duration_sec=total_sec,
             silence_percentage=legacy.silence_percentage,
+            acoustic_staging=dict(getattr(legacy, "acoustic_staging", {})),
+            wallah_automations=list(getattr(legacy, "wallah_automations", [])),
             metadata=dict(legacy.metadata),
         )

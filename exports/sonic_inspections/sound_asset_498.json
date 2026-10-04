@@ -1139,7 +1139,12 @@
           "confidence": 0.7054,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1151,7 +1156,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 6.5}",
+          "metadata": {
+            "onset_strength_db": 6.5
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1163,7 +1170,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "frame_energy_gate_v1",
-          "metadata": "{\"silence_threshold_db\": -60.0}",
+          "metadata": {
+            "silence_threshold_db": -60.0
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1175,7 +1184,12 @@
           "confidence": 0.5965,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1187,7 +1201,12 @@
           "confidence": 0.55,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Scary music\", \"normalized_label\": \"music.mood.scary\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Scary music",
+            "normalized_label": "music.mood.scary",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1199,7 +1218,12 @@
           "confidence": 0.3868,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1211,7 +1235,12 @@
           "confidence": 0.4541,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1223,7 +1252,12 @@
           "confidence": 0.8275,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1235,7 +1269,12 @@
           "confidence": 0.3328,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Whoosh, swoosh, swish\", \"normalized_label\": null, \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Whoosh, swoosh, swish",
+            "normalized_label": null,
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1247,7 +1286,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 6.6}",
+          "metadata": {
+            "onset_strength_db": 6.6
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1259,7 +1300,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 6.6}",
+          "metadata": {
+            "onset_strength_db": 6.6
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1271,7 +1314,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 14.5}",
+          "metadata": {
+            "onset_strength_db": 14.5
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1283,7 +1328,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 10.2}",
+          "metadata": {
+            "onset_strength_db": 10.2
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1295,7 +1342,12 @@
           "confidence": 0.6746,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1307,7 +1359,12 @@
           "confidence": 0.2452,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Timpani\", \"normalized_label\": \"music.instrument.timpani\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Timpani",
+            "normalized_label": "music.instrument.timpani",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         },
         {
@@ -1319,7 +1376,12 @@
           "confidence": 0.8209,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:13"
         }
       ],

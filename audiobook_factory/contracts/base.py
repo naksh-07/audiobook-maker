@@ -52,6 +52,8 @@ MusicCueType = Literal[
     "TENSION_RISER",
     "CLIMACTIC_ACTION_CUE",
     "AFTERMATH_FADE",
+    "DRAMATIC_PUNCTUATION",
+    "THEMATIC_MOTIF",
 ]
 
 ProvenanceMethod = Literal[

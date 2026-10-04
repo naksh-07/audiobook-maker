@@ -1174,7 +1174,12 @@
           "confidence": 0.7437,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Thunderstorm\", \"normalized_label\": \"weather.thunderstorm\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Thunderstorm",
+            "normalized_label": "weather.thunderstorm",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1186,7 +1191,12 @@
           "confidence": 0.5847,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Thunder\", \"normalized_label\": \"weather.thunder\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Thunder",
+            "normalized_label": "weather.thunder",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1198,7 +1208,12 @@
           "confidence": 0.5569,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Rain\", \"normalized_label\": \"weather.rain\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Rain",
+            "normalized_label": "weather.rain",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1210,7 +1225,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 6.0}",
+          "metadata": {
+            "onset_strength_db": 6.0
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1222,7 +1239,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "frame_energy_gate_v1",
-          "metadata": "{\"silence_threshold_db\": -60.0}",
+          "metadata": {
+            "silence_threshold_db": -60.0
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1234,7 +1253,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 7.9}",
+          "metadata": {
+            "onset_strength_db": 7.9
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1246,7 +1267,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 9.1}",
+          "metadata": {
+            "onset_strength_db": 9.1
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1258,7 +1281,12 @@
           "confidence": 0.7302,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Thunderstorm\", \"normalized_label\": \"weather.thunderstorm\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Thunderstorm",
+            "normalized_label": "weather.thunderstorm",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1270,7 +1298,12 @@
           "confidence": 0.7129,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Rain\", \"normalized_label\": \"weather.rain\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Rain",
+            "normalized_label": "weather.rain",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1282,7 +1315,12 @@
           "confidence": 0.5877,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Thunder\", \"normalized_label\": \"weather.thunder\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Thunder",
+            "normalized_label": "weather.thunder",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1294,7 +1332,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 6.7}",
+          "metadata": {
+            "onset_strength_db": 6.7
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1306,7 +1346,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 10.1}",
+          "metadata": {
+            "onset_strength_db": 10.1
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1318,7 +1360,12 @@
           "confidence": 0.5483,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Rain\", \"normalized_label\": \"weather.rain\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Rain",
+            "normalized_label": "weather.rain",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1330,7 +1377,12 @@
           "confidence": 0.4803,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Rain on surface\", \"normalized_label\": null, \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Rain on surface",
+            "normalized_label": null,
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         },
         {
@@ -1342,7 +1394,12 @@
           "confidence": 0.4124,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Raindrop\", \"normalized_label\": \"weather.raindrop\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Raindrop",
+            "normalized_label": "weather.raindrop",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:18"
         }
       ],

@@ -1663,7 +1663,12 @@
           "confidence": 0.872,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1675,7 +1680,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "frame_energy_gate_v1",
-          "metadata": "{\"silence_threshold_db\": -60.0}",
+          "metadata": {
+            "silence_threshold_db": -60.0
+          },
           "created_at": "2026-09-26 22:25:15"
         },
         {
@@ -1687,7 +1694,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 8.8}",
+          "metadata": {
+            "onset_strength_db": 8.8
+          },
           "created_at": "2026-09-26 22:25:15"
         },
         {
@@ -1699,7 +1708,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 7.2}",
+          "metadata": {
+            "onset_strength_db": 7.2
+          },
           "created_at": "2026-09-26 22:25:15"
         },
         {
@@ -1711,7 +1722,12 @@
           "confidence": 0.8183,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1723,7 +1739,12 @@
           "confidence": 0.3112,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1735,7 +1756,12 @@
           "confidence": 0.2077,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1747,7 +1773,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 6.3}",
+          "metadata": {
+            "onset_strength_db": 6.3
+          },
           "created_at": "2026-09-26 22:25:15"
         },
         {
@@ -1759,7 +1787,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 6.6}",
+          "metadata": {
+            "onset_strength_db": 6.6
+          },
           "created_at": "2026-09-26 22:25:15"
         },
         {
@@ -1771,7 +1801,9 @@
           "confidence": null,
           "source_method": "measured_dsp",
           "detector_id": "energy_flux_detector_v1",
-          "metadata": "{\"onset_strength_db\": 1.0}",
+          "metadata": {
+            "onset_strength_db": 1.0
+          },
           "created_at": "2026-09-26 22:25:15"
         },
         {
@@ -1783,7 +1815,12 @@
           "confidence": 0.533,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1795,7 +1832,12 @@
           "confidence": 0.3905,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1807,7 +1849,12 @@
           "confidence": 0.2752,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Cutlery, silverware\", \"normalized_label\": null, \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Cutlery, silverware",
+            "normalized_label": null,
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1819,7 +1866,12 @@
           "confidence": 0.5057,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1831,7 +1883,12 @@
           "confidence": 0.2521,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Chink, clink\", \"normalized_label\": \"foley.tableware.clink\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Chink, clink",
+            "normalized_label": "foley.tableware.clink",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1843,7 +1900,12 @@
           "confidence": 0.2278,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1855,7 +1917,12 @@
           "confidence": 0.5735,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1867,7 +1934,12 @@
           "confidence": 0.2571,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Music\", \"normalized_label\": \"music.instrumental\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Music",
+            "normalized_label": "music.instrumental",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1879,7 +1951,12 @@
           "confidence": 0.5604,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1891,7 +1968,12 @@
           "confidence": 0.4957,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1903,7 +1985,12 @@
           "confidence": 0.6628,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1915,7 +2002,12 @@
           "confidence": 0.446,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1927,7 +2019,12 @@
           "confidence": 0.5475,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1939,7 +2036,12 @@
           "confidence": 0.5007,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1951,7 +2053,12 @@
           "confidence": 0.2709,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Cutlery, silverware\", \"normalized_label\": null, \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Cutlery, silverware",
+            "normalized_label": null,
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1963,7 +2070,12 @@
           "confidence": 0.7357,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1975,7 +2087,12 @@
           "confidence": 0.413,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1987,7 +2104,12 @@
           "confidence": 0.8308,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -1999,7 +2121,12 @@
           "confidence": 0.3117,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2011,7 +2138,12 @@
           "confidence": 0.3021,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Chink, clink\", \"normalized_label\": \"foley.tableware.clink\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Chink, clink",
+            "normalized_label": "foley.tableware.clink",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2023,7 +2155,12 @@
           "confidence": 0.6505,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2035,7 +2172,12 @@
           "confidence": 0.4751,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2047,7 +2189,12 @@
           "confidence": 0.2058,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Cutlery, silverware\", \"normalized_label\": null, \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Cutlery, silverware",
+            "normalized_label": null,
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2059,7 +2206,12 @@
           "confidence": 0.5928,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2071,7 +2223,12 @@
           "confidence": 0.5711,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2083,7 +2240,12 @@
           "confidence": 0.2959,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Cutlery, silverware\", \"normalized_label\": null, \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Cutlery, silverware",
+            "normalized_label": null,
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2095,7 +2257,12 @@
           "confidence": 0.7288,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2107,7 +2274,12 @@
           "confidence": 0.3316,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2119,7 +2291,12 @@
           "confidence": 0.7754,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2131,7 +2308,12 @@
           "confidence": 0.2512,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Dishes, pots, and pans\", \"normalized_label\": \"foley.tableware.dishes\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Dishes, pots, and pans",
+            "normalized_label": "foley.tableware.dishes",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2143,7 +2325,12 @@
           "confidence": 0.2449,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Chink, clink\", \"normalized_label\": \"foley.tableware.clink\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Chink, clink",
+            "normalized_label": "foley.tableware.clink",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2155,7 +2342,12 @@
           "confidence": 0.6732,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Chink, clink\", \"normalized_label\": \"foley.tableware.clink\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Chink, clink",
+            "normalized_label": "foley.tableware.clink",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         },
         {
@@ -2167,7 +2359,12 @@
           "confidence": 0.6509,
           "source_method": "classifier",
           "detector_id": "MIT/ast-finetuned-audioset-10-10-0.4593",
-          "metadata": "{\"raw_label\": \"Speech\", \"normalized_label\": \"vocal.speech\", \"ontology_id\": \"audioset_527\", \"window_type\": \"sliding_10s_hop_5s\"}",
+          "metadata": {
+            "raw_label": "Speech",
+            "normalized_label": "vocal.speech",
+            "ontology_id": "audioset_527",
+            "window_type": "sliding_10s_hop_5s"
+          },
           "created_at": "2026-09-26 22:25:17"
         }
       ],

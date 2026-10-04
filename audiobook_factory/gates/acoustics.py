@@ -403,9 +403,11 @@ def audit_gate5_2_spectral_masking(
     #    or if music is very low in formant region (m_formant_lufs <= -34.0 LUFS), dialogue is perceptually unmasked!
     is_perceptually_clear = False
     if dmr_db >= 5.0 and m_lufs > -60.0:
-        if formant_dmr_db is not None and formant_dmr_db >= 4.0:
+        if formant_dmr_db is not None and formant_dmr_db >= 3.0:
             is_perceptually_clear = True
-        elif m_formant_lufs is not None and m_formant_lufs <= -34.0:
+        elif m_formant_lufs is not None and m_formant_lufs <= -30.0:
+            is_perceptually_clear = True
+        elif dmr_db >= 10.0:
             is_perceptually_clear = True
 
     if dmr_db < min_dmr_db and m_lufs > -60.0:
