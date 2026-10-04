@@ -196,6 +196,8 @@ def main():
     p_auto.add_argument("--cover", default=None, help="Cover art image path")
     p_auto.add_argument("--workers", default=3, type=int, help="Number of concurrent TTS synthesis workers (default: 3)")
     p_auto.add_argument("--force-gate", action="store_true", help="Bypass Extraction Quality Gate REVIEW failure and force production")
+    p_auto.add_argument("--force-rebuild", action="store_true", help="Invalidate cached manifests and artifacts to force complete re-generation")
+    p_auto.add_argument("--stage-start", default=None, choices=["extract", "translate", "script", "tts", "produce", "direct", "mix", "package"], help="Resume pipeline from a specific stage without re-running earlier completed stages")
 
     # produce
     p_produce = subparsers.add_parser("produce", help="Produce cinematic chapters with 5-track standard & timeline ledger")
@@ -205,6 +207,8 @@ def main():
     p_produce.add_argument("--voice", default="Aoede", help="Lead voice persona")
     p_produce.add_argument("--workers", default=3, type=int, help="TTS synthesis workers")
     p_produce.add_argument("--duck-db", default=-16.0, type=float, help="Sidechain attenuation dB")
+    p_produce.add_argument("--force-rebuild", action="store_true", help="Invalidate cached manifests and artifacts to force complete re-generation")
+    p_produce.add_argument("--stage-start", default=None, choices=["tts", "direct", "mix"], help="Resume chapter production from a specific sub-stage")
 
     # bank
     p_bank = subparsers.add_parser("bank", help="Manage and search local Sound Bank (SQLite FTS5)")

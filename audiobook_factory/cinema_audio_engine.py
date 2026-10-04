@@ -105,7 +105,76 @@ ACOUSTIC_IR_PRESETS: Dict[str, Dict[str, Any]] = {
         "lpf": 5500,
         "default_wet": 0.15,
     },
+    "rural_courtyard_open": {
+        "delays": "25|50",
+        "decays": "0.10|0.05",
+        "hpf": 200,
+        "lpf": 6500,
+        "default_wet": 0.07,
+    },
+    "modern_office_carpet": {
+        "delays": "12|24",
+        "decays": "0.08|0.04",
+        "hpf": 220,
+        "lpf": 8500,
+        "default_wet": 0.05,
+    },
+    "urban_street_canyon": {
+        "delays": "45|90|135",
+        "decays": "0.20|0.15|0.10",
+        "hpf": 160,
+        "lpf": 5000,
+        "default_wet": 0.12,
+    },
+    "wooden_cottage_interior": {
+        "delays": "15|30|45",
+        "decays": "0.14|0.09|0.05",
+        "hpf": 190,
+        "lpf": 7000,
+        "default_wet": 0.08,
+    },
+    "cathedral_sacred_vault": {
+        "delays": "40|80|120",
+        "decays": "0.28|0.22|0.16",
+        "hpf": 120,
+        "lpf": 6500,
+        "default_wet": 0.18,
+    },
 }
+
+
+def resolve_acoustic_ir_preset(preset_name: Optional[str]) -> Tuple[str, Dict[str, Any]]:
+    """Resolves an IR preset name with fuzzy fallback matching to prevent silent failures."""
+    if not preset_name:
+        return "domestic_room", ACOUSTIC_IR_PRESETS["domestic_room"]
+
+    clean_name = preset_name.strip().lower()
+    if clean_name in ACOUSTIC_IR_PRESETS:
+        return clean_name, ACOUSTIC_IR_PRESETS[clean_name]
+
+    # Fuzzy matching heuristics
+    if any(k in clean_name for k in ("courtyard", "rural", "village", "veranda", "patio", "field", "farm")):
+        return "rural_courtyard_open", ACOUSTIC_IR_PRESETS["rural_courtyard_open"]
+    if any(k in clean_name for k in ("office", "modern", "carpet", "boardroom", "corridor", "flat", "apartment")):
+        return "modern_office_carpet", ACOUSTIC_IR_PRESETS["modern_office_carpet"]
+    if any(k in clean_name for k in ("street", "canyon", "city", "alley", "urban", "bazaar", "market")):
+        return "urban_street_canyon", ACOUSTIC_IR_PRESETS["urban_street_canyon"]
+    if any(k in clean_name for k in ("cottage", "hut", "cabin", "timber", "wood", "shack")):
+        return "wooden_cottage_interior", ACOUSTIC_IR_PRESETS["wooden_cottage_interior"]
+    if any(k in clean_name for k in ("cathedral", "church", "temple", "vault", "sanctuary", "mosque")):
+        return "cathedral_sacred_vault", ACOUSTIC_IR_PRESETS["cathedral_sacred_vault"]
+    if any(k in clean_name for k in ("tavern", "inn", "pub", "bar", "kitchen")):
+        return "tavern_timber_small", ACOUSTIC_IR_PRESETS["tavern_timber_small"]
+    if any(k in clean_name for k in ("crypt", "stone", "dungeon", "cellar")):
+        return "stone_crypt_damp", ACOUSTIC_IR_PRESETS["stone_crypt_damp"]
+    if any(k in clean_name for k in ("hall", "palace", "ballroom")):
+        return "great_hall_stone", ACOUSTIC_IR_PRESETS["great_hall_stone"]
+    if any(k in clean_name for k in ("forest", "woods", "mountain", "outdoor", "exterior")):
+        return "forest_open_mist", ACOUSTIC_IR_PRESETS["forest_open_mist"]
+    if any(k in clean_name for k in ("cave", "mine", "catacomb")):
+        return "cave_catacomb", ACOUSTIC_IR_PRESETS["cave_catacomb"]
+
+    return "domestic_room", ACOUSTIC_IR_PRESETS["domestic_room"]
 
 
 def build_spatial_early_reflection_filter(staging_config: Any) -> str:
@@ -113,8 +182,8 @@ def build_spatial_early_reflection_filter(staging_config: Any) -> str:
     Constructs an FFmpeg filter_complex graph string for physical room convolution early reflections.
     Convolves room physical geometry onto DX vocal track to eliminate anechoic isolation booth dryness.
     """
-    preset_name = getattr(staging_config, "preset_name", "tavern_timber_small") if staging_config else "tavern_timber_small"
-    preset = ACOUSTIC_IR_PRESETS.get(preset_name, ACOUSTIC_IR_PRESETS["tavern_timber_small"])
+    raw_name = getattr(staging_config, "preset_name", "tavern_timber_small") if staging_config else "tavern_timber_small"
+    _, preset = resolve_acoustic_ir_preset(raw_name)
 
     wet_ratio = getattr(staging_config, "wet_dry_ratio", None)
     if wet_ratio is None or wet_ratio <= 0.0:

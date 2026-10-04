@@ -32,10 +32,20 @@ class LiteraryDraftTranslator:
             return self.model
         return get_model_manager().resolve_active_model(TaskType.TRANSLATION)
 
-    def _detect_scene_mode(self, text_block: str, block_title: str) -> str:
+    def _detect_scene_mode(
+        self,
+        text_block: str,
+        block_title: str,
+        book_dna: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """Determines the active dramatic scene mode to inject calibrated directives."""
         text_lower = text_block.lower()
         title_lower = block_title.lower()
+
+        dna = book_dna or {}
+        fidelity_tier = dna.get("source_fidelity_tier", "RAW_UNRATED")
+        cadence = dna.get("regional_dialect_cadence", "Standard Spoken Hindustani")
+        profanity_policy = dna.get("profanity_policy", "UNRATED_AUTHENTIC_KASHYAP" if fidelity_tier == "RAW_UNRATED" else "MILD_COLLOQUIAL")
 
         is_combat = any(
             w in text_lower or w in title_lower
@@ -49,33 +59,83 @@ class LiteraryDraftTranslator:
             text_block.count('"') >= 4 or text_block.count('“') >= 4 or text_block.count("'") >= 6
         )
 
+        # 1. CLASSIC REVERENT MODE (Premchand, Tagore, Classic Literature)
+        if fidelity_tier == "CLASSIC_REVERENT" or profanity_policy == "STRICTLY_CLEAN_REVERENT":
+            if is_dialogue:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: CLASSIC LITERARY DIALOGUE ({cadence})\n"
+                    f"- Infuse dialogue with authentic, dignified {cadence}. Preserve emotional pathos, social hierarchy, and character sincerity.\n"
+                    "- STRICTLY FORBIDDEN: Modern street vulgarities ('गांड', 'चूतड़', etc.), tapori slang, or forced profanity. Honor the sacred dignity of classic literature.\n"
+                    "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Translate strictly what the author intended, preserving moral and emotional resonance.\n"
+                )
+            elif is_intimate:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: TENDER LITERARY INTIMACY ({cadence})\n"
+                    "- Render tender or intimate moments with delicate literary grace, emotional warmth, and respectful poetic sensitivity.\n"
+                    "- Strictly ban modern erotica, vulgar slang, or clinical biology terms where absent from source.\n"
+                )
+            elif is_combat:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: DRAMATIC CONFLICT & TENSION ({cadence})\n"
+                    "- Render dramatic conflict with psychological gravity, authentic period tension, and moral stakes.\n"
+                )
+            else:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: CLASSIC PASTORAL & NARRATIVE PROSE ({cadence})\n"
+                    f"- Maintain deep narrative elegance in {cadence}, honoring classic literary cadence.\n"
+                )
+
+        # 2. RAW UNRATED MODE (Manto, Sapkowski, George R.R. Martin, Crime/Dark Fantasy)
+        if fidelity_tier == "RAW_UNRATED" or profanity_policy == "UNRATED_AUTHENTIC_KASHYAP":
+            if is_combat:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: VISCERAL COMBAT, GORE & STACCATO RHYTHM ({cadence})\n"
+                    "- Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism ('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा').\n"
+                    "- During intense fight scenes, fracture narrative into rapid STACCATO clauses (2-4 words per beat: 'कदम पीछे। तलवार का पैंतra। वार। चूक गया!').\n"
+                    "- Capture adrenaline tunnel vision, muscle strain, and raw battlefield profanity.\n"
+                )
+            elif is_intimate:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: SOMATIC INTIMACY & PASSION (MANTO STANDARD)\n"
+                    "- Render passionate, sensual, intimate, or erotic scenes with visceral realism and authentic passion ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपish').\n"
+                    "- STRICTLY BANNED: Sterile, clinical biology-textbook words ('योनि', 'लिंग') that sound like high-school exams or hospital autopsies.\n"
+                    "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Allow quiet scenes to remain genuinely quiet and tender, without forcing unfiltered passion.\n"
+                )
+            elif is_dialogue:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: HIGH-STAKES DIALOGUE & SOCIAL DYNAMICS ({cadence})\n"
+                    "- Translate raw insults and curses into authentic, earthy Hindustani equivalents ('गांड', 'चूतड़', 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने').\n"
+                    "- 19-TO-21 AMPLIFICATION: When source contains raw vulgarity or curses, do not reduce it to 15. Amplify from 19 to 21 without flinching.\n"
+                    "- TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant characters start with dismissive 'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
+                    "- NATURAL DIALOGUE & IDIOMS: Transpose source idioms into organic dramatic Hindustani idioms fitting the narrative world and characters.\n"
+                )
+            else:
+                return (
+                    f"\n>>> ACTIVE SCENE MODE: ATMOSPHERIC LORE & WORLDBUILDING ({cadence})\n"
+                    "- Maintain authentic literary voice and atmospheric sensory depth.\n"
+                    "- CONTEXTUAL HINDUSTANI ('Aate me Namak'): Infuse contextual, evocative Urdu vocabulary ('रूह', 'सन्नाटा', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक', 'सुकून') where scene mood and world atmosphere justify it, without forcing an artificial quota.\n"
+                )
+
+        # 3. DRAMATIC MODERN (Default)
         if is_combat:
             return (
-                "\n>>> ACTIVE SCENE MODE: VISCERAL COMBAT, GORE & STACCATO RHYTHM\n"
-                "- Depict blade strikes, bone fractures, blood spray, and wounds with visceral realism ('लोहा हंसली की हड्डी चीरता हुआ सीने में धंस गया', 'गले से खून का फव्वारा फूटा').\n"
-                "- During intense fight scenes, fracture narrative into rapid STACCATO clauses (2-4 words per beat: 'कदम पीछे। तलवार का पैंतरा। वार। चूक गया!').\n"
-                "- Capture adrenaline tunnel vision, muscle strain, and raw battlefield profanity.\n"
+                f"\n>>> ACTIVE SCENE MODE: CINEMATIC ACTION ({cadence})\n"
+                "- Depict physical combat and high-stakes tension with clarity, visceral momentum, and cinematic rhythm.\n"
             )
         elif is_intimate:
             return (
-                "\n>>> ACTIVE SCENE MODE: SOMATIC INTIMACY & PASSION (MANTO STANDARD)\n"
-                "- Render passionate, sensual, intimate, or erotic scenes with visceral realism and authentic passion ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश').\n"
-                "- STRICTLY BANNED: Sterile, clinical biology-textbook words ('योनि', 'लिंग') that sound like high-school exams or hospital autopsies.\n"
-                "- THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Allow quiet scenes to remain genuinely quiet and tender, without forcing unfiltered passion.\n"
+                f"\n>>> ACTIVE SCENE MODE: EMOTIONAL INTIMACY & SUBTEXT ({cadence})\n"
+                "- Render emotional vulnerability, romantic tension, and unspoken longing with natural sensitivity.\n"
             )
         elif is_dialogue:
             return (
-                "\n>>> ACTIVE SCENE MODE: HIGH-STAKES DIALOGUE & SOCIAL DYNAMICS\n"
-                "- Translate raw insults and curses into authentic, earthy Hindustani equivalents ('गांड', 'चूतड़', 'बकचोदी', 'सूअर का पेशाब', 'हरामी', 'कमीने').\n"
-                "- 19-TO-21 AMPLIFICATION: When source contains raw vulgarity or curses, do not reduce it to 15. Amplify from 19 to 21 without flinching.\n"
-                "- TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant characters start with dismissive 'तू / अबे', but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.\n"
-                "- NATURAL DIALOGUE & IDIOMS: Transpose source idioms into organic dramatic Hindustani idioms fitting the narrative world and characters.\n"
+                f"\n>>> ACTIVE SCENE MODE: NATURAL CONVERSATIONAL DIALOGUE ({cadence})\n"
+                "- Translate spoken dialogue with organic cadence, sharp comedic/dramatic timing, and realistic subtext.\n"
             )
         else:
             return (
-                "\n>>> ACTIVE SCENE MODE: ATMOSPHERIC LORE & WORLDBUILDING\n"
-                "- Maintain authentic literary voice and atmospheric sensory depth.\n"
-                "- CONTEXTUAL HINDUSTANI ('Aate me Namak'): Infuse contextual, evocative Urdu vocabulary ('रूह', 'सन्नाटा', 'ख़ौफ़', 'ज़ख़्म', 'दस्तक', 'सुकून') where scene mood and world atmosphere justify it, without forcing an artificial quota.\n"
+                f"\n>>> ACTIVE SCENE MODE: ATMOSPHERIC NARRATIVE PROSE ({cadence})\n"
+                "- Maintain engaging narrative flow with natural sensory texture and evocative vocabulary.\n"
             )
 
     def translate_draft(
@@ -85,18 +145,23 @@ class LiteraryDraftTranslator:
         block_title: str = "",
         preceding_context: str = "",
         adult_mode: bool = True,
+        book_dna: Optional[Dict[str, Any]] = None,
         call_llm_fn: Optional[Callable[..., str]] = None,
     ) -> str:
         """Generates the foundational literary Hindi translation draft."""
         model = self._resolve_model()
-        scene_directives = self._detect_scene_mode(text_block, block_title)
+        eff_dna = book_dna or (glossary.get("book_dna") if isinstance(glossary, dict) else None)
+        scene_directives = self._detect_scene_mode(text_block, block_title, book_dna=eff_dna)
 
-        if adult_mode:
+        tier = eff_dna.get("source_fidelity_tier", "RAW_UNRATED" if adult_mode else "CLASSIC_REVERENT") if eff_dna else ("RAW_UNRATED" if adult_mode else "CLASSIC_REVERENT")
+        tradition = eff_dna.get("literary_tradition", "DRAMATIC_LITERATURE") if eff_dna else "DRAMATIC_LITERATURE"
+        cadence = eff_dna.get("regional_dialect_cadence", "Spoken Hindustani") if eff_dna else "Spoken Hindustani"
+
+        if tier == "RAW_UNRATED":
             advisory_guidance = get_advisory_db().get_formatted_prompt_guidelines()
             system_prompt = (
-                "You are a master literary translator and audio drama director adapting mature adult literature "
-                "(in the cinematic tradition of Anurag Kashyap and Saadat Hasan Manto) "
-                "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
+                f"You are a master literary translator and audio drama director adapting mature literature "
+                f"({tradition}) into cinematic, spoken Hindustani ({cadence} in Devanagari script).\n\n"
                 "Strict Translation Invariants:\n"
                 "1. LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat, "
                 "gritty dialogue, or mature intimacy present in the source text. Faithfully represent the author's authentic dramatic truth.\n"
@@ -111,15 +176,18 @@ class LiteraryDraftTranslator:
             )
         else:
             system_prompt = (
-                "You are a master literary translator and audio drama director adapting classic literature "
-                "into cinematic, spoken Hindustani (Hindi in Devanagari script).\n\n"
+                f"You are a master literary translator and audio drama director adapting classic literature "
+                f"({tradition}) into cinematic, spoken Hindustani ({cadence} in Devanagari script).\n\n"
                 "Strict Translation Invariants:\n"
                 "1. SENSE-FOR-SENSE SPOKEN DIALOGUE: Translate sense-for-sense, preserving drama, subtext, humor, "
                 "and emotional depth for professional voice actors. Use flowing, natural Hindustani.\n"
-                "2. ADHERE TO GLOSSARY & PRONOUNS: Strictly adhere to the provided Character Glossary for proper noun spellings "
+                "2. SACRED REVERENCE & ZERO BOWDLERIZATION: Strictly forbid modern vulgar street slang or tapori cuss words. "
+                "Faithfully honor the author's authentic literary dignity, emotional pathos, and regional voice.\n"
+                "3. ADHERE TO GLOSSARY & PRONOUNS: Strictly adhere to the provided Character Glossary for proper noun spellings "
                 "and honorific dynamics ('Aap' vs 'Tum' vs 'Tu').\n"
-                "3. PRESERVE FORMATTING & ZERO CHATTER: Keep headings and dialogue quotation marks intact. Output ONLY the translated "
-                "passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions."
+                "4. PRESERVE FORMATTING & ZERO CHATTER: Keep headings and dialogue quotation marks intact. Output ONLY the translated "
+                "passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions.\n"
+                f"{scene_directives}"
             )
 
         # Dramatic fiction framing to defeat false-positive safety moderation

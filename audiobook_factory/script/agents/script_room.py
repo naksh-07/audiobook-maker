@@ -13,6 +13,7 @@ import logging
 from typing import List, Dict, Any, Optional, Callable
 
 from .dialogue_isolator import DialogueTurnIsolator
+from .dialogue_attribution_auditor import DialogueAttributionAuditor
 from .stanislavski_director import StanislavskiSubtextDirector
 from .physical_blocking_director import PhysicalBlockingDirector
 from .dramaturgy_judge import DramaturgyConsistencyJudge
@@ -21,11 +22,12 @@ logger = logging.getLogger("AudiobookFactory")
 
 
 class ScreenplayDramaturgyRoom:
-    """Coordinates the 4 screenplay dramaturgy and spatial staging agents."""
+    """Coordinates the 5 screenplay dramaturgy, anti-swap attribution, and spatial staging agents."""
 
     def __init__(self, model: Optional[str] = None):
         self.model = model
         self.isolator = DialogueTurnIsolator(model=model)
+        self.auditor = DialogueAttributionAuditor(model=model)
         self.stanislavski = StanislavskiSubtextDirector(model=model)
         self.blocking_director = PhysicalBlockingDirector(model=model)
         self.judge = DramaturgyConsistencyJudge()
@@ -39,7 +41,7 @@ class ScreenplayDramaturgyRoom:
         character_roster: Optional[Dict[str, Any]] = None,
         call_llm_fn: Optional[Callable[..., Any]] = None,
     ) -> List[Dict[str, Any]]:
-        """Processes a chunk through the 4-agent Screenplay Room."""
+        """Processes a chunk through the 5-agent Screenplay Room."""
         # Pass 1: Turn Isolation
         turns = self.isolator.isolate_turns(
             chunk_text=chunk_text,
@@ -50,9 +52,19 @@ class ScreenplayDramaturgyRoom:
         if not turns:
             return []
 
+        # Pass 1.5: Forensic Attribution & Speaker Anti-Swap Audit
+        audited_turns, audit_report = self.auditor.audit_and_correct(
+            turns=turns,
+            chunk_text=chunk_text,
+            preceding_context=preceding_context,
+            is_hindi=is_hindi,
+            character_roster=character_roster,
+            call_llm_fn=call_llm_fn,
+        )
+
         # Pass 2A: Stanislavski Subtext & Intensity
         directed_turns = self.stanislavski.direct_subtext(
-            segments=turns,
+            segments=audited_turns,
             dramatic_context=dramatic_context,
             is_hindi=is_hindi,
             call_llm_fn=call_llm_fn,

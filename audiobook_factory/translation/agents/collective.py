@@ -38,12 +38,15 @@ class MultiAgentTranslationCollective:
         block_title: str = "",
         preceding_context: str = "",
         adult_mode: bool = True,
+        book_dna: Optional[Dict[str, Any]] = None,
         call_llm_fn: Optional[Callable[..., str]] = None,
     ) -> str:
         """Runs the 4-stage translation collective on an English text block."""
         t_start = time.time()
         words = len(text_block.split())
         logger.info(f"[*] [Translation Collective] Commencing 4-Agent Translation for '{block_title}' ({words} words)...")
+
+        eff_dna = book_dna or (glossary.get("book_dna") if isinstance(glossary, dict) else None)
 
         # -------------------------------------------------------------
         # Pass 1: Literary Draft Translator (Foundational Sense-for-Sense)
@@ -55,6 +58,7 @@ class MultiAgentTranslationCollective:
             block_title=block_title,
             preceding_context=preceding_context,
             adult_mode=adult_mode,
+            book_dna=eff_dna,
             call_llm_fn=call_llm_fn,
         )
 
@@ -89,6 +93,7 @@ class MultiAgentTranslationCollective:
                 glossary=glossary,
                 block_title=block_title,
                 preceding_context=preceding_context,
+                book_dna=eff_dna,
                 call_llm_fn=call_llm_fn,
             )
         except Exception as e:

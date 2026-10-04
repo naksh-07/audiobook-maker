@@ -27,7 +27,7 @@ class SceneAcousticBlueprint(BaseModel):
     primary_materials: List[str] = Field(default_factory=lambda: ["wood", "stone"], description="Physical wall/floor reflective materials")
     ir_preset: str = Field(
         default="tavern_timber_small",
-        description="'tavern_timber_small', 'stone_crypt_damp', 'great_hall_stone', 'forest_open_mist', 'domestic_room', 'cave_catacomb'"
+        description="'tavern_timber_small', 'stone_crypt_damp', 'great_hall_stone', 'forest_open_mist', 'domestic_room', 'cave_catacomb', 'rural_courtyard_open', 'modern_office_carpet', 'urban_street_canyon', 'wooden_cottage_interior', 'cathedral_sacred_vault'"
     )
     dx_reverb_wet_ratio: float = Field(
         default=0.12, ge=0.04, le=0.25,
@@ -58,6 +58,8 @@ class ScenographerAgent:
         era: str = "MEDIEVAL_FANTASY",
         title: str = "",
         author: str = "",
+        sonic_bible: Optional[Dict[str, Any]] = None,
+        book_dna: Optional[Dict[str, Any]] = None,
     ) -> ScenographyPlan:
         """
         Synthesizes physical room geometry and convolution IR presets for each act.
@@ -66,6 +68,10 @@ class ScenographerAgent:
         framing = get_dramatic_fiction_framing(title, author)
 
         acts_json = json.dumps([a.model_dump() for a in showrunner_plan.acts], indent=2)
+
+        custom_spaces_prompt = ""
+        if sonic_bible and sonic_bible.get("acoustic_spaces"):
+            custom_spaces_prompt = f"\nPROJECT ACOUSTIC SPACES from sonic_bible:\n{json.dumps(sonic_bible.get('acoustic_spaces'), indent=2)}\n"
 
         sys_prompt = (
             "You are a Master Acoustic Scenographer and Spatial Audio Engineer for cinematic audio drama. "
@@ -79,7 +85,7 @@ class ScenographerAgent:
         prompt = f"""Chapter ID: {showrunner_plan.chapter_id}
 Era: {era}
 Dramatic Theme: {showrunner_plan.dramatic_theme}
-
+{custom_spaces_prompt}
 DRAMATIC ACTS FROM SHOWRUNNER:
 \"\"\"
 {acts_json}
@@ -92,6 +98,11 @@ Standard IR Presets available:
 - 'forest_open_mist': Open air, zero lateral reflections, ground absorption, distant diffuse echoes (decay 80-120ms, wet 0.06)
 - 'domestic_room': Standard domestic plaster/wood interior (decay 160-200ms, wet 0.09)
 - 'cave_catacomb': Irregular rock surfaces, dark flutter reflections (decay 400-550ms, wet 0.16)
+- 'rural_courtyard_open': Rustic village courtyard, mud/brick walls, open sky diffusion (decay 120-180ms, wet 0.07)
+- 'modern_office_carpet': Drywall, acoustic ceiling tiles, carpet absorption, corporate chamber (decay 80-140ms, wet 0.05)
+- 'urban_street_canyon': City street corridor between tall buildings, vertical slapback echoes (decay 350-500ms, wet 0.12)
+- 'wooden_cottage_interior': Intimate rustic timber walls, thatched ceiling, cozy hearth resonance (decay 150-200ms, wet 0.08)
+- 'cathedral_sacred_vault': Grand sacred vault, soaring stone arches, long reverberant decay (decay 600-900ms, wet 0.18)
 
 Return a JSON array of blueprints, one for each act:
 [
@@ -132,7 +143,54 @@ Return a JSON array of blueprints, one for each act:
         blueprints = []
         for act in showrunner_plan.acts:
             env = act.environment_type.lower()
-            ir_p = "tavern_timber_small" if "tavern" in env else ("stone_crypt_damp" if "crypt" in env or "stone" in env else "domestic_room")
+            loc = act.location_setting.lower()
+            combined = f"{env} {loc}"
+
+            if any(k in combined for k in ("courtyard", "rural", "village", "veranda", "patio", "field", "farm")):
+                ir_p = "rural_courtyard_open"
+                wet_p = 0.07
+                decay_p = 150
+            elif any(k in combined for k in ("office", "modern", "carpet", "boardroom", "corridor", "flat", "apartment")):
+                ir_p = "modern_office_carpet"
+                wet_p = 0.05
+                decay_p = 110
+            elif any(k in combined for k in ("street", "canyon", "city", "alley", "urban", "bazaar", "market")):
+                ir_p = "urban_street_canyon"
+                wet_p = 0.12
+                decay_p = 400
+            elif any(k in combined for k in ("cottage", "hut", "cabin", "timber", "shack")):
+                ir_p = "wooden_cottage_interior"
+                wet_p = 0.08
+                decay_p = 180
+            elif any(k in combined for k in ("cathedral", "church", "temple", "vault", "sanctuary", "mosque")):
+                ir_p = "cathedral_sacred_vault"
+                wet_p = 0.18
+                decay_p = 750
+            elif any(k in combined for k in ("tavern", "inn", "pub", "bar", "kitchen")):
+                ir_p = "tavern_timber_small"
+                wet_p = 0.12
+                decay_p = 220
+            elif any(k in combined for k in ("crypt", "stone", "dungeon", "cellar")):
+                ir_p = "stone_crypt_damp"
+                wet_p = 0.18
+                decay_p = 500
+            elif any(k in combined for k in ("hall", "palace", "ballroom")):
+                ir_p = "great_hall_stone"
+                wet_p = 0.16
+                decay_p = 600
+            elif any(k in combined for k in ("forest", "woods", "mountain", "outdoor", "exterior")):
+                ir_p = "forest_open_mist"
+                wet_p = 0.06
+                decay_p = 100
+            elif any(k in combined for k in ("cave", "mine", "catacomb")):
+                ir_p = "cave_catacomb"
+                wet_p = 0.16
+                decay_p = 480
+            else:
+                ir_p = "domestic_room"
+                wet_p = 0.09
+                decay_p = 180
+
             blueprints.append(
                 SceneAcousticBlueprint(
                     act_index=act.act_index,
@@ -141,8 +199,8 @@ Return a JSON array of blueprints, one for each act:
                     room_dimensions="medium_enclosed",
                     primary_materials=["wood", "stone"],
                     ir_preset=ir_p,
-                    dx_reverb_wet_ratio=0.12,
-                    early_reflections_decay_ms=220,
+                    dx_reverb_wet_ratio=wet_p,
+                    early_reflections_decay_ms=decay_p,
                     high_frequency_damping_hz=7500,
                     acoustic_presence_description=f"Atmospheric space for {act.location_setting}",
                 )

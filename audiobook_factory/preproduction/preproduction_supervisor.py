@@ -17,6 +17,7 @@ from typing import Dict, Any, Optional, Callable
 
 from audiobook_factory.translation.book_bible import BookBible, BookEntity
 from audiobook_factory.character_caster import CharacterCaster
+from .book_dna_agent import BookDNAAgent
 from .dramatis_personae_agent import DramatisPersonaeAgent
 from .sonic_world_architect import SonicWorldArchitect
 from .phonetic_lexicon_dramaturge import PhoneticLexiconDramaturge
@@ -29,6 +30,7 @@ class PreProductionSupervisor:
 
     def __init__(self, model: Optional[str] = None):
         self.model = model
+        self.book_dna_agent = BookDNAAgent(model=model)
         self.dramatis_personae_agent = DramatisPersonaeAgent(model=model)
         self.sonic_architect = SonicWorldArchitect(model=model)
         self.lexicon_dramaturge = PhoneticLexiconDramaturge(model=model)
@@ -41,16 +43,18 @@ class PreProductionSupervisor:
     ) -> Dict[str, Any]:
         """Executes one-time pre-production master pass for the novel."""
         p_dir = Path(project_dir).resolve()
+        book_dna_path = p_dir / "book_dna.json"
         book_bible_path = p_dir / "book_bible.json"
         sonic_bible_path = p_dir / "sonic_bible.json"
         cast_lock_path = p_dir / "cast_lock.json"
         meta_path = p_dir / "metadata.json"
 
         # Check existing master state
-        if not force and book_bible_path.exists() and sonic_bible_path.exists() and cast_lock_path.exists():
+        if not force and book_dna_path.exists() and book_bible_path.exists() and sonic_bible_path.exists() and cast_lock_path.exists():
             logger.info(f"[*] PreProductionSupervisor: Master novel state already locked for {p_dir.name}. Skipping.")
             return {
                 "status": "CACHED_LOCKED",
+                "book_dna": str(book_dna_path),
                 "book_bible": str(book_bible_path),
                 "sonic_bible": str(sonic_bible_path),
                 "cast_lock": str(cast_lock_path),
@@ -95,16 +99,27 @@ class PreProductionSupervisor:
         if not combined_sample.strip():
             combined_sample = f"Novel title: {book_metadata.get('title')}"
 
-        # 1. Dramatis Personae Extraction
-        logger.info("  [Room 1 Step 1/3] DramatisPersonaeAgent extracting character dossiers...")
-        characters_list = self.dramatis_personae_agent.extract_dramatis_personae(
+        # 0. Universal Literary DNA & Register Profiling (Novel-Agnostic)
+        logger.info("  [Room 1 Step 0/4] BookDNAAgent profiling universal literary DNA & register...")
+        book_dna_data = self.book_dna_agent.analyze_book_dna(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
             call_llm_fn=call_llm_fn,
         )
+        with open(book_dna_path, "w", encoding="utf-8") as f:
+            json.dump(book_dna_data, f, ensure_ascii=False, indent=2)
+
+        # 1. Dramatis Personae Extraction (Guided by Book DNA)
+        logger.info("  [Room 1 Step 1/4] DramatisPersonaeAgent extracting character dossiers...")
+        characters_list = self.dramatis_personae_agent.extract_dramatis_personae(
+            novel_text_sample=combined_sample,
+            book_metadata=book_metadata,
+            book_dna=book_dna_data,
+            call_llm_fn=call_llm_fn,
+        )
 
         # 2. Sonic World Architecture
-        logger.info("  [Room 1 Step 2/3] SonicWorldArchitect synthesizing acoustic DNA...")
+        logger.info("  [Room 1 Step 2/4] SonicWorldArchitect synthesizing acoustic DNA...")
         sonic_bible_data = self.sonic_architect.design_sonic_bible(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
@@ -114,7 +129,7 @@ class PreProductionSupervisor:
             json.dump(sonic_bible_data, f, ensure_ascii=False, indent=2)
 
         # 3. Phonetic Lexicon Extraction
-        logger.info("  [Room 1 Step 3/3] PhoneticLexiconDramaturge extracting world lexicon...")
+        logger.info("  [Room 1 Step 3/4] PhoneticLexiconDramaturge extracting world lexicon...")
         lexicon_data = self.lexicon_dramaturge.extract_lexicon_and_phonetics(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
@@ -185,6 +200,7 @@ class PreProductionSupervisor:
             "status": "MASTER_LOCKED",
             "characters_count": len(bible.characters),
             "locations_count": len(bible.locations),
+            "book_dna": str(book_dna_path),
             "book_bible": str(book_bible_path),
             "sonic_bible": str(sonic_bible_path),
             "cast_lock": str(cast_lock_path),

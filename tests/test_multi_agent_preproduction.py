@@ -144,7 +144,14 @@ class TestMultiAgentPreproduction(unittest.TestCase):
         }
         mock_lex = {"locations": {"Blaviken": "ब्लाविकेन"}}
 
-        with patch.object(supervisor.dramatis_personae_agent, "extract_dramatis_personae", return_value=mock_chars), \
+        mock_dna = {
+            "literary_tradition": "DARK_FANTASY_GRIT",
+            "source_fidelity_tier": "RAW_UNRATED",
+            "regional_dialect_cadence": "Hindustani",
+        }
+
+        with patch.object(supervisor.book_dna_agent, "analyze_book_dna", return_value=mock_dna), \
+             patch.object(supervisor.dramatis_personae_agent, "extract_dramatis_personae", return_value=mock_chars), \
              patch.object(supervisor.sonic_architect, "design_sonic_bible", return_value=mock_sonic), \
              patch.object(supervisor.lexicon_dramaturge, "extract_lexicon_and_phonetics", return_value=mock_lex):
 

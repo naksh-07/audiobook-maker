@@ -103,6 +103,8 @@ def cmd_produce(args):
     """Single-command cinematic chapter or full-book production using 5-track standard."""
     project_dir = get_projects_dir() / args.book
     orchestrator = PipelineOrchestrator(get_projects_dir())
+    force_rebuild = getattr(args, "force_rebuild", False)
+    stage_start = getattr(args, "stage_start", None)
 
     if args.chapter:
         print(f"[*] Producing Cinematic Chapter {args.chapter} for '{args.book}'...")
@@ -112,6 +114,8 @@ def cmd_produce(args):
             voice=args.voice,
             workers=args.workers,
             duck_db=args.duck_db,
+            force_rebuild=force_rebuild,
+            stage_start=stage_start,
         )
         print(f"\n[OK] Chapter {args.chapter} produced successfully!")
         print(f"     Master File : {res['master_file']}")
@@ -130,6 +134,8 @@ def cmd_produce(args):
                 voice=args.voice,
                 workers=args.workers,
                 duck_db=args.duck_db,
+                force_rebuild=force_rebuild,
+                stage_start=stage_start,
             )
         print(f"\n[OK] All {len(scripts)} chapters produced successfully!")
     else:
@@ -143,6 +149,8 @@ def cmd_auto(args):
     cover = Path(args.cover) if args.cover else None
     workers = getattr(args, "workers", 3)
     force_gate = getattr(args, "force_gate", False)
+    force_rebuild = getattr(args, "force_rebuild", False)
+    stage_start = getattr(args, "stage_start", None)
 
     orchestrator = PipelineOrchestrator(get_projects_dir())
     orchestrator.run_autonomous_pipeline(
@@ -153,6 +161,8 @@ def cmd_auto(args):
         cover_image=cover,
         workers=workers,
         force_gate=force_gate,
+        force_rebuild=force_rebuild,
+        stage_start=stage_start,
     )
 
 

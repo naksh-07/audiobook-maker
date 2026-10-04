@@ -73,12 +73,33 @@ class MultiAgentDirector:
         dramatic_theme: str = "Cinematic Audio Drama",
         title: str = "",
         author: str = "",
+        sonic_bible: Optional[Dict[str, Any]] = None,
+        book_dna: Optional[Dict[str, Any]] = None,
     ) -> CreativeManifest:
         """
         Executes end-to-end multi-agent directing pass and returns a broadcast-standard CreativeManifest.
         """
         total_segs = len(script_segments)
         total_duration_ms = int(total_duration_sec * 1000)
+
+        # Auto-load project sonic_bible.json and book_dna.json if available
+        if sonic_bible is None and self.project_dir:
+            sb_path = self.project_dir / "sonic_bible.json"
+            if sb_path.exists():
+                try:
+                    with open(sb_path, "r", encoding="utf-8") as f:
+                        sonic_bible = json.load(f)
+                except Exception:
+                    pass
+
+        if book_dna is None and self.project_dir:
+            dna_path = self.project_dir / "book_dna.json"
+            if dna_path.exists():
+                try:
+                    with open(dna_path, "r", encoding="utf-8") as f:
+                        book_dna = json.load(f)
+                except Exception:
+                    pass
 
         logger.info(
             f"[*] MultiAgentDirector: Initiating Hollywood Directing Room for {chapter_id} "
@@ -106,6 +127,8 @@ class MultiAgentDirector:
             era=era,
             title=title,
             author=author,
+            sonic_bible=sonic_bible,
+            book_dna=book_dna,
         )
 
         # ---------------------------------------------------------------------
@@ -121,6 +144,8 @@ class MultiAgentDirector:
                 era=era,
                 title=title,
                 author=author,
+                sonic_bible=sonic_bible,
+                book_dna=book_dna,
             )
             future_music = executor.submit(
                 self.music_supervisor.score_chapter,

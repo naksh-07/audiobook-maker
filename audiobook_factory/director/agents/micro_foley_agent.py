@@ -56,17 +56,50 @@ class MicroFoleyPlan(BaseModel):
     events: List[FoleyEventDirective] = Field(default_factory=list)
 
 
-def build_scene_physics_context_matrix(location_setting: str, environment_type: str, era: str) -> str:
+def build_scene_physics_context_matrix(
+    location_setting: str,
+    environment_type: str,
+    era: str,
+    sonic_bible: Optional[Dict[str, Any]] = None,
+    book_dna: Optional[Dict[str, Any]] = None,
+) -> str:
     """
     Constructs a rich tactile scene physics matrix dynamically derived from the act's
-    environment, setting, and era. Ensures LLM spots living-world tactile presence
+    environment, setting, era, sonic_bible, and book_dna. Ensures LLM spots living-world tactile presence
     even when prose contains zero explicit object mentions.
     Universal & Novel-Agnostic.
     """
     loc_lower = (location_setting or "").lower()
     env_lower = (environment_type or "").lower()
+    combined = f"{loc_lower} {env_lower}"
 
-    if any(k in loc_lower or k in env_lower for k in ("tavern", "inn", "pub", "bar", "kitchen", "dining", "hall", "taproom")):
+    custom_props = ""
+    if sonic_bible and sonic_bible.get("foley_palette"):
+        custom_props = f"\n- Custom Production Sound Palette: {json.dumps(sonic_bible.get('foley_palette'))}"
+
+    if any(k in combined for k in ("rural", "village", "veranda", "courtyard", "patio", "field", "farm", "khet", "aangan")):
+        return (
+            "TACTILE SCENE PHYSICS MATRIX (Rural / Village / Rustic Living Physics):\n"
+            "- Available Props & Surfaces: Woven hemp charpai / cots, baked earthenware (matka, surahi, kulhad), brass thali, wooden cartwheels, dried thatch, mud-plastered floor, cow dung courtyard floor, hookahs / chillums, cotton dhotis and kurtas.\n"
+            "- Character Physical Micro-Beats:\n"
+            "  * pre_speech: Barefoot shifting on dusty earth, dry cough or clearing throat, placing clay cup on wicker table, adjusting cotton shawl.\n"
+            "  * mid_speech_pause: Inhaling from clay pipe, creak of charpai ropes as character shifts weight, sudden rustle of dry leaves, cattle bell in distance.\n"
+            "  * post_speech: Drawing deep breath, tapping brass cup on wooden bench, standing up with charpai creak, spitting dust onto earth.\n"
+            "  * under_speech: Dry afternoon wind rustling thatch, faint clink of brass utensils, embers of clay hearth."
+            f"{custom_props}"
+        )
+    elif any(k in combined for k in ("office", "modern", "boardroom", "corridor", "flat", "apartment", "city", "corporate", "desk")):
+        return (
+            "TACTILE SCENE PHYSICS MATRIX (Modern Contemporary / Office / Urban Living Physics):\n"
+            "- Available Props & Surfaces: Polished desks, ergonomic mesh/leather chairs, ceramic coffee mugs, ballpoint pens, keyboards, smartphone screens, glass windows, linoleum / carpeted floors.\n"
+            "- Character Physical Micro-Beats:\n"
+            "  * pre_speech: Clicking pen top, tapping fingers on laminate desk, setting ceramic mug onto coaster, shifting in swivel chair.\n"
+            "  * mid_speech_pause: Swallowing lukewarm coffee, typing two quick keystrokes, deep breath through nostrils, shuffling paper printouts.\n"
+            "  * post_speech: Leaning back with leather chair groan, placing phone face down with muted click, closing laptop lid.\n"
+            "  * under_speech: Subtle low hum of fluorescent lights, distant muffled city street or HVAC air circulation."
+            f"{custom_props}"
+        )
+    elif any(k in combined for k in ("tavern", "inn", "pub", "bar", "kitchen", "dining", "hall", "taproom")):
         return (
             "TACTILE SCENE PHYSICS MATRIX (Tavern / Inn / Interior Gathering):\n"
             "- Available Props & Surfaces: Heavy oak tables, rough wooden benches/stools, pewter & wood ale tankards, ceramic bowls, bread knives, iron fire poker, clay pipes.\n"
@@ -75,8 +108,9 @@ def build_scene_physics_context_matrix(location_setting: str, environment_type: 
             "  * mid_speech_pause: Taking a swallow of ale, pipe puff, hearth log crackle/pop during silence, plate clatter.\n"
             "  * post_speech: Long drink, thumping mug onto table, leaning back (creaking wood), tossing copper coin onto table.\n"
             "  * under_speech: Gentle crackle of fireplace hearth, subtle shift in wooden chair, faint tankard slide."
+            f"{custom_props}"
         )
-    elif any(k in loc_lower or k in env_lower for k in ("stone", "dungeon", "crypt", "castle", "fortress", "tower", "cellar", "vault", "throne")):
+    elif any(k in combined for k in ("stone", "dungeon", "crypt", "castle", "fortress", "tower", "cellar", "vault", "throne")):
         return (
             "TACTILE SCENE PHYSICS MATRIX (Stone Chamber / Fortress / Crypt):\n"
             "- Available Props & Surfaces: Cold granite flagstones, iron torch sconces, heavy iron keys, chain links, scabbards, steel armor plates, leather belts, heavy oak doors.\n"
@@ -85,8 +119,9 @@ def build_scene_physics_context_matrix(location_setting: str, environment_type: 
             "  * mid_speech_pause: Water drop echoing on stone, torch hiss, armor squeak on shift of posture.\n"
             "  * post_speech: Deep exhale through nose, scabbard slapping thigh, footsteps echoing into distance.\n"
             "  * under_speech: Subtle low reverberant room reflections, torch crackle, armor buckle settling."
+            f"{custom_props}"
         )
-    elif any(k in loc_lower or k in env_lower for k in ("forest", "woods", "wilderness", "camp", "road", "swamp", "marsh", "mountain")):
+    elif any(k in combined for k in ("forest", "woods", "wilderness", "camp", "road", "swamp", "marsh", "mountain")):
         return (
             "TACTILE SCENE PHYSICS MATRIX (Wilderness / Forest / Road / Camp):\n"
             "- Available Props & Surfaces: Pine needles, dry twigs, mud, river stones, campfire embers, canvas tents, horse leather, travel cloaks, water skins.\n"
@@ -95,6 +130,7 @@ def build_scene_physics_context_matrix(location_setting: str, environment_type: 
             "  * mid_speech_pause: Campfire pop/spark, wind rustling canopy, water skin slosh on drink.\n"
             "  * post_speech: Sheathing knife into leather, spitting into dirt, stirrup jingle, sigh.\n"
             "  * under_speech: Gentle breeze through branches, subtle wet leather creak, embers glowing."
+            f"{custom_props}"
         )
     else:
         return (
@@ -105,6 +141,7 @@ def build_scene_physics_context_matrix(location_setting: str, environment_type: 
             "  * mid_speech_pause: Brief pause marked by chair creak, sharp inhale, or small prop adjustment.\n"
             "  * post_speech: Turning away, closing book/door, sighing, settling into posture.\n"
             "  * under_speech: Subtle room tone physics, clothing rustle on movement."
+            f"{custom_props}"
         )
 
 
@@ -117,6 +154,94 @@ class MicroFoleyAgent:
     def __init__(self, model: Optional[str] = None):
         self.model = model
 
+    @staticmethod
+    def _audit_foley_density_and_fill_voids(
+        events: List[FoleyEventDirective],
+        script_segments: List[Dict[str, Any]],
+        showrunner_plan: ShowrunnerPlan,
+        era: str = "MEDIEVAL_FANTASY",
+    ) -> List[FoleyEventDirective]:
+        """
+        Zero Dead Voids Guarantee:
+        Audits foley distribution across the chapter timeline. If any acoustic void
+        exceeds 8 segments (~25-35 seconds of silence), seeds organic, tactile living-world
+        micro-foley cues (cloth rustle, weight shift, chair creak, soft step) matching the act's environment.
+        Guarantees Audible & GraphicAudio benchmark density without anechoic dead zones.
+        """
+        if not script_segments:
+            return events
+
+        total_segs = len(script_segments)
+        existing_indices = {e.segment_index for e in events}
+        filled_events = list(events)
+
+        act_for_seg = {}
+        for act in showrunner_plan.acts:
+            for s_idx in range(act.start_segment, act.end_segment + 1):
+                act_for_seg[s_idx] = act
+
+        sorted_indices = sorted(list(existing_indices))
+        intervals = []
+        if not sorted_indices:
+            intervals.append((1, total_segs))
+        else:
+            if sorted_indices[0] > 8:
+                intervals.append((1, sorted_indices[0]))
+            for i in range(len(sorted_indices) - 1):
+                if sorted_indices[i + 1] - sorted_indices[i] > 8:
+                    intervals.append((sorted_indices[i], sorted_indices[i + 1]))
+            if total_segs - sorted_indices[-1] > 8:
+                intervals.append((sorted_indices[-1], total_segs))
+
+        for start_idx, end_idx in intervals:
+            curr = start_idx + 5
+            while curr < end_idx:
+                if curr not in existing_indices and 1 <= curr <= total_segs:
+                    act = act_for_seg.get(curr)
+                    env = (act.environment_type if act else "").lower()
+                    loc = (act.location_setting if act else "").lower()
+                    combined = f"{env} {loc}"
+
+                    if any(k in combined for k in ("rural", "village", "farm", "courtyard")):
+                        verb = "charpai_creak" if (curr % 3 == 0) else ("cotton_rustle" if (curr % 3 == 1) else "barefoot_dust_step")
+                        mat = "cloth" if "rustle" in verb else ("wood" if "charpai" in verb else "stone")
+                    elif any(k in combined for k in ("office", "modern", "city")):
+                        verb = "chair_swivel" if (curr % 3 == 0) else ("paper_turn" if (curr % 3 == 1) else "shoe_scuff")
+                        mat = "leather" if "chair" in verb else "wood"
+                    elif any(k in combined for k in ("stone", "crypt", "castle", "fortress")):
+                        verb = "boots_flagstone" if (curr % 3 == 0) else ("leather_creak" if (curr % 3 == 1) else "armor_shift")
+                        mat = "stone" if "boots" in verb else ("leather" if "leather" in verb else "metal")
+                    elif any(k in combined for k in ("forest", "woods", "camp", "road")):
+                        verb = "twigs_crunch" if (curr % 3 == 0) else ("cloak_rustle" if (curr % 3 == 1) else "dirt_step")
+                        mat = "wood" if "twigs" in verb else ("cloth" if "cloak" in verb else "stone")
+                    else:
+                        verb = "cloth_rustle" if (curr % 2 == 0) else "chair_creak"
+                        mat = "cloth" if "cloth" in verb else "wood"
+
+                    filled_events.append(
+                        FoleyEventDirective(
+                            segment_index=curr,
+                            action_verb=verb,
+                            object_material=mat,
+                            trigger_mode="implicit_scene_physics",
+                            beat_timing="pre_speech" if curr % 2 == 0 else "under_speech",
+                            relative_position=0.3,
+                            anchor_word="",
+                            gain_dbfs=-26.0,
+                            pan=0.0,
+                            is_micro_foley=True,
+                            foley_type="micro",
+                            duration_sec=0.6,
+                            description="Organic living-world tactile micro-action bridging acoustic void",
+                            dramatic_justification="Density protection preventing anechoic silence void",
+                        )
+                    )
+                    existing_indices.add(curr)
+                curr += 6
+
+        filled_events.sort(key=lambda x: x.segment_index)
+        return filled_events
+
     def _spot_act_foley(
         self,
         act: Any,
@@ -124,6 +249,8 @@ class MicroFoleyAgent:
         script_segments: List[Dict[str, Any]],
         era: str,
         framing: str,
+        sonic_bible: Optional[Dict[str, Any]] = None,
+        book_dna: Optional[Dict[str, Any]] = None,
     ) -> List[FoleyEventDirective]:
         lines = []
         for s in act_segs:
@@ -138,6 +265,8 @@ class MicroFoleyAgent:
             location_setting=act.location_setting,
             environment_type=act.environment_type,
             era=era,
+            sonic_bible=sonic_bible,
+            book_dna=book_dna,
         )
 
         sys_prompt = (
@@ -218,11 +347,14 @@ Return a JSON array of foley cues for this act. Include BOTH major actions and i
         era: str = "MEDIEVAL_FANTASY",
         title: str = "",
         author: str = "",
+        sonic_bible: Optional[Dict[str, Any]] = None,
+        book_dna: Optional[Dict[str, Any]] = None,
     ) -> MicroFoleyPlan:
         """
         Executes concurrent hierarchical foley spotting across all acts.
         Processes each act cleanly in parallel with rich Implicit Scene Physics so zero text is truncated
         and living world physics trigger naturally without requiring literal word anchors.
+        Applies Zero Dead Voids density protection to guarantee no gap exceeds 8 segments.
         """
         logger.info(f"[*] MicroFoleyAgent: Spotting macro & implicit living-world foley across {len(script_segments)} segments in {len(showrunner_plan.acts)} acts...")
         framing = get_dramatic_fiction_framing(title, author)
@@ -243,7 +375,7 @@ Return a JSON array of foley cues for this act. Include BOTH major actions and i
         # Concurrently process all acts across the 100+ key pool
         with ThreadPoolExecutor(max_workers=min(4, max(1, len(act_tasks)))) as executor:
             futures = [
-                executor.submit(self._spot_act_foley, act, act_segs, script_segments, era, framing)
+                executor.submit(self._spot_act_foley, act, act_segs, script_segments, era, framing, sonic_bible, book_dna)
                 for act, act_segs in act_tasks
             ]
             for future in as_completed(futures):
@@ -253,7 +385,14 @@ Return a JSON array of foley cues for this act. Include BOTH major actions and i
                 except Exception as e:
                     logger.warning(f"  [!] Act foley spotting worker notice: {e}")
 
-        # Sort all events chronologically by segment index
+        # Audit density and fill any dead voids > 8 segments
+        all_events = self._audit_foley_density_and_fill_voids(
+            events=all_events,
+            script_segments=script_segments,
+            showrunner_plan=showrunner_plan,
+            era=era,
+        )
+
         all_events.sort(key=lambda x: x.segment_index)
         logger.info(f"[+] MicroFoleyAgent: Successfully spotted {len(all_events)} foley cues across the chapter.")
         return MicroFoleyPlan(chapter_id=showrunner_plan.chapter_id, events=all_events)

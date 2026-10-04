@@ -269,6 +269,7 @@ def _translate_single_block(
     preceding_context: str = "",
     model: Optional[str] = None,
     adult_mode: Optional[bool] = None,
+    book_dna: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Room 2: 4-Agent Dramatic Translation Collective Coordinator.
@@ -276,19 +277,14 @@ def _translate_single_block(
     SubtextAndIdiomDramaturge, and TranslationQualityCritic.
 
     Core Invariants:
-    - LITERARY ANTI-BOWDLERIZATION MANDATE: NEVER sanitize, soften, or bowdlerize raw violence, visceral combat,
-      gritty dialogue, or mature intimacy present in the source text. Faithfully represent the author's authentic dramatic truth.
+    - DUAL-RULE INVARIANT ('NOTHING ABOVE SOURCE'):
+      * When source is Classic Literature (Munshi Premchand, Jane Austen, Tagore):
+        Preserve sacred authorial dignity, emotional pathos, and authentic regional cadence.
+        Zero modern vulgar street slang or tapori profanities.
+      * When source is Raw Unrated Fiction (Manto, Sapkowski, George R.R. Martin, Sacred Games):
+        19-to-21 Amplification! Faithfully preserve raw street profanities, visceral combat gore,
+        and unvarnished somatic intimacy without sanitization or puritanical moralizing.
     - 70/30 ANTI-PARODY INVARIANT: Maintain a strict 70% Canon Sacredness / 30% Sensory Desi Amplification ratio.
-      Never replace the book's universe, lore, proper nouns, or geographic names with arbitrary mythology or tapori spoofs.
-    - Cinematic tradition of Anurag Kashyap and Saadat Hasan Manto:
-      Raw dialogue and rustic profanity ('गांड', 'चूतड़', 'हरामी', 'कमीने', 'बकचोदी', 'सूअर का पेशाब') preserved.
-    - 19-TO-21 AMPLIFICATION: When source contains raw vulgarity or curses, do not reduce it to 15. Amplify from 19 to 21 without flinching.
-    - TU <-> MAAI-BAAP DYNAMIC POWER SHIFT: Honorific dynamics must reflect power shifts. Arrogant characters start with dismissive 'तू / अबे',
-      but when physically intimidated, their speech collapses into groveling 'माई-बाप / सरकार / हुज़ूर'.
-    - SOMATIC INTIMACY & PASSION (MANTO STANDARD): Render passionate or intimate scenes with visceral realism
-      ('मसलना', 'तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'होंठों की तपिश').
-    - THE 'NOTHING ABOVE SOURCE' INVARIANT: Strictly respect narrative truth. Allow quiet scenes to remain genuinely quiet and tender,
-      without forcing unfiltered passion or comedic tapori parody.
     """
     if not model:
         model = get_model_manager().resolve_active_model(TaskType.TRANSLATION)
@@ -297,6 +293,7 @@ def _translate_single_block(
 
     from audiobook_factory.translation.agents import get_translation_collective
 
+    eff_dna = book_dna or (glossary.get("book_dna") if isinstance(glossary, dict) else None)
     collective = get_translation_collective(model=model)
     return collective.translate_block(
         text_block=text_block,
@@ -304,6 +301,7 @@ def _translate_single_block(
         block_title=block_title,
         preceding_context=preceding_context,
         adult_mode=adult_mode,
+        book_dna=eff_dna,
     )
 
 
@@ -466,6 +464,14 @@ def translate_chapter(
     if project_dir:
         cache_dir = Path(project_dir) / "translation" / ".cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
+        # Load book_dna.json if present
+        dna_path = Path(project_dir) / "book_dna.json"
+        if dna_path.exists() and isinstance(glossary, dict) and not glossary.get("book_dna"):
+            try:
+                with open(dna_path, "r", encoding="utf-8") as df:
+                    glossary["book_dna"] = json.load(df)
+            except Exception:
+                pass
         # Step 1: READ ONLY before translation
         mem_block = _retrieve_chapter_memory_in_translator(
             project_dir=Path(project_dir),

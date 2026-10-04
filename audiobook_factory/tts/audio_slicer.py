@@ -41,7 +41,8 @@ def compute_canonical_segment_filename(
     highpass_hz = int(cfg.get("highpass_hz", 0))
     presence_boost_db = float(cfg.get("presence_boost_db", 0.0))
     volume_gain_db = float(cfg.get("volume_gain_db", 0.0))
-    calib_str = f"{voice}:{speed:.2f}:{pitch:.2f}:{bass_boost_db:.1f}:{clarity_cut_db:.1f}:{lowpass_hz}:{highpass_hz}:{presence_boost_db:.1f}:{volume_gain_db:.1f}"
+    eq_profile = str(cfg.get("eq_formant_profile", "")).strip()
+    calib_str = f"{voice}:{speed:.2f}:{pitch:.2f}:{bass_boost_db:.1f}:{clarity_cut_db:.1f}:{lowpass_hz}:{highpass_hz}:{presence_boost_db:.1f}:{volume_gain_db:.1f}:{eq_profile}"
     cache_key = f"{text}|{calib_str}".encode("utf-8")
     text_hash = hashlib.md5(cache_key).hexdigest()[:8]
     return f"c{chapter_num:03d}_s{seg_num:04d}_{text_hash}.wav"
@@ -118,6 +119,12 @@ def slice_and_declick_batch(
                 filter_parts.append(f"equalizer=f=3000:t=q:w=1.8:g=-{clarity_cut_db:.1f}")
             if lowpass_hz > 1000:
                 filter_parts.append(f"lowpass=f={lowpass_hz}")
+            eq_formant_profile = str(sp_cfg.get("eq_formant_profile", "")).strip()
+            if eq_formant_profile:
+                for eq_filter in eq_formant_profile.split(","):
+                    eq_clean = eq_filter.strip()
+                    if eq_clean and eq_clean not in filter_parts:
+                        filter_parts.append(eq_clean)
             if softclip_tanh or ("[shouting]" in seg.text.lower()):
                 filter_parts.append("asoftclip=type=tanh:param=1.2")
 

@@ -72,6 +72,24 @@ from audiobook_factory.orchestration import (
 )
 
 
+STAGE_NUMBERS: Dict[str, int] = {
+    "extract": 1,
+    "extraction": 1,
+    "translate": 2,
+    "translation": 2,
+    "script": 3,
+    "screenplay": 3,
+    "tts": 4,
+    "synthesis": 4,
+    "produce": 4,
+    "direct": 5,
+    "directing": 5,
+    "mix": 5,
+    "package": 6,
+    "packaging": 6,
+}
+
+
 class PipelineOrchestrator:
     """End-to-end production manager for full novels and books."""
 
@@ -91,6 +109,8 @@ class PipelineOrchestrator:
         spatial_staging: bool = True,
         adult_literary_mode: bool = True,
         force_gate: bool = False,
+        force_rebuild: bool = False,
+        stage_start: Optional[str] = None,
     ) -> Path:
         """
         Executes the complete 6-stage autonomous novel pipeline:
@@ -107,6 +127,10 @@ class PipelineOrchestrator:
             raise FileNotFoundError(f"Input novel file not found: {input_file}")
 
         os.environ["ADULT_LITERARY_MODE"] = "true" if adult_literary_mode else "false"
+        if force_rebuild:
+            os.environ["FORCE_REBUILD_MANIFEST"] = "true"
+
+        start_stage_num = STAGE_NUMBERS.get(stage_start.lower(), 1) if stage_start else 1
 
         logger.info("=======================================================")
         logger.info("   AUTONOMOUS STUDIO AUDIOBOOK PRODUCTION PIPELINE   ")
@@ -115,6 +139,10 @@ class PipelineOrchestrator:
         logger.info(f"   Style      : {'Full-Cast Dramatized' if dramatized else 'Single Narrator'}")
         logger.info(f"   Adult Mode : {'Active (GOW / Manto Unfiltered)' if adult_literary_mode else 'Standard'}")
         logger.info(f"   Voice Lead : {voice}")
+        if stage_start:
+            logger.info(f"   Stage Start: {stage_start} (Stage {start_stage_num})")
+        if force_rebuild:
+            logger.info("   Rebuild    : FORCE REBUILD ENABLED (Cache Invalidated)")
         logger.info("=======================================================\n")
 
         telemetry = get_telemetry_ledger()
@@ -129,6 +157,8 @@ class PipelineOrchestrator:
                 "dramatized": dramatized,
                 "voice": voice,
                 "adult_literary_mode": adult_literary_mode,
+                "force_rebuild": force_rebuild,
+                "stage_start": stage_start,
             },
         )
 
@@ -136,25 +166,39 @@ class PipelineOrchestrator:
             # -------------------------------------------------------------
             # Stage 1: Document Extraction
             # -------------------------------------------------------------
-            with telemetry.stage_timer(run_id, "Document Extraction", 1):
-                logger.info("[Stage 1/6] Ingesting document and extracting chapters...")
-                meta = process_book_file(input_file, self.projects_dir, force_gate=force_gate)
-                book_slug = meta["book_id"]
+            if start_stage_num <= 1:
+                with telemetry.stage_timer(run_id, "Document Extraction", 1):
+                    logger.info("[Stage 1/6] Ingesting document and extracting chapters...")
+                    meta = process_book_file(input_file, self.projects_dir, force_gate=force_gate)
+                    book_slug = meta["book_id"]
+                    project_dir = self.projects_dir / book_slug
+                    ledger = ProjectStateLedger(project_dir)
+                    ledger.set_meta("title", meta.get("title", book_slug))
+                    ledger.set_meta("author", meta.get("author", "Unknown Author"))
+                    ledger.set_meta("source_file", str(input_file))
+            else:
+                book_slug = input_file.stem
                 project_dir = self.projects_dir / book_slug
+                if not project_dir.exists():
+                    logger.warning(f"  [!] Project {book_slug} missing on disk; running Stage 1 extraction.")
+                    meta = process_book_file(input_file, self.projects_dir, force_gate=force_gate)
+                    book_slug = meta["book_id"]
+                    project_dir = self.projects_dir / book_slug
                 ledger = ProjectStateLedger(project_dir)
-                ledger.set_meta("title", meta.get("title", book_slug))
-                ledger.set_meta("author", meta.get("author", "Unknown Author"))
-                ledger.set_meta("source_file", str(input_file))
+                logger.info(f"[Stage 1/6] Document extraction skipped (resuming at stage: {stage_start}).")
 
             # -------------------------------------------------------------
             # Stage 2: Literary Translation (Sense-for-Sense Hindustani)
             # -------------------------------------------------------------
             if hindi:
-                with telemetry.stage_timer(run_id, "Literary Translation", 2):
-                    logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
-                    translate_book_project(project_dir, force_gate=force_gate)
-                    # Inline Gate 0: Translation Coverage Verification
-                    verify_translation_coverage_gates(project_dir)
+                if start_stage_num <= 2:
+                    with telemetry.stage_timer(run_id, "Literary Translation", 2):
+                        logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
+                        translate_book_project(project_dir, force_gate=force_gate)
+                        # Inline Gate 0: Translation Coverage Verification
+                        verify_translation_coverage_gates(project_dir)
+                else:
+                    logger.info(f"\n[Stage 2/6] Translation skipped (resuming at stage: {stage_start}).")
             else:
                 telemetry.record_stage(run_id, "Literary Translation", 2, duration_sec=0.0, status="SKIPPED")
                 logger.info("\n[Stage 2/6] Translation skipped (English/Native language selected).")
@@ -162,8 +206,12 @@ class PipelineOrchestrator:
             # -------------------------------------------------------------
             # Stage 3: Screenplay Attribution (Sliding Window, No Truncation)
             # -------------------------------------------------------------
-            with telemetry.stage_timer(run_id, "Screenplay Attribution", 3):
-                logger.info("\n[Stage 3/6] Generating screenplay scripts with dialogue attribution...")
+            scripts_dir = project_dir / "scripts"
+            script_files = sorted(scripts_dir.glob("chapter_*_script.json")) if scripts_dir.exists() else []
+
+            if start_stage_num <= 3 or not script_files:
+                with telemetry.stage_timer(run_id, "Screenplay Attribution", 3):
+                    logger.info("\n[Stage 3/6] Generating screenplay scripts with dialogue attribution...")
                 if dramatized:
                     try:
                         from audiobook_factory.character_caster import CharacterCaster
@@ -188,32 +236,42 @@ class PipelineOrchestrator:
 
                 # Inline Gate 1 & Gate 6A: Voice Collision, Roster Sanity & Voice Continuity
                 verify_screenplay_project_gates(project_dir)
+            else:
+                logger.info(f"\n[Stage 3/6] Screenplay generation skipped (resuming at stage: {stage_start}, found {len(script_files)} scripts).")
 
             # -------------------------------------------------------------
             # Stage 4 & 5: Concurrent Synthesis & 5-Track Cinematic Production
             # -------------------------------------------------------------
-            with telemetry.stage_timer(run_id, "Cinematic Audio Production", 4):
-                logger.info(f"\n[Stage 4-5/6] 5-Track Cinematic Audio Drama Production across {len(script_files)} chapters (Workers: {workers})...")
-                for idx in range(1, len(script_files) + 1):
-                    logger.info(f"\n--- Producing Chapter {idx}/{len(script_files)} ---")
-                    self.produce_chapter(
-                        project_dir=project_dir,
-                        chapter_num=idx,
-                        voice=voice,
-                        workers=workers,
-                        duck_db=duck_db,
-                        spatial_staging=spatial_staging,
-                    )
+            if start_stage_num <= 5:
+                with telemetry.stage_timer(run_id, "Cinematic Audio Production", 4):
+                    logger.info(f"\n[Stage 4-5/6] 5-Track Cinematic Audio Drama Production across {len(script_files)} chapters (Workers: {workers})...")
+                    for idx in range(1, len(script_files) + 1):
+                        logger.info(f"\n--- Producing Chapter {idx}/{len(script_files)} ---")
+                        self.produce_chapter(
+                            project_dir=project_dir,
+                            chapter_num=idx,
+                            voice=voice,
+                            workers=workers,
+                            duck_db=duck_db,
+                            spatial_staging=spatial_staging,
+                            force_rebuild=force_rebuild,
+                            stage_start=stage_start,
+                        )
+            else:
+                logger.info(f"\n[Stage 4-5/6] Synthesis & 5-Track production skipped (resuming at stage: {stage_start}).")
 
             # -------------------------------------------------------------
             # Stage 6: Final M4B Containerization with Chapter Markers
             # -------------------------------------------------------------
-            with telemetry.stage_timer(run_id, "M4B Container Packaging", 6):
-                logger.info("\n[Stage 6/6] Packaging final M4B container with chapter navigation & cover art...")
-                final_m4b = package_m4b_audiobook(project_dir, cover_image=cover_image)
+            if start_stage_num <= 6:
+                with telemetry.stage_timer(run_id, "M4B Container Packaging", 6):
+                    logger.info("\n[Stage 6/6] Packaging final M4B container with chapter navigation & cover art...")
+                    final_m4b = package_m4b_audiobook(project_dir, cover_image=cover_image)
 
-                # Inline Gate 6C: Table of Contents Monotonicity & Chapter Boundaries
-                verify_packaging_gates(project_dir)
+                    # Inline Gate 6C: Table of Contents Monotonicity & Chapter Boundaries
+                    verify_packaging_gates(project_dir)
+            else:
+                final_m4b = project_dir / "mastered" / f"{book_slug}_audiobook.m4b"
 
             telemetry.end_run(run_id, status="SUCCESS")
             report_file = project_dir / "TELEMETRY_REPORT.json"
@@ -245,6 +303,8 @@ class PipelineOrchestrator:
         workers: int = 3,
         duck_db: float = -16.0,
         spatial_staging: bool = True,
+        force_rebuild: bool = False,
+        stage_start: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Produces a single cinematic chapter using the deterministic agentic standard:
@@ -317,29 +377,33 @@ class PipelineOrchestrator:
         verify_pre_synthesis_gates(script_file, chap_stem, project_dir, chapter_num)
 
         # 1. Synthesize speech segments via Gemini TTS (Token Bucket & Graceful Key Halting)
-        logger.info(f"[*] Synthesizing Chapter {chapter_num:02d} speech segments (Workers: {workers})...")
-        from audiobook_factory.key_manager import AllKeysExhaustedTodayError
-        import sys
-        try:
-            dispatcher = TTSDispatcher(
-                project_dir=project_dir,
-                default_voice=voice,
-                max_workers=workers,
-                allow_dynamic_cast=True,
-            )
-            dispatcher.synthesize_chapter_script(script_file, chapter_num)
-        except AllKeysExhaustedTodayError as e:
-            if os.environ.get("ENABLE_EMERGENCY_FALLBACK", "").lower() in ("true", "1", "yes"):
-                logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted; emergency local WinRT fallback was applied.")
-            else:
-                logger.error("\n[!] 🛑 SUPERVISOR AGENT HALT: ALL TTS API KEYS EXHAUSTED FOR TODAY.")
-                logger.error(f"[!] 🛑 {e}")
-                logger.info(f"[*] Progress Checkpoint safely stored on disk for Chapter {chapter_num:02d}.")
-                logger.info("[*] The system will gracefully halt now. Run the script again tomorrow after 12:30 PM IST (Midnight PT) to automatically resume.")
-                raise AllKeysExhaustedTodayError(
-                    f"Supervisor Halt: All TTS API keys exhausted today for Chapter {chapter_num:02d}. "
-                    "Progress safely checkpointed on disk."
-                ) from e
+        skip_tts = bool(stage_start and stage_start.lower() in ("direct", "directing", "mix") and not force_rebuild)
+        if not skip_tts:
+            logger.info(f"[*] Synthesizing Chapter {chapter_num:02d} speech segments (Workers: {workers})...")
+            from audiobook_factory.key_manager import AllKeysExhaustedTodayError
+            import sys
+            try:
+                dispatcher = TTSDispatcher(
+                    project_dir=project_dir,
+                    default_voice=voice,
+                    max_workers=workers,
+                    allow_dynamic_cast=True,
+                )
+                dispatcher.synthesize_chapter_script(script_file, chapter_num)
+            except AllKeysExhaustedTodayError as e:
+                if os.environ.get("ENABLE_EMERGENCY_FALLBACK", "").lower() in ("true", "1", "yes"):
+                    logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted; emergency local WinRT fallback was applied.")
+                else:
+                    logger.error("\n[!] 🛑 SUPERVISOR AGENT HALT: ALL TTS API KEYS EXHAUSTED FOR TODAY.")
+                    logger.error(f"[!] 🛑 {e}")
+                    logger.info(f"[*] Progress Checkpoint safely stored on disk for Chapter {chapter_num:02d}.")
+                    logger.info("[*] The system will gracefully halt now. Run the script again tomorrow after 12:30 PM IST (Midnight PT) to automatically resume.")
+                    raise AllKeysExhaustedTodayError(
+                        f"Supervisor Halt: All TTS API keys exhausted today for Chapter {chapter_num:02d}. "
+                        "Progress safely checkpointed on disk."
+                    ) from e
+        else:
+            logger.info(f"[*] Synthesis skipped for Chapter {chapter_num:02d} (resuming at stage: {stage_start}).")
 
         # Gate 2.8: Pre-Mix Performance Fidelity Gate (Fail-Closed)
         verify_performance_fidelity_gate(manifests_dir, chap_stem, chapter_num)
@@ -357,7 +421,12 @@ class PipelineOrchestrator:
 
         # 4. Agentic Directing Layer: Produce validated CreativeManifest via AgentDirector
         manifest_file = manifests_dir / f"{chap_stem}_manifest.json"
-        force_rebuild_manifest = os.environ.get("FORCE_REBUILD_MANIFEST", "false").lower() in ("true", "1", "yes")
+        force_rebuild_manifest = force_rebuild or (os.environ.get("FORCE_REBUILD_MANIFEST", "false").lower() in ("true", "1", "yes"))
+        if force_rebuild and manifest_file.exists():
+            try:
+                manifest_file.unlink()
+            except Exception:
+                pass
         manifest = None
 
         if manifest_file.exists() and not force_rebuild_manifest:

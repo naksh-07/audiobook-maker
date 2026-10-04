@@ -7,12 +7,14 @@ One-time master ingestion room producing locked novel master state:
 - cast_lock.json (Collision-free Voice Allocations)
 """
 
+from .book_dna_agent import BookDNAAgent
 from .dramatis_personae_agent import DramatisPersonaeAgent
 from .sonic_world_architect import SonicWorldArchitect
 from .phonetic_lexicon_dramaturge import PhoneticLexiconDramaturge
 from .preproduction_supervisor import PreProductionSupervisor, run_preproduction
 
 __all__ = [
+    "BookDNAAgent",
     "DramatisPersonaeAgent",
     "SonicWorldArchitect",
     "PhoneticLexiconDramaturge",

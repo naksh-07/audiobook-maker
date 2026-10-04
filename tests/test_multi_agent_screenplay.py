@@ -184,7 +184,7 @@ class TestMultiAgentScreenplay(unittest.TestCase):
         self.assertEqual(report["status"], "CERTIFIED")
 
     def test_screenplay_dramaturgy_room_end_to_end(self):
-        """Verifies ScreenplayDramaturgyRoom coordinates all 4 passes end-to-end."""
+        """Verifies ScreenplayDramaturgyRoom coordinates all 5 passes end-to-end."""
         room = ScreenplayDramaturgyRoom(model="mock-model")
 
         mock_turns = [
@@ -193,6 +193,7 @@ class TestMultiAgentScreenplay(unittest.TestCase):
         ]
 
         with patch.object(room.isolator, "isolate_turns", return_value=mock_turns), \
+             patch.object(room.auditor, "audit_and_correct", side_effect=lambda turns, **kw: (turns, {"status": "CERTIFIED"})), \
              patch.object(room.stanislavski, "direct_subtext", side_effect=lambda segments, **kw: segments), \
              patch.object(room.blocking_director, "direct_blocking", side_effect=lambda segments, **kw: segments):
 

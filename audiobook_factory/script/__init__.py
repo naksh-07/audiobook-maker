@@ -12,6 +12,7 @@ from audiobook_factory.script.normalizer import (
 )
 from audiobook_factory.script.dialogue_parser import (
     _parse_dialogue_turns_llm,
+    parse_and_audit_dialogue_turns,
 )
 from audiobook_factory.script.staging_enricher import (
     _enrich_performance_and_staging_llm,
@@ -28,6 +29,7 @@ from audiobook_factory.script.project_generator import (
 )
 from audiobook_factory.script.agents import (
     DialogueTurnIsolator,
+    DialogueAttributionAuditor,
     StanislavskiSubtextDirector,
     PhysicalBlockingDirector,
     DramaturgyConsistencyJudge,
@@ -39,12 +41,14 @@ __all__ = [
     "normalize_speech_text",
     "build_narrator_script",
     "_parse_dialogue_turns_llm",
+    "parse_and_audit_dialogue_turns",
     "_enrich_performance_and_staging_llm",
     "_parse_dramatized_chunk_llm",
     "clean_screenplay_pass2",
     "build_dramatized_script_llm",
     "generate_project_scripts",
     "DialogueTurnIsolator",
+    "DialogueAttributionAuditor",
     "StanislavskiSubtextDirector",
     "PhysicalBlockingDirector",
     "DramaturgyConsistencyJudge",

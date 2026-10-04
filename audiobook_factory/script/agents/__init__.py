@@ -9,6 +9,7 @@ Deconstructs screenplay generation into 4 collaborative specialists:
 """
 
 from .dialogue_isolator import DialogueTurnIsolator
+from .dialogue_attribution_auditor import DialogueAttributionAuditor
 from .stanislavski_director import StanislavskiSubtextDirector
 from .physical_blocking_director import PhysicalBlockingDirector
 from .dramaturgy_judge import DramaturgyConsistencyJudge
@@ -16,6 +17,7 @@ from .script_room import ScreenplayDramaturgyRoom, get_screenplay_room
 
 __all__ = [
     "DialogueTurnIsolator",
+    "DialogueAttributionAuditor",
     "StanislavskiSubtextDirector",
     "PhysicalBlockingDirector",
     "DramaturgyConsistencyJudge",
