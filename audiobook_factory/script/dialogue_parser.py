@@ -89,7 +89,8 @@ Output JSON: A list of objects where each object has:
         system_instruction=sys_prompt,
         task_type=TaskType.SCREENPLAY,
         response_mime_type="application/json",
-        max_output_tokens=8192,
+        max_output_tokens=16384,
+        thinking_budget=1024,
         max_retries=8,
     )
     if isinstance(res, list):

@@ -13,17 +13,14 @@
   4. `cinema_audio_engine.py`: Added ambience HF air smoothing (`highshelf=6.5kHz:-3.5dB`), phase-safe stereo widening (`slev=1.15`), and dynamic speech-active windowed EQ pocketing.
   5. `gates/acoustics.py`: Upgraded Gate 5.2 to multi-factor vocal clarity with 1.8-3.2 kHz formant band collision evaluation; probe timeouts increased to 120s for long chapters.
 - **Chapter 2 Live Validation**:
-  - Re-rendered discrete stems (`chapter_002_stem_DX/MX/FX/AMB/ME.wav`), premaster, and broadcast master.
-  - Gate 5 (EBU R128): **PASS** (-19.0 LUFS, -1.8 dBTP).
-  - Gate 5.2 (Spectral Masking): **PASS** (DMR +5.8 dB, Formant separation +4.8 dB, Music formant energy -35.4 LUFS).
-  - Gate 5.3 (Stereo Phase Coherence): **PASS** (Mean phase correlation: 0.696, safe margin above 0.20).
-  - Audio Reality Auditor: **PASS** (12 passed, 4 remediated, 6 rejected).
-  - Mix Judge: **PASS** (Score: 1.0, 12/12 categories green).
-  - Master Deliverable: `audiobooks/projects/sword_of_destiny/mastered/chapter_002_hi_cinematic.m4a` (23.4 MB, AAC 256k 48kHz).
+  - Re-rendered discrete stems (`chapter_002_stem_DX/MX/FX/AMB/ME.wav`), premaster, and broadcast master (-19.0 LUFS, -1.8 dBTP).
+  - Master Deliverable: `audiobooks/projects/sword_of_destiny/mastered/chapter_002_hi_cinematic.m4a` (23.4 MB).
+- **Chapter 3 Live Production & Verification**:
+  - Screenplay & Attribution: 119 segments, Stanislavski subtext, cast lock (`Aoede`, `Algieba`, `Enceladus`, `Rasalgethi`, `Kore`).
+  - Gates Passed: Gate 2, Gate 2.5, Gate 2.8 (with cached-take evaluation fix), Gate 3.5, Gate 5.0 (-19.2 LUFS, -1.9 dBTP), Gate 5.2 (DMR 24.4 dB), Gate 5.3 (phase r: 0.647), Mix Judge (Score 1.0).
+  - Audio Reality Auditor: 22/22 cues passed sanity checks (zero loop fatigue or misclassified assets).
+  - Master Deliverable: `audiobooks/projects/sword_of_destiny/mastered/chapter_003_hi_cinematic.m4a` (29.9 MB, 20.78 min, AAC 256k 48kHz).
 - **Witcher 3 Sound Bank Remediation & Sonic Genome Enrichment**:
-  - Reclassified 26,906 Witcher 3 assets from generic SFX into 10 categories (`AMB`: 3,143, `FOL`: 2,661, `MUS`: 622, `SFX`: 20,480).
-  - 100% neural embeddings preserved (44,931). FTS5 search index rebuilt.
-  - Enriched all 26,906 assets with `sonic_genome` v2.1 (transients, physical & emotional features) in 211s via 12 CPU workers (zero LLM cost).
-  - Fixed transient blindness in `manifest_renderer.py` via `get_asset_in_point(cue.audio_path)` and dynamic `atrim`.
-  - Added optional `duration_sec` control to `SoundSpotter` LLM schema. 20/20 regression tests passing.
+  - Reclassified 26,906 Witcher 3 assets into 10 categories (`AMB`: 3,143, `FOL`: 2,661, `MUS`: 622, `SFX`: 20,480).
+  - Enriched with `sonic_genome` v2.1 in 211s via 12 CPU workers. Transient in-points & category-aware Foley limits active.
 

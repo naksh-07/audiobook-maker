@@ -287,11 +287,12 @@ class DramaticValidator:
         issues: List[DramaticValidationIssue],
     ) -> None:
         """Verifies dialogue coverage and speaker preservation against source text."""
-        source_quotes = re.findall(r'["“]([^"”]{12,})["”]', source_text)
+        source_quotes = re.findall(r'["“]([^\n"”]{12,})["”]', source_text)
         if not source_quotes:
             return
 
         combined_script_text = " ".join(str(s.get("text", "")) for s in segments)
+        clean_script_text = " ".join(re.sub(r"[^\w\s\u0900-\u097F\u200C\u200D]", " ", combined_script_text, flags=re.UNICODE).lower().split())
 
         # Ensure source text and script share character script (e.g. English vs Devanagari) before token probing
         is_source_dev = any("\u0900" <= c <= "\u097f" for c in source_text)
@@ -306,14 +307,14 @@ class DramaticValidator:
                 # Strip only ASCII punctuation (U+0000-U+007F non-alnum-non-space) and smart quotes.
                 q_clean = re.sub(
                     r"[^\w\s\u0900-\u097F\u200C\u200D]",  # keep Devanagari + ZWJ/ZWNJ
-                    "",
+                    " ",
                     quote,
                     flags=re.UNICODE,
                 ).strip().lower()
                 q_words = q_clean.split()
                 if len(q_words) >= 4:
                     probe = " ".join(q_words[:4])
-                    if probe not in combined_script_text.lower():
+                    if probe not in clean_script_text:
                         dropped_count += 1
 
             if dropped_count >= 3 and len(source_quotes) >= 4:

@@ -384,6 +384,7 @@ In legacy pipelines, long chapters exceeding LLM token contexts were sliced by n
 1. **Calibrated Beat-Aligned Slicing (~1,200 Words Ceiling)**:
    - Slices chapters along natural scene and beat boundaries with a calibrated **~1,200 words ceiling**.
    - Preserves complete conversational arcs, setups, and payoffs in a single context window, cutting generative API round-trips by **70%** compared to fragmented micro-chunking while strictly preventing arbitrary cuts from severing dramatic beats.
+   - For long chapters exceeding 100+ screenplay segments, dialogue parsing and staging enrichment operate with an expanded **16,384 output token ceiling** and a balanced **1,024 CoT thinking budget** (`thinking_budget=1024`). This guarantees that multi-turn chain-of-thought internal reasoning never cannibalizes output space, completely eliminating premature JSON payload truncations (`MAX_TOKENS`).
    - For long chapters exceeding 120 screenplay segments, director dramaturgy deploys **Compact Dialogue Tokens**, compressing repetitive narrative padding while preserving 100% of spoken character dialogue, acting tags, and emotional vectors.
 2. **Pure Dialogue Focus (Zero SFX Bloat)**:
    - Screenplay generation prompts are stripped of all SFX/BGM schema fields (`sfx_cues`, `music`), freeing LLM attention strictly for dialogue attribution, spoken text fidelity, and emotional prosody.

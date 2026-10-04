@@ -83,6 +83,8 @@ Output JSON: A list of objects where each object corresponds by "index" to the i
             system_instruction=sys_prompt,
             task_type=TaskType.SCREENPLAY,
             response_mime_type="application/json",
+            max_output_tokens=16384,
+            thinking_budget=1024,
             max_retries=8,
         )
     except Exception as e:

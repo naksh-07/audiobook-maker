@@ -488,10 +488,10 @@ class TakeVariant(BaseModel):
     duration_sec: float = Field(default=0.0, ge=0.0, description="Audio duration in seconds")
     direction: PerformanceDirection = Field(..., description="PerformanceDirection guiding this take")
     evaluation: Optional[PerformanceEvaluationResult] = Field(default=None, description="Dimensional evaluation result")
-    alignment_result: Optional[Any] = Field(default=None, repr=False, description="Detailed alignment result for this take")
+    alignment_result: Optional[Any] = Field(default=None, repr=False, exclude=True, description="Detailed alignment result for this take")
     is_selected: bool = Field(default=False, description="Whether this take was selected for final mix")
     selection_reason: str = Field(default="", description="Explainable reason for selection or rejection")
-    selection_result: Optional[Any] = Field(default=None, repr=False, description="Detailed selection outcome and provenance")
+    selection_result: Optional[Any] = Field(default=None, repr=False, exclude=True, description="Detailed selection outcome and provenance")
 
 
 class TakeSelectorCalibrationConfig(BaseModel):

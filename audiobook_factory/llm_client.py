@@ -32,7 +32,7 @@ class GeminiPayloadError(RuntimeError):
 def _model_supports_thinking(model_name: str) -> bool:
     """Returns True if the given Gemini model is known to support thinkingConfig."""
     m = model_name.lower()
-    return "thinking" in m or "2.5" in m
+    return "thinking" in m or "2.5" in m or "3." in m or "flash" in m
 
 
 def call_gemini(
@@ -88,7 +88,7 @@ def call_gemini(
     # Creative reasoning tasks get a thinking budget so internal CoT tokens don't
     # cannibalize maxOutputTokens and cause premature MAX_TOKENS truncation.
     _THINKING_TASK_TYPES = {TaskType.TRANSLATION, TaskType.SCREENPLAY, TaskType.DRAMATURGY, TaskType.DIRECTING}
-    _DEFAULT_THINKING_BUDGET = 4096  # conservative budget — enough for chapter-level reasoning
+    _DEFAULT_THINKING_BUDGET = 1024  # balanced budget — leaves ample room for long multi-turn JSON responses
 
     pool = get_persistent_key_pool()
     model_mgr = get_model_manager()

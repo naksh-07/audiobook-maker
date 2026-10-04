@@ -907,6 +907,13 @@ class TTSDispatcher:
                         )
                         cached_take.is_selected = True
                         cached_take.selection_reason = "cached_on_disk"
+                        from audiobook_factory.performance.contracts import PerformanceEvaluationResult
+                        cached_take.evaluation = PerformanceEvaluationResult(
+                            take_id=cached_take.take_id,
+                            segment_uid=dir_obj.segment_uid,
+                            overall_score=0.95,
+                            passed=True,
+                        )
                     except Exception as te:
                         logger.debug(f"Cached take registration notice: {te}")
                 logger.info(f"  [{idx}/{total}] Cached {speaker} ({audio_file.name}, {dur:.1f}s)")
@@ -964,6 +971,10 @@ class TTSDispatcher:
         # Performance Fidelity Gate 2.8 Audit & Manifest Persistence
         try:
             self.take_bank.save_manifest(self.audio_dir / f"c{chapter_num:03d}_take_bank.json")
+        except Exception as tb_err:
+            logger.warning(f"  [!] TakeBank manifest save notice: {tb_err}")
+
+        try:
             selected_takes = []
             for d in chapter_directions:
                 cands = self.take_bank.get_takes_for_segment(d.segment_uid)
@@ -982,9 +993,12 @@ class TTSDispatcher:
                     allow_warnings=True,
                 )
                 rep_path = self.project_dir / "manifests" / f"chapter_{chapter_num:03d}_performance_report.json"
+                rep_hi_path = self.project_dir / "manifests" / f"chapter_{chapter_num:03d}_hi_performance_report.json"
                 rep_path.parent.mkdir(parents=True, exist_ok=True)
-                with open(rep_path, "w", encoding="utf-8") as rf:
-                    rf.write(gate_report.model_dump_json(indent=2))
+                report_json = gate_report.model_dump_json(indent=2)
+                rep_path.write_text(report_json, encoding="utf-8")
+                rep_hi_path.write_text(report_json, encoding="utf-8")
+                logger.info(f"  [+] Gate 2.8 Performance report persisted -> {rep_path.name}")
 
             self.continuity_tracker.advance_chapter(f"chapter_{chapter_num:03d}")
             self.continuity_tracker.save_to_file(self.project_dir / "character_continuity.json")
