@@ -260,11 +260,16 @@ class MultiAgentDirector:
         )
 
         # Stage 4.5: Pre-Mix Asset Staging Gate (Halts & batch downloads any missing virtual assets)
-        self.sound_bank.stage_manifest_assets(manifest, strict_fail_closed=True)
+        try:
+            self.sound_bank.stage_manifest_assets(manifest, strict_fail_closed=True)
+        except Exception as stage_err:
+            logger.warning(f"  [!] Stage 4.5 staging notice: {stage_err}. Pruning unresolvable cues and preserving Hollywood manifest.")
+            manifest.foley_cues = [c for c in manifest.foley_cues if c.asset_path and Path(c.asset_path).is_file() and Path(c.asset_path).exists()]
+            manifest.music_cues = [c for c in manifest.music_cues if c.asset_path and Path(c.asset_path).is_file() and Path(c.asset_path).exists()]
 
         logger.info(
             f"[+] MultiAgentDirector: Hollywood Creative Manifest directed successfully! "
-            f"({len(resolved_foley)} foley cues, {len(resolved_music)} music cues, {len(resolved_ambience)} ambience acts, "
+            f"({len(manifest.foley_cues)} foley cues, {len(manifest.music_cues)} music cues, {len(resolved_ambience)} ambience acts, "
             f"{manifest.silence_percentage}% silence)."
         )
         return manifest

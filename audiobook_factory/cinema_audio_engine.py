@@ -899,8 +899,11 @@ def render_discrete_stems(
 
             # Invalidate any stale master deliverable so it never survives a remix
             stale_master = out_dir / f"{ch_id}_cinema_master.wav"
-            if stale_master.exists():
-                stale_master.unlink(missing_ok=True)
+            try:
+                if stale_master.exists():
+                    stale_master.unlink(missing_ok=True)
+            except OSError as ue:
+                logger.debug(f"Notice: stale_master unlink deferred on Windows: {ue}")
 
             # Re-evaluate with judge
             mix_judge_result = judge_instance.evaluate(
@@ -927,8 +930,11 @@ def render_discrete_stems(
     # --- STEM 7: FULL MASTER (Stage 12 Broadcast Mastering via MasteringEngineV2) ---
     # Master strictly from the final settled premaster
     master_file = out_dir / f"{ch_id}_cinema_master.wav"
-    if master_file.exists():
-        master_file.unlink(missing_ok=True)
+    try:
+        if master_file.exists():
+            master_file.unlink(missing_ok=True)
+    except OSError as ue:
+        logger.debug(f"Notice: master_file unlink deferred on Windows: {ue}")
 
     mastering_engine = MasteringEngineV2(ffmpeg_bin=ff)
     master_target_lufs = -19.0

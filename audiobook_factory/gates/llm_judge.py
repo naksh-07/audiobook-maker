@@ -583,6 +583,8 @@ Audit the emotional arc continuity and output JSON:
 - "teleportation_violations": list of objects [{{"character": str, "from_emotion": str, "to_emotion": str, "reason": str}}]
 - "broken_causality_beats": list of strings
 - "reason": str summary
+
+Note: Emotional teleportation ONLY occurs when a character abruptly flips between contradictory emotional states (e.g. from profound grief to manic celebration without reason). Maintaining the same emotion or transitioning between aligned emotions (e.g. calm to calm, neutral to thoughtful) is NOT emotional teleportation.
 """
         verdict = cls.evaluate_with_llm(
             prompt=prompt,

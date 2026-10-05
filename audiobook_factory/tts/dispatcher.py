@@ -580,6 +580,7 @@ class TTSDispatcher:
                 )
                 if 0 <= win_idx < len(takes_for_seg):
                     winning_take = takes_for_seg[win_idx]
+                    winning_take.is_selected = True
                     winning_take.selection_reason = f"[AUDITION_CRITIC] {justification}"
                 else:
                     winning_take = self.take_selector.select_best_take(

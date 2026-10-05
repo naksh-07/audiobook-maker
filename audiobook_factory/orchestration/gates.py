@@ -39,13 +39,13 @@ def verify_pre_synthesis_gates(
         gate2_res = audit_gate2_script(script_file, project_dir=project_dir, enable_llm_judge=True, strict=True)
         logger.info(f"[*] Gate 2 Script Audit: PASSED for Chapter {chapter_num:02d} ({gate2_res.get('total_segments', 0)} segments)")
     except GateAuditError as e:
-        logger.error(f"\n[!] 🛑 GATE 2 AUDIT FAILED for Chapter {chapter_num:02d}: {e}")
+        logger.error(f"\n[!] [STOP] GATE 2 AUDIT FAILED for Chapter {chapter_num:02d}: {e}")
         logger.error("[!] Screenplay contains non-canonical speakers, schema violations, or misattributed dialogue. Aborting synthesis.")
         raise
     except Exception as e:
         # FAIL-CLOSED: An unexpected auditor crash must not silently pass a broken screenplay to TTS.
         logger.error(
-            f"[!] 🛑 GATE 2 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            f"[!] [STOP] GATE 2 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
             "Aborting to prevent corrupted script from reaching synthesis."
         )
         raise GateAuditError(f"Gate 2 Script Audit raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
@@ -77,12 +77,12 @@ def verify_pre_synthesis_gates(
         if os.environ.get("FORCE_DRAMATIC_GATE", "false").lower() in ("true", "1", "yes") or os.environ.get("FORCE_GATE", "false").lower() in ("true", "1", "yes"):
             logger.warning(f"  [!] GATE 2.5 DRAMATIC FIDELITY FORCED for Chapter {chapter_num:02d}: {e}")
         else:
-            logger.error(f"\n[!] 🛑 GATE 2.5 DRAMATIC FIDELITY FAILED for Chapter {chapter_num:02d}: {e}")
+            logger.error(f"\n[!] [STOP] GATE 2.5 DRAMATIC FIDELITY FAILED for Chapter {chapter_num:02d}: {e}")
             raise
     except Exception as e:
         # FAIL-CLOSED: Unexpected crash in dramatic fidelity auditor must not silently pass.
         logger.error(
-            f"[!] 🛑 GATE 2.5 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            f"[!] [STOP] GATE 2.5 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
             "Aborting to prevent un-validated screenplay from reaching synthesis."
         )
         raise GateAuditError(f"Gate 2.5 Dramatic Fidelity raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
@@ -130,7 +130,7 @@ def verify_performance_fidelity_gate(
     except Exception as e:
         # FAIL-CLOSED: Crash reading the performance report must not silently pass.
         logger.error(
-            f"[!] 🛑 GATE 2.8 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            f"[!] [STOP] GATE 2.8 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
             "Performance fidelity cannot be verified — aborting."
         )
         raise GateAuditError(f"Gate 2.8 Performance Fidelity raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
@@ -144,7 +144,7 @@ def verify_acoustic_feasibility_gate(
     try:
         gate35_res = audit_gate3_5_acoustic_feasibility(manifest, sound_bank=get_sound_bank())
         if not gate35_res.passed:
-            logger.error(f"[!] 🛑 Gate 3.5 Pre-Flight Feasibility FAILED for Chapter {chapter_num:02d}: {gate35_res.errors}")
+            logger.error(f"[!] [STOP] Gate 3.5 Pre-Flight Feasibility FAILED for Chapter {chapter_num:02d}: {gate35_res.errors}")
             if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
                 raise GateAuditError(f"Gate 3.5 Pre-Flight Feasibility Failed: {'; '.join(gate35_res.errors)}")
         else:
@@ -154,7 +154,7 @@ def verify_acoustic_feasibility_gate(
     except Exception as e:
         # FAIL-CLOSED: Auditor crash must not let silent/clipped audio proceed to render.
         logger.error(
-            f"[!] 🛑 GATE 3.5 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
+            f"[!] [STOP] GATE 3.5 UNEXPECTED CRASH for Chapter {chapter_num:02d}: {e}. "
             "Acoustic feasibility cannot be verified — aborting."
         )
         raise GateAuditError(f"Gate 3.5 Acoustic Feasibility raised an unexpected error for Chapter {chapter_num:02d}: {e}") from e
@@ -184,7 +184,7 @@ def verify_post_mix_master_gates(
             gate52_res = audit_gate5_2_spectral_masking(vocal_wav, mx_stem, min_dmr_db=12.0)
             gate52_passed = gate52_res.passed
             if not gate52_res.passed:
-                logger.error(f"[!] 🛑 Gate 5.2 Spectral Masking FAILED for Chapter {chapter_num:02d}: {gate52_res.errors}")
+                logger.error(f"[!] [STOP] Gate 5.2 Spectral Masking FAILED for Chapter {chapter_num:02d}: {gate52_res.errors}")
                 if os.environ.get("FORCE_POST_MIX_GATE", "false").lower() in ("true", "1", "yes") or os.environ.get("FORCE_GATE", "false").lower() in ("true", "1", "yes"):
                     logger.warning(f"  [!] GATE 5.2 SPECTRAL MASKING FORCED for Chapter {chapter_num:02d}.")
                     gate52_passed = True
@@ -203,7 +203,7 @@ def verify_post_mix_master_gates(
         if is_offline:
             gate52_passed = True
         else:
-            logger.error(f"[!] 🛑 Gate 5.2 FAILED: Missing stems (mx={mx_stem.exists()}, vocal={vocal_wav.exists()})")
+            logger.error(f"[!] [STOP] Gate 5.2 FAILED: Missing stems (mx={mx_stem.exists()}, vocal={vocal_wav.exists()})")
             if strict_gates:
                 raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.2: Missing mx_stem or vocal_wav stems.")
 
@@ -215,7 +215,7 @@ def verify_post_mix_master_gates(
             gate53_res = audit_gate5_3_stereo_phase(master_wav, min_phase_correlation=0.20)
             gate53_passed = gate53_res.passed
             if not gate53_res.passed:
-                logger.error(f"[!] 🛑 Gate 5.3 Stereo Phase FAILED for Chapter {chapter_num:02d}: {gate53_res.errors}")
+                logger.error(f"[!] [STOP] Gate 5.3 Stereo Phase FAILED for Chapter {chapter_num:02d}: {gate53_res.errors}")
                 if strict_gates:
                     raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.3 Stereo Phase: {'; '.join(gate53_res.errors)}")
             else:
@@ -232,7 +232,7 @@ def verify_post_mix_master_gates(
         if is_offline:
             gate53_passed = True
         else:
-            logger.error(f"[!] 🛑 Gate 5.3 FAILED: master_wav does not exist ({master_wav})")
+            logger.error(f"[!] [STOP] Gate 5.3 FAILED: master_wav does not exist ({master_wav})")
             if strict_gates:
                 raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5.3: master_wav missing.")
 
@@ -267,7 +267,7 @@ def verify_post_mix_master_gates(
         except GateAuditError:
             raise
         except Exception as e:
-            logger.error(f"[!] 🛑 Gate 5 Broadcast Master FAILED for Chapter {chapter_num:02d}: {e}")
+            logger.error(f"[!] [STOP] Gate 5 Broadcast Master FAILED for Chapter {chapter_num:02d}: {e}")
             raise GateAuditError(f"Chapter {chapter_num:02d} master failed EBU R128 broadcast certification: {e}")
 
     return gate52_passed, gate53_passed, gate5_certified
@@ -311,7 +311,7 @@ def verify_translation_coverage_gates(project_dir: Path, strict: bool = True) ->
             flagged = g1_anti.get("flagged", [])
             msg = f"Gate 1 Anti-Censorship Audit flagged {len(flagged)} dilution issues in {ef.name} (Status: {anti_status})"
             if strict:
-                logger.error(f"[!] 🛑 {msg}")
+                logger.error(f"[!] [STOP] {msg}")
                 reasons = "; ".join(f"{f.get('english', '')}->{f.get('hindi', '')}: {f.get('reason', '')}" for f in flagged)
                 raise GateAuditError(f"Gate 1 Anti-Censorship FAILED for {ef.name}: {reasons}")
             else:
@@ -343,7 +343,7 @@ def verify_packaging_gates(project_dir: Path) -> None:
             logger.info("[*] Gate 6C Table of Contents Monotonicity: PASSED")
         else:
             # FAIL-CLOSED: Out-of-order chapters must not be silently packaged into M4B.
-            logger.error(f"[!] 🛑 GATE 6C TOC MONOTONICITY FAILED: {g6c_res.errors}")
+            logger.error(f"[!] [STOP] GATE 6C TOC MONOTONICITY FAILED: {g6c_res.errors}")
             raise GateAuditError(
                 f"Gate 6C TOC Monotonicity Failed — chapter timestamps are non-monotonic or boundaries overlap: "
                 f"{'; '.join(str(e) for e in g6c_res.errors)}"
@@ -353,7 +353,7 @@ def verify_packaging_gates(project_dir: Path) -> None:
     except Exception as e:
         # FAIL-CLOSED: Auditor crash must not silently produce a malformed M4B TOC.
         logger.error(
-            f"[!] 🛑 GATE 6C UNEXPECTED CRASH: {e}. "
+            f"[!] [STOP] GATE 6C UNEXPECTED CRASH: {e}. "
             "TOC monotonicity cannot be verified — aborting packaging."
         )
         raise GateAuditError(f"Gate 6C TOC Monotonicity raised an unexpected error: {e}") from e

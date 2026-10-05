@@ -269,6 +269,10 @@ class DramaticValidator:
             verdict = LLMDramaticCritic.audit_dramatic_arc(segments=segments, strict=False)
             if verdict.emotional_teleportation_detected:
                 for v in verdict.teleportation_violations:
+                    from_e = str(v.get("from_emotion", "")).strip().lower()
+                    to_e = str(v.get("to_emotion", "")).strip().lower()
+                    if from_e and to_e and from_e == to_e:
+                        continue
                     issues.append(
                         DramaticValidationIssue(
                             code="EMOTIONAL_TELEPORTATION",
