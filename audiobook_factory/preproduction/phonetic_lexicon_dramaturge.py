@@ -45,8 +45,8 @@ class PhoneticLexiconDramaturge:
             fiction_framing +
             "You are a master Worldbuilding Lexicographer and Phonetic Director.\n"
             "Analyze the novel's text and extract all locations, factions, creatures, artifacts, and lore terms.\n"
-            "Enforce the 70/30 Invariant: Proper nouns and geographic places preserve their authentic European / fantasy "
-            "names in phonetically accurate Devanagari script. Fictional concepts, weapons, and creature types receive "
+            "Enforce the 70/30 Invariant: Proper nouns and geographic places preserve their authentic source-language "
+            "names in phonetically accurate Devanagari script verified by authoritative web usage. Fictional concepts, weapons, and creature types receive "
             "cinematic, atmospheric Hindustani equivalents.\n\n"
             "Output JSON schema with:\n"
             "- 'locations': {EnglishName: DevanagariName}\n"
@@ -86,6 +86,7 @@ Output JSON: An object matching the required schema:
                     prompt=prompt,
                     system_instruction=sys_prompt,
                     task_type=TaskType.EXTRACTION,
+                    tools=[{"googleSearch": {}}],
                     response_mime_type="application/json",
                     max_output_tokens=16384,
                     thinking_budget=1024,

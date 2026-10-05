@@ -32,15 +32,15 @@ def detect_chapter_mood(chapter_text: str, model: str | None = None) -> Dict[str
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
-    # Sample beginning and climax for analysis (keep token size lean)
-    sample_snippet = chapter_text[:2500]
+    # Sample comprehensive chapter scope (up to 40,000 characters)
+    sample_snippet = chapter_text[:40000]
     prompt = (
         "You are an expert audio director for cinematic audiobooks. "
-        "Analyze the following excerpt from a book chapter and return a JSON object with: "
-        "'primary_mood' (strictly one of: peaceful, mysterious, tense, emotional, epic, default), "
+        "Analyze the following chapter text and return a JSON object with: "
+        "'primary_mood' (evocative primary mood, e.g. peaceful, mysterious, tense, emotional, epic, melancholic, suspenseful, nostalgic, eerie), "
         "'intensity' (float from 0.1 to 1.0), "
-        "'summary' (1 sentence summary of the scene atmosphere), "
-        "'musicgen_prompt' (a detailed prompt for Meta MusicGen: instrumental ambient background score, NO vocals, NO loud drums, describing instruments and tempo).\n\n"
+        "'summary' (1-2 sentence summary of the scene atmosphere), "
+        "'musicgen_prompt' (a detailed prompt for Meta MusicGen: instrumental ambient background score matching the era, NO vocals, NO loud drums, describing instruments and tempo).\n\n"
         f"Excerpt:\n{sample_snippet}\n\n"
         "Return ONLY raw valid JSON."
     )

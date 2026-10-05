@@ -182,7 +182,7 @@ def build_spatial_early_reflection_filter(staging_config: Any) -> str:
     Constructs an FFmpeg filter_complex graph string for physical room convolution early reflections.
     Convolves room physical geometry onto DX vocal track to eliminate anechoic isolation booth dryness.
     """
-    raw_name = getattr(staging_config, "preset_name", "tavern_timber_small") if staging_config else "tavern_timber_small"
+    raw_name = getattr(staging_config, "preset_name", "domestic_room") if staging_config else "domestic_room"
     _, preset = resolve_acoustic_ir_preset(raw_name)
 
     wet_ratio = getattr(staging_config, "wet_dry_ratio", None)

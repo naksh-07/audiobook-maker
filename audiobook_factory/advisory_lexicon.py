@@ -53,7 +53,7 @@ class LiteraryAdvisoryDB:
         self.seed_default_guidelines()
 
     def seed_default_guidelines(self):
-        """Populates the database with universal dark-fantasy Hindustani literary guidelines."""
+        """Populates the database with universal dramatic Hindustani literary guidelines."""
         with self._connection() as conn:
             count = conn.execute("SELECT COUNT(*) AS cnt FROM literary_advisory_rules;").fetchone()["cnt"]
             if count > 0:
@@ -86,8 +86,8 @@ class LiteraryAdvisoryDB:
                 ),
                 (
                     "beverages",
-                    "wine, ale, spirits, plum alcohol",
-                    "Use 'शराब', 'मदिरा', 'सुराही', or 'जाम' for tavern spirits, ales, and noble plum liqueurs. The word 'दारू' feels like cheap modern country bootleg/theka and breaks classic literary weight unless deliberately describing a filthy gutter brawl.",
+                    "wine, ale, spirits, traditional alcohol",
+                    "Use 'शराब', 'मदिरा', 'सुराही', or 'जाम' for wines, spirits, and traditional alcoholic beverages matching the novel's period and culture. The word 'दारू' feels like cheap modern bootleg unless deliberately describing crude street brawls.",
                     json.dumps(["शराब", "मदिरा", "सुराही", "जाम", "मद्य"], ensure_ascii=False),
                     json.dumps(["दारू"], ensure_ascii=False),
                     "global",

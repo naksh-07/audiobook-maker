@@ -26,17 +26,21 @@ class CodeSwitchEngine:
     Ensures natural spoken prosody without corrupting literary intentionality.
     """
 
-    @staticmethod
+    @classmethod
     def is_intentional_code_switch(
+        cls,
         token: str,
         sentence_context: str,
         character_profile: Optional[Any] = None,
+        custom_allowed_loanwords: Optional[Any] = None,
     ) -> bool:
         """
         Determines whether an English/foreign token inside Hindi dialogue is intentional code-switching
         rather than untranslated leakage.
         """
         clean = token.strip().lower()
+        if custom_allowed_loanwords and clean in custom_allowed_loanwords:
+            return True
         if clean in NATURAL_HINDUSTANI_LOANWORDS:
             return True
 

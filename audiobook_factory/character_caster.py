@@ -175,6 +175,7 @@ Return a JSON array of objects with:
                 task_type=TaskType.DIRECTING,
                 prompt=prompt,
                 system_instruction=sys_prompt,
+                tools=[{"googleSearch": {}}],
                 temperature=0.2,
                 response_mime_type="application/json",
             )
@@ -210,35 +211,35 @@ Return a JSON array of objects with:
 
         # Male Vocal Acoustic Profiling
         if g == "male":
-            if any(w in arch for w in ("warrior", "heavy", "monster", "brute", "thug", "butcher", "soldier", "bodyguard")):
+            if any(w in arch for w in ("heavy", "deep", "imposing", "rough", "rugged", "warrior", "soldier", "brute", "guard", "thug", "bodyguard", "laborer")):
                 pitch = round(0.88 + (index % 3) * 0.02, 2)  # 0.88 - 0.92
                 speed = 0.96
                 bass_boost = 3.0
                 presence_boost = 0.5
                 clarity_cut = 0.0
                 lowpass = 0
-            elif any(w in arch for w in ("elder", "scholar", "mentor", "priest", "old", "alderman", "king", "father")):
+            elif any(w in arch for w in ("elder", "scholar", "mentor", "priest", "old", "father", "grandfather", "aged", "teacher")):
                 pitch = round(0.92 + (index % 2) * 0.02, 2)  # 0.92 - 0.94
                 speed = 0.94
                 bass_boost = 1.0
                 presence_boost = 1.2
                 clarity_cut = 1.5
                 lowpass = 6500
-            elif any(w in arch for w in ("bard", "youth", "agile", "scout", "comedic", "rogue", "boy", "apprentice")):
+            elif any(w in arch for w in ("youth", "young", "boy", "agile", "sharp", "energetic", "comedic", "apprentice", "rebel", "student", "bard")):
                 pitch = round(1.05 + (index % 3) * 0.02, 2)  # 1.05 - 1.09
                 speed = 1.04
                 bass_boost = -1.0
                 presence_boost = 2.2
                 clarity_cut = 0.0
                 lowpass = 0
-            elif any(w in arch for w in ("peasant", "tavern", "innkeeper", "bhatiyara", "merchant", "servant")):
+            elif any(w in arch for w in ("commoner", "rustic", "villager", "worker", "servant", "merchant", "driver", "shopkeeper", "innkeeper", "tavern", "tavernkeeper", "peasant")):
                 pitch = round(1.06 + (index % 2) * 0.03, 2)  # 1.06 - 1.09
                 speed = 0.97
                 bass_boost = 0.0
                 presence_boost = 1.8
                 clarity_cut = 2.0
                 lowpass = 0
-            elif any(w in arch for w in ("lead", "protagonist", "hero", "hunter", "warrior", "mercenary", "cynic", "detective")):
+            elif any(w in arch for w in ("lead", "protagonist", "hero", "detective", "commander", "leader", "officer", "noble", "governor")):
                 pitch = round(0.95 + (index % 2) * 0.02, 2)  # 0.95 - 0.97
                 speed = 0.99
                 bass_boost = 2.0
@@ -262,21 +263,21 @@ Return a JSON array of objects with:
                 lowpass = 0
         else:
             # Female Vocal Acoustic Profiling
-            if any(w in arch for w in ("commanding", "queen", "sorceress", "mature", "leader", "mother", "matriarch")):
+            if any(w in arch for w in ("commanding", "leader", "mature", "mother", "matriarch", "queen", "sorceress", "director", "officer")):
                 pitch = round(0.94 + (index % 2) * 0.02, 2)  # 0.94 - 0.96
                 speed = 0.98
                 bass_boost = 1.5
                 presence_boost = 1.5
                 clarity_cut = 0.0
                 lowpass = 0
-            elif any(w in arch for w in ("youth", "maiden", "delicate", "tender", "vulnerable", "girl", "daughter")):
+            elif any(w in arch for w in ("youth", "young", "girl", "daughter", "delicate", "tender", "vulnerable", "student")):
                 pitch = round(1.05 + (index % 2) * 0.02, 2)  # 1.05 - 1.07
                 speed = 1.03
                 bass_boost = -1.5
                 presence_boost = 2.0
                 clarity_cut = 0.0
                 lowpass = 0
-            elif any(w in arch for w in ("warrior", "shieldmaiden", "feisty", "zerrikanian", "soldier")):
+            elif any(w in arch for w in ("fierce", "resolute", "soldier", "warrior", "rebel", "sharp", "athletic")):
                 pitch = round(0.97 + (index % 2) * 0.02, 2)  # 0.97 - 0.99
                 speed = 1.01
                 bass_boost = 1.8

@@ -64,7 +64,7 @@ class DramatisPersonaeAgent:
             "- 'aliases': list of strings (alternative names, nicknames, titles)\n"
             "- 'prominence': 'lead' | 'major' | 'minor' | 'incidental'\n"
             "- 'vocal_archetype': string (e.g. 'deep gravelly baritone', 'caustic aristocratic alto', 'youthful tenor', 'weathered rustic bass')\n"
-            "- 'sociolect_trait': string (dynamically derived sociolect fitting the novel's literary world and social hierarchy, e.g. 'POOR_OPPRESSED_PEASANT', 'ORTHODOX_PRIEST_LANDLORD', 'FEUDAL_ZAMINDAR', 'CYNICAL_MONSTER_HUNTER', 'STREET_THUG', 'ARISTOCRATIC_COMMANDER', 'NEUTRAL')\n"
+            "- 'sociolect_trait': string (dynamically derived sociolect fitting the novel's literary world and social hierarchy, e.g. 'POOR_OPPRESSED_PEASANT', 'ORTHODOX_PRIEST_LANDLORD', 'FEUDAL_ZAMINDAR', 'URBAN_DETECTIVE', 'STREET_THUG', 'ARISTOCRATIC_COMMANDER', 'NEUTRAL')\n"
             "- 'recommended_pronoun_level': 'aap' | 'tum' | 'tu'\n"
             "- 'speech_quirks': string (cadence quirks, verbal tics, laconic grunts, respectful deferrals, etc.)"
         )
@@ -107,6 +107,7 @@ Output JSON: A list of character profile objects:
                     prompt=prompt,
                     system_instruction=sys_prompt,
                     task_type=TaskType.EXTRACTION,
+                    tools=[{"googleSearch": {}}],
                     response_mime_type="application/json",
                     max_output_tokens=16384,
                     thinking_budget=1024,

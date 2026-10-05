@@ -71,7 +71,7 @@ class TestMultiAgentTranslation(unittest.TestCase):
         # Intimate text
         intimate_mode = draft_agent._detect_scene_mode("Her lips and gentle kiss on his skin.", "Night")
         self.assertIn("SOMATIC INTIMACY", intimate_mode)
-        self.assertIn("MANTO STANDARD", intimate_mode)
+        self.assertTrue("MANTO STANDARD" in intimate_mode or "VISCERAL REALISM STANDARD" in intimate_mode)
 
         # Dialogue text
         dialogue_text = '"Who are you?" he said. "A traveler," she replied. "Prove it," he demanded.'

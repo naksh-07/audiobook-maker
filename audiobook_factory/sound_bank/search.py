@@ -283,14 +283,19 @@ class SearchMixin:
 
         # Era & Negative Tag Filtering (only ban blatant anachronisms, never narrative props)
         banned = set(negative_tags or [])
-        if era and era.upper() in ("MODERN", "MODERN_CONTEMPORARY"):
-            banned.update({"catapult", "drawbridge", "trebuchet", "battering_ram"})
-        elif era and era.upper() == "MEDIEVAL_FANTASY":
+        era_upper = (era or "").upper()
+        if any(k in era_upper for k in ("RURAL", "ANCIENT", "19TH", "FEUDAL", "HISTORICAL", "MEDIEVAL")):
             banned.update({
-                "car", "automobile", "engine", "traffic", "gunshot", "phone", "telephone",
-                "siren", "computer", "subway", "train", "airplane", "helicopter",
-                "refrigerator", "office"
+                "car", "automobile", "engine", "traffic", "phone", "telephone",
+                "siren", "computer", "subway", "train_horn", "airplane", "helicopter",
+                "refrigerator", "office", "plastic", "cellphone", "smartphone"
             })
+            if "MEDIEVAL" in era_upper:
+                banned.add("gunshot")
+        elif any(k in era_upper for k in ("SCIFI", "CYBERPUNK", "SPACE")):
+            banned.update({"horse_carriage", "catapult", "trebuchet", "battering_ram", "torch"})
+        elif any(k in era_upper for k in ("MODERN", "CONTEMPORARY")):
+            banned.update({"catapult", "drawbridge", "trebuchet", "battering_ram"})
 
         if banned:
             filtered = []

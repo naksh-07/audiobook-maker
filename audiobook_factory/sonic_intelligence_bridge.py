@@ -102,6 +102,20 @@ BILINGUAL_SOUND_TAXONOMY = {
     "आग": "fire campfire torch crackle blaze flame",
     "मशाल": "torch fire wood flame crackle",
     "धमाका": "explosion blast boom thunder heavy impact",
+
+    # Vernacular, Period & Rural Objects
+    "हुक्का": "water pipe bubbling hookah smoke",
+    "ताँगा": "horse carriage trot cobblestones wooden wheel",
+    "घोड़ा": "horse trot gallop neigh whinny hooves",
+    "बाँसुरी": "flute bamboo woodwind melody gentle",
+    "शहनाई": "shehnai reed woodwind high melody",
+    "घूँघरू": "bells anklet chime jingle metallic",
+    "नाव": "boat wooden oars row water splash paddle",
+    "कश्ती": "boat wood rowing splash water lake",
+    "कुल्हाड़ी": "axe chop wood log strike thud impact",
+    "लाठी": "stick staff wood thud blunt strike impact",
+    "चरपाई": "creak rope wooden bed shift rope friction",
+    "तोप": "cannon boom explosion heavy blast",
 }
 
 # Stop words and filler poetic adjectives that break strict FTS5 search
@@ -117,7 +131,7 @@ STOP_WORDS_FTS = {
 COMBAT_TERMS = {
     "sword", "blade", "scabbard", "parry", "axe", "dagger", "drawbridge", "armor",
     "clash", "spear", "shield", "mace", "crossbow", "warrior", "combat", "blood",
-    "slashing", "warrior", "monster", "beast", "battle"
+    "slashing", "monster", "beast", "battle"
 }
 
 
@@ -134,9 +148,9 @@ class SonicIntelligenceBridge:
         """
         return {
             "environments": [
-                "suburban_street_day", "suburban_street_night", "domestic_room",
-                "office_commercial", "quiet_chamber", "tavern_interior",
-                "dense_forest_night", "stone_crypt", "open_road"
+                "domestic_room", "rural_courtyard_open", "suburban_street_day",
+                "suburban_street_night", "office_commercial", "quiet_chamber",
+                "wooden_cottage_interior", "dense_forest_night", "open_road"
             ],
             "foley_verbs": [
                 "door_creak", "door_slam", "door_open", "door_close",
@@ -147,12 +161,12 @@ class SonicIntelligenceBridge:
             ],
             "music_archetypes": [
                 "MYSTERY_PROLOGUE", "INVESTIGATION_TENSION", "NOCTURNAL_VIGIL",
-                "MAGICAL_DESTINY", "BITTERSWEET_PARTING", "CONTEMPLATIVE_SOLITUDE",
+                "DRAMATIC_CONFRONTATION", "BITTERSWEET_PARTING", "CONTEMPLATIVE_SOLITUDE",
                 "URGENT_PURSUIT", "WARM_DOMESTICITY"
             ],
             "musical_timbre_tags": [
                 "solo cello", "subtle strings", "woodwinds", "soft piano",
-                "atmospheric drone", "low brass swell", "harp bells", "acoustic guitar"
+                "atmospheric drone", "low brass swell", "bansuri / flute", "acoustic guitar"
             ]
         }
 

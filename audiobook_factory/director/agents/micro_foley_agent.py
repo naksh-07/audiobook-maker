@@ -132,6 +132,39 @@ def build_scene_physics_context_matrix(
             "  * under_speech: Gentle breeze through branches, subtle wet leather creak, embers glowing."
             f"{custom_props}"
         )
+    elif any(k in combined for k in ("train", "rail", "carriage", "compartment", "platform", "station")):
+        return (
+            "TACTILE SCENE PHYSICS MATRIX (Train / Railway Compartment / Transit):\n"
+            "- Available Props & Surfaces: Polished brass fittings, velvet cushions, wooden compartment doors, luggage leather, glass windows, rattling teacups on table, ticket stubs, pocket watches.\n"
+            "- Character Physical Micro-Beats:\n"
+            "  * pre_speech: Shifting posture against train sway, tapping pocket watch, sliding brass door latch.\n"
+            "  * mid_speech_pause: Wheel rhythmic clack on track during pause, teacup clinking on saucer, distant train whistle.\n"
+            "  * post_speech: Leaning toward window, pulling curtain, exhaling against train hum.\n"
+            "  * under_speech: Continuous steady train track rail rhythm, gentle vibration of carriage."
+            f"{custom_props}"
+        )
+    elif any(k in combined for k in ("ship", "boat", "sea", "ocean", "deck", "cabin", "river")):
+        return (
+            "TACTILE SCENE PHYSICS MATRIX (Ship / Boat / Maritime Setting):\n"
+            "- Available Props & Surfaces: Salt-weathered deck timbers, hemp rope rigging, brass compass, oil lamps, canvas sails, wooden oars, iron railings.\n"
+            "- Character Physical Micro-Beats:\n"
+            "  * pre_speech: Grabbing deck railing, wiping spray from face, coil of rope shifting.\n"
+            "  * mid_speech_pause: Heavy creak of timber hull, water lap against wood, wind flapping sailcloth.\n"
+            "  * post_speech: Stepping down companionway, lighting pipe with match flick, looking out to sea.\n"
+            "  * under_speech: Ocean water swelling against hull, distant wind whistling through ropes."
+            f"{custom_props}"
+        )
+    elif any(k in combined for k in ("cyber", "sci", "space", "terminal", "station", "bridge", "lab")):
+        return (
+            "TACTILE SCENE PHYSICS MATRIX (Sci-Fi / Spacecraft / High-Tech Lab):\n"
+            "- Available Props & Surfaces: Metallic deck plating, polymer consoles, pneumatic sliding doors, holographic touchpads, pressurized suits, synth-fabric jackets.\n"
+            "- Character Physical Micro-Beats:\n"
+            "  * pre_speech: Keypad chirp, boots clanging on metal grate, adjusting comm earpiece.\n"
+            "  * mid_speech_pause: Soft cooling fan hum, console status ping, pneumatic valve pressure release.\n"
+            "  * post_speech: Holstering sidearm with magnetic click, tapping touch display, turning chair.\n"
+            "  * under_speech: Low-frequency reactor core hum, subtle electronics air circulation."
+            f"{custom_props}"
+        )
     else:
         return (
             "TACTILE SCENE PHYSICS MATRIX (General Dramatic Environment):\n"

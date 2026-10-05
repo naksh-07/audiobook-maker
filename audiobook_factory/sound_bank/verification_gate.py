@@ -34,15 +34,44 @@ ERA_BANNED_KEYWORDS: Dict[str, List[str]] = {
         "car", "traffic", "telephone", "phone", "radio", "engine", "diesel",
         "truck", "motor", "airplane", "aeroplane", "train", "computer",
         "siren", "subway", "helicopter", "police", "plastic", "pills",
-        "handcuffs", "paralyzer", "compressed_air", "compressed-air"
+        "handcuffs", "paralyzer", "compressed_air", "compressed-air", "gunshot"
+    ],
+    "RURAL_HISTORICAL": [
+        "car", "traffic", "telephone", "phone", "radio", "engine", "diesel",
+        "truck", "motor", "airplane", "aeroplane", "computer", "siren", "subway",
+        "helicopter", "plastic", "cellphone", "smartphone", "train_horn"
     ],
     "VICTORIAN_EDWARDIAN": [
-        "automobile", "airplane", "television", "computer", "cell_phone", "smartphone"
+        "automobile", "airplane", "television", "computer", "cell_phone", "smartphone", "plastic"
     ],
     "PULP_NOIR_1940S": [
         "smartphone", "internet", "laser", "cyborg", "spacesuit"
     ],
+    "SPACE_OPERA_SCIFI": [
+        "horse_carriage", "catapult", "trebuchet", "battering_ram", "torch"
+    ],
 }
+
+
+def resolve_banned_words_for_era(era: str, custom_banned: Optional[List[str]] = None) -> List[str]:
+    """Resolves an exhaustive list of banned anachronisms for any novel setting."""
+    banned = set(custom_banned or [])
+    active_era = (era or "").upper()
+
+    if active_era in ERA_BANNED_KEYWORDS:
+        banned.update(ERA_BANNED_KEYWORDS[active_era])
+    elif any(k in active_era for k in ("RURAL", "VILLAGE", "ANCIENT", "19TH", "FEUDAL", "HISTORICAL", "MEDIEVAL")):
+        banned.update(ERA_BANNED_KEYWORDS["RURAL_HISTORICAL"])
+        if "MEDIEVAL" in active_era:
+            banned.add("gunshot")
+    elif any(k in active_era for k in ("SCIFI", "CYBERPUNK", "SPACE")):
+        banned.update(ERA_BANNED_KEYWORDS["SPACE_OPERA_SCIFI"])
+    elif any(k in active_era for k in ("VICTORIAN", "EDWARDIAN")):
+        banned.update(ERA_BANNED_KEYWORDS["VICTORIAN_EDWARDIAN"])
+    elif any(k in active_era for k in ("NOIR", "1940", "1950")):
+        banned.update(ERA_BANNED_KEYWORDS["PULP_NOIR_1940S"])
+
+    return sorted(list(banned))
 
 
 @dataclass
@@ -128,7 +157,7 @@ class AudioVerificationGate:
         # 1. Era & Anachronism Verification (Fast Metadata / Name Reject)
         # ---------------------------------------------------------------------
         active_era = (era or "").upper()
-        banned_words = ERA_BANNED_KEYWORDS.get(active_era, [])
+        banned_words = resolve_banned_words_for_era(active_era, meta.get("banned_anachronisms"))
         clean_fname = re.sub(r"[_\-\.\/\\]+", " ", fname_lower)
         clean_tags = re.sub(r"[_\-\.\/\\]+", " ", tags_lower)
         for bw in banned_words:

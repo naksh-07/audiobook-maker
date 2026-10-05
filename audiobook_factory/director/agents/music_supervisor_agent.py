@@ -57,7 +57,7 @@ class MusicSupervisorAgent:
         showrunner_plan: ShowrunnerPlan,
         script_segments: List[Dict[str, Any]],
         total_duration_sec: float,
-        era: str = "MEDIEVAL_FANTASY",
+        era: str = "UNIVERSAL_CONTEMPORARY",
         title: str = "",
         author: str = "",
     ) -> MusicScoringPlan:
@@ -79,8 +79,8 @@ class MusicSupervisorAgent:
             f"{framing}"
             "Your objective is to score the chapter with SURGICAL CINEMATIC CUES rather than endless flat looping beds. "
             "Score:\n"
-            "1. Scene Transition Stingers (5–12s): Warm acoustic lute, cello, or flute bridging scene changes.\n"
-            "2. Thematic Underscores (25–50s): Low-volume ambient cello, dark bowed strings, or folk drones under pivotal dialogues.\n"
+            "1. Scene Transition Stingers (5–12s): Warm acoustic instruments (strings, piano, woodwinds, or traditional instruments matching the novel's culture) bridging scene changes.\n"
+            "2. Thematic Underscores (25–50s): Low-volume ambient cello, piano, subtle bowed strings, or atmospheric drones under pivotal dialogues.\n"
             "3. Tension Punctuation (10–20s): Sudden atmospheric drop or crescendo on key revelations.\n"
             f"CRITICAL CONSTRAINT: Total music duration across ALL cues MUST NOT exceed {max_music_sec:.1f} seconds! "
             "At least 65% of the chapter MUST remain pure acoustic dialogue + room tone. "

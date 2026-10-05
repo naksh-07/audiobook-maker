@@ -22,18 +22,18 @@ class SceneAcousticBlueprint(BaseModel):
 
     act_index: int = Field(..., ge=1)
     location_name: str
-    environment_slug: str = Field(default="tavern_interior", description="Standardized environment identifier")
+    environment_slug: str = Field(default="domestic_room", description="Standardized environment identifier")
     room_dimensions: str = Field(default="medium", description="'intimate_small', 'medium_enclosed', 'cavernous_large', 'open_exterior'")
     primary_materials: List[str] = Field(default_factory=lambda: ["wood", "stone"], description="Physical wall/floor reflective materials")
     ir_preset: str = Field(
-        default="tavern_timber_small",
+        default="domestic_room",
         description="'tavern_timber_small', 'stone_crypt_damp', 'great_hall_stone', 'forest_open_mist', 'domestic_room', 'cave_catacomb', 'rural_courtyard_open', 'modern_office_carpet', 'urban_street_canyon', 'wooden_cottage_interior', 'cathedral_sacred_vault'"
     )
     dx_reverb_wet_ratio: float = Field(
-        default=0.12, ge=0.04, le=0.25,
+        default=0.10, ge=0.04, le=0.25,
         description="Subtle early reflection wet ratio convolved onto DX spoken track (0.10 - 0.15 is ideal)"
     )
-    early_reflections_decay_ms: int = Field(default=220, ge=80, le=800)
+    early_reflections_decay_ms: int = Field(default=180, ge=80, le=800)
     high_frequency_damping_hz: int = Field(default=7500, description="Air absorption high-cut filter")
     acoustic_presence_description: str = Field(default="", description="Artistic description of the acoustic atmosphere")
 
@@ -55,7 +55,7 @@ class ScenographerAgent:
     def design_acoustic_spaces(
         self,
         showrunner_plan: ShowrunnerPlan,
-        era: str = "MEDIEVAL_FANTASY",
+        era: str = "UNIVERSAL_CONTEMPORARY",
         title: str = "",
         author: str = "",
         sonic_bible: Optional[Dict[str, Any]] = None,
@@ -108,15 +108,15 @@ Return a JSON array of blueprints, one for each act:
 [
   {{
     "act_index": 1,
-    "location_name": "Tavern Interior",
-    "environment_slug": "tavern_interior",
+    "location_name": "Main Room",
+    "environment_slug": "domestic_room",
     "room_dimensions": "intimate_small | medium_enclosed | cavernous_large | open_exterior",
-    "primary_materials": ["aged pine", "clay tiles", "wool cloaks"],
-    "ir_preset": "tavern_timber_small",
-    "dx_reverb_wet_ratio": 0.12,
-    "early_reflections_decay_ms": 220,
+    "primary_materials": ["wood", "cloth", "plaster"],
+    "ir_preset": "domestic_room",
+    "dx_reverb_wet_ratio": 0.10,
+    "early_reflections_decay_ms": 180,
     "high_frequency_damping_hz": 7500,
-    "acoustic_presence_description": "Warm, claustrophobic tavern taproom with low wooden beams"
+    "acoustic_presence_description": "Natural, intimate room with balanced early reflections"
   }}
 ]
 """

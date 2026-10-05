@@ -262,11 +262,17 @@ class SoundSpotter:
         framing = get_dramatic_fiction_framing(title, author)
 
         # Dynamic era-specific examples
-        if era == "MEDIEVAL_FANTASY":
+        if "rural" in era.lower() or "village" in era.lower() or era == "RURAL_HISTORICAL":
             era_guidance = (
-                "Era: Medieval Fantasy. Identify authentic period and fantasy props: "
-                "sword draw, blade clash, scabbard creak, shield bash, armor rattle, torch sizzle, "
-                "tankard slam, coin pouch clink, tavern door creak, horse bridle rattle, footsteps on gravel/cobblestones."
+                "Era: Rural Historical. Identify authentic rustic living interactions: "
+                "charpai creak, earthenware clink, matka water dip, hookah bubble, barefoot footsteps on earth, "
+                "bamboo lathi thud, bullock cart rattle, dry leaf rustle."
+            )
+        elif era == "MEDIEVAL_FANTASY":
+            era_guidance = (
+                "Era: Medieval Historical. Identify authentic period physical props: "
+                "metal blade draw, armor clank, torch hiss, heavy wooden door, coin pouch clink, "
+                "horse bridle rattle, footsteps on stone/gravel."
             )
         elif era in ("SPACE_OPERA_SCIFI", "RETRO_FUTURE_CYBERPUNK"):
             era_guidance = (
@@ -296,8 +302,8 @@ class SoundSpotter:
 
 Return a JSON array of physical Foley events where each object has:
 - "segment_index": int (1-based segment where this physical action occurs)
-- "action_verb": string (e.g. "sword_draw", "tankard_slam", "door_creak", "footsteps", "blade_clash", "coin_drop")
-- "object_material": string (e.g. "metal", "wood", "glass", "stone", "leather", "gravel")
+- "action_verb": string (e.g. "door_creak", "footsteps", "cup_clink", "chair_shift", "paper_rustle", "physical_impact")
+- "object_material": string (e.g. "metal", "wood", "glass", "stone", "leather", "gravel", "earth")
 - "anchor_word": string (specific word or tag in the segment text anchoring the sound)
 - "duration_sec": optional float (desired dramatic duration in seconds, e.g. 1.5 for a quick hit, 3.5 for prolonged movement; null for natural decay)
 - "gain_dbfs": float (-14.0 to -22.0)
@@ -313,7 +319,12 @@ Return a JSON array of physical Foley events where each object has:
         """Scans prose to determine environmental room tone, location, and weather."""
         framing = get_dramatic_fiction_framing(title, author)
 
-        if era == "MEDIEVAL_FANTASY":
+        if "rural" in era.lower() or "village" in era.lower() or era == "RURAL_HISTORICAL":
+            era_ambience = (
+                "Appropriate environments: rural_courtyard_open, domestic_room, wooden_cottage_interior, "
+                "open_road, riverbank_crickets, quiet_field."
+            )
+        elif era == "MEDIEVAL_FANTASY":
             era_ambience = (
                 "Appropriate environments: stone_ruins_exterior, tavern_interior, castle_great_hall, "
                 "crypt_catacomb, deep_forest_night, swamp_marsh_night, mountain_pass_blizzard, city_market_square."
@@ -342,8 +353,8 @@ Return a JSON array of physical Foley events where each object has:
 \"\"\"
 
 Return a JSON array of Ambience beds where each object has:
-- "name": string (standard environment slug matching the scene location, e.g. "stone_ruins_exterior", "tavern_interior", "room_tone", "spaceship_bridge")
-- "setting": string (e.g. "Crumbling ruins outside cavern entrance", "Bustling tavern taproom", "Spaceship command deck")
+- "name": string (standard environment slug matching the scene location, e.g. "rural_courtyard_open", "room_tone", "domestic_room", "office_commercial")
+- "setting": string (e.g. "Sunlit village courtyard", "Quiet study", "City street corner")
 - "target_lufs": float (-30.0 to -34.0, default -32.0)
 - "reverb_preset": string ("room", "hall", "plate", or "none")
 """
@@ -374,10 +385,10 @@ Return a JSON array of Ambience beds where each object has:
 Return a JSON array of Music cues where each object has:
 - "trigger_segment": int (segment index where the cue starts)
 - "duration_sec": float (15.0 to 60.0)
-- "narrative_archetype": string (e.g. "MYSTERY_PROLOGUE", "TENSION", "NOCTURNAL_VIGIL", "SWORD_DUEL", "MONSTER_HUNT", "BITTERSWEET_PARTING", "ROYAL_CONSPIRACY")
+- "narrative_archetype": string (e.g. "MYSTERY_PROLOGUE", "TENSION", "NOCTURNAL_VIGIL", "DRAMATIC_CONFRONTATION", "BITTERSWEET_PARTING", "CONTEMPLATIVE_SOLITUDE", "REVELATION")
 - "mood": string ("mysterious", "tense", "peaceful", "emotional", "epic", "dramatic")
 - "tempo": string ("slow", "moderate", "fast")
-- "timbre": string ("dark strings", "solo cello", "hurdy-gurdy", "slavic folk instruments", "brass", "atmospheric pads")
+- "timbre": string ("dark strings", "solo cello", "acoustic piano", "woodwinds", "brass", "atmospheric pads", "traditional cultural instruments")
 - "energy_section": string ("INTRO_BED", "RISING_TENSION", "CLIMAX_DROP")
 - "search_query": string (optimal 3-word query for music search)
 - "volume_db": float (-7.0 to -9.0)

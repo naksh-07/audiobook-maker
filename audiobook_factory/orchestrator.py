@@ -188,6 +188,17 @@ class PipelineOrchestrator:
                 logger.info(f"[Stage 1/6] Document extraction skipped (resuming at stage: {stage_start}).")
 
             # -------------------------------------------------------------
+            # Stage 1.5: Pre-Production DeepSearch Grounding & Canonical State Lock
+            # -------------------------------------------------------------
+            if start_stage_num <= 2:
+                try:
+                    from audiobook_factory.preproduction import run_preproduction
+                    logger.info("\n[*] Executing Pre-Production DeepSearch Grounding & Master Novel Lock...")
+                    run_preproduction(project_dir=project_dir, force=force_rebuild)
+                except Exception as pre_err:
+                    logger.warning(f"  [!] Pre-production grounding notice: {pre_err}. Proceeding with pipeline defaults.")
+
+            # -------------------------------------------------------------
             # Stage 2: Literary Translation (Sense-for-Sense Hindustani)
             # -------------------------------------------------------------
             if hindi:

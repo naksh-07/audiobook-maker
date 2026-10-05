@@ -107,6 +107,7 @@ Output JSON: An object representing sonic_bible.json:
                     prompt=prompt,
                     system_instruction=sys_prompt,
                     task_type=TaskType.DIRECTING,
+                    tools=[{"googleSearch": {}}],
                     response_mime_type="application/json",
                     max_output_tokens=16384,
                     thinking_budget=1024,

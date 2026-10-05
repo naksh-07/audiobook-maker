@@ -52,11 +52,11 @@ class TranslationPolicyConfig(BaseModel):
             "3. SPOKEN NATURALNESS & SYNTAX RESTRUCTURING: Translate sense-for-sense, NOT literal word-for-word. "
             "Break English subordinate clauses into natural, flowing Hindustani cadence suitable for voice performance.\n"
             "4. CONTEXTUAL HINDUSTANI (आटे में नमक जितनी उर्दू): Use Urdu vocabulary as natural atmospheric and emotional "
-            "seasoning (रूह, ख़ौफ़, सन्नाटा, ज़ख़्म, ख़ंजर, दस्तक, जिस्म, हवस, सुकून, शराब) where scene atmosphere and character "
+            "seasoning (सन्नाटा, ख़ामोशी, दस्तक, सुकून, धड़कन, आवाज़, सांसें, दर्द) where scene atmosphere and character "
             "background justify it. Do not force an artificial quota.\n"
             "5. CHARACTER LINGUISTIC IDENTITY: Preserve each speaker's distinct voice, sentence rhythm, sarcasm, and honorific shifts. "
             "Do not reduce every character to the same generic Hindi narrator tone.\n"
-            "6. CANONICAL TERMINOLOGY: Strictly adhere to the canonical Book Bible proper nouns and fantasy terminology.\n"
+            "6. CANONICAL TERMINOLOGY: Strictly adhere to the canonical Book Bible proper nouns and source world terminology.\n"
             "7. ZERO METADATA / ZERO CHATTER: Output ONLY the translated literary prose in Devanagari Markdown. "
             "Do not include translator notes, commentary, disclaimers, or scene overviews."
         )

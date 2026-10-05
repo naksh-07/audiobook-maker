@@ -17,6 +17,7 @@ from typing import Dict, Any, Optional, Callable
 
 from audiobook_factory.translation.book_bible import BookBible, BookEntity
 from audiobook_factory.character_caster import CharacterCaster
+from .novel_deepsearch import NovelDeepSearchEngine, DeepSearchNovelDossier
 from .book_dna_agent import BookDNAAgent
 from .dramatis_personae_agent import DramatisPersonaeAgent
 from .sonic_world_architect import SonicWorldArchitect
@@ -30,6 +31,7 @@ class PreProductionSupervisor:
 
     def __init__(self, model: Optional[str] = None):
         self.model = model
+        self.deepsearch = NovelDeepSearchEngine(model=model)
         self.book_dna_agent = BookDNAAgent(model=model)
         self.dramatis_personae_agent = DramatisPersonaeAgent(model=model)
         self.sonic_architect = SonicWorldArchitect(model=model)
@@ -99,18 +101,41 @@ class PreProductionSupervisor:
         if not combined_sample.strip():
             combined_sample = f"Novel title: {book_metadata.get('title')}"
 
-        # 0. Universal Literary DNA & Register Profiling (Novel-Agnostic)
-        logger.info("  [Room 1 Step 0/4] BookDNAAgent profiling universal literary DNA & register...")
+        # 0A. Canonical Novel DeepSearch Reconnaissance (Google Search Grounding)
+        logger.info("  [Room 1 Step 0A/5] NovelDeepSearch conducting multi-angle web reconnaissance...")
+        dossier = self.deepsearch.conduct_deepsearch(
+            title=book_metadata.get("title", ""),
+            author=book_metadata.get("author", ""),
+            sample_text=combined_sample,
+            project_slug=p_dir.name,
+            call_llm_fn=call_llm_fn,
+        )
+        dossier_path = p_dir / "book_dossier.json"
+        with open(dossier_path, "w", encoding="utf-8") as f:
+            json.dump(dossier.model_dump(), f, ensure_ascii=False, indent=2)
+
+        # 0B. Universal Literary DNA & Register Profiling (Novel-Agnostic)
+        logger.info("  [Room 1 Step 0B/5] BookDNAAgent profiling universal literary DNA & register...")
         book_dna_data = self.book_dna_agent.analyze_book_dna(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
             call_llm_fn=call_llm_fn,
         )
+        # Synchronize with DeepSearch canonical findings
+        if dossier.world_acoustics.banned_anachronisms:
+            book_dna_data["banned_anachronisms"] = dossier.world_acoustics.banned_anachronisms
+        if dossier.linguistic_dialect.acceptable_loanwords:
+            book_dna_data["acceptable_loanwords"] = dossier.linguistic_dialect.acceptable_loanwords
+        if dossier.musical_tradition.signature_instruments:
+            book_dna_data["musical_instruments"] = dossier.musical_tradition.signature_instruments
+        if dossier.literary_dna.historical_era:
+            book_dna_data["historical_era"] = dossier.literary_dna.historical_era
+
         with open(book_dna_path, "w", encoding="utf-8") as f:
             json.dump(book_dna_data, f, ensure_ascii=False, indent=2)
 
-        # 1. Dramatis Personae Extraction (Guided by Book DNA)
-        logger.info("  [Room 1 Step 1/4] DramatisPersonaeAgent extracting character dossiers...")
+        # 1. Dramatis Personae Extraction (Guided by Book DNA & DeepSearch)
+        logger.info("  [Room 1 Step 1/5] DramatisPersonaeAgent extracting character dossiers...")
         characters_list = self.dramatis_personae_agent.extract_dramatis_personae(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
@@ -118,18 +143,40 @@ class PreProductionSupervisor:
             call_llm_fn=call_llm_fn,
         )
 
+        # Merge DeepSearch canonical characters into character list to eliminate blind spots
+        known_names = {c.get("english_name", "").lower() for c in characters_list if isinstance(c, dict)}
+        for d_char in dossier.characters:
+            if d_char.english_name.lower() not in known_names:
+                characters_list.append({
+                    "english_name": d_char.english_name,
+                    "hindi_name": d_char.hindi_name,
+                    "gender": d_char.gender,
+                    "aliases": d_char.aliases,
+                    "prominence": d_char.role_prominence,
+                    "vocal_archetype": d_char.vocal_weight,
+                    "sociolect_trait": d_char.occupation_status or "NEUTRAL",
+                    "recommended_pronoun_level": "aap" if d_char.age_group == "elder" else "tum",
+                    "speech_quirks": "",
+                })
+                known_names.add(d_char.english_name.lower())
+
         # 2. Sonic World Architecture
-        logger.info("  [Room 1 Step 2/4] SonicWorldArchitect synthesizing acoustic DNA...")
+        logger.info("  [Room 1 Step 2/5] SonicWorldArchitect synthesizing acoustic DNA...")
         sonic_bible_data = self.sonic_architect.design_sonic_bible(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
             call_llm_fn=call_llm_fn,
         )
+        if dossier.world_acoustics.banned_anachronisms:
+            sonic_bible_data["banned_anachronisms"] = dossier.world_acoustics.banned_anachronisms
+        if dossier.musical_tradition.signature_instruments:
+            sonic_bible_data["signature_instruments"] = dossier.musical_tradition.signature_instruments
+
         with open(sonic_bible_path, "w", encoding="utf-8") as f:
             json.dump(sonic_bible_data, f, ensure_ascii=False, indent=2)
 
         # 3. Phonetic Lexicon Extraction
-        logger.info("  [Room 1 Step 3/4] PhoneticLexiconDramaturge extracting world lexicon...")
+        logger.info("  [Room 1 Step 3/5] PhoneticLexiconDramaturge extracting world lexicon...")
         lexicon_data = self.lexicon_dramaturge.extract_lexicon_and_phonetics(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
