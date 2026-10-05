@@ -65,7 +65,7 @@ Author: {author}
 
 Sample Passages Across Novel:
 \"\"\"
-{novel_text_sample[:100000]}
+{novel_text_sample[:16000]}
 \"\"\"
 
 Output JSON: An object representing sonic_bible.json:
@@ -107,7 +107,6 @@ Output JSON: An object representing sonic_bible.json:
                     prompt=prompt,
                     system_instruction=sys_prompt,
                     task_type=TaskType.DIRECTING,
-                    tools=[{"googleSearch": {}}],
                     response_mime_type="application/json",
                     max_output_tokens=16384,
                     thinking_budget=1024,

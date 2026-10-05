@@ -74,7 +74,7 @@ Author: {author}
 
 Novel Passage Samples:
 \"\"\"
-{novel_text_sample[:120000]}
+{novel_text_sample[:16000]}
 \"\"\"
 
 Output JSON: A list of character profile objects:
@@ -107,7 +107,6 @@ Output JSON: A list of character profile objects:
                     prompt=prompt,
                     system_instruction=sys_prompt,
                     task_type=TaskType.EXTRACTION,
-                    tools=[{"googleSearch": {}}],
                     response_mime_type="application/json",
                     max_output_tokens=16384,
                     thinking_budget=1024,

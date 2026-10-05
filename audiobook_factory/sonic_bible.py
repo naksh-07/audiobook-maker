@@ -45,16 +45,66 @@ class WorldAcousticProfile(BaseModel):
     """
     model_config = ConfigDict(extra="ignore")
 
-    env_id: str = Field(..., description="Unique space slug (e.g. 'crypt_tomb', 'great_castle_hall', 'swamp_marsh')")
-    display_name: str = Field(..., description="Human-readable environment name")
+    env_id: str = Field(default="", description="Unique space slug (e.g. 'crypt_tomb', 'great_castle_hall', 'swamp_marsh')")
+    display_name: str = Field(default="", description="Human-readable environment name")
     space_type: Literal["indoor_small", "indoor_large", "subterranean", "outdoor_open", "outdoor_enclosed", "ethereal"] = Field(
-        ..., description="Physical enclosure geometry"
+        default="indoor_small", description="Physical enclosure geometry"
     )
     estimated_rt60_ms: int = Field(default=1200, ge=50, le=12000, description="Estimated reverberation time T60 in milliseconds")
     high_freq_damping: float = Field(default=0.5, ge=0.0, le=1.0, description="High-frequency air/wall damping factor")
     early_reflections_level_db: float = Field(default=-14.0, le=0.0, description="Early reflection gain in dB")
     reverb_tail_level_db: float = Field(default=-18.0, le=0.0, description="Late diffuse reverb tail gain in dB")
     ir_preset: str = Field(default="room", description="Impulse response convolution preset (e.g. 'cave', 'wood_hall')")
+    reverb_type: Optional[str] = Field(default=None, description="Raw reverb type identifier")
+    wet_mix: Optional[float] = Field(default=None, description="Wet mix level")
+    predelay_ms: Optional[int] = Field(default=None, description="Pre-delay in ms")
+    decay_time_s: Optional[float] = Field(default=None, description="Decay time in seconds")
+    dominant_materials: List[str] = Field(default_factory=list, description="Dominant physical materials")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_profile(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        reverb_type = data.get("reverb_type") or data.get("ir_preset") or "room"
+
+        if not data.get("display_name"):
+            name = data.get("env_id") or reverb_type
+            data["display_name"] = str(name).replace("_", " ").title()
+
+        if not data.get("space_type"):
+            rt_lower = str(reverb_type).lower()
+            if any(k in rt_lower for k in ["cavern", "cave", "crypt", "tomb", "dungeon", "underground"]):
+                data["space_type"] = "subterranean"
+            elif any(k in rt_lower for k in ["forest", "field", "mountain", "outdoor", "valley", "camp", "road"]):
+                data["space_type"] = "outdoor_open"
+            elif any(k in rt_lower for k in ["courtyard", "alley", "ravine"]):
+                data["space_type"] = "outdoor_enclosed"
+            elif any(k in rt_lower for k in ["hall", "castle", "cathedral", "tavern", "inn", "temple"]):
+                data["space_type"] = "indoor_large"
+            elif any(k in rt_lower for k in ["ethereal", "void", "astral", "dream"]):
+                data["space_type"] = "ethereal"
+            else:
+                data["space_type"] = "indoor_small"
+
+        if "estimated_rt60_ms" not in data and "decay_time_s" in data:
+            try:
+                decay = float(data["decay_time_s"])
+                data["estimated_rt60_ms"] = int(decay * 1000)
+            except (ValueError, TypeError):
+                data["estimated_rt60_ms"] = 1200
+        elif "estimated_rt60_ms" not in data:
+            data["estimated_rt60_ms"] = 1200
+
+        if "estimated_rt60_ms" in data:
+            try:
+                ms = int(data["estimated_rt60_ms"])
+                data["estimated_rt60_ms"] = max(50, min(12000, ms))
+            except (ValueError, TypeError):
+                data["estimated_rt60_ms"] = 1200
+
+        return data
 
 
 class GlobalLoudnessPolicy(BaseModel):
@@ -91,6 +141,17 @@ class SonicBible(BaseModel):
         description="Keyed by env_id"
     )
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_env_keys(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            spaces = data.get("acoustic_spaces")
+            if isinstance(spaces, dict):
+                for env_key, space_dict in spaces.items():
+                    if isinstance(space_dict, dict) and not space_dict.get("env_id"):
+                        space_dict["env_id"] = str(env_key)
+        return data
 
     def register_leitmotif(self, motif: LeitmotifDefinition) -> None:
         """Register or update a leitmotif definition."""

@@ -87,13 +87,13 @@ class PreProductionSupervisor:
 
         sample_passages: list[str] = []
         if chapter_files:
-            # Sample up to 10 chapters distributed across beginning, middle, and end
-            step = max(1, len(chapter_files) // 10)
-            selected_files = chapter_files[::step][:10]
+            # Sample up to 5 chapters distributed across beginning, middle, and end
+            step = max(1, len(chapter_files) // 5)
+            selected_files = chapter_files[::step][:5]
             for cf in selected_files:
                 try:
                     txt = cf.read_text(encoding="utf-8")
-                    sample_passages.append(txt[:8000])
+                    sample_passages.append(txt[:3000])
                 except Exception:
                     pass
 
@@ -102,75 +102,149 @@ class PreProductionSupervisor:
             combined_sample = f"Novel title: {book_metadata.get('title')}"
 
         # 0A. Canonical Novel DeepSearch Reconnaissance (Google Search Grounding)
-        logger.info("  [Room 1 Step 0A/5] NovelDeepSearch conducting multi-angle web reconnaissance...")
-        dossier = self.deepsearch.conduct_deepsearch(
-            title=book_metadata.get("title", ""),
-            author=book_metadata.get("author", ""),
-            sample_text=combined_sample,
-            project_slug=p_dir.name,
-            call_llm_fn=call_llm_fn,
-        )
         dossier_path = p_dir / "book_dossier.json"
-        with open(dossier_path, "w", encoding="utf-8") as f:
-            json.dump(dossier.model_dump(), f, ensure_ascii=False, indent=2)
+        dossier: Optional[DeepSearchNovelDossier] = None
+        if dossier_path.exists():
+            try:
+                with open(dossier_path, "r", encoding="utf-8") as f:
+                    dossier = DeepSearchNovelDossier.model_validate_json(f.read())
+                if dossier and dossier.characters and len(dossier.characters) > 0 and dossier.characters[0].english_name != "Protagonist":
+                    logger.info(f"  [Room 1 Step 0A/5] Canonical Novel DeepSearch dossier verified on disk ({len(dossier.characters)} characters). Reusing existing research.")
+                else:
+                    dossier = None
+            except Exception as e:
+                logger.warning(f"  [Room 1 Step 0A/5] Existing dossier unreadable ({e}), re-running web reconnaissance...")
+                dossier = None
+
+        if dossier is None:
+            logger.info("  [Room 1 Step 0A/5] NovelDeepSearch conducting multi-angle web reconnaissance...")
+            dossier = self.deepsearch.conduct_deepsearch(
+                title=book_metadata.get("title", ""),
+                author=book_metadata.get("author", ""),
+                sample_text=combined_sample,
+                project_slug=p_dir.name,
+                call_llm_fn=call_llm_fn,
+            )
+            with open(dossier_path, "w", encoding="utf-8") as f:
+                json.dump(dossier.model_dump(), f, ensure_ascii=False, indent=2)
 
         # 0B. Universal Literary DNA & Register Profiling (Novel-Agnostic)
-        logger.info("  [Room 1 Step 0B/5] BookDNAAgent profiling universal literary DNA & register...")
-        book_dna_data = self.book_dna_agent.analyze_book_dna(
-            novel_text_sample=combined_sample,
-            book_metadata=book_metadata,
-            call_llm_fn=call_llm_fn,
-        )
+        book_dna_data = None
+        if book_dna_path.exists() and not force:
+            try:
+                with open(book_dna_path, "r", encoding="utf-8") as f:
+                    book_dna_data = json.load(f)
+                if book_dna_data.get("literary_tradition"):
+                    logger.info("  [Room 1 Step 0B/5] Existing book_dna.json verified on disk. Reusing.")
+                else:
+                    book_dna_data = None
+            except Exception:
+                book_dna_data = None
+
+        if book_dna_data is None:
+            logger.info("  [Room 1 Step 0B/5] BookDNAAgent profiling universal literary DNA & register...")
+            book_dna_data = self.book_dna_agent.analyze_book_dna(
+                novel_text_sample=combined_sample,
+                book_metadata=book_metadata,
+                call_llm_fn=call_llm_fn,
+                enable_web_research=(dossier is None),
+            )
         # Synchronize with DeepSearch canonical findings
-        if dossier.world_acoustics.banned_anachronisms:
-            book_dna_data["banned_anachronisms"] = dossier.world_acoustics.banned_anachronisms
-        if dossier.linguistic_dialect.acceptable_loanwords:
-            book_dna_data["acceptable_loanwords"] = dossier.linguistic_dialect.acceptable_loanwords
-        if dossier.musical_tradition.signature_instruments:
-            book_dna_data["musical_instruments"] = dossier.musical_tradition.signature_instruments
-        if dossier.literary_dna.historical_era:
-            book_dna_data["historical_era"] = dossier.literary_dna.historical_era
+        if dossier:
+            if dossier.literary_dna.tradition:
+                book_dna_data["literary_tradition"] = dossier.literary_dna.tradition
+            if dossier.literary_dna.source_fidelity_tier:
+                book_dna_data["source_fidelity_tier"] = dossier.literary_dna.source_fidelity_tier
+            if dossier.literary_dna.narrative_tone:
+                book_dna_data["world_atmosphere_summary"] = dossier.literary_dna.narrative_tone
+            if dossier.world_acoustics.banned_anachronisms:
+                book_dna_data["banned_anachronisms"] = dossier.world_acoustics.banned_anachronisms
+            if dossier.linguistic_dialect.acceptable_loanwords:
+                book_dna_data["acceptable_loanwords"] = dossier.linguistic_dialect.acceptable_loanwords
+            if dossier.musical_tradition.signature_instruments:
+                book_dna_data["musical_instruments"] = dossier.musical_tradition.signature_instruments
+            if dossier.literary_dna.historical_era:
+                book_dna_data["historical_era"] = dossier.literary_dna.historical_era
+            if dossier.linguistic_dialect.recommended_hindustani_register:
+                book_dna_data["regional_dialect_cadence"] = dossier.linguistic_dialect.recommended_hindustani_register
 
         with open(book_dna_path, "w", encoding="utf-8") as f:
             json.dump(book_dna_data, f, ensure_ascii=False, indent=2)
 
         # 1. Dramatis Personae Extraction (Guided by Book DNA & DeepSearch)
         logger.info("  [Room 1 Step 1/5] DramatisPersonaeAgent extracting character dossiers...")
-        characters_list = self.dramatis_personae_agent.extract_dramatis_personae(
+        raw_chars = self.dramatis_personae_agent.extract_dramatis_personae(
             novel_text_sample=combined_sample,
             book_metadata=book_metadata,
             book_dna=book_dna_data,
             call_llm_fn=call_llm_fn,
         )
 
-        # Merge DeepSearch canonical characters into character list to eliminate blind spots
-        known_names = {c.get("english_name", "").lower() for c in characters_list if isinstance(c, dict)}
-        for d_char in dossier.characters:
-            if d_char.english_name.lower() not in known_names:
-                characters_list.append({
-                    "english_name": d_char.english_name,
-                    "hindi_name": d_char.hindi_name,
-                    "gender": d_char.gender,
-                    "aliases": d_char.aliases,
-                    "prominence": d_char.role_prominence,
-                    "vocal_archetype": d_char.vocal_weight,
-                    "sociolect_trait": d_char.occupation_status or "NEUTRAL",
-                    "recommended_pronoun_level": "aap" if d_char.age_group == "elder" else "tum",
-                    "speech_quirks": "",
-                })
-                known_names.add(d_char.english_name.lower())
+        # Seed characters_list with DeepSearch canonical characters so verified Devanagari spellings take precedence
+        characters_list: list[Dict[str, Any]] = []
+        known_names = set()
+        if dossier and dossier.characters:
+            for d_char in dossier.characters:
+                c_name = d_char.english_name.strip()
+                if c_name and c_name.lower() != "protagonist":
+                    characters_list.append({
+                        "english_name": c_name,
+                        "hindi_name": d_char.hindi_name,
+                        "gender": d_char.gender,
+                        "aliases": d_char.aliases,
+                        "prominence": d_char.role_prominence,
+                        "vocal_archetype": d_char.vocal_weight,
+                        "sociolect_trait": d_char.occupation_status or "NEUTRAL",
+                        "recommended_pronoun_level": "aap" if d_char.age_group == "elder" else "tum",
+                        "speech_quirks": "",
+                    })
+                    known_names.add(c_name.lower())
+                    for a in d_char.aliases:
+                        known_names.add(a.lower())
+
+        # Append novel-text discovered characters not already covered by canonical dossier
+        for c in raw_chars:
+            if isinstance(c, dict) and c.get("english_name"):
+                name = c["english_name"].strip()
+                if name.lower() not in known_names and name.lower() not in ("protagonist", "narrator"):
+                    characters_list.append(c)
+                    known_names.add(name.lower())
 
         # 2. Sonic World Architecture
-        logger.info("  [Room 1 Step 2/5] SonicWorldArchitect synthesizing acoustic DNA...")
-        sonic_bible_data = self.sonic_architect.design_sonic_bible(
-            novel_text_sample=combined_sample,
-            book_metadata=book_metadata,
-            call_llm_fn=call_llm_fn,
-        )
-        if dossier.world_acoustics.banned_anachronisms:
-            sonic_bible_data["banned_anachronisms"] = dossier.world_acoustics.banned_anachronisms
-        if dossier.musical_tradition.signature_instruments:
-            sonic_bible_data["signature_instruments"] = dossier.musical_tradition.signature_instruments
+        sonic_bible_data = None
+        if sonic_bible_path.exists() and not force:
+            try:
+                with open(sonic_bible_path, "r", encoding="utf-8") as f:
+                    sonic_bible_data = json.load(f)
+                if sonic_bible_data.get("acoustic_spaces"):
+                    logger.info("  [Room 1 Step 2/5] Existing sonic_bible.json verified on disk. Reusing.")
+                else:
+                    sonic_bible_data = None
+            except Exception:
+                sonic_bible_data = None
+
+        if sonic_bible_data is None:
+            logger.info("  [Room 1 Step 2/5] SonicWorldArchitect synthesizing acoustic DNA...")
+            sonic_bible_data = self.sonic_architect.design_sonic_bible(
+                novel_text_sample=combined_sample,
+                book_metadata=book_metadata,
+                call_llm_fn=call_llm_fn,
+            )
+        if dossier:
+            if dossier.world_acoustics.banned_anachronisms:
+                sonic_bible_data["banned_anachronisms"] = dossier.world_acoustics.banned_anachronisms
+            if dossier.musical_tradition.signature_instruments:
+                sonic_bible_data["signature_instruments"] = dossier.musical_tradition.signature_instruments
+            if dossier.musical_tradition.cultural_tradition:
+                sonic_bible_data["cultural_tradition"] = dossier.musical_tradition.cultural_tradition
+            if dossier.musical_tradition.primary_moods:
+                sonic_bible_data["primary_moods"] = dossier.musical_tradition.primary_moods
+            if dossier.world_acoustics.primary_materials:
+                sonic_bible_data["primary_materials"] = dossier.world_acoustics.primary_materials
+            if dossier.world_acoustics.architectural_style:
+                sonic_bible_data["architectural_style"] = dossier.world_acoustics.architectural_style
+            if dossier.literary_dna.historical_era:
+                sonic_bible_data["primary_era"] = dossier.literary_dna.historical_era
 
         with open(sonic_bible_path, "w", encoding="utf-8") as f:
             json.dump(sonic_bible_data, f, ensure_ascii=False, indent=2)

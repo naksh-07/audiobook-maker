@@ -57,6 +57,11 @@ class MusicCue(BaseModel):
         """Alias for track_name to maintain uniform cue interface across Ambience, Foley, and Music."""
         return self.track_name
 
+    @asset_path.setter
+    def asset_path(self, value: str) -> None:
+        """Allow setting asset_path as alias for track_name."""
+        self.track_name = str(value)
+
     @model_validator(mode="after")
     def clamp_fade_envelope(self) -> MusicCue:
         total_fade = (self.fade_in_ms or 0) + (self.fade_out_ms or 0)

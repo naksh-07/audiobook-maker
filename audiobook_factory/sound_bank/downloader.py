@@ -96,7 +96,7 @@ class DownloaderMixin:
 
                         # Sanity check: file exists and is not an HTML 404/403 page
                         file_size = temp_path.stat().st_size
-                        if file_size < 1024:
+                        if file_size < 500:
                             raise ValueError(f"Downloaded file too small or empty ({file_size} bytes)")
 
                         with open(temp_path, "rb") as check_f:

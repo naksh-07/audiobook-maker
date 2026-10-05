@@ -168,11 +168,13 @@ def call_gemini(
         if not candidate_models:
             raise LLMUnavailableError(f"STRICT HALT: No valid models available for task {task_type}")
 
-        if attempt > 0 and len(candidate_models) > 1:
+        if model:
+            curr_model = model
+        elif env_model:
+            curr_model = env_model
+        elif attempt > 0 and len(candidate_models) > 1:
             # Automatic candidate rotation on retries/errors (never hammer a single model)
             curr_model = candidate_models[attempt % len(candidate_models)]
-        elif model:
-            curr_model = model
         else:
             try:
                 curr_model = model_mgr.resolve_active_model(task_type, api_key=curr_key)

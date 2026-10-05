@@ -200,11 +200,11 @@ class AudioVerificationGate:
         # 2. Duration Contract Verification by Category
         # ---------------------------------------------------------------------
         if cat_upper in ("AMB", "AMBIENCE"):
-            # Continuous scene beds must be >= 45s to prevent nauseating loops
-            if is_continuous_bed and dur < 45.0:
+            # Continuous scene beds must be >= 25s to prevent short loop fatigue while accepting BBC 30s beds
+            if is_continuous_bed and dur < 25.0:
                 return VerificationResult(
                     is_valid=False,
-                    reason=f"Ambience Bed Rejected: Duration {dur:.2f}s is under the 45.0s minimum threshold. Short files cause audible loop fatigue.",
+                    reason=f"Ambience Bed Rejected: Duration {dur:.2f}s is under the 25.0s minimum threshold. Short files cause audible loop fatigue.",
                     metrics=probe,
                     fallback_recommended=True,
                 )

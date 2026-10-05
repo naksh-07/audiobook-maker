@@ -61,7 +61,7 @@ Author: {author}
 
 Novel Sample Passages:
 \"\"\"
-{novel_text_sample[:100000]}
+{novel_text_sample[:16000]}
 \"\"\"
 
 Output JSON: An object matching the required schema:
@@ -86,7 +86,6 @@ Output JSON: An object matching the required schema:
                     prompt=prompt,
                     system_instruction=sys_prompt,
                     task_type=TaskType.EXTRACTION,
-                    tools=[{"googleSearch": {}}],
                     response_mime_type="application/json",
                     max_output_tokens=16384,
                     thinking_budget=1024,

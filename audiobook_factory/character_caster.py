@@ -80,8 +80,10 @@ class CharacterCaster:
                 logger.warning(f"  [!] Failed to read existing roster, recasting: {e}")
 
         # Collect text samples from available chapters
-        search_dir = project_dir / "translation" if use_hindi and (project_dir / "translation").exists() else project_dir / "extracted"
-        if not search_dir.exists():
+        trans_dir = project_dir / "translation"
+        if use_hindi and trans_dir.exists() and any(trans_dir.glob("chapter_*.md")):
+            search_dir = trans_dir
+        else:
             search_dir = project_dir / "extracted"
 
         chap_files = sorted(search_dir.glob("chapter_*.md"))
