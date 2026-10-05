@@ -15,20 +15,17 @@
   2. TTS Synthesis: 10 speech segments cached in `audio_chunks/`; dialogue composite `chapter_001_hi_dialogue.wav`.
   3. Discrete 5-Track Stems: Rendered `chapter_001_stem_DX.wav`, `_stem_FX.wav`, `_stem_MX.wav`, `_stem_AMB.wav`, `_stem_ME.wav`.
   4. Final Broadcast Master: `chapter_001_hi_cinematic.m4a` & `chapter_001_cinema_master.wav` (0.97 min).
-  5. Architecture Fixes: `MusicCue.asset_path` property setter, `SonicBible` auto-mapping validator, `downloader.py` 500-byte threshold, `AudioVerificationGate` 25.0s ambience bed threshold.
 
-## Milestone: Chapter 2 ("The Bounds of Reason" - Story 1) Production (COMPLETE)
-- **Status**: COMPLETE & EBU R128 CERTIFIED (-19.0 LUFS, -1.8 dBTP, 11.1 min).
-- **Deliverables**:
-  1. Translation & Script: `chapter_002_hi.md` (22.3 KB); `chapter_002_hi_script.json` (73 segments, Stanislavski directing & spatial blocking).
-  2. TTS Synthesis: 73 segments synthesized & cached in `audio_chunks/`; dialogue track `chapter_002_hi_dialogue.wav` (123.88 MB).
-  3. Discrete 5-Track Stems: Rendered `DX`, `FX`, `MX`, `AMB`, `ME` with -16dB sidechain ducking.
-  4. Final Broadcast Master: `chapter_002_hi_cinematic.m4a` (11.1 min, LUFS: -19.3, TP: -1.7 dBTP, Gate 5 PASSED).
+## Milestone: Chapter 2 Production & Read-Only Forensic Audit (COMPLETED & TAGGED)
+- **Status**: TAGGED AS `v4.0.0-unstable-buggy` — Production audio verified mechanically but flagged acoustically/artistically.
+- **Audit Findings**:
+  1. Dialogue: Dropped source paras 14, 41, 42; 2 segments missing takes (passed by Gate 2.8).
+  2. Translation: `thinking_budget=0`, Essi Daven & langur hallucinations, "मायावी शिकारी" drift.
+  3. SFX/Foley: `timeline_ledger.py` line 327 `foley_tag` key mismatch caused 100% empty cues; 0 foley rendered; FX stem at -51.81 dB RMS.
+  4. Online/Offline: Archive.org 503 & Gamesounds 404 aborted MultiAgentDirector to legacy spotter; 27,654 local files bypassed.
+  5. Gates: Gate 5 & MixJudge rubber-stamped silent FX/MX as 1.0; Scene 1 REVIEW_REQUIRED ignored.
+- **Artifact**: `docs/audits/chapter-002-pipeline-forensic-audit.md`.
 
-## Next Milestone: Chapter 3 Production
-- **Target**: Ingest `chapter_003.md` (Continuation of "The Bounds of Reason").
-- **Status**: READY_FOR_DISPATCH upon user approval.
-
-
-
-
+## Active State: Paused for Future Remediation
+- **Tag**: `v4.0.0-unstable-buggy` pushed to GitHub.
+- **Next Focus**: Foley schema key fix, local-first sound bank retrieval, graceful download fallback, thinking budget restoration, and gate rigor overhaul.

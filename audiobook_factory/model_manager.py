@@ -92,6 +92,7 @@ EXCLUDED_PATTERNS = (
     "computer-use",
     "customtools",
     "3.5-flash",
+    "3.6-flash",
     "3.8-flash",
     "3.7-flash",
     "omni",
