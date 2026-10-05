@@ -143,7 +143,7 @@ The Dramatic Performance Realization Layer is built around 14 discrete, battle-t
 ```python
 class PerformanceDirection(BaseModel):
     # 1. Identity & Provenance
-    direction_id: str                      # Deterministic ID (e.g., 'pd_0001_geralt')
+    direction_id: str                      # Deterministic ID (e.g., 'pd_0001_protagonist')
     segment_uid: str                       # ScreenplaySegment UID
     index: int                             # 1-indexed monotonic chapter sequence number
     speaker: str                           # Canonical character speaker name
@@ -420,7 +420,7 @@ Monitors running actor performance telemetry across scenes and chapters:
 - Tracks total lines delivered, total spoken duration, moving window of pacing, vocal energy, restraint levels, and emotional diversity.
 - **Drift Detection:** Audits scene directions against established character baselines. If a character's average scene pace deviates by more than $30\%$ ($|\text{pace}_{\text{scene}} - \text{pace}_{\text{est}}| / \text{pace}_{\text{est}} > 0.30$) without dramatic motivation, emits actionable warnings:
   ```
-  [!] Performance Drift Alert: Geralt average pace shifted by 38.5% in scene (established: 0.95, scene: 1.32).
+  [!] Performance Drift Alert: Protagonist average pace shifted by 38.5% in scene (established: 0.95, scene: 1.32).
   ```
 
 ---
@@ -441,7 +441,7 @@ A foundational invariant of Audiobook Maker v4.0 is that **the author's spoken d
 ### Architectural Separation of Concerns
 1. **Dialogue Verbatim Invariance:** The text delivered to the listener must match the author's prose bit-for-bit (subject only to authorized stage-1 normalizations like quote uncurling and Devanagari script hygiene).
 2. **Zero Inline Stage Direction Bleed:** Under no circumstances are parenthetical stage directions or acting adjectives injected into the spoken text.
-   - ❌ *Incorrect (Legacy):* `Geralt: "(coldly and with suppressed anger) Step back."` $\rightarrow$ TTS models often read the parenthetical aloud or stumble over cadence.
+   - ❌ *Incorrect (Legacy):* `Protagonist: "(coldly and with suppressed anger) Step back."` $\rightarrow$ TTS models often read the parenthetical aloud or stumble over cadence.
    - ✅ *Correct (v4.0):*
      - `text`: `"Step back."`
      - `speechMetadata.style`: `"cold menace, acting to threaten, iron restraint, low resonant chest register"`
@@ -502,7 +502,7 @@ selector = IntelligentTakeSelector(evaluator=evaluator)
 segments = [
     ScreenplaySegment(
         index=1,
-        speaker="Geralt",
+        speaker="Protagonist",
         text="Put the steel away. Now.",
         emotion="cold_menace",
         performance_priority="climactic",
@@ -510,7 +510,7 @@ segments = [
     ScreenplaySegment(
         index=2,
         speaker="Bandit",
-        text="Make us, witcher—",
+        text="Make us try—",
         emotion="defiance",
         is_interruption=True,
     ),
@@ -551,13 +551,13 @@ Gate 2.8 and the Dramatic Performance Realization Layer are integrated into the 
 
 ```powershell
 # Direct and audit chapter screenplay performance
-python audiobook_cli.py script audiobooks/projects/witcher_blood_of_elves --audit-only
+python audiobook_cli.py script audiobooks/projects/my_project --audit-only
 
 # Synthesize dialogue with multi-take allocation and Gate 2.8 validation
-python audiobook_cli.py synthesize audiobooks/projects/witcher_blood_of_elves --chapter 1
+python audiobook_cli.py synthesize audiobooks/projects/my_project --chapter 1
 
 # Execute full autonomous chapter production with Gate 2.8 pre-mix gating
-python audiobook_cli.py produce audiobooks/projects/witcher_blood_of_elves --chapter 1 --auto
+python audiobook_cli.py produce audiobooks/projects/my_project --chapter 1 --auto
 ```
 
 ---

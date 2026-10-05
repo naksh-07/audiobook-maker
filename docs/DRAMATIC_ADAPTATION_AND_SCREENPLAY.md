@@ -426,7 +426,7 @@ flowchart TD
     end
 ```
 
-1. **`COLD_CYNIC` (e.g., Geralt, weary mercenaries, hardened inquisitors):**
+1. **`COLD_CYNIC` (e.g., stoic lone-wolf operatives, weary mercenaries, hardened detectives):**
    - Baseline Pace: `0.92` | Baseline Energy: `0.70` | Articulation: `deliberate_crisp` | Restraint: `0.85`
    - Emotional Delivery: Anger is expressed as `cold_menace`; fear as `silent_vigilance`; sadness as `weary_resignation`.
    - Speech Quirks: Cynical grunt prosody (`[growl] हूँ...`, `[sighs] हम्म...`), $1.2\text{s}$ pregnant pauses before retorts.
@@ -436,7 +436,7 @@ flowchart TD
    - Emotional Delivery: Anger expressed as `cutting_condescension`; fear as `brittle_disdain`; humor as `wry_amused_sneer`.
    - Speech Quirks: Elongated elegant vowels, rapid dismissive cadence.
    - Performance Rules: Emphasize precise consonants to convey superiority; treat dialogue as verbal fencing where every pause asserts status.
-3. **`THARKI_BARD` (e.g., Dandelion / Jaskier, roguish poets, charismatic gamblers):**
+3. **`THARKI_BARD` (e.g., flamboyant wanderers, roguish poets, charismatic gamblers):**
    - Baseline Pace: `1.08` | Baseline Energy: `0.90` | Articulation: `lyrical_colloquial` | Restraint: `0.30`
    - Emotional Delivery: Anger expressed as `theatrical_indignation`; fear as `dramatic_flustered_panic`; affection as `effusive_flirtatious_warmth`.
    - Speech Quirks: Melodic upward pitch inflections, audible dramatic gasps.

@@ -165,7 +165,7 @@ def get_reverb_filter_string(preset: str = "room") -> Tuple[str, float]:
 ---
 
 ### 9. Hollywood & AAA-Game Combat Sound Design & Action Acoustics (ADR-017)
-In AAA video games (God of War, The Witcher 3) and Hollywood action films, combat audio is never an unstructured din of loud sound effects playing simultaneously over shouting characters. Such an approach causes severe acoustic masking (DMR < +12 dB) and mono phase collapse ($r < 0.85$).
+In premier AAA game audio productions and Hollywood action films, combat audio is never an unstructured din of loud sound effects playing simultaneously over shouting characters. Such an approach causes severe acoustic masking (DMR < +12 dB) and mono phase collapse ($r < 0.85$).
 
 Audiobook Maker implements a five-pillar action acoustic architecture:
 
@@ -196,8 +196,8 @@ Every major physical impact (blade deflection, shield bash, bone crush, warhamme
 
 ---
 
-### 10. Harry Potter / Pottermore Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
-To achieve the spatial immersion of BBC Radio 4 and Pottermore audio dramas, Audiobook Maker decouples environmental ambience into 4 independent stems per scene:
+### 10. Hollywood Full-Cast Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
+To achieve the spatial immersion of BBC Radio 4 and premier GraphicAudio dramas, Audiobook Maker decouples environmental ambience into 4 independent stems per scene:
 
 ```text
 Scene Ambience Manifest (SceneSoundscapeManifest)
@@ -226,7 +226,7 @@ Scene Ambience Manifest (SceneSoundscapeManifest)
 - If the combined Music, Foley, and Ambience bed ($ME$) encroaches within 10 dB of the vocal dialogue track ($DX$), the render reports a DMR violation in `chapter_XXX_stem_ledger.json`.
 
 #### E. Pre-Baked Multi-Phase Composite Asset Baker
-- Multi-phase sound effects (e.g. Harry Potter magic spells: Phase A Gesture Pre-roll $0-100\text{ ms}$ $\rightarrow$ Phase B Arcane Exciter $100-300\text{ ms}$ $\rightarrow$ Phase C Sub-Bass Dissipation $40-60\text{ Hz}$) are pre-rendered offline using [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py).
+- Multi-phase sound effects (e.g. dramatic arcane spells or complex tactile props: Phase A Gesture Pre-roll $0-100\text{ ms}$ $\rightarrow$ Phase B Exciter $100-300\text{ ms}$ $\rightarrow$ Phase C Sub-Bass Dissipation $40-60\text{ Hz}$) are pre-rendered offline using [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py).
 - Pre-baked assets (`magic_lumos_light.wav`, `magic_expelliarmus_kinetic.wav`, `tactile_parchment_quill_scratch.wav`) are indexed directly into the SQLite FTS5 Sound Bank, ensuring zero runtime FFmpeg filter graph bloat.
 
 ---

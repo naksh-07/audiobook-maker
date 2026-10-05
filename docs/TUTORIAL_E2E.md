@@ -27,24 +27,25 @@ python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('API 
 
 ## 🍳 Recipe 1: 1-Click Autonomous Cinematic Hindi Audio Drama
 
-Transform an English fantasy novel into a full-cast, dramatized Hindustani audio drama complete with orchestral score, physical Foley, and `.m4b` delivery.
+Transform any novel (classic literature, period drama, mystery, sci-fi, fantasy) into a full-cast, dramatized Hindustani audio drama complete with score, physical Foley, and `.m4b` delivery.
 
 ```bash
-python audiobook_cli.py auto books/the_witcher.epub \
+python audiobook_cli.py auto books/my_novel.epub \
   --hindi \
   --dramatized \
   --voice Charon \
-  --cover covers/witcher.jpg \
+  --cover covers/cover.jpg \
   --workers 4
 ```
 
 ### What Happens Under the Hood:
-1. **Extraction**: The EPUB is dissected into clean Markdown chapters (`audiobooks/projects/the_witcher/extracted/`).
-2. **Translation**: A two-pass dramatic Hindustani translation runs, generating a character glossary (`glossary.json`) and preserving archaic fantasy honorifics.
+0. **Pre-Production & DeepSearch Reconnaissance**: `NovelDeepSearchEngine` queries Google Search to discover literary DNA, historical era, dramatis personae, material acoustics, and banned anachronisms, locking `book_dossier.json`.
+1. **Extraction**: The EPUB is dissected into clean Markdown chapters (`audiobooks/projects/my_novel/extracted/`).
+2. **Translation**: A two-pass dramatic Hindustani translation runs, automatically tuned to the novel's DeepSearch register and honorific hierarchy (*Aap/Tum/Tu*).
 3. **Screenplay Scripting**: Dialogue is attributed to distinct characters using sliding-window attribution. Pacing pauses, spatial panning, and acting directives are embedded.
-4. **Speech Synthesis**: Chunks are synthesized concurrently via Gemini 3.1 Flash TTS (`Charon`, `Aoede`, `Puck`, `Fenrir`) using a token-bucket rate limiter.
+4. **Speech Synthesis**: Chunks are synthesized concurrently via Gemini 3.1 Flash TTS (`Charon`, `Aoede`, `Puck`, `Fenrir`, `Kore`) using a token-bucket rate limiter.
 5. **Acoustic Directing**: `AgentDirector` carves acoustic silence ($\ge 60\%$), queries the SQLite Sound Bank for musical underscore, and places Foley cues.
-6. **Mastering & Packaging**: FFmpeg normalizes audio to EBU R128 (-19 LUFS), embeds cover art and chapter seek points, and produces `audiobooks/output/the_witcher.m4b`.
+6. **Mastering & Packaging**: FFmpeg normalizes audio to EBU R128 (-19 LUFS), embeds cover art and chapter seek points, and produces `audiobooks/output/my_novel.m4b`.
 
 ---
 
@@ -107,8 +108,8 @@ Open `chapter_001_script.json` in your editor. You can fine-tune any segment:
 {
   "index": 14,
   "type": "dialogue",
-  "speaker": "Geralt",
-  "text": "People like to invent monsters and monstrosities.",
+  "speaker": "Protagonist",
+  "text": "Truth has a quiet habit of waiting in the shadows.",
   "emotion": "melancholic_weary",
   "acting": {
     "delivery_style": "low_growl_cynical",
@@ -161,7 +162,7 @@ If your Google AI Studio daily API token quota is reached during synthesis, prod
 1. **State Preservation**: The [`ProjectStateLedger`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/state.py) automatically commits state to `project_state.json`. Every successfully generated `.wav` chunk remains safely on disk in `audio_chunks/`.
 2. **Quota Reset**: After the quota resets (or after updating `.env` with a fresh API key), simply rerun the same command:
    ```bash
-   python audiobook_cli.py produce witcher1 --all
+   python audiobook_cli.py produce my_novel --all
    ```
 3. **Smart Resume**: The TTS Dispatcher probes existing chunks on disk, skips all segments already synthesized, and resumes seamlessly from the exact unrendered segment.
 
@@ -173,10 +174,10 @@ If a sound engineer wishes to perform custom mastering or surround mixing in Pro
 
 ```bash
 # Verify exported stems for Chapter 1
-python audiobook_cli.py stems witcher1 --chapter 1
+python audiobook_cli.py stems my_novel --chapter 1
 ```
 
-The stems reside at `audiobooks/projects/witcher1/mastered/stems/`:
+The stems reside at `audiobooks/projects/my_novel/mastered/stems/`:
 - **`chapter_001_stem_DX.wav`**: Dry/Processed Voice Dialogue (Vocal Corridor Centered).
 - **`chapter_001_stem_MX.wav`**: Musical Score & Cues (with 2.2kHz notch).
 - **`chapter_001_stem_FX.wav`**: Tactile Foley & Dramatic SFX.
@@ -193,10 +194,10 @@ Before distributing your audiobook to platforms, verify broadcast compliance:
 
 ```bash
 # 1. Audit individual chapter (Gates 0 - 5.3)
-python audiobook_cli.py audit witcher1 --chapter 1
+python audiobook_cli.py audit my_novel --chapter 1
 
 # 2. Run full-book macro certification (Gates 6A - 6D)
-python audiobook_cli.py audit-book witcher1
+python audiobook_cli.py audit-book my_novel
 ```
 
 ### Understanding Audit Output:

@@ -110,7 +110,7 @@ Content-Type: application/json
 
 > [!CAUTION]
 > **API Structural Invariant**:
-> Attempting to pass multiple speakers in a single concatenated string (e.g., `"Geralt: ...\nCiri: ..."`) will immediately trigger:
+> Attempting to pass multiple speakers in a single concatenated string (e.g., `"Protagonist: ...\nCompanion: ..."`) will immediately trigger:
 > `HTTP 400 Bad Request: "Multi-speaker generation requests must specify speaker names for each part in the contents."`
 > 
 > You **MUST** pass each character turn as an independent part object inside `contents[0].parts`, explicitly declaring `speechMetadata.speaker`. Furthermore, `multiSpeakerVoiceConfig` in `v1beta` currently requires **exactly 2 speakers** per API batch.
@@ -125,16 +125,16 @@ Content-Type: application/json
       "role": "user",
       "parts": [
         {
-          "text": "Run, Ciri! <gasp> Into the trees, now!",
+          "text": "Run! <gasp> Into the trees, now!",
           "speechMetadata": {
-            "speaker": "Geralt",
+            "speaker": "Protagonist",
             "style": "urgent commanding shout, raspy breath, high adrenaline"
           }
         },
         {
-          "text": "I won't leave you, Geralt! <sob> Look out behind you!",
+          "text": "I won't leave you! <sob> Look out behind you!",
           "speechMetadata": {
-            "speaker": "Ciri",
+            "speaker": "Companion",
             "style": "tearful defiant plea, cracking voice, terrified speed"
           }
         }
@@ -147,13 +147,13 @@ Content-Type: application/json
       "multiSpeakerVoiceConfig": {
         "speakerVoiceConfigs": [
           {
-            "speaker": "Geralt",
+            "speaker": "Protagonist",
             "voiceConfig": {
               "prebuiltVoiceConfig": { "voiceName": "Fenrir" }
             }
           },
           {
-            "speaker": "Ciri",
+            "speaker": "Companion",
             "voiceConfig": {
               "prebuiltVoiceConfig": { "voiceName": "Kore" }
             }

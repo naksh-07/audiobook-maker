@@ -242,7 +242,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Dynamic Ducking & Tinnitus Shockwave:** `PROFILE_COMBAT_SHOCK` ($-24\text{ dB}$ attenuation, $4000\text{ ms}$ release) and `PROFILE_COMBAT` ($-22\text{ dB}$, $250\text{ ms}$ release) in `acoustic_bus_matrix.py`. "The Smother Cut" applies 150–250ms of hard digital silence right before fatal impacts.
 - **Staccato Combat Prose & Neural Tags:** Narrative sentences fracture into rapid 2–4 word staccato beats ('कदम पीछे। तलवार का पैंतरा। वार। चूक गया!'), paired with validated neural tags: `[bellowing battlecry]`, `[combat strain]`, `[diaphragm strain]`, `[guttural grunt on blade deflect]`, `[spits blood]`, `[choked gasp]`, `[ragged heaving pant]`, `[slow motion]`.
 
-### 11. Harry Potter / Pottermore Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
+### 11. Hollywood Full-Cast Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
 - **4-Stem Decoupled Scene Acoustics:** Replaces flat single-loop ambience with 4 distinct stems per scene managed via [`SceneSoundscapeManifest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/scene_acoustics.py):
   - *Stem 1 (Base Room Tone):* Architectural cavity resonance ($-34$ to $-36\text{ LUFS}$, stereo width 1.35).
   - *Stem 2 (Weather & Macro World):* Exterior storm, gale, blizzard, or rain ($-30$ to $-32\text{ LUFS}$, stereo width 1.40).
@@ -252,7 +252,7 @@ Quality is mathematically audited at every stage of the pipeline:
 - **Zero-Token Local Stochastic Transient Generator:** Procedurally discovers $\ge 600\text{ ms}$ speech pauses from `TimelineLedger`, scattering non-repetitive micro-events (distant owls, candle sparks, floor creaks, ticking clocks) without consuming LLM tokens.
 - **Voice Limiter & Priority Stealing:** `filter_concurrency_window` ($200\text{ ms}$ window, max 3 concurrent Foley cues) eliminates transient clutter, collisions, and acoustic mud.
 - **Dialogue-to-Masking Ratio (DMR $\ge +10.0$ dB) Validation:** Automated proxy verification in `CinemaAudioEngine` and `StemLedger` guarantees dialogue clarity over the composite background bed.
-- **Offline Foley & Magic Composite Asset Baker:** [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py) pre-renders multi-phase magic spells (`magic_lumos_light.wav`, `magic_expelliarmus_kinetic.wav`) and tactile props (`tactile_parchment_quill_scratch.wav`), indexing them permanently in SQLite FTS5 for zero-latency retrieval with zero runtime FFmpeg graph bloat.
+- **Offline Foley & Composite Asset Baker:** [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py) pre-renders multi-phase dramatic composite cues and tactile props, indexing them permanently in SQLite FTS5 for zero-latency retrieval with zero runtime FFmpeg graph bloat.
 
 ### 12. Overloaded LLM Prompt Decomposition, Non-Hammering Key Pool & Anti-Fake Creative Hardening (ADR-045)
 - **Centralized Non-Hammering Key Pool Client ([`llm_client.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/llm_client.py)):**
@@ -294,7 +294,7 @@ Production testing of complex multi-character dialogical exchanges revealed subt
 - **Pre-Flight Chapter Voice Validation:** `TTSDispatcher.synthesize_chapter_script()` executes a zero-cost dry-run pre-flight validation pass across all dialogue segments before initiating any external API calls, halting immediately if an unmapped speaker is detected.
 - **Gate 2 Whitelist Enforcement:** [`audit_gate2_script()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py) auto-discovers project catalogs and validates speaker keys against the canonical whitelist, failing early before synthesis starts.
 - **Gate 1 Acoustic Gender Alignment:** [`audit_gate1_roster()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/gate_auditor.py) verifies persona gender alignment, generating warnings if male characters are assigned female voice personas or vice versa.
-- **Two-Pass Screenplay Pronoun & Alias Normalization:** [`clean_screenplay_pass2()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py) disambiguates conversational pronouns in both English (`he`, `she`, `the man`, `the woman`) and Hindi (`उसने`, `वह`, `आदमी`, `लड़की`, `महिला`), and strips parenthetical actor annotations (e.g. `Geralt (Witcher)` $\rightarrow$ `Geralt`).
+- **Two-Pass Screenplay Pronoun & Alias Normalization:** [`clean_screenplay_pass2()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py) disambiguates conversational pronouns in both English (`he`, `she`, `the man`, `the woman`) and Hindi (`उसने`, `वह`, `आदमी`, `लड़की`, `महिला`) to the most recently active matching character, and strips parenthetical actor annotations (e.g. `Character (Role)` $\rightarrow$ `Character`).
 
 ### 15. Audio Drama Timeline Sync, Bilingual Foley Staging & Soundscape Partitioning (ADR-022)
 Elimates timeline drift, Foley placement anomalies, and acoustic masking across full-novel productions:
@@ -487,12 +487,15 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - **Era & Franchise Vocabulary Sanitizer:** Screens cues against era-banned vocabulary (`ERA_BANNED_SUBSTRINGS`), eliminating modern vehicle engines, phones, sirens, and contemporary chatter from medieval fantasy soundscapes.
   - Emits canonical audit ledger `chapter_XXX_audio_reality_ledger.json`.
 
-### 26. Universal Project Classifier & Automated Sonic Bible Generator (Stages 0.5 & 0.6)
+### 26. Canonical Novel DeepSearch Engine & Automated Sonic Bible Generator (Stages 0A, 0.5 & 0.6)
 *(See authoritative manual: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))*
-- **Universal Project Classifier ([`audiobook_factory/project_classifier.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/project_classifier.py)):**
-  - Dynamically classifies book era (`MEDIEVAL_FANTASY`, `SPACE_OPERA_SCIFI`, `RETRO_FUTURE_CYBERPUNK`, `PULP_NOIR_1940S`, `VICTORIAN_EDWARDIAN`, `MODERN_CONTEMPORARY`), genre, franchise affinity, primary acoustic space, and dramatic theme from metadata and source prose with zero hardcoded project biases.
-  - Built-in signatures for major literary franchises (The Witcher, Dune, Tolkien Middle-Earth, Sherlock Holmes, Lovecraft Cthulhu).
-- **Automated Sonic Bible Generator ([`audiobook_factory/sonic_bible_generator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_bible_generator.py)):**
+- **Stage 0A: Canonical Novel DeepSearch Engine ([`audiobook_factory/preproduction/novel_deepsearch.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/preproduction/novel_deepsearch.py)):**
+  - Executes live Google Search Grounded reconnaissance (`tools: [{"googleSearch": {}}]`) for any novel in world literature, extracting Literary DNA, Dramatis Personae, Material Acoustics, Banned Anachronisms, Musical Traditions, and Spoken Dialect.
+  - Locks authoritative `book_dossier.json` and `book_dna.json` before downstream generation begins, preventing hallucinations.
+  - Robust offline fallback covering rural realism, somatic drama, golden age mystery, sci-fi, and universal contemporary literature.
+- **Stage 0.5: Universal Project Classifier ([`audiobook_factory/project_classifier.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/project_classifier.py)):**
+  - Dynamically classifies book era (`RURAL_HISTORICAL`, `SPACE_OPERA_SCIFI`, `RETRO_FUTURE_CYBERPUNK`, `PULP_NOIR_1940S`, `VICTORIAN_EDWARDIAN`, `MEDIEVAL_FANTASY`, `MODERN_CONTEMPORARY`), genre, universe affinity, primary acoustic space, and dramatic theme via Google Search Grounding with zero hardcoded project dictionaries.
+- **Stage 0.6: Automated Sonic Bible Generator ([`audiobook_factory/sonic_bible_generator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_bible_generator.py)):**
   - Stage 0.6 automated compiler synthesizing project-level `sound_bible.json` without manual intervention.
   - Establishes canonical World Acoustic Spaces (`room_tone`, primary environment, default reverb IRs), character leitmotif signatures, and Global Loudness Policies (-19.0 LUFS, -1.5 dBTP, LRA $\le 8.5\text{ LU}$, DMR $\ge 14.0\text{ dB}$, phase correlation $r \ge 0.20$).
 
@@ -538,7 +541,7 @@ Elimates timeline drift, Foley placement anomalies, and acoustic masking across 
   - Gate 3 fail-closed when directing artifacts are missing; Stage 11 operates in audited degraded mode with `LLM_SOUND_DESIGN_STRICT` flag.
 - **Archival of 39 Dead & Shadow Modules**: Safely archived legacy `sound_design/` shadow package, legacy `real_audio_*` modules, `krutidev_transcoder.py`, and test scripts to `archive/` with zero data loss.
 - **Master Sound Bank Synthetic Noise Purge**: Permanently purged 5 dummy `anoisesrc` files from disk and `sound_bank.db`. Rebuilt SQLite FTS5 search indexes.
-- **Broadcast Production Milestone**: *Sword of Destiny* Chapter 1 (1.11 min) and Chapter 2 (13.10 min, 785.65s, 71 segments) 100% Broadcast Certified EBU R128 (-19.0 LUFS, TP -1.5 dBTP, Phase $r=0.554$, DMR +32.1 dB). Zero synthetic noise, zero loop fatigue, 100% authentic Witcher 3 Studio Library soundscape.
+- **Broadcast Production Milestone**: Benchmark Chapter 1 (1.11 min) and Chapter 2 (13.10 min, 785.65s, 71 segments) 100% Broadcast Certified EBU R128 (-19.0 LUFS, TP -1.5 dBTP, Phase $r=0.554$, DMR +32.1 dB). Zero synthetic noise, zero loop fatigue, 100% authentic Master Studio Library soundscape.
 
 ### 31. Master 5-Phase Controlled Forensic Remediation (ADR-050)
 - **Phase 1: Runtime Integrity & Zero F821 Undefined Names**:

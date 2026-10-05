@@ -495,7 +495,7 @@ flowchart TD
 ### 📚 Upgrade 4: Literary Chapter vs. Production Chunk Distinction
 
 Audiobook pipelines routinely confuse two distinct concepts:
-1. **Literary Chapters:** Authentic structural boundaries authored by the novelist (e.g. *"Chapter 1: The Witcher"*, *"Prologue"*, *"Chapter 14"*).
+1. **Literary Chapters:** Authentic structural boundaries authored by the novelist (e.g. *"Chapter 1: The Beginning"*, *"Prologue"*, *"Chapter 14"*).
 2. **Production Chunks:** Ephemeral processing units created strictly to prevent LLM attention saturation ($> 12,000$ words) or fallback chunks (`"Production Chunk 1"`, `"Production Chunk 2"`) generated when a raw plain text or poorly-tagged PDF document lacks detectable headings.
 
 Pillar 1 models this distinction explicitly across [`CanonicalBook`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L236-L355), [`CanonicalChapter`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L92-L173), and [`ChapterSegmenter`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/chapter_segmenter.py):
@@ -599,7 +599,7 @@ Extracts an EPUB, PDF, TXT, or Markdown book into the canonical AST, archives ra
 
 ```bash
 # Standard extraction with fail-closed gate enforcement
-python audiobook_cli.py extract books/the_witcher.epub
+python audiobook_cli.py extract books/my_novel.epub
 
 # PDF extraction with automatic layout analysis
 python audiobook_cli.py extract books/dracula.pdf
@@ -610,15 +610,15 @@ python audiobook_cli.py extract books/scanned_book.pdf --force-gate
 
 ### 2. Autonomous End-to-End Pipeline (`auto`)
 
-Runs all 6 production stages in a single command, incorporating Gate 0.1 before translation:
+Runs all production stages in a single command, incorporating Step 0A DeepSearch and Gate 0.1 before translation:
 
 ```bash
 # Autonomous run with default fail-closed protection
-python audiobook_cli.py auto books/the_witcher.epub \
+python audiobook_cli.py auto books/my_novel.epub \
   --hindi \
   --dramatized \
   --voice Charon \
-  --cover covers/witcher.jpg
+  --cover covers/cover.jpg
 
 # Autonomous run with Quality Gate override
 python audiobook_cli.py auto books/unorthodox_layout.epub \

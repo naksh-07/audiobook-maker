@@ -35,8 +35,7 @@ flowchart LR
 - **Phase 1 (Foundation — Certified)**: Deterministic audio analysis pipeline extracting physical ground-truth DSP metrics directly from waveforms (`speech_corridor_density`, EBU R128 integrated LUFS, True Peak dBTP, Welch spectral centroid), non-destructive SQLite schema migration, and temporal event onsets.
 - **Phase 2 (AI Enrichment — Certified)**: Dedicated machine-learning adapters (AudioSet 527 classification via AST, open-vocabulary 512-d dual embeddings via LAION-CLAP), thread-safe VRAM model management (`SonicModelManager`), and SQLite vector BLOB storage.
 - **Phase 3 (Sound Intelligence — Certified & Hardened)**: Multilingual query planning (`HinglishQueryNormalizer`, `SonicQueryPlanner`), thread-safe LRU query caching (`QueryEmbeddingCache`), 5-source candidate pooling (`CandidatePoolAggregator`), explainable linear reranking with negative penalties (`SonicHybridReranker`), and epistemically honest `AgentSoundCard` (v3.0) models with strict 4-tier labeling.
-- **Phase 4 (Production Scale Library Harvester — Certified)**: High-throughput, non-destructive 11-stage ingestion engine for massive local sound collections (~200GB). Extracts rich container metadata (ID3v1/ID3v2, BWF/BEXT, RIFF INFO, Vorbis comments), Universal Category System (UCS) naming grammar, folder taxonomy tokens, and companion variation groupings without data loss. Features sliding-window ephemeral streaming ingest (`streaming_harvester.py`), rapid 64KB SHA-256 header fingerprinting, idempotent skip/resume, and strict GPU VRAM eviction.
-- **Phase 5 (IP Lore & Franchise Affinity System — Certified)**: First-class franchise ontology (`franchise_affinity`, `lore_tags`, `ip_priority`) boosting authentic studio sound assets during universe-specific audiobook production. Ingests all **26,906 CD PROJEKT RED Witcher 3 studio audio assets** (22.25 GB) and 230 Witcher OST tracks 100% in-place with zero audio duplication, providing instant Hollywood-grade combat, magic, creature, and foley soundscapes.
+- **Phase 5 (IP Lore & Dynamic Franchise Affinity System — Certified)**: First-class franchise ontology (`franchise_affinity`, `lore_tags`, `ip_priority`) dynamically boosting authentic studio sound assets when a universe match is discovered by `NovelDeepSearchEngine`. Ingests all **26,906 studio audio assets** (22.25 GB) and 230 OST tracks 100% in-place with zero audio duplication, providing instant Hollywood-grade combat, magic, creature, and foley soundscapes without hardcoded production assumptions.
 
 ---
 
@@ -493,7 +492,7 @@ The Library Harvester subsystem has been verified with a dedicated automated tes
 
 ## ⚔️ 9. Phase 5: IP Lore & Franchise Affinity System
 
-Phase 5 introduces first-class intellectual property (IP) affinity and lore tagging across the audio drama production pipeline. When producing universe-specific audiobooks (such as *The Witcher*, *Game of Thrones*, or epic fantasy/period dramas), the engine automatically prioritizes genuine studio recordings over generic catalog assets.
+Phase 5 introduces first-class intellectual property (IP) affinity and lore tagging across the audio drama production pipeline. When producing universe-specific audiobooks, the engine dynamically discovers the universe via `NovelDeepSearchEngine` and prioritizes genuine studio recordings over generic catalog assets, while falling back gracefully to universal contemporary or genre assets when producing original works.
 
 ### A. Non-Destructive Schema Expansion
 Three dedicated columns are added to `sound_catalog`:
@@ -535,6 +534,12 @@ Enables ingesting massive open-source sound repositories (e.g. BBC 16k collectio
 3. Commits remote CDN streaming URLs, acoustic facts, and neural embeddings to SQLite.
 4. Immediately purges scratch audio files, reclaiming 100% of temporary disk space.
 5. Logs atomic checkpoint progress in `ingestion_batches` for 100% crash-proof resumability.
+
+### E. Universal Era & World Agnostic Filtering (Zero Anachronism Mandate)
+The Master Sound Bank serves all literary genres without bias. During search and retrieval:
+- **Dynamic Era Exclusion**: [`sound_bank/search.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/search.py) and [`verification_gate.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_bank/verification_gate.py) filter candidates against the novel's DeepSearch `banned_anachronisms` list and period era (`RURAL_HISTORICAL`, `SPACE_OPERA_SCIFI`, `PULP_NOIR_1940S`, `VICTORIAN_EDWARDIAN`, `UNIVERSAL_CONTEMPORARY`, `MEDIEVAL_FANTASY`).
+- **Anachronism Quarantine**: Specialized historical or fantasy assets (e.g. swords, magic spells, monsters) are strictly excluded from contemporary or pastoral novels, while modern machinery and electronic hums are strictly excluded from period/ancient novels.
+- **Default Baseline**: Search defaults to `UNIVERSAL_CONTEMPORARY` unless dynamically resolved from scene context and `book_dossier.json`.
 
 ---
 

@@ -12,9 +12,10 @@ Unlike legacy audiobook generators that simply pipe unformatted text into a Text
 
 ```mermaid
 flowchart TB
-    subgraph Room0["🌍 Pre-Production: Classification & Sonic Bible Generation"]
+    subgraph Room0["🌍 Pre-Production: Canonical DeepSearch & World Resolution"]
         direction TB
-        RawBook["Raw Book File<br/>(EPUB / PDF / TXT / Markdown)"] --> Classifier["Stage 0.5: Universal Project Classifier<br/>(audiobook_factory/project_classifier.py)<br/>• Era, Genre, Franchise Affinity & Acoustic DNA"]
+        RawBook["Raw Book File<br/>(EPUB / PDF / TXT / Markdown)"] --> DeepSearch["Stage 0A: Canonical Novel DeepSearch Engine<br/>(audiobook_factory/preproduction/novel_deepsearch.py)<br/>• Gemini Google Search Grounding & Canonical Dossier"]
+        DeepSearch --> Classifier["Stage 0.5: Universal Project Classifier<br/>(audiobook_factory/project_classifier.py)<br/>• Dynamic Era, Genre, Universe & Acoustic DNA"]
         Classifier --> BibleGen["Stage 0.6: Automated Sonic Bible Generator<br/>(audiobook_factory/sonic_bible_generator.py)<br/>• sound_bible.json, World Profiles, Leitmotif Matrix"]
     end
 
@@ -92,15 +93,20 @@ flowchart TB
 
 ## 🚪 Deep-Dive: The Production Rooms
 
-### 0. Stage 0.5 & Stage 0.6: Universal Project Classification & Sonic Bible Generation
-*Purpose: Automatically detect novel universe acoustic DNA and synthesize project-level sound design policies.*
+### 0. Stage 0A, Stage 0.5 & Stage 0.6: Universal Pre-Production & World Resolution
+*Purpose: Dynamically research novel DNA via Google Search Grounding and synthesize authoritative project-level sound design policies.*
+
+- **Stage 0A: Canonical Novel DeepSearch Engine ([`audiobook_factory/preproduction/novel_deepsearch.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/preproduction/novel_deepsearch.py)):**
+  - Executes multi-angle Google Search Grounded reconnaissance (`tools: [{"googleSearch": {}}]`) across 5 orthogonal vectors: Literary DNA, Complete Dramatis Personae, World Acoustics & Banned Anachronisms, Musical Traditions, and Spoken Dialect.
+  - Locks authoritative `book_dossier.json`, `book_dna.json`, and `book_bible.json` before downstream generation runs, eliminating hallucinations.
+  - Provides robust offline fallback covering world literature archetypes (Premchand rural realism, Manto somatic realism, Christie mystery, Asimov sci-fi, and universal contemporary).
 
 - **Stage 0.5: Universal Project Classifier ([`audiobook_factory/project_classifier.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/project_classifier.py)):**
-  - Analyzes book title, author, metadata, and opening prose samples to classify:
-    - `era`: `MEDIEVAL_FANTASY`, `SPACE_OPERA_SCIFI`, `RETRO_FUTURE_CYBERPUNK`, `PULP_NOIR_1940S`, `VICTORIAN_EDWARDIAN`, `MODERN_CONTEMPORARY`.
-    - `genre`: `fantasy`, `sci_fi`, `horror_thriller`, `detective_noir`, `historical`, `literary_fiction`.
-    - `franchise_affinity`: Recognizes canonical literary signatures (The Witcher, Dune, Middle-Earth, Sherlock Holmes, Lovecraft Cthulhu).
-    - `primary_acoustic_env`: Sets default acoustic landscape (e.g. `stone_ruins_exterior`, `tavern_interior`, `spaceship_bridge`).
+  - Dynamically discovers or classifies the work into:
+    - `era`: `RURAL_HISTORICAL`, `SPACE_OPERA_SCIFI`, `RETRO_FUTURE_CYBERPUNK`, `PULP_NOIR_1940S`, `VICTORIAN_EDWARDIAN`, `MEDIEVAL_FANTASY`, `MODERN_CONTEMPORARY`.
+    - `genre`: `rural_realism`, `sci_fi`, `horror_thriller`, `detective_noir`, `historical`, `fantasy`, `literary_fiction`.
+    - `franchise_affinity`: Dynamically discovered via Google Search Grounding or `None` for standalone literature (zero hardcoded dictionaries).
+    - `primary_acoustic_env`: Sets default acoustic landscape (e.g. `rural_village_outdoors`, `detective_office`, `victorian_parlor_fire`, `spaceship_bridge`, `room_tone`).
 - **Stage 0.6: Automated Sonic Bible Generator ([`audiobook_factory/sonic_bible_generator.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sonic_bible_generator.py)):**
   - Compiles authoritative project-level `sound_bible.json` establishing:
     - World Acoustic Profiles and impulse response mappings.
@@ -173,7 +179,7 @@ flowchart TB
   - **Cynical Protagonist Grunt Engine:** Automatically tags weary, cynical protagonist reactions with signature neural grunts (`[growl] हूँ...`, `[sighs] हम्म...`) and enforces `pause_after_ms` of 1000–1400ms for dramatic pregnant pause prosody.
   - **ASMR Intimacy Staging:** Automatically assigns `spatial.proximity: "intimate_close"`, dead-center `spatial.pan: 0.0`, dynamic intensity `low`, `pre_roll_breath_ms: 200-250`, and music sidechain attenuation of `-22.0 dB` ("The Erotic Silence").
   - **Combat Action-Beat Splitting & Dual-Perspective Staging (ADR-017):** Splits major kinetic strikes into dedicated 800ms – 1500ms speech-free intervals (`speaker: "Foley"`, `text: "[ACTION]"`), staging Attacker actions Left ($-0.6$), Defender parries Right ($+0.6$), and Fatal Clashes Center ($0.0$).
-  - **Zero-Voice-Drift Hardening & Two-Pass Attribution (ADR-021):** Direct roster injection with explicit gender markers, and two-pass pronoun disambiguation ([`clean_screenplay_pass2()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py#L629-L853)) resolving both English (`he`, `she`, `the man`, `the woman`) and Hindi (`उसने`, `वह`, `आदमी`, `लड़की`, `महिला`) pronouns to the most recently active matching character, stripping parenthetical annotations (`Geralt (Witcher)` $\rightarrow$ `Geralt`), normalizing alias variants, and enriching segments with dramatic plan metadata.
+  - **Zero-Voice-Drift Hardening & Two-Pass Attribution (ADR-021):** Direct roster injection with explicit gender markers, and two-pass pronoun disambiguation ([`clean_screenplay_pass2()`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py#L629-L853)) resolving both English (`he`, `she`, `the man`, `the woman`) and Hindi (`उसने`, `वह`, `आदमी`, `लड़की`, `महिला`) pronouns to the most recently active matching character, stripping parenthetical annotations (`Character (Role)` $\rightarrow$ `Character`), normalizing alias variants, and enriching segments with dramatic plan metadata.
   - **Two-Pass Decoupled Screenplay Parser (ADR-045):** Splits monolithic screenplay generation in [`script_builder.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py) into two single-responsibility passes:
     1. *Pass 1 (`_parse_dialogue_turns_llm`):* Focuses strictly on structural dialogue turn isolation, canonical character roster attribution, clean spoken prose, and neural vocal tags (`[whispers]`, `[gasp]`).
     2. *Pass 2 (`_enrich_performance_and_staging_llm`):* Focuses strictly on Stanislavski performance enrichment (actioning verbs, subtext, surface emotion, dynamic headroom intensity `low`/`medium`/`explosive`, delivery styles, and stereo azimuth panning).

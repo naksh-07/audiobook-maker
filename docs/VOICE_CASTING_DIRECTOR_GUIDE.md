@@ -91,7 +91,7 @@ The following 12 voices represent the premier production roster for multi-cast d
   - *Pacing Range*: 0.75x to 1.15x.
   - *Forbidden Styles*: High-pitched bubbly youth, sweet melodic romance, cartoon panic.
 - **Best Inline Tags**: `<sigh>`, `<throat-clearing>`, `<short pause>`, `<pant>`.
-- **Ideal Archetypes**: Witcher / Geralt, Hardboiled Noir Detective, Veteran Mercenary, Grimdark Narrator, Mob Boss.
+- **Ideal Archetypes**: Stoic Hunter/Warrior, Hardboiled Noir Detective, Veteran Mercenary, Grimdark Narrator, Mob Boss, Weathered Rustic Lead.
 
 ---
 
@@ -105,7 +105,7 @@ The following 12 voices represent the premier production roster for multi-cast d
   - *Pacing Range*: 0.85x to 1.35x.
   - *Forbidden Styles*: Sub-bass guttural growl, stoic ancient elder, flat lifeless monotone.
 - **Best Inline Tags**: `<laugh>`, `<laughter>`, `<gasp>`, `<snicker>`, `<short pause>`.
-- **Ideal Archetypes**: Bard / Dandelion / Jaskier, Charming Thief, Witty Sidekick, Young Hero, Comic Relief.
+- **Ideal Archetypes**: Agile Rogue, Charming Thief, Witty Sidekick, Young Hero, Comic Relief, Village Bard.
 
 ---
 
@@ -119,7 +119,7 @@ The following 12 voices represent the premier production roster for multi-cast d
   - *Pacing Range*: 0.80x to 1.20x.
   - *Forbidden Styles*: Squeaky fragile child, giggling flirt, exaggerated melodrama.
 - **Best Inline Tags**: `<pant>`, `<gasp>`, `<breath>`, `<short pause>`.
-- **Ideal Archetypes**: Warrior Heroine / Adult Ciri, Sorceress / Yennefer, Rebel Commander, Matriarch Leader.
+- **Ideal Archetypes**: Commanding Leader, Fierce Warrior, Resolute Queen, Sorceress/Scholar, Rebel Commander, Matriarch Leader.
 
 ---
 
@@ -353,7 +353,7 @@ Pre-built directing recipes for `ScreenplaySegment.acting` and `speechMetadata.s
 - **Text & Tag Pattern**:
   ```text
   "Stay... <breath> just until dawn. <short pause> Don't look at me like that."
-  "<sigh> I told you once before... <short pause> witchers don't stay."
+  "<sigh> I told you once before... <short pause> wanderers don't stay."
   ```
 - **Directing Metadata**:
   ```json
@@ -363,7 +363,7 @@ Pre-built directing recipes for `ScreenplaySegment.acting` and `speechMetadata.s
       "style": "soft breathy whisper, extremely close-mic ASMR proximity, trembling vulnerability, slow tempo"
     },
     {
-      "speaker": "Witcher",
+      "speaker": "Wanderer",
       "style": "deep hushed baritone, intimate close proximity, gentle world-weary sigh"
     }
   ]
@@ -443,7 +443,11 @@ my_audiobook_project/
 └── character_roster.json   # Canonical names, aliases, and gender markers
 ```
 
-### 1. `voice_registry.json` Schema
+> [!IMPORTANT]
+> **Universal Dynamic Casting Mandate (Zero Hardcoding)**
+> The character names below (`Protagonist`, `Investigator`, `Heroine`, etc.) are illustrative examples. Character rosters and voice registrations are **NEVER hardcoded** into the factory core, scripts, or prompt templates. They are dynamically generated for any novel in world literature by `NovelDeepSearchEngine` and `CharacterCaster` using Gemini Google Search Grounding and the 4D Acoustic Formant Matrix.
+
+### 1. `voice_registry.json` Schema (Illustrative Example)
 ```json
 {
   "Narrator": {
@@ -452,18 +456,18 @@ my_audiobook_project/
     "speed": 1.0,
     "presence_boost_db": 1.5
   },
-  "Geralt": {
+  "Protagonist": {
     "backend": "gemini_tts",
     "voice": "Algenib",
     "speed": 0.95,
     "bass_boost_db": 2.5
   },
-  "Jaskier": {
+  "Investigator": {
     "backend": "gemini_tts",
     "voice": "Puck",
     "speed": 1.05
   },
-  "Ciri": {
+  "Heroine": {
     "backend": "gemini_tts",
     "voice": "Kore",
     "speed": 1.0
@@ -471,26 +475,26 @@ my_audiobook_project/
 }
 ```
 
-### 2. `character_roster.json` Schema
+### 2. `character_roster.json` Schema (Illustrative Example)
 ```json
 {
   "characters": {
-    "Geralt": {
+    "Protagonist": {
       "gender": "male",
-      "aliases": ["Witcher", "White Wolf", "गेराल्ट", "विचर", "Geralt of Rivia"]
+      "aliases": ["Hero", "मुसाफ़िर", "Lead", "Captain"]
     },
-    "Jaskier": {
+    "Investigator": {
       "gender": "male",
-      "aliases": ["Dandelion", "जaskier", "डैंडेलियन", "Bard"]
+      "aliases": ["डिटेक्टिव", "Companion", "Inspector", "Partner"]
     },
-    "Ciri": {
+    "Heroine": {
       "gender": "female",
-      "aliases": ["Cirilla", "Swallow", "सिरी", "Princess"]
+      "aliases": ["Commander", "नायिका", "Lady", "Leader"]
     }
   }
 }
 ```
 
 ### 3. Fail-Closed Zero-Voice-Drift Guarantee
-1. **Multi-Script Alias Normalization**: When a script segment arrives with `"speaker": "विचर"` or `"speaker": "White_Wolf"`, `TTSDispatcher` automatically normalizes it to `"Geralt"`, extracting the canonical `Algenib` voice.
+1. **Multi-Script Alias Normalization**: When a script segment arrives with a translated or alias name (e.g. `"speaker": "मुसाफ़िर"` or `"speaker": "Hero"`), `TTSDispatcher` automatically normalizes it to `"Protagonist"`, extracting the canonical calibrated voice.
 2. **Zero-Tolerance Pre-Flight Sweep**: Before a single API request is dispatched, `TTSDispatcher.synthesize_chapter_script()` sweeps all segments. If an unmapped character name is discovered, execution immediately halts with `UnregisteredSpeakerError`, shielding Gemini quotas from broken partial chapters.

@@ -60,14 +60,18 @@ python audiobook_cli.py auto <FILE> [OPTIONS]
 | `--workers` | Integer | `3` | Number of concurrent TTS synthesis worker threads. |
 | `--force-gate` | Flag | `False` | Bypass Extraction Quality Gate (Gate 0.1) `REVIEW` failure and force production. |
 
+> [!IMPORTANT]
+> **Universal Novel-Agnostic Production Mandate**
+> All commands operate universally on any novel in world literature. The project slug `my_novel` is an illustrative example. Pre-production Step 0A dynamically uses Google Search Grounding to discover novel metadata, characters, and acoustics. Hardcoding specific novel paths or franchise names into CLI scripts is strictly forbidden.
+
 ### Example
 ```bash
 # Standard autonomous production:
-python audiobook_cli.py auto books/the_witcher.epub \
+python audiobook_cli.py auto books/my_novel.epub \
   --hindi \
   --dramatized \
   --voice Charon \
-  --cover covers/witcher.jpg \
+  --cover covers/cover.jpg \
   --workers 4
 
 # Autonomous production overriding Quality Gate REVIEW failure:
@@ -101,10 +105,10 @@ python audiobook_cli.py produce <BOOK_SLUG> [OPTIONS]
 ### Example
 ```bash
 # Produce Chapter 3 only:
-python audiobook_cli.py produce witcher1 --chapter 3 --voice Charon --workers 3
+python audiobook_cli.py produce my_novel --chapter 3 --voice Charon --workers 3
 
 # Produce all chapters across the project:
-python audiobook_cli.py produce witcher1 --all --duck-db -16.0
+python audiobook_cli.py produce my_novel --all --duck-db -16.0
 ```
 
 ---
@@ -228,7 +232,7 @@ python audiobook_cli.py timeline <BOOK_SLUG> --chapter <NUM> [OPTIONS]
 
 ### Example
 ```bash
-python audiobook_cli.py timeline witcher1 --chapter 1 --stitch
+python audiobook_cli.py timeline my_novel --chapter 1 --stitch
 ```
 
 ---
@@ -249,7 +253,7 @@ python audiobook_cli.py direct <BOOK_SLUG> --chapter <NUM> [OPTIONS]
 
 ### Example
 ```bash
-python audiobook_cli.py direct witcher1 --chapter 1
+python audiobook_cli.py direct my_novel --chapter 1
 ```
 
 ---
@@ -277,12 +281,12 @@ python audiobook_cli.py render --manifest <PATH> [OPTIONS]
 ```bash
 # Automated vocal stem inference:
 python audiobook_cli.py render \
-  --manifest audiobooks/projects/witcher1/manifests/chapter_001_manifest.json
+  --manifest audiobooks/projects/my_novel/manifests/chapter_001_manifest.json
 
 # Explicit vocal stem override:
 python audiobook_cli.py render \
-  --manifest audiobooks/projects/witcher1/manifests/chapter_001_manifest.json \
-  --vocal audiobooks/projects/witcher1/mastered/chapter_001_dialogue.wav
+  --manifest audiobooks/projects/my_novel/manifests/chapter_001_manifest.json \
+  --vocal audiobooks/projects/my_novel/mastered/chapter_001_dialogue.wav
 ```
 
 ---
@@ -333,7 +337,7 @@ python audiobook_cli.py audit <BOOK_SLUG> --chapter <NUM>
 
 ### Example
 ```bash
-python audiobook_cli.py audit witcher1 --chapter 1
+python audiobook_cli.py audit my_novel --chapter 1
 ```
 
 ---

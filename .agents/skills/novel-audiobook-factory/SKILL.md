@@ -38,7 +38,8 @@ python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voic
 
 ```mermaid
 flowchart TD
-    A["Input File (.epub / .pdf)"] --> B["Stage 1: Document Extractor<br/>(audiobook_factory.extractor)"]
+    A["Input File (.epub / .pdf)"] --> S0["Stage 0: Novel DeepSearch Engine<br/>(novel_deepsearch.py with Google Search)"]
+    S0 --> B["Stage 1: Document Extractor<br/>(audiobook_factory.extractor)"]
     B --> C["Stage 2: Literary Hindi Translation<br/>(audiobook_factory.translator)"]
     C --> D["Stage 3: Sliding-Window Screenplay Attribution<br/>(audiobook_factory.script_builder)"]
     D --> E["Stage 4: Deep Foley & Acoustic Miner<br/>(audiobook_factory.foley_miner)"]
@@ -46,6 +47,11 @@ flowchart TD
     E & F --> G["Stage 6: 5-Track FFmpeg Timeline Compositor<br/>(audiobook_factory.soundscape)"]
     G --> H["Stage 7: Broadcast Mastering & M4B Container<br/>(audiobook_factory.packager)"]
 ```
+
+### Stage 0: Canonical Novel DeepSearch Reconnaissance ([`novel_deepsearch.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/preproduction/novel_deepsearch.py))
+- **Live Google Search Grounding**: Employs Gemini with `tools: [{"googleSearch": {}}]` to research any novel title/author in real-time across 5 orthogonal angles (Literary DNA, Dramatis Personae, World Acoustics & Banned Anachronisms, Musical Traditions, Spoken Dialect).
+- **Canonical Book Dossier**: Pre-establishes `book_dossier.json`, `book_dna.json`, and `book_bible.json` before any translation, directing, or synthesis runs, eliminating downstream LLM hallucinations.
+- **Robust Offline Fallbacks**: Provides deterministic fallback archetypes covering world literature (rural realism, somatic drama, golden-age mystery, sci-fi, contemporary).
 
 ### Stage 1: Document Ingestion & Canonical AST Engine ([`extractor.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/extractor.py), [`pdf_engine.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/pdf_engine.py), [`epub_parser.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/epub_parser.py))
 - **Sacred Source Preservation & Normalization**: SHA-256 manifest archival in `raw/`. Purges C0/C1 control characters (`\x00`, `\x07`) and soft hyphens (`\u00ad`) strictly in `normalized_text` while keeping `CanonicalBlock.raw_text` 100% sacred and unmutated.
@@ -82,7 +88,7 @@ flowchart TD
 
 ### Stage 5: Concurrent Multi-Cast TTS ([`tts_dispatcher.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))
 - **Engine**: Google Gemini 3.1 Flash TTS (`gemini-3.1-flash-tts-preview`) generating 24kHz raw PCM.
-- **Multi-Cast Persona Routing**: Dynamically maps characters to distinct voices (`Charon` for Geralt, `Aoede` for Narrator, `Puck` for Dandelion/Guards, `Fenrir` for Kings/Nobles, `Kore` for Sorceresses).
+- **Multi-Cast Persona Routing**: Dynamically maps characters to distinct voices via `CharacterCaster` and 4D acoustic formant matrix (e.g. `Aoede` for main narrator, `Charon` for deep/elder male characters, `Puck` for agile/youthful roles, `Fenrir` for aggressive figures, `Kore` for youthful female characters), dynamically discovering cast roles from source text and DeepSearch dossier.
 - **Rate-Limiter & Key Pool**: Rotates across 80+ keys with `TokenBucketRateLimiter` and single-worker human cadence.
 
 ### Stage 6: 5-Track FFmpeg Timeline Compositor ([`soundscape.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape.py))
@@ -128,3 +134,14 @@ If network drops or the PC reboots mid-synthesis, rerun the exact same command:
 python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized
 ```
 The pipeline automatically skips completed segments in under 5ms, re-attaching immediately to the first pending segment. Zero duplicated API calls, zero lost tokens.
+
+---
+
+## 5. Universal Novel-Agnostic Production Protocol (Zero Hardcoding)
+
+> [!IMPORTANT]
+> **Strict Agent Non-Negotiable: Zero Hardcoding Across All Layers**
+> 1. **No Hardcoded Titles, Characters, or Lore**: Agents must NEVER hardcode novel names, specific character rosters, franchise terms, or era biases into code, prompt templates, or documentation.
+> 2. **Dynamic Reconnaissance First**: All literary metadata, character profiles, pronunciation rules, acoustic environments, and banned anachronisms MUST be dynamically derived via `NovelDeepSearchEngine` (`tools: [{"googleSearch": {}}]`) or loaded from `book_dossier.json` / `book_bible.json`.
+> 3. **Illustrative Examples Only**: Any character names or titles mentioned in documentation or tests are strictly illustrative examples across diverse world literature (Premchand, Christie, Murakami, Tolstoy, Asimov, etc.) and must NEVER be treated as static rules or system defaults.
+

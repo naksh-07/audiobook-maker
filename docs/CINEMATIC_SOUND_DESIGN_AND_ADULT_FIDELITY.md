@@ -51,7 +51,7 @@ flowchart TD
 
 ## ⚔️ Pillar 1: Hollywood & AAA-Game Combat Sound Design (ADR-017)
 
-Modeled after combat design benchmarks from **God of War: Ragnarök** and **The Witcher 3: Wild Hunt**, action scenes in Audiobook Maker adhere to five strict acoustic invariants:
+Modeled after combat design benchmarks from Hollywood action cinema and premier audio dramas, action scenes in Audiobook Maker adhere to five strict acoustic invariants:
 
 ### 1. The 3-Layer Combat Sandwich
 Kinetic strikes, weapon parries, and concussive impacts are never mapped to single generic sound files. Instead, they are constructed across three distinct frequency tiers:
@@ -98,9 +98,9 @@ Paired with validated neural vocal tags in [`audiobook_factory/sanitizer.py`](fi
 
 ---
 
-## 🏰 Pillar 2: Harry Potter Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
+## 🏰 Pillar 2: Hollywood Full-Cast Grade 4-Stem Decoupled Scene Acoustics (ADR-018)
 
-To replicate the acoustic realism of **Audible/Pottermore's Harry Potter** productions, environmental soundscapes are decoupled from flat loops into 4 discrete stems per scene managed via [`SceneSoundscapeManifest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/scene_acoustics.py):
+To replicate the acoustic realism of premier full-cast audio drama productions, environmental soundscapes are decoupled from flat loops into 4 discrete stems per scene managed via [`SceneSoundscapeManifest`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/scene_acoustics.py):
 
 | Stem Layer | Target Loudness | Stereo Width | Description |
 |---|:---:|:---:|---|
@@ -132,7 +132,7 @@ $$\text{DMR} = \text{LUFS}_{\text{DX}} - \text{LUFS}_{\text{ME}} \ge +10.0\text{
 If the combined Music, Foley, and Ambience bed ($ME$) is within 10 dB of dialogue ($DX$), the render reports `dmr_compliant: false` in `chapter_XXX_stem_ledger.json`.
 
 ### 5. Pre-Baked Composite Asset Baker
-Multi-phase sound design (such as Harry Potter wand spells: gesture air whoosh $\rightarrow$ arcane ionization chime $\rightarrow$ 52Hz sub-bass thump) is pre-rendered offline using [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py):
+Multi-phase sound design (such as dramatic arcane spells or complex physical interactions: gesture air whoosh $\rightarrow$ arcane ionization chime $\rightarrow$ 52Hz sub-bass thump) is pre-rendered offline using [`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py):
 ```bash
 python scripts/bake_foley_composites.py
 ```
@@ -142,7 +142,7 @@ Pre-baked assets (`magic_lumos_light.wav`, `magic_expelliarmus_kinetic.wav`, `ta
 
 ## 🔞 Pillar 3: Adult Literary Fidelity & Permanent TTS Safety Unlock (ADR-019)
 
-Mature dark fantasy novels (e.g. *The Witcher*, *A Song of Ice and Fire*, *Gangs of Wasseypur*) require unapologetic dramatic grit and somatic passion. Audiobook Maker enforces world-class adult literary fidelity:
+Mature dramatic novels, gritty crime sagas, and dark fantasy fiction require unapologetic dramatic grit and somatic passion. Audiobook Maker enforces world-class adult literary fidelity:
 
 ### 1. Permanent Gemini Flash TTS Safety Unlock
 - **The Problem:** Google Gemini Flash Cloud TTS applies aggressive out-of-the-box content moderation filters that block authentic period dialogue, dark tavern curses, and passionate encounters with generic HTTP 400/403 errors.

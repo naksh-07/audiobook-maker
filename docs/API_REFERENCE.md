@@ -691,8 +691,8 @@ def generate_ffmetadata(
     """Generates standard FFMETADATA1 file with escaped title, artist, and chapter timestamps."""
 ```
 
-### `Foley & Magic Composite Baker` ([`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py))
-*Offline pre-rendering of multi-phase Harry Potter magic spells and tactile props, indexed into SQLite FTS5.*
+### `Foley & Special Effect Composite Baker` ([`scripts/bake_foley_composites.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/scripts/bake_foley_composites.py))
+*Offline pre-rendering of multi-phase composite cues, tactile props, and effects, indexed into SQLite FTS5.*
 
 ```python
 def bake_composite(
@@ -705,7 +705,7 @@ def bake_composite(
     """Renders a single pre-baked composite asset via FFmpeg with zero runtime filter graph bloat."""
 
 def bake_all_magic_and_foley_composites() -> None:
-    """Pre-bakes the core Harry Potter & fantasy tactile composite sound set and indexes them into Sound Bank."""
+    """Pre-bakes the core cinematic tactile composite sound set and indexes them into Sound Bank."""
 ```
 
 ---
@@ -1690,8 +1690,8 @@ class AudioVerificationGate:
 class ProjectClassification:
     era: str                            # MEDIEVAL_FANTASY, SPACE_OPERA_SCIFI, etc.
     genre: str                          # fantasy, sci_fi, detective_noir, etc.
-    franchise_affinity: Optional[str]   # 'the_witcher', 'dune', 'tolkien_middle_earth', None
-    primary_acoustic_env: str           # 'stone_ruins_exterior', 'tavern_interior', etc.
+    franchise_affinity: Optional[str]   # Dynamically discovered via NovelDeepSearchEngine or None (never hardcoded)
+    primary_acoustic_env: str           # Dynamically resolved acoustic environment (e.g., stone_ruins_exterior, cyberpunk_alley, etc.)
     dramatic_theme: str
     confidence: float
 

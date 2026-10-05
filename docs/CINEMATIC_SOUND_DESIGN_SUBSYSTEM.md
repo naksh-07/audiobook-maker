@@ -11,7 +11,7 @@
 
 ## 📖 Executive Summary
 
-The **Commercial Cinematic Sound Design Subsystem** (`audiobook_factory/sound_design/`) elevates Audiobook Maker from basic dialogue-and-music narration to **full-cast commercial audio drama quality**, benchmarked directly against productions such as the *Harry Potter / Pottermore* full-cast series, BBC Radio 4 dramas, and AAA-game cinematic soundscapes.
+The **Commercial Cinematic Sound Design Subsystem** (`audiobook_factory/sound_design/`) elevates Audiobook Maker from basic dialogue-and-music narration to **full-cast commercial audio drama quality**, benchmarked directly against productions such as GraphicAudio ("A Movie in Your Mind"), BBC Radio 4 dramas, and AAA-game cinematic soundscapes.
 
 Unlike greenfield rewrites, this subsystem integrates seamlessly into the existing repository architecture through a clean, non-invasive adapter boundary ([`SoundDesignAdapter`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/sound_design/adapter.py)). It operates strictly upstream of downstream stem mixing (Track 11) and broadcast mastering (Track 12), ensuring complete separation of creative sound design intent from final DSP rendering.
 
@@ -342,7 +342,7 @@ flowchart TD
    - Enforces the strict **$\ge 60\%$ acoustic silence rule**, placing underscores only where narratively essential and choosing silence for mundane scenes.
 
 ### 2. Era-Aware Negative Sound Bank Filtering
-With 27,456 sound assets on disk (many originating from medieval/fantasy libraries like Witcher 3), queries like `door` or `house` previously risked resolving to heavy wooden dungeon doors or spooky swamp bogs in modern domestic stories.
+With 27,456 sound assets on disk (spanning diverse historical, rural, and modern libraries), queries like `door` or `house` previously risked resolving to heavy wooden dungeon doors or spooky swamp bogs in modern domestic stories.
 - **`MODERN` Era Exclusions**: Strictly bans `swamp`, `bog`, `crypt`, `dungeon`, `sword`, `blade`, `armor`, `scabbard`, `drawbridge`, `tavern`, `tavern_brawl`, `gore`, `clash`, `parry`.
 - **`MEDIEVAL_FANTASY` Era Exclusions**: Strictly bans `car`, `automobile`, `engine`, `traffic`, `gunshot`, `phone`, `telephone`, `siren`, `computer`.
 - **Graceful Acoustic Fallback**: If an exact modern prop is unavailable in the local sound bank, the engine falls back to **pure acoustic silence**, guaranteeing that inappropriate fantasy assets never contaminate a modern scene.

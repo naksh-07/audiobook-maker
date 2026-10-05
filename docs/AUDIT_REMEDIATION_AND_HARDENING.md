@@ -19,6 +19,10 @@ During production validation of multi-chapter novel production runs on Windows 1
 
 As of this release, the entire test suite maintains a **1,180+ unit and regression test pass rate (100% green)** with zero failures, zero errors, and zero regressions across all test suites.
 
+> [!IMPORTANT]
+> **Universal Agnostic Standard & Historical Context Note**:
+> This document records historical forensic bug triage and regression remediations across real production runs. Specific project paths or character references mentioned in defect post-mortems below reflect historical reproduction steps and are strictly historical. The Audiobook Maker engine is **100% universal and novel-agnostic**—no future agent or pipeline module may introduce hardcoded franchise titles, character registries, or era defaults. All metadata and acoustic worlds are dynamically derived via `NovelDeepSearchEngine`.
+
 ---
 
 ## 🗺️ Hardened Architectural Signal Flow
