@@ -18,7 +18,7 @@ from .indexer import IndexerMixin
 from .downloader import DownloaderMixin
 from .search import SearchMixin
 from .sound_card import SoundCardMixin
-from .resolver import ResolverMixin
+from .resolver import ResolverMixin, SoundAssetStagingError
 from .dsp_metrics import DSPMetricsMixin
 from .harvester import HarvesterMixin
 from .verification_gate import AudioVerificationGate, VerificationResult
@@ -79,4 +79,5 @@ __all__ = [
     "HarvesterMixin",
     "AudioVerificationGate",
     "VerificationResult",
+    "SoundAssetStagingError",
 ]

@@ -166,3 +166,47 @@ def cmd_auto(args):
     )
 
 
+
+def cmd_stage_sounds(args):
+    """Stage 4.5: Pre-downloads and verifies virtual sound assets for a chapter manifest ahead of render."""
+    import sys
+    from audiobook_factory.sound_bank import get_sound_bank
+    from audiobook_factory.contracts import CreativeManifest
+
+    manifest_arg = getattr(args, "manifest", None)
+    book_arg = getattr(args, "book", None)
+    chap_arg = getattr(args, "chapter", None)
+
+    if manifest_arg:
+        m_path = Path(manifest_arg).resolve()
+    elif book_arg and chap_arg is not None:
+        p_dir = get_projects_dir() / book_arg
+        m_path = p_dir / "manifests" / f"chapter_{chap_arg:03d}_creative_manifest.json"
+        if not m_path.exists():
+            m_path = p_dir / "manifests" / f"chapter_{chap_arg:02d}_creative_manifest.json"
+    else:
+        print("[!] Please provide --manifest <path> OR <book> --chapter <num>.", file=sys.stderr)
+        sys.exit(1)
+
+    if not m_path.exists():
+        print(f"[!] Manifest not found: {m_path}", file=sys.stderr)
+        sys.exit(1)
+
+    with open(m_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    manifest = CreativeManifest.from_dict(data) if hasattr(CreativeManifest, "from_dict") else CreativeManifest.model_validate(data)
+    bank = get_sound_bank()
+    workers = getattr(args, "workers", 4)
+    strict = getattr(args, "strict", True)
+
+    print(f"[*] Stage 4.5: Staging sound assets for manifest: {m_path.name}...")
+    res = bank.stage_manifest_assets(manifest, max_workers=workers, strict_fail_closed=strict)
+
+    with open(m_path, "w", encoding="utf-8") as f:
+        f.write(manifest.to_json(indent=2))
+
+    print(f"\n[OK] Sound staging complete: {res['status']} ({res['staged_count']} staged, {res['total_cues']} total cues verified).")
+
+
+

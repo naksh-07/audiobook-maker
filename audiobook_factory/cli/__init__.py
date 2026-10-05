@@ -8,6 +8,7 @@ from audiobook_factory.cli.commands.pipeline import (
     cmd_master,
     cmd_produce,
     cmd_auto,
+    cmd_stage_sounds,
 )
 from audiobook_factory.cli.commands.audio import (
     cmd_soundscape,
@@ -44,4 +45,5 @@ __all__ = [
     "cmd_audit_book",
     "cmd_audit",
     "cmd_bank",
+    "cmd_stage_sounds",
 ]

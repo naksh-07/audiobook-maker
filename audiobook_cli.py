@@ -40,6 +40,7 @@ from audiobook_factory.cli import (
     cmd_audit_book,
     cmd_audit,
     cmd_bank,
+    cmd_stage_sounds,
 )
 
 __all__ = [
@@ -60,6 +61,7 @@ __all__ = [
     "cmd_audit_book",
     "cmd_audit",
     "cmd_bank",
+    "cmd_stage_sounds",
     "WORKSPACE_DIR",
     "PROJECTS_DIR",
     "main",
@@ -249,6 +251,14 @@ def main():
     p_stems.add_argument("book", help="Project book slug")
     p_stems.add_argument("--chapter", type=int, required=True, help="Chapter number to inspect")
 
+    # stage-sounds
+    p_stage = subparsers.add_parser("stage-sounds", help="Stage 4.5: Pre-download and verify virtual sound assets for a chapter manifest")
+    p_stage.add_argument("book", nargs="?", default=None, help="Project book slug")
+    p_stage.add_argument("--chapter", type=int, default=None, help="Chapter number")
+    p_stage.add_argument("--manifest", default=None, help="Direct path to creative_manifest.json")
+    p_stage.add_argument("--workers", type=int, default=4, help="Concurrent download workers (default: 4)")
+    p_stage.add_argument("--strict", action="store_true", default=True, help="Fail closed if any asset fails verification (default: True)")
+
     args = parser.parse_args()
 
     if not args.subcommand:
@@ -274,6 +284,7 @@ def main():
         "audit-book": cmd_audit_book,
         "timeline": cmd_timeline,
         "stems": cmd_stems,
+        "stage-sounds": cmd_stage_sounds,
     }
     try:
         cmds[args.subcommand](args)

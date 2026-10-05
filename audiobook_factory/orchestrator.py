@@ -471,6 +471,14 @@ class PipelineOrchestrator:
         # Gate 3.5: Acoustic Pre-Flight Feasibility Guard
         verify_acoustic_feasibility_gate(manifest, chapter_num)
 
+        # Stage 4.5: Pre-Mix Asset Staging Gate (Halts & batch downloads any missing virtual assets)
+        logger.info(f"[*] Stage 4.5: Pre-Mix Asset Staging Gate for Chapter {chapter_num:02d}...")
+        staging_res = get_sound_bank().stage_manifest_assets(manifest, strict_fail_closed=True)
+        if staging_res.get("staged_count", 0) > 0:
+            # Re-persist updated manifest with verified local disk paths
+            with open(manifest_file, "w", encoding="utf-8") as f:
+                f.write(manifest.to_json(indent=2))
+
         # 5. Cinema Audio Engine: Render 5-Track Discrete DME Stems & Final Cinema Master
         cinematic_out = mastered_dir / f"{chap_stem}_cinematic.m4a"
         logger.info(f"[*] Cinema Audio Engine: Rendering discrete DME stems and cinema master for Chapter {chapter_num:02d}...")

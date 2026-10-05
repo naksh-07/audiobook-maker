@@ -54,6 +54,9 @@ class MultiAgentDirector:
         self.model = model
         self.project_dir = Path(project_dir) if project_dir else None
 
+        from audiobook_factory.sonic_intelligence_bridge import SonicIntelligenceBridge
+        self.bridge = SonicIntelligenceBridge(sound_bank=self.sound_bank)
+
         # Instantiate the 5 specialized agents
         self.showrunner = ShowrunnerAgent(model=model)
         self.scenographer = ScenographerAgent(model=model)
@@ -256,6 +259,9 @@ class MultiAgentDirector:
             },
         )
 
+        # Stage 4.5: Pre-Mix Asset Staging Gate (Halts & batch downloads any missing virtual assets)
+        self.sound_bank.stage_manifest_assets(manifest, strict_fail_closed=True)
+
         logger.info(
             f"[+] MultiAgentDirector: Hollywood Creative Manifest directed successfully! "
             f"({len(resolved_foley)} foley cues, {len(resolved_music)} music cues, {len(resolved_ambience)} ambience acts, "
@@ -300,19 +306,37 @@ class MultiAgentDirector:
                 continue
 
             query = f"{event.action_verb} {event.object_material}".strip()
-            # If is_micro_foley is True, try FOL first, then SFX
-            res = self.sound_bank.resolve_sound(
-                query,
-                category="FOL" if event.is_micro_foley else "SFX",
-                franchise_affinity=franchise_affinity,
-            )
-            asset_path = self._extract_asset_path(res)
+            cat = "FOL" if event.is_micro_foley else "SFX"
+            asset_path = None
+            res = None
+
+            # 1. Primary resolution: Route through SonicIntelligenceBridge
+            try:
+                b_path, _, _ = self.bridge.resolve_asset_with_fallback(
+                    query=query,
+                    category=cat,
+                    is_combat_scene=bool(franchise_affinity or any(w in query.lower() for w in ("sword", "blade", "fight", "clash"))),
+                    limit=5,
+                )
+                if b_path:
+                    asset_path = b_path
+            except Exception as b_err:
+                logger.debug(f"SonicIntelligenceBridge resolution notice: {b_err}")
+
+            # 2. SoundBank direct resolution if needed
+            if not asset_path:
+                res = self.sound_bank.resolve_sound(
+                    query,
+                    category=cat,
+                    franchise_affinity=franchise_affinity,
+                )
+                asset_path = self._extract_asset_path(res)
 
             # Fallback to broader search if exact resolution fails
             if not asset_path:
                 res = self.sound_bank.resolve_sound(
                     event.action_verb.replace("_", " "),
-                    category="FOL" if event.is_micro_foley else "SFX",
+                    category=cat,
                     franchise_affinity=franchise_affinity,
                 )
                 asset_path = self._extract_asset_path(res)
@@ -415,12 +439,27 @@ class MultiAgentDirector:
 
             # Query sound bank music library
             query = m_dir.search_query or f"{m_dir.mood} {m_dir.timbre}"
-            res = self.sound_bank.resolve_sound(
-                query,
-                category="MUS",
-                franchise_affinity=franchise_affinity,
-            )
-            asset_path = self._extract_asset_path(res)
+            asset_path = None
+            res = None
+
+            try:
+                b_path, _, _ = self.bridge.resolve_asset_with_fallback(
+                    query=query,
+                    category="music",
+                    limit=5,
+                )
+                if b_path:
+                    asset_path = b_path
+            except Exception as b_err:
+                logger.debug(f"SonicIntelligenceBridge music resolution notice: {b_err}")
+
+            if not asset_path:
+                res = self.sound_bank.resolve_sound(
+                    query,
+                    category="MUS",
+                    franchise_affinity=franchise_affinity,
+                )
+                asset_path = self._extract_asset_path(res)
 
             if not asset_path:
                 res = self.sound_bank.resolve_sound(

@@ -15,6 +15,11 @@ from typing import Dict, Any, List, Optional, Union
 from audiobook_factory.sound_bank.indexer import IndexerMixin
 
 
+class SoundAssetStagingError(RuntimeError):
+    """Raised when virtual sound assets fail to download or fail verification in Stage 4.5."""
+    pass
+
+
 class ResolverMixin:
     """Asset resolution, track slicing, and metrics retrieval mixin."""
 
@@ -554,3 +559,180 @@ class ResolverMixin:
             "moods": mood_counts,
             "database_path": str(self.db_path),
         }
+
+    def stage_manifest_assets(
+        self,
+        manifest: Any,
+        max_workers: int = 4,
+        strict_fail_closed: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Stage 4.5: Pre-Mix Asset Staging Gate.
+        Inspects all sound cues across foley, music, and ambience in the manifest.
+        If any virtual or un-downloaded audio assets are referenced, halts pipeline execution,
+        downloads them concurrently with live progress logging, verifies them via AudioVerificationGate,
+        updates the manifest cue paths to local disk paths, and resumes execution.
+        Fails closed with SoundAssetStagingError if any download fails in strict mode.
+        """
+        from audiobook_factory.logger import logger
+        from audiobook_factory.sound_bank.verification_gate import AudioVerificationGate
+
+        cues_to_stage: List[Tuple[str, Any]] = []
+
+        # Foley cues
+        f_cues = getattr(manifest, "foley_cues", None) or (
+            manifest.get("foley_cues", []) if isinstance(manifest, dict) else []
+        )
+        for c in f_cues:
+            cues_to_stage.append(("FOL", c))
+
+        # Music cues
+        m_cues = getattr(manifest, "music_cues", None) or (
+            manifest.get("music_cues", []) if isinstance(manifest, dict) else []
+        )
+        for c in m_cues:
+            cues_to_stage.append(("MUS", c))
+
+        # Ambience scenes
+        a_scenes = getattr(manifest, "ambience_scenes", None) or (
+            manifest.get("ambience_scenes", []) if isinstance(manifest, dict) else []
+        )
+        for c in a_scenes:
+            cues_to_stage.append(("AMB", c))
+
+        if not cues_to_stage:
+            return {"total_cues": 0, "staged_count": 0, "status": "EMPTY_MANIFEST"}
+
+        # Scan for missing/virtual assets
+        missing_tasks = []
+        gate = AudioVerificationGate()
+
+        with self._get_conn() as conn:
+            for cat, cue in cues_to_stage:
+                raw_path = getattr(cue, "asset_path", "") or (
+                    cue.get("asset_path", "") if isinstance(cue, dict) else ""
+                )
+                asset_id = getattr(cue, "asset_id", 0) or (
+                    cue.get("asset_id", 0) if isinstance(cue, dict) else 0
+                )
+                asset_name = getattr(cue, "asset_name", "") or (
+                    cue.get("asset_name", "") if isinstance(cue, dict) else ""
+                )
+
+                # Check if already physically exists
+                local_found: Optional[Path] = None
+                if raw_path:
+                    p = Path(raw_path)
+                    if p.is_file() and p.exists() and p.stat().st_size > 500:
+                        local_found = p
+                    elif (self.bank_root / raw_path).is_file():
+                        local_found = self.bank_root / raw_path
+
+                if not local_found and asset_name:
+                    for sub in ("", cat.lower(), "cache", f"cache/{cat.lower()}"):
+                        cand = self.bank_root / sub / asset_name if sub else self.bank_root / asset_name
+                        if cand.is_file() and cand.exists() and cand.stat().st_size > 500:
+                            local_found = cand
+                            break
+
+                if local_found:
+                    # Update cue path to confirmed local file
+                    if isinstance(cue, dict):
+                        cue["asset_path"] = str(local_found).replace("\\", "/")
+                    else:
+                        setattr(cue, "asset_path", str(local_found).replace("\\", "/"))
+                    continue
+
+                # Locate in database to find download URL
+                row = None
+                if asset_id:
+                    row = conn.execute(
+                        "SELECT id, filename, category, source_url, mirror_url FROM sound_catalog WHERE id = ?",
+                        (asset_id,),
+                    ).fetchone()
+                if not row and asset_name:
+                    row = conn.execute(
+                        "SELECT id, filename, category, source_url, mirror_url FROM sound_catalog WHERE filename = ? LIMIT 1",
+                        (asset_name,),
+                    ).fetchone()
+                if not row and raw_path:
+                    p_name = Path(raw_path).name
+                    row = conn.execute(
+                        "SELECT id, filename, category, source_url, mirror_url FROM sound_catalog WHERE filename = ? LIMIT 1",
+                        (p_name,),
+                    ).fetchone()
+
+                if row and (row["source_url"] or row["mirror_url"]):
+                    missing_tasks.append((cat, cue, dict(row)))
+                else:
+                    logger.warning(f"  [!] Stage 4.5: No remote URL or catalog entry found for missing asset '{raw_path or asset_name}'")
+
+        if not missing_tasks:
+            logger.info("[+] Stage 4.5: All referenced sound assets already verified on disk.")
+            return {"total_cues": len(cues_to_stage), "staged_count": 0, "status": "ALL_LOCAL"}
+
+        total_missing = len(missing_tasks)
+        logger.info(f"[*] Stage 4.5: Halting pipeline to stage {total_missing} virtual sound assets on-demand...")
+
+        failed_assets = []
+        staged_count = 0
+
+        def _fetch_task(task_item):
+            t_cat, t_cue, t_row = task_item
+            t_id = t_row["id"]
+            t_fn = t_row["filename"]
+            dl_path = self.download_virtual_asset(
+                sound_id=t_id,
+                source_url=t_row.get("source_url"),
+                filename=t_fn,
+                category=t_row.get("category") or t_cat,
+                mirror_url=t_row.get("mirror_url"),
+            )
+            return t_cat, t_cue, t_row, dl_path
+
+        from concurrent.futures import as_completed
+        with ThreadPoolExecutor(max_workers=min(max_workers, max(1, total_missing))) as executor:
+            future_map = {executor.submit(_fetch_task, item): item for item in missing_tasks}
+            for fut in as_completed(future_map):
+                t_cat, t_cue, t_row, dl_path = fut.result()
+                t_fn = t_row["filename"]
+                if dl_path and dl_path.exists():
+                    v_res = gate.verify_asset(
+                        dl_path,
+                        category=t_cat,
+                        candidate_meta=t_row,
+                        is_continuous_bed=(t_cat == "AMB"),
+                    )
+                    if v_res.is_valid:
+                        staged_count += 1
+                        size_kb = dl_path.stat().st_size / 1024
+                        size_str = f"{size_kb:.1f} KB" if size_kb < 1024 else f"{size_kb/1024:.2f} MB"
+                        norm_p = str(dl_path).replace("\\", "/")
+                        if isinstance(t_cue, dict):
+                            t_cue["asset_path"] = norm_p
+                        else:
+                            setattr(t_cue, "asset_path", norm_p)
+                        logger.info(f"  [↓] Staged asset [{staged_count}/{total_missing}]: {t_fn} ({t_cat}) [{size_str}]")
+                    else:
+                        err_msg = f"AudioVerificationGate rejected '{t_fn}': {v_res.reason}"
+                        logger.warning(f"  [!] {err_msg}")
+                        failed_assets.append((t_fn, err_msg))
+                else:
+                    err_msg = f"Download failed for '{t_fn}'"
+                    logger.warning(f"  [!] {err_msg}")
+                    failed_assets.append((t_fn, err_msg))
+
+        if failed_assets and strict_fail_closed:
+            err_summary = "; ".join(f"{fn} ({err})" for fn, err in failed_assets)
+            raise SoundAssetStagingError(
+                f"Stage 4.5 Fail-Closed Gate: {len(failed_assets)} of {total_missing} virtual assets failed staging: {err_summary}"
+            )
+
+        logger.info(f"[+] Stage 4.5: All {staged_count} virtual sound assets verified on disk. Resuming pipeline execution.")
+        return {
+            "total_cues": len(cues_to_stage),
+            "staged_count": staged_count,
+            "failed_count": len(failed_assets),
+            "status": "STAGED_SUCCESS",
+        }
+

@@ -90,18 +90,24 @@ class DownloaderMixin:
                             url,
                             headers={"User-Agent": "AudiobookFactory/2.0 (https://github.com/naksh-07/audiobook-maker)"}
                         )
-                        with urllib.request.urlopen(req, timeout=5.0) as resp:
+                        with urllib.request.urlopen(req, timeout=15.0) as resp:
                             with open(temp_path, "wb") as out_f:
                                 shutil.copyfileobj(resp, out_f)
 
                         # Sanity check: file exists and is not an HTML 404/403 page
                         file_size = temp_path.stat().st_size
-                        if file_size <= 0:
-                            raise ValueError(f"Downloaded file empty ({file_size} bytes)")
+                        if file_size < 1024:
+                            raise ValueError(f"Downloaded file too small or empty ({file_size} bytes)")
 
                         with open(temp_path, "rb") as check_f:
-                            head = check_f.read(128).lower()
-                            if b"<!doctype html" in head or b"<html" in head or b"404 not found" in head:
+                            head = check_f.read(256).lower()
+                            if (
+                                b"<!doctype html" in head
+                                or b"<html" in head
+                                or b"404 not found" in head
+                                or b"access denied" in head
+                                or b"error 403" in head
+                            ):
                                 raise ValueError("Remote server returned HTML error page instead of audio stream")
 
                         temp_path.replace(target_path)

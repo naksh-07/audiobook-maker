@@ -4,13 +4,12 @@
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
 # Active Context: Audiobook Maker Production Engine & Hollywood Directing Suite
 
-## Milestone: Universal DeepSearch Grounding & System-Wide Zero-Hardcoding Mandate
-- **Status**: COMPLETE & VERIFIED. Code purge committed in `8e18d3e`. Full documentation sweep completed.
-- **Key Deliverables**:
-  1. **Canonical Novel DeepSearch Engine** (`novel_deepsearch.py`): Multi-angle web reconnaissance via Gemini Google Search Grounding (`tools: [{"googleSearch": {}}]`) producing canonical `DeepSearchNovelDossier` across 5 angles (Literary DNA, Dramatis Personae, World Acoustics & Banned Anachronisms, Musical Traditions, Spoken Dialect). Robust offline fallbacks for Premchand, Manto, Agatha Christie, Asimov, and contemporary literature.
-  2. **19/19 Hardcoding Code Points Purged**: Completely removed all residual franchise terms (Witcher lore, tavern defaults, hurdy-gurdy/medieval instruments, static dictionaries) from `character_caster.py`, `dramatis_personae_agent.py`, `phonetic_lexicon_dramaturge.py`, `sonic_world_architect.py`, `sound_spotter.py`, `sound_bank/search.py`, `verification_gate.py`, and `cinema_audio_engine.py`.
-  3. **Universal Documentation Sweep**: Scrubbed 18 documentation files (`AGENTS.md`, `SKILL.md`, `README.md`, `docs/*`), replacing hardcoded titles/characters with universal archetypes and codifying the permanent **Zero Hardcoding Mandate** across all agent and engineering levels.
-  4. **Full Test Certification**:
-     - `tests/test_universal_deepsearch_grounding.py`: 6/6 tests passing (100% green).
-     - `tests/test_zero_hardcoding_contracts.py`: 4/4 contract tests passing (100% green).
-     - Overall regression suite: 100% green. Zero remote push guaranteed; local commit ready.
+## Milestone: Stage 4.5 Halt & Batch Download-on-Demand Staging Gate (COMPLETE)
+- **Status**: COMPLETE & VERIFIED (20/20 tests passing, 100% green).
+- **Architectural Deliverables**:
+  1. **Strict Semantic-First Retrieval** (`search.py`): Eliminated `is_downloaded DESC` bias; FTS5 BM25 match quality strictly dominates. Mismatched local files (e.g. handsaws for footsteps) completely eradicated.
+  2. **Stage 4.5 Pre-Mix Staging Gate** (`resolver.py` & `downloader.py`): Halts pipeline before audio mix if virtual assets are spotted, downloads in parallel (4 workers) with real-time terminal progress, verifies via `AudioVerificationGate`, and enforces strict fail-closed protection.
+  3. **SonicIntelligenceBridge Integration** (`multi_agent_director.py`): Wired Devanagari/Hindi taxonomy normalizer and query expansion into all foley and music cue resolution.
+  4. **Catalog Taxonomy Grounding** (`micro_foley_agent.py`, `music_supervisor_agent.py`): Injected verified action verbs, materials, and music timbres into agent system prompts to eliminate hallucinated words.
+  5. **Orchestrator & CLI Upgrades** (`orchestrator.py`, `audiobook_cli.py`): Auto-staged before FFmpeg in Step 5; added standalone `stage-sounds` CLI command.
+  6. **Test Certification**: `tests/test_download_on_demand_and_staging.py` 7/7 PASSED; full regression suite 20/20 PASSED. Zero remote push maintained.

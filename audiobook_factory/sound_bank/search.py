@@ -244,9 +244,15 @@ class SearchMixin:
 
             if category:
                 cat_norm = category.upper()
+                is_explicit_combat = any(
+                    w.lower() in ("sword", "blade", "clash", "armor", "shield", "axe", "dagger", "combat", "fight", "punch", "stab", "slash", "gun", "bow")
+                    for w in search_words
+                )
                 if cat_norm in ("FOLEY", "FOL"):
                     sql += " AND c.category IN ('FOL', 'SFX') AND (c.duration_sec IS NULL OR c.duration_sec <= 15.0)"
                     sql += " AND (c.filepath IS NULL OR (c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'))"
+                    if not is_explicit_combat:
+                        sql += " AND (c.subcategory IS NULL OR (LOWER(c.subcategory) NOT LIKE '%combat%' AND LOWER(c.subcategory) NOT LIKE '%weapon%'))"
                 elif cat_norm == "SFX":
                     sql += " AND c.category IN ('SFX', 'FOL') AND (c.duration_sec IS NULL OR c.duration_sec <= 15.0)"
                     sql += " AND (c.filepath IS NULL OR (c.filepath NOT LIKE '%/music/%' AND c.filepath NOT LIKE '%\\music\\%'))"
@@ -265,10 +271,11 @@ class SearchMixin:
                 params.append(mood.lower())
 
             if franchise_affinity:
-                sql += " ORDER BY (CASE WHEN LOWER(c.franchise_affinity) = LOWER(?) THEN 100 ELSE 0 END) DESC, c.is_downloaded DESC, rank LIMIT ?"
+                sql += " ORDER BY (CASE WHEN LOWER(c.franchise_affinity) = LOWER(?) THEN 100 ELSE 0 END) DESC, rank ASC, c.id ASC LIMIT ?"
                 params.extend([franchise_affinity, limit * 3 if (era or negative_tags) else limit])
             else:
-                sql += " ORDER BY c.is_downloaded DESC, rank LIMIT ?"
+                # Strict Semantic-First: Rank strictly by FTS5 BM25 match quality and catalog ID
+                sql += " ORDER BY rank ASC, c.id ASC LIMIT ?"
                 params.append(limit * 3 if (era or negative_tags) else limit)
 
             with self._get_conn() as conn:

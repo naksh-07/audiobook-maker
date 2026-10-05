@@ -84,7 +84,12 @@ class MusicSupervisorAgent:
             "3. Tension Punctuation (10–20s): Sudden atmospheric drop or crescendo on key revelations.\n"
             f"CRITICAL CONSTRAINT: Total music duration across ALL cues MUST NOT exceed {max_music_sec:.1f} seconds! "
             "At least 65% of the chapter MUST remain pure acoustic dialogue + room tone. "
-            "Target 4 to 10 distinct, purposeful musical cues distributed across the chapter."
+            "Target 4 to 10 distinct, purposeful musical cues distributed across the chapter.\n\n"
+            "VERIFIED SOUND BANK MUSIC TIMBRES & QUERIES (Ground search_query in these verified terms for instant resolution):\n"
+            "- Timbres: dark strings, solo cello, melancholic piano, subtle woodwinds, ambient tension drone, "
+            "low brass swell, bansuri flute, acoustic guitar, pizzicato suspense, emotional strings, orchestral brass.\n"
+            "- Moods: tense, mysterious, melancholic, dark_ominous, emotional, peaceful, epic, playful_folk.\n"
+            "- Optimal search_query examples: 'dark cello tension', 'melancholic piano slow', 'ambient drone suspense', 'subtle strings emotional', 'mystery pizzicato tension'."
         )
 
         prompt = f"""Chapter ID: {showrunner_plan.chapter_id}
