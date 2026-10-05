@@ -47,11 +47,11 @@ class TaskType(str, Enum):
 
 
 TASK_MINIMUM_TIERS: Dict[TaskType, ModelTier] = {
-    TaskType.TRANSLATION: ModelTier.TIER_2_BALANCED,
-    TaskType.SCREENPLAY: ModelTier.TIER_2_BALANCED,
-    TaskType.DRAMATURGY: ModelTier.TIER_2_BALANCED,
-    TaskType.DIRECTING: ModelTier.TIER_2_BALANCED,
-    TaskType.SOUND_DESIGN: ModelTier.TIER_2_BALANCED,
+    TaskType.TRANSLATION: ModelTier.TIER_3_UTILITY,
+    TaskType.SCREENPLAY: ModelTier.TIER_3_UTILITY,
+    TaskType.DRAMATURGY: ModelTier.TIER_3_UTILITY,
+    TaskType.DIRECTING: ModelTier.TIER_3_UTILITY,
+    TaskType.SOUND_DESIGN: ModelTier.TIER_3_UTILITY,
     TaskType.AUDITING: ModelTier.TIER_3_UTILITY,
     TaskType.EXTRACTION: ModelTier.TIER_3_UTILITY,
     TaskType.UTILITY: ModelTier.TIER_3_UTILITY,
