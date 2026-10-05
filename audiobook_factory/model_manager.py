@@ -52,8 +52,8 @@ TASK_MINIMUM_TIERS: Dict[TaskType, ModelTier] = {
     TaskType.DRAMATURGY: ModelTier.TIER_2_BALANCED,
     TaskType.DIRECTING: ModelTier.TIER_2_BALANCED,
     TaskType.SOUND_DESIGN: ModelTier.TIER_2_BALANCED,
-    TaskType.AUDITING: ModelTier.TIER_2_BALANCED,
-    TaskType.EXTRACTION: ModelTier.TIER_2_BALANCED,
+    TaskType.AUDITING: ModelTier.TIER_3_UTILITY,
+    TaskType.EXTRACTION: ModelTier.TIER_3_UTILITY,
     TaskType.UTILITY: ModelTier.TIER_3_UTILITY,
 }
 
