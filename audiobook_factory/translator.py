@@ -51,6 +51,8 @@ def call_gemini(
     response_schema: Optional[Dict[str, Any]] = None,
     max_retries: int = 8,
     thinking_budget: Optional[int] = None,
+    task_type: Optional[Any] = None,
+    **kwargs,
 ) -> str:
     """Send request to Gemini API with automatic key rotation, retry and high-tier model fallback.
     Delegates to centralized audiobook_factory.llm_client.
@@ -62,14 +64,14 @@ def call_gemini(
     res = core_call_gemini(
         prompt=prompt,
         system_instruction=system_instruction if system_instruction else None,
-        task_type=TaskType.TRANSLATION,
+        task_type=task_type or TaskType.TRANSLATION,
         response_mime_type=mime,
         # temperature intentionally omitted — llm_client uses task-adaptive 0.85
         max_output_tokens=16384,
         max_retries=max_retries,
         model=model,
         response_schema=response_schema,
-        timeout_sec=90.0,
+        timeout_sec=kwargs.get("timeout_sec", 90.0),
         return_raw_text=True,
         thinking_budget=thinking_budget,
     )

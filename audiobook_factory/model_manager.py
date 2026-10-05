@@ -71,12 +71,9 @@ class ModelTierFloorBreachError(RuntimeError):
 # Default catalog used as offline fallback if API discovery cannot connect
 OFFLINE_CATALOG_FALLBACK: List[str] = [
     "gemini-3.6-flash",
-    "gemini-3.5-flash",
-    "gemini-3-flash-preview",
-    "gemini-3.8-flash",
-    "gemini-3.7-flash",
     "gemini-flash-latest",
     "gemini-3.1-flash-lite",
+    "gemini-3-flash-preview",
     "gemini-flash-lite-latest",
 ]
 
@@ -94,6 +91,14 @@ EXCLUDED_PATTERNS = (
     "antigravity-preview",
     "computer-use",
     "customtools",
+    "3.5-flash",
+    "3.8-flash",
+    "3.7-flash",
+    "omni",
+    "gemma",
+    "-pro",
+    "gemini-pro",
+    "3-flash-preview",
 )
 
 
@@ -176,7 +181,7 @@ class ModelManager:
             return ModelTier.TIER_3_UTILITY
 
         # Tier 1 Flagship: High reasoning models and pro previews
-        if any(x in m for x in ("3.8-flash", "3.7-flash", "-pro", "pro-preview", "gemini-pro")):
+        if any(x in m for x in ("3.8-flash", "3.7-flash", "3.6-flash", "-pro", "pro-preview", "gemini-pro")):
             return ModelTier.TIER_1_FLAGSHIP
 
         # Tier 2 Balanced: Standard balanced flash models

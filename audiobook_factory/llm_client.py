@@ -41,8 +41,8 @@ def call_gemini(
     task_type: TaskType = TaskType.UTILITY,
     response_mime_type: str = "application/json",
     temperature: Optional[float] = None,
-    max_output_tokens: int = 8192,
-    max_retries: int = 6,
+    max_output_tokens: int = 16384,
+    max_retries: int = 12,
     service: str = "text",
     explicit_key: Optional[str] = None,
     timeout_sec: float = 45.0,
@@ -113,8 +113,8 @@ def call_gemini(
             p["generationConfig"]["responseSchema"] = response_schema
         if system_instruction:
             p["systemInstruction"] = {"parts": [{"text": system_instruction}]}
-        # Inject thinkingConfig only for creative reasoning tasks
-        if current_thinking_budget and current_thinking_budget > 0:
+        # Inject thinkingConfig if specified (including 0 to disable thinking)
+        if current_thinking_budget is not None and current_thinking_budget >= 0:
             p["generationConfig"]["thinkingConfig"] = {
                 "thinkingBudget": current_thinking_budget
             }
@@ -124,8 +124,10 @@ def call_gemini(
 
     # Resolve effective thinking budget for this call
     effective_thinking_budget: Optional[int] = None
-    if task_type in _THINKING_TASK_TYPES:
-        effective_thinking_budget = thinking_budget if thinking_budget is not None else _DEFAULT_THINKING_BUDGET
+    if thinking_budget is not None:
+        effective_thinking_budget = thinking_budget
+    elif task_type in _THINKING_TASK_TYPES:
+        effective_thinking_budget = _DEFAULT_THINKING_BUDGET
 
     last_error: Optional[Exception] = None
     _max_tokens_retried = False  # guard: only retry once on MAX_TOKENS
@@ -168,13 +170,15 @@ def call_gemini(
         if not candidate_models:
             raise LLMUnavailableError(f"STRICT HALT: No valid models available for task {task_type}")
 
-        if model:
+        if (model or env_model) and attempt < 3:
+            curr_model = model or env_model
+        elif attempt > 0 and len(candidate_models) > 1:
+            # Automatic candidate rotation on persistent retries/errors (never hammer an overloaded model)
+            curr_model = candidate_models[attempt % len(candidate_models)]
+        elif model:
             curr_model = model
         elif env_model:
             curr_model = env_model
-        elif attempt > 0 and len(candidate_models) > 1:
-            # Automatic candidate rotation on retries/errors (never hammer a single model)
-            curr_model = candidate_models[attempt % len(candidate_models)]
         else:
             try:
                 curr_model = model_mgr.resolve_active_model(task_type, api_key=curr_key)
@@ -232,24 +236,24 @@ def call_gemini(
 
                 candidate = resp_candidates[0]
                 if candidate.get("finishReason") == "MAX_TOKENS":
-                    # --- MAX_TOKENS Truncation Retry (Phase 2/3 Fix) ---
-                    # Thinking tokens eat into maxOutputTokens on Gemini 3+.
-                    # On first MAX_TOKENS hit: retry with halved thinking budget.
-                    # On second hit (or no thinking budget): fail-hard.
-                    if (
-                        effective_thinking_budget
-                        and not _max_tokens_retried
-                        and not _thinking_disabled
-                        and _model_supports_thinking(curr_model)
-                    ):
-                        halved_budget = effective_thinking_budget // 2
-                        logger.warning(
-                            f"  [!] MAX_TOKENS on {curr_model} (thinking_budget={effective_thinking_budget}). "
-                            f"Retrying with halved thinking budget ({halved_budget}) on next candidate..."
-                        )
-                        effective_thinking_budget = halved_budget
+                    # --- MAX_TOKENS Truncation Retry ---
+                    if not _max_tokens_retried:
                         _max_tokens_retried = True
+                        if effective_thinking_budget and effective_thinking_budget > 0:
+                            halved_budget = effective_thinking_budget // 2
+                            logger.warning(
+                                f"  [!] MAX_TOKENS on {curr_model} (thinking_budget={effective_thinking_budget}). "
+                                f"Retrying with halved thinking budget ({halved_budget}) on next candidate..."
+                            )
+                            effective_thinking_budget = halved_budget
+                        else:
+                            logger.warning(
+                                f"  [!] MAX_TOKENS on {curr_model}. Retrying with thinkingBudget=0 and expanded maxOutputTokens=16384..."
+                            )
+                            effective_thinking_budget = 0
+                            max_output_tokens = max(max_output_tokens, 16384)
                         continue  # proceed to next retry iteration
+
                     raise GeminiPayloadError(
                         f"Gemini API output truncated: finishReason is MAX_TOKENS "
                         f"(model={curr_model}, thinking_budget={effective_thinking_budget}). "
@@ -311,7 +315,7 @@ def call_gemini(
             error_type, wait_sec, msg = classify_gemini_error(e.code, err_body)
             preview = f"{curr_key[:6]}...{curr_key[-4:]}"
             logger.warning(
-                f"  [!] LLM HTTP {e.code} ({error_type}) on key {preview} (attempt {attempt + 1}/{max_retries}): {msg}"
+                f"  [!] LLM HTTP {e.code} ({error_type}) [model: {curr_model}] on key {preview} (attempt {attempt + 1}/{max_retries}): {msg}"
             )
 
             run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
