@@ -179,3 +179,107 @@ class DownloaderMixin:
                 logger.debug(f"LRU pruning check encountered warning: {e}")
 
             return target_path
+
+    def precache_essential_bundle(
+        self,
+        max_workers: int = 4,
+        progress_cb: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Pre-downloads an essential studio core bundle of ~100-150 universal everyday sounds
+        (doors, footsteps on wood/carpet/gravel, tableware, tea pouring, paper rustle,
+        rain, wind, fireplace, room tone) for zero-network production latency.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+        from audiobook_factory.sound_bank.verification_gate import AudioVerificationGate
+
+        core_queries = [
+            ("footsteps wood", "FOL", 10),
+            ("footsteps gravel", "FOL", 10),
+            ("footsteps carpet", "FOL", 5),
+            ("footsteps stone pavement", "FOL", 5),
+            ("door open creak latch", "FOL", 12),
+            ("door close slam shut", "FOL", 8),
+            ("tea cup pour liquid clink", "FOL", 10),
+            ("paper page turn book rustle", "FOL", 10),
+            ("chair wooden slide furniture", "FOL", 5),
+            ("clock ticking tick watch", "FOL", 5),
+            ("rain thunderstorm weather", "AMB", 10),
+            ("fire campfire hearth crackle", "AMB", 8),
+            ("wind breeze air ambient", "AMB", 8),
+            ("room tone quiet interior", "AMB", 8),
+            ("bird chirp morning nature", "AMB", 6),
+        ]
+
+        unique_candidates: Dict[int, Dict[str, Any]] = {}
+        for q, cat, lim in core_queries:
+            results = self.search(q, category=cat, limit=lim)
+            for r in results:
+                rid = r.get("id")
+                if rid and rid not in unique_candidates:
+                    unique_candidates[rid] = r
+
+        to_download = [
+            c for c in unique_candidates.values()
+            if not c.get("is_downloaded") and (c.get("source_url") or c.get("mirror_url"))
+        ]
+
+        stats = {
+            "total_essential_identified": len(unique_candidates),
+            "already_cached": len(unique_candidates) - len(to_download),
+            "queued_for_download": len(to_download),
+            "successfully_staged": 0,
+            "failed_count": 0,
+            "failed_details": [],
+        }
+
+        if not to_download:
+            return stats
+
+        gate = AudioVerificationGate()
+        completed_count = 0
+        total_dl = len(to_download)
+
+        def _worker(cand: Dict[str, Any]) -> Tuple[int, Optional[Path], Optional[str]]:
+            s_id = cand["id"]
+            fn = cand.get("filename") or f"asset_{s_id}"
+            cat = cand.get("category", "SFX") or "SFX"
+            src = cand.get("source_url")
+            mir = cand.get("mirror_url")
+            try:
+                p = self.download_virtual_asset(
+                    sound_id=s_id,
+                    source_url=src,
+                    filename=fn,
+                    category=cat,
+                    mirror_url=mir,
+                )
+                if not p or not p.exists():
+                    return s_id, None, "Download returned missing path"
+                v_res = gate.verify_asset(p, category=cat)
+                if not v_res.is_valid:
+                    return s_id, None, f"Verification rejected: {v_res.reason}"
+                return s_id, p, None
+            except Exception as e:
+                return s_id, None, str(e)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = [pool.submit(_worker, c) for c in to_download]
+            for fut in futures:
+                s_id, p, err = fut.result()
+                completed_count += 1
+                if p:
+                    stats["successfully_staged"] += 1
+                    if progress_cb:
+                        progress_cb(completed_count, total_dl, p.name, True)
+                    else:
+                        logger.info(f"  [↓] Cached essential sound [{completed_count}/{total_dl}]: {p.name}")
+                else:
+                    stats["failed_count"] += 1
+                    stats["failed_details"].append({"id": s_id, "error": err})
+                    if progress_cb:
+                        progress_cb(completed_count, total_dl, str(s_id), False)
+                    else:
+                        logger.warning(f"  [!] Failed caching essential sound [{completed_count}/{total_dl}] (ID {s_id}): {err}")
+
+        return stats

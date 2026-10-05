@@ -22,6 +22,7 @@ from .resolver import ResolverMixin, SoundAssetStagingError
 from .dsp_metrics import DSPMetricsMixin
 from .harvester import HarvesterMixin
 from .verification_gate import AudioVerificationGate, VerificationResult
+from .metadata_backfill import BBCMetadataBackfillEngine
 
 
 class SoundBank(

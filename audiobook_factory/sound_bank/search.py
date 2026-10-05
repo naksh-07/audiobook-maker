@@ -121,16 +121,15 @@ class SearchMixin:
 
         sql = """
             SELECT c.*,
-                   a.integrated_lufs as dsp_lufs,
-                   a.true_peak_db as dsp_peak,
-                   a.spectral_centroid_hz as dsp_centroid
+                   c.integrated_lufs as dsp_lufs,
+                   c.true_peak_db as dsp_peak,
+                   c.spectral_centroid_hz as dsp_centroid
             FROM sound_catalog c
-            LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
         """
         if where_clauses:
             sql += " WHERE " + " AND ".join(where_clauses)
 
-        sql += " ORDER BY c.is_downloaded DESC, c.id ASC LIMIT ?"
+        sql += " ORDER BY c.id ASC LIMIT ?"
         params.append(limit * 3)
 
         with self._get_conn() as conn:
@@ -144,12 +143,11 @@ class SearchMixin:
             params[fts_param_idx] = fts_query_or
             sql_fallback = """
                 SELECT c.*,
-                       a.integrated_lufs as dsp_lufs,
-                       a.true_peak_db as dsp_peak,
-                       a.spectral_centroid_hz as dsp_centroid
+                       c.integrated_lufs as dsp_lufs,
+                       c.true_peak_db as dsp_peak,
+                       c.spectral_centroid_hz as dsp_centroid
                 FROM sound_catalog c
-                LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
-                WHERE """ + " AND ".join(where_clauses) + " ORDER BY c.is_downloaded DESC, c.id ASC LIMIT ?"
+                WHERE """ + " AND ".join(where_clauses) + " ORDER BY c.id ASC LIMIT ?"
             with self._get_conn() as conn:
                 cur = conn.execute(sql_fallback, params)
                 candidates = [dict(row) for row in cur.fetchall()]
@@ -234,11 +232,11 @@ class SearchMixin:
             sql = """
                 SELECT c.id, c.filename, c.filepath, c.category, c.subcategory, c.mood, c.tags,
                        c.duration_sec, c.size_bytes, c.source_url, c.is_downloaded,
-                       c.franchise_affinity, c.lore_tags, rank,
-                       a.integrated_lufs, a.true_peak_db, a.spectral_centroid_hz
+                       c.franchise_affinity, c.lore_tags,
+                       c.integrated_lufs, c.true_peak_db, c.spectral_centroid_hz,
+                       bm25(sound_catalog_fts, 5.0, 10.0, 0.5, 5.0, 5.0, 3.0, 2.0, 8.0, 8.0, 10.0, 4.0, 6.0) as rank
                 FROM sound_catalog_fts f
                 JOIN sound_catalog c ON f.rowid = c.id
-                LEFT JOIN sound_assets a ON (a.filepath = c.filepath OR a.filename = c.filename)
                 WHERE sound_catalog_fts MATCH ?
             """
 

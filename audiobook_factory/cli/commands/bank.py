@@ -293,6 +293,39 @@ def cmd_bank(args):
             ai_mode=ai_mode,
             scratch_dir=scratch,
         )
+    elif action == "precache-essential":
+        workers = getattr(args, "workers", 4)
+        print(f"\n[*] Pre-caching Essential Studio Core Bundle (concurrency={workers})...")
+        def _prog(cur, tot, name, ok):
+            tag = "[+]" if ok else "[-]"
+            print(f"  {tag} [{cur}/{tot}] {name}")
+        stats = bank.precache_essential_bundle(max_workers=workers, progress_cb=_prog)
+        print("\n=======================================================")
+        print("   ESSENTIAL STUDIO SOUND BUNDLE PRE-CACHE COMPLETE   ")
+        print("=======================================================")
+        print(f"  Total Essential Identified : {stats['total_essential_identified']}")
+        print(f"  Already Cached on Disk     : {stats['already_cached']}")
+        print(f"  Newly Staged to Cache      : {stats['successfully_staged']}")
+        print(f"  Failed / Unreachable       : {stats['failed_count']}")
+        print("=======================================================\n")
+    elif action == "backfill-metadata":
+        dry_run = getattr(args, "dry_run", False)
+        limit = getattr(args, "limit", None)
+        mode_str = "DRY RUN" if dry_run else "LIVE UPDATE"
+        print(f"\n[*] Running BBC Physical Metadata Backfill Engine ({mode_str}, limit={limit})...")
+        from audiobook_factory.sound_bank.metadata_backfill import BBCMetadataBackfillEngine
+        stats = BBCMetadataBackfillEngine.run_backfill(bank=bank, dry_run=dry_run, limit=limit)
+        print("\n=======================================================")
+        print("   BBC METADATA BACKFILL SUMMARY                      ")
+        print("=======================================================")
+        print(f"  Candidates Scanned  : {stats['total_candidates']}")
+        print(f"  Updated Tracks      : {stats['updated_count']}")
+        print(f"  Actions Assigned    : {stats['actions_assigned']}")
+        print(f"  Exciters Assigned   : {stats['exciters_assigned']}")
+        print(f"  Resonators Assigned : {stats['resonators_assigned']}")
+        print(f"  Dry Run             : {stats['dry_run']}")
+        print("=======================================================\n")
+
 
 
 

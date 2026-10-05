@@ -134,6 +134,14 @@ def _setup_bank_subparsers(subs):
     p_stream.add_argument("--ai-mode", choices=["full", "dsp_only"], default="full", help="AI embedding depth")
     p_stream.add_argument("--scratch", default=None, help="Custom scratch folder path")
 
+    p_precache = subs.add_parser("precache-essential", help="Pre-download essential studio core bundle of everyday sounds for zero-network production")
+    p_precache.add_argument("--workers", type=int, default=4, help="Download concurrency threads")
+
+    p_backfill = subs.add_parser("backfill-metadata", help="Backfill physical UCS metadata (action_type, exciter, resonator) for BBC catalog")
+    p_backfill.add_argument("--dry-run", action="store_true", help="Simulate extraction without writing to database")
+    p_backfill.add_argument("--limit", type=int, default=None, help="Limit number of items to process")
+
+
 
 def main():
     parser = argparse.ArgumentParser(

@@ -267,6 +267,15 @@ class SonicIntelligenceBridge:
                             tier_name = "exact_fts" if tier_idx == 1 else "relaxed_fts"
                             score = 1.0 if tier_idx == 1 else 0.85
                             return fpath, tier_name, score
+
+                        # Virtual asset available for Stage 4.5 download-on-demand
+                        if item.get("source_url") or not item.get("is_downloaded", 1):
+                            cat_folder = (item.get("category") or category or "SFX").upper()
+                            fname = item.get("filename") or Path(fpath_str).name
+                            expected_path = self.sound_bank.cache_dir / cat_folder / Path(fname).name
+                            tier_name = "exact_fts_virtual" if tier_idx == 1 else "relaxed_fts_virtual"
+                            score = 0.95 if tier_idx == 1 else 0.80
+                            return expected_path, tier_name, score
             except Exception as e:
                 logger.debug(f"FTS5 candidate search error on '{c_query}': {e}")
 
@@ -284,6 +293,10 @@ class SonicIntelligenceBridge:
                             continue
                         if cand.exists():
                             return cand, "vector_intelligence", 0.75
+                        # Virtual candidate in vector intelligence
+                        cat_folder = (category or "SFX").upper()
+                        expected_path = self.sound_bank.cache_dir / cat_folder / cand.name
+                        return expected_path, "vector_intelligence_virtual", 0.70
         except Exception as e:
             logger.debug(f"Sonic intelligence search error: {e}")
 
@@ -324,9 +337,9 @@ class SonicIntelligenceBridge:
                 category=cat,
                 is_combat_scene=is_combat_scene,
             )
-            if tier == "exact_fts":
+            if tier in ("exact_fts", "exact_fts_virtual"):
                 exact_hits += 1
-            elif tier in ("relaxed_fts", "vector_intelligence"):
+            elif tier in ("relaxed_fts", "relaxed_fts_virtual", "vector_intelligence", "vector_intelligence_virtual"):
                 relaxed_hits += 1
             else:
                 silence_fallbacks += 1
