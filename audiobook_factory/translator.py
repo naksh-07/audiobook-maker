@@ -60,15 +60,26 @@ def call_gemini(
     per TaskType.TRANSLATION (currently 0.85 for literary expressive range).
     max_output_tokens=16384 to accommodate Devanagari output (~1.4x English token expansion).
     """
+    if task_type is None:
+        sys_lower = (system_instruction or "").lower()
+        if json_mode or any(k in sys_lower for k in ("audit", "evaluat", "parser", "detect", "review", "check")):
+            resolved_task_type = TaskType.AUDITING
+        else:
+            resolved_task_type = TaskType.TRANSLATION
+    else:
+        resolved_task_type = task_type
+
+    effective_retries = max_retries if resolved_task_type == TaskType.TRANSLATION else min(max_retries, 4)
+
     mime = "application/json" if json_mode else "text/plain"
     res = core_call_gemini(
         prompt=prompt,
         system_instruction=system_instruction if system_instruction else None,
-        task_type=task_type or TaskType.TRANSLATION,
+        task_type=resolved_task_type,
         response_mime_type=mime,
         # temperature intentionally omitted — llm_client uses task-adaptive 0.85
         max_output_tokens=16384,
-        max_retries=max_retries,
+        max_retries=effective_retries,
         model=model,
         response_schema=response_schema,
         timeout_sec=kwargs.get("timeout_sec", 90.0),
