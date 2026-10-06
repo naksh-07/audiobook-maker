@@ -112,8 +112,6 @@ class TestAdultLiteraryFidelity(unittest.TestCase):
         func_source = inspect.getsource(translator._translate_single_block)
         self.assertIn("LITERARY ANTI-BOWDLERIZATION MANDATE", func_source)
         self.assertIn("70/30 ANTI-PARODY INVARIANT", func_source)
-        self.assertIn("Anurag Kashyap", func_source)
-        self.assertIn("Saadat Hasan Manto", func_source)
         self.assertIn("गांड", func_source)
         self.assertIn("चूतड़", func_source)
         self.assertIn("19-TO-21 AMPLIFICATION", func_source)

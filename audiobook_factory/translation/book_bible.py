@@ -146,7 +146,7 @@ class BookBible(BaseModel):
     schema_version: str = "2.0.0"
     book_title: str = "Unknown"
     author: str = "Unknown"
-    narrative_voice: str = "Dark fantasy, cinematic dramatic Hindustani"
+    narrative_voice: str = "Neutral literary dramatic Hindustani"
     characters: Dict[str, BookEntity] = Field(default_factory=dict)
     locations: Dict[str, str] = Field(default_factory=dict)  # English -> Devanagari
     organizations: Dict[str, str] = Field(default_factory=dict)

@@ -127,7 +127,8 @@ class SpatialCoordinates(BaseModel):
     """Acoustic spatial placement on the stereo stage."""
     model_config = ConfigDict(extra="ignore")
     pan: float = Field(default=0.0, ge=-1.0, le=1.0, description="Stereo azimuth pan from -1.0 (hard left) to +1.0 (hard right)")
-    proximity: str = Field(default="normal_room", description="Acoustic proximity zone (e.g. 'close_mic', 'normal_room', 'distant')")
+    proximity: str = Field(default="normal_room", description="Acoustic proximity zone (e.g. 'close_mic', 'normal_room', 'distant', 'intimate_close')")
+    physical_blocking: Optional[str] = Field(default="standing", description="Physical character posture/choreography: 'sitting', 'standing', 'pacing', 'leaning_close', 'retreating', 'lying_down'")
 
 
 class SegmentMusicParams(BaseModel):

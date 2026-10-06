@@ -327,12 +327,15 @@ class IntelligentTranslationPipeline:
 \"\"\"
 """
             # D. Dispatch Translation LLM Call (ACT)
+            from audiobook_factory.model_manager import TaskType
             t0 = time.time()
             raw_target = call_llm_fn(
                 prompt=prompt,
                 system_instruction=system_instruction,
                 model=self.model,
                 json_mode=False,
+                task_type=TaskType.TRANSLATION,
+                thinking_budget=0,
             ).strip()
             dur = time.time() - t0
             print(f"    [+] Scene translated in {dur:.1f}s ({len(raw_target)} chars)")
@@ -478,6 +481,8 @@ class IntelligentTranslationPipeline:
                             system_instruction=system_instruction,
                             model=self.model,
                             json_mode=False,
+                            task_type=TaskType.TRANSLATION,
+                            thinking_budget=0,
                         ).strip()
                         is_val_s, clean_s, _ = validate_and_sanitize_translation(raw_retranslated, is_hindi=True)
                         candidate_scene = clean_s if is_val_s else raw_retranslated

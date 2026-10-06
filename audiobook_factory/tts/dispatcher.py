@@ -435,6 +435,7 @@ class TTSDispatcher:
         presence_boost_db = float(sp_cfg.get("presence_boost_db", 0.0))
         volume_gain_db = float(sp_cfg.get("volume_gain_db", 0.0))
         softclip_tanh = bool(sp_cfg.get("softclip_tanh", False))
+        eq_formant_profile = str(sp_cfg.get("eq_formant_profile", "")).strip()
 
         out_filename = compute_canonical_segment_filename(chapter_num, seg_num, text, sp_cfg, default_voice=self.default_voice)
         out_file = self.audio_dir / out_filename
@@ -556,15 +557,59 @@ class TTSDispatcher:
             )
             takes_for_seg.append(take_var)
 
-        # Intelligent Take Selection with Voice Identity & Conversational Chemistry
-        winning_take = self.take_selector.select_best_take(
-            takes_for_seg,
-            tts_text,
-            p_dir,
-            signature=signature,
-            voice_dna=voice_dna,
-            prev_take=getattr(self, "_prev_take", None),
-        )
+        # Intelligent Take Selection with Voice Identity, Conversational Chemistry & TakeAuditionCritic
+        if len(takes_for_seg) > 1:
+            try:
+                from audiobook_factory.performance.take_critic import TakeAuditionCritic
+                critic = TakeAuditionCritic()
+                candidate_dicts = [
+                    {
+                        "take_id": t.take_id,
+                        "variant_type": t.variant_type,
+                        "duration_sec": t.duration_sec,
+                    }
+                    for t in takes_for_seg
+                ]
+                win_idx, justification = critic.select_best_take_audition(
+                    text=tts_text,
+                    speaker=speaker,
+                    subtext=getattr(p_dir, "subtext", ""),
+                    emotion=getattr(p_dir, "emotion", ""),
+                    intensity=getattr(p_dir, "intensity", "medium"),
+                    candidates=candidate_dicts,
+                )
+                if 0 <= win_idx < len(takes_for_seg):
+                    winning_take = takes_for_seg[win_idx]
+                    winning_take.is_selected = True
+                    winning_take.selection_reason = f"[AUDITION_CRITIC] {justification}"
+                else:
+                    winning_take = self.take_selector.select_best_take(
+                        takes_for_seg,
+                        tts_text,
+                        p_dir,
+                        signature=signature,
+                        voice_dna=voice_dna,
+                        prev_take=getattr(self, "_prev_take", None),
+                    )
+            except Exception as e:
+                logger.warning(f"  [TakeAuditionCritic] Audition deliberation notice: {e}")
+                winning_take = self.take_selector.select_best_take(
+                    takes_for_seg,
+                    tts_text,
+                    p_dir,
+                    signature=signature,
+                    voice_dna=voice_dna,
+                    prev_take=getattr(self, "_prev_take", None),
+                )
+        else:
+            winning_take = self.take_selector.select_best_take(
+                takes_for_seg,
+                tts_text,
+                p_dir,
+                signature=signature,
+                voice_dna=voice_dna,
+                prev_take=getattr(self, "_prev_take", None),
+            )
 
         # Pronunciation Audio QA & Targeted Take Repair
         qa_res = self.pronunciation_auditor.audit_take(
@@ -656,6 +701,13 @@ class TTSDispatcher:
 
         if lowpass_hz > 1000:
             post_filters.append(f"lowpass=f={lowpass_hz}")
+
+        # 4D Acoustic Formant Equalization Profile
+        if eq_formant_profile:
+            for eq_filter in eq_formant_profile.split(","):
+                eq_clean = eq_filter.strip()
+                if eq_clean and eq_clean not in post_filters:
+                    post_filters.append(eq_clean)
 
         if post_filters:
             post_filters.append("alimiter=limit=-1.2dB:attack=5:release=50:asc=true")

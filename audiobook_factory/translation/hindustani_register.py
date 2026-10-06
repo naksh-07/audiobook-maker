@@ -14,16 +14,16 @@ from pydantic import BaseModel, Field
 
 class HindustaniRegisterSpec(BaseModel):
     atmosphere_words: List[str] = [
-        "रूह", "ख़ौफ़", "सन्नाटा", "ख़ामोशी", "दस्तक", "सिहरन", "तारीकी", "गर्दिश", "वीरान"
+        "सन्नाटा", "ख़ामोशी", "दस्तक", "सिहरन", "अंधेरा", "गूंज", "वीरान", "ख़ौफ़"
     ]
     passion_and_somatics: List[str] = [
-        "जिस्म", "हवस", "सुकून", "तन्हाई", "बेख़ौफ़", "तपिश", "सिहरन", "अफ़साने", "नशा"
+        "सुकून", "तन्हाई", "बेचैनी", "तपिश", "सांसें", "धड़कन", "नशा"
     ]
     combat_and_grit: List[str] = [
-        "ज़ख़्म", "ख़ंजर", "वहशी", "फ़ासला", "शराब", "क़हर", "तिलिस्म", "हैरत", "फ़ौलाद"
+        "ज़ख़्म", "दर्द", "आवाज़", "फ़ासला", "असर", "क़हर", "वार", "ख़ंजर"
     ]
     scholastic_and_courtly: List[str] = [
-        "इल्हाम", "कीमियागरी", "क़यामत", "फ़रेब", "वजूद", "इल्म", "शायर", "अदब"
+        "अदब", "तहज़ीब", "वजूद", "इल्म", "हुज़ूर", "सलाम", "हकीकत"
     ]
 
 
@@ -45,10 +45,36 @@ class HindustaniRegisterEngine:
         )
 
     @classmethod
+    def from_book_dna(cls, book_dna: Dict[str, Any]) -> HindustaniRegisterEngine:
+        """Constructs an engine directly tuned to the novel's DeepSearch DNA."""
+        if not book_dna:
+            return cls.from_genre("general")
+
+        trad = str(book_dna.get("literary_tradition", "")).lower()
+        era = str(book_dna.get("historical_era", "")).lower()
+
+        if "rural" in trad or "awadh" in trad or "bhojpuri" in trad or "village" in era:
+            return cls.from_genre("rural_historical")
+        elif "sci" in trad or "cyber" in trad or "space" in era:
+            return cls.from_genre("scifi")
+        elif "period" in era or "19th" in era or "classic" in trad or "victorian" in trad:
+            return cls.from_genre("history")
+        elif "crime" in trad or "thriller" in trad or "noir" in trad:
+            return cls.from_genre("thriller")
+        return cls.from_genre("general")
+
+    @classmethod
     def from_genre(cls, genre: str = "general") -> HindustaniRegisterEngine:
         """Constructs a genre-calibrated Hindustani register engine for ANY novel."""
         g = genre.lower()
-        if "sci" in g or "cyber" in g or "space" in g:
+        if "rural" in g or "village" in g or "awadh" in g:
+            spec = HindustaniRegisterSpec(
+                atmosphere_words=["सन्नाटा", "चौपाल", "आँगन", "छाँव", "धूप", "सन्नाटा"],
+                passion_and_somatics=["सुकून", "ममता", "पीड़ा", "धड़कन", "सांसें"],
+                combat_and_grit=["लाठी", "ज़ख़्म", "दर्द", "मार", "चीख़"],
+                scholastic_and_courtly=["बाबू", "मालिक", "हुज़ूर", "प्रणाम", "आशीर्वाद"],
+            )
+        elif "sci" in g or "cyber" in g or "space" in g:
             spec = HindustaniRegisterSpec(
                 atmosphere_words=["तारीकी", "गर्दिश", "सन्नाटा", "वीरान", "ख़ामोशी", "फ़ासला"],
                 passion_and_somatics=["सुकून", "तन्हाई", "बेख़ौफ़", "तपिश", "जिस्म"],
@@ -70,7 +96,7 @@ class HindustaniRegisterEngine:
                 scholastic_and_courtly=["फ़रेब", "वजूद", "क़यामत"],
             )
         else:
-            # Default rich dark-fantasy / general literary register
+            # Default balanced universal literary register
             spec = HindustaniRegisterSpec()
         return cls(spec=spec)
 

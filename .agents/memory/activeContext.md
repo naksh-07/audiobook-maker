@@ -5,18 +5,16 @@
 # Active Context: Pure Vocals-Only Studio Audiobook Production Engine
 
 ## Milestone: Vocals-Only Architecture Decoupling & Hardening (v4.0 Baseline)
-- **Status**: PRODUCTION CERTIFIED & 100% GREEN (712 passed, 8 skipped, 0 failed in 98s).
+- **Status**: PRODUCTION CERTIFIED & 100% GREEN. Ported Phase 1-3 from main.
 - **Core Streamlined Pipeline**:
-  `Source (PDF/EPUB/TXT) -> Extraction -> Translation (Hindustani) -> Screenplay & Cast Attribution -> Multi-Voice Gemini TTS -> Dialogue Editorial -> EBU R128 (-19 LUFS) Master -> M4B Packaging`.
-- **Decoupled & Archived**:
-  - Unlinked 2.2 GB sound bank junction and removed 354 MB SQLite FTS5 database.
-  - Moved unstable BGM/SFX/5-track mix engines (`AgentDirector`, `manifest_renderer`, `sound_design`, `soundscape_engine`, `cinematic_mix`, `virtual_catalog`) and 35+ sound-related test files into `archive/cinematic_audio/` (git-ignored).
-- **Key Vocal Intelligence Retained**:
-  1. Character casting & voice registry (`Aoede`, `Kore`, `Charon`, `Fenrir`, `Puck`, `Zephyr`, `Leda`, `Orpheus`).
-  2. Zero-voice-drift attribution & Stanislavski dramatic direction (`ADR-021`).
-  3. Persistent round-robin SQLite Gemini key pool (123 active keys with token-bucket rate limiting).
-  4. Workstation forced alignment (MMS CTC & honest acoustic energy fallback).
-  5. Dialogue editorial layer, Hann micro-fades (12ms/18ms), and broadcast EBU R128 (-19.0 LUFS, -1.5 dBTP) vocal mastering.
-  6. Chaptered M4B packaging with cover art and chapter metadata.
+  `Source (PDF/EPUB/TXT) -> Extraction -> Pre-Production (DeepSearch/BookDNA) -> Translation Collective -> Screenplay & Anti-Swap Attribution -> 4D Formant Multi-Voice TTS -> Dialogue Editorial -> EBU R128 (-19 LUFS) Master -> M4B Packaging`.
+- **Decoupled & Pure Vocals-Only**:
+  - Excluded unstable BGM/SFX 5-track mix engines, Archive.org sound bank downloader, and noisy stems.
+- **Ported Vocal & Pre-Production Upgrades from Main**:
+  1. **Quota Shield & Model Fallbacks**: Excluded quota-trap models (`omni`, `gemma`, `pro`), 12s probe timeout.
+  2. **Room 1 Pre-Production Intelligence**: `NovelDeepSearchEngine`, `BookDNAAgent`, `DramatisPersonaeAgent`, `PhoneticLexiconDramaturge`.
+  3. **Room 2 Translation Collective**: 4-Agent Collective (`DraftTranslator`, `CadenceSpecialist`, `IdiomDramaturge`, `TranslationCritic`) + Dual-Rule Invariant.
+  4. **Room 3 Screenplay & Staging**: `DialogueAttributionAuditor` (anti-swap QA), physical blocking spatial coordinates.
+  5. **Room 4 4D Vocal Timbre**: `CharacterCaster` 4D acoustic vector ($F_0$ pitch delta, tempo, parametric EQ formants), `TakeAuditionCritic`.
 - **CLI Commands**:
   `audiobook_cli.py [extract|translate|script|synthesize|master|package|produce|auto|audit|audit-book]`

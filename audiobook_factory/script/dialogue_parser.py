@@ -101,3 +101,40 @@ Output JSON: A list of objects where each object has:
                 return res[k]
         return [res]
     return []
+
+
+def parse_and_audit_dialogue_turns(
+    chunk_text: str,
+    preceding_context: str = "",
+    is_hindi: bool = False,
+    character_roster: Optional[Dict[str, Any]] = None,
+    audit_attribution: bool = True,
+) -> List[Dict[str, Any]]:
+    """
+    Pass 1 + Pass 1.5: Parses dialogue turns and executes Forensic Dialogue Attribution Audit
+    to eliminate character voice swapping, inversions, and leaked dialogue tags.
+    """
+    turns = _parse_dialogue_turns_llm(
+        chunk_text=chunk_text,
+        preceding_context=preceding_context,
+        is_hindi=is_hindi,
+        character_roster=character_roster,
+    )
+    if audit_attribution and turns:
+        try:
+            from audiobook_factory.script.agents.dialogue_attribution_auditor import DialogueAttributionAuditor
+            auditor = DialogueAttributionAuditor()
+            turns, _ = auditor.audit_and_correct(
+                turns=turns,
+                chunk_text=chunk_text,
+                preceding_context=preceding_context,
+                is_hindi=is_hindi,
+                character_roster=character_roster,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger("AudiobookFactory").warning(
+                f"  [!] parse_and_audit_dialogue_turns attribution audit warning: {e}"
+            )
+    return turns
+
