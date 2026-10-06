@@ -127,6 +127,7 @@ def call_gemini(
     last_error: Optional[Exception] = None
     _max_tokens_retried = False  # guard: only retry once on MAX_TOKENS
     _thinking_disabled = False   # guard: disable thinkingConfig if model rejects it
+    _models_safety_blocked: set[str] = set()
 
     for attempt in range(max_retries):
         # Subtle non-hammering pacing jitter between parallel threads (100ms - 350ms)
@@ -165,16 +166,22 @@ def call_gemini(
         if not candidate_models:
             raise LLMUnavailableError(f"STRICT HALT: No valid models available for task {task_type}")
 
-        if attempt > 0 and len(candidate_models) > 1:
+        available_candidates = [m for m in candidate_models if m not in _models_safety_blocked]
+        if not available_candidates:
+            available_candidates = candidate_models
+
+        if attempt > 0 and len(available_candidates) > 1:
             # Automatic candidate rotation on retries/errors (never hammer a single model)
-            curr_model = candidate_models[attempt % len(candidate_models)]
-        elif model:
+            curr_model = available_candidates[attempt % len(available_candidates)]
+        elif model and model not in _models_safety_blocked:
             curr_model = model
         else:
             try:
                 curr_model = model_mgr.resolve_active_model(task_type, api_key=curr_key)
+                if curr_model in _models_safety_blocked:
+                    curr_model = available_candidates[0]
             except Exception:
-                curr_model = candidate_models[0]
+                curr_model = available_candidates[0]
 
         # Determine whether current candidate model supports thinkingConfig
         use_thinking = (
@@ -268,8 +275,21 @@ def call_gemini(
                 return raw_text
 
         except GeminiPayloadError as gpe:
-            # Deterministic payload problem: do NOT retry on identical payload
             last_error = gpe
+            # Check if this was a safety/prohibited content block
+            is_safety_block = "blocked" in str(gpe).lower() or "prohibited_content" in str(gpe).lower()
+            if is_safety_block:
+                _models_safety_blocked.add(curr_model)
+                available = [m for m in candidate_models if m not in _models_safety_blocked]
+                if available and attempt < max_retries - 1:
+                    logger.warning(
+                        f"  [SAFETY_BLOCK] Model {curr_model} blocked payload ({gpe}). "
+                        f"Rotating to alternative candidate model (remaining: {available})..."
+                    )
+                    time.sleep(0.5)
+                    continue
+
+            # Deterministic payload problem or all models exhausted
             logger.warning(f"  [FAIL-FAST] {gpe}. Breaking model retry immediately.")
             run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
             try:

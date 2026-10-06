@@ -19,5 +19,9 @@
   6. **Runtime Hardening & WinError 32 Shield**: Centralized `_atomic_replace` backoff retry across all modules, explicit FFmpeg timeouts on 100% of subprocess calls, NaN float audio sanitization.
   7. **Docs & Guardrails Synchronization**: `AGENTS.md`, `README.md`, skills, and docs aligned to Pure Vocals-Only standards (`ADR-051`).
 - **Test Suite Status**: 764 passed, 8 skipped, 0 failed (100% green).
+- **Literary Translation Intelligence (Restored & Hardened)**:
+  - Universal World-Anchor (Rule 8) eliminates cartoonish village proverbs (*लंबरदार/पंच जी*) on foreign fantasy while preserving Premchand Awadhi/Bhojpuri.
+  - `BLOCK_NONE` safety framing + multi-model safety rotation in `llm_client.py` and `repair_engine.py`.
+  - Chapter 2 (*The Bounds of Reason*) translated with publication-grade Devanagari prose.
 - **CLI Commands**:
   `audiobook_cli.py [extract|translate|script|synthesize|master|package|produce|auto|audit|audit-book]`

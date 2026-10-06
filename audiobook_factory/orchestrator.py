@@ -10,7 +10,7 @@ import uuid
 import time
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from audiobook_factory.logger import logger
 
@@ -87,6 +87,7 @@ class PipelineOrchestrator:
         spatial_staging: bool = True,
         adult_literary_mode: bool = True,
         force_gate: bool = False,
+        chapters: Optional[List[int]] = None,
     ) -> Path:
         """
         Executes the complete 6-stage autonomous novel pipeline:
@@ -148,9 +149,9 @@ class PipelineOrchestrator:
             if hindi:
                 with telemetry.stage_timer(run_id, "Literary Translation", 2):
                     logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
-                    translate_book_project(project_dir, force_gate=force_gate)
+                    translate_book_project(project_dir, force_gate=force_gate, chapters=chapters)
                     # Inline Gate 0: Translation Coverage Verification
-                    verify_translation_coverage_gates(project_dir)
+                    verify_translation_coverage_gates(project_dir, chapters=chapters)
             else:
                 telemetry.record_stage(run_id, "Literary Translation", 2, duration_sec=0.0, status="SKIPPED")
                 logger.info("\n[Stage 2/6] Translation skipped (English/Native language selected).")
@@ -176,6 +177,7 @@ class PipelineOrchestrator:
                     project_dir=project_dir,
                     use_hindi=hindi,
                     dramatized=dramatized,
+                    chapters=chapters,
                 )
 
                 script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
@@ -190,11 +192,13 @@ class PipelineOrchestrator:
             # -------------------------------------------------------------
             with telemetry.stage_timer(run_id, "Vocals-Only Audio Production", 4):
                 logger.info(f"\n[Stage 4/5] Multi-Voice Synthesis & Vocal Broadcast Mastering across {len(script_files)} chapters (Workers: {workers})...")
-                for idx in range(1, len(script_files) + 1):
-                    logger.info(f"\n--- Producing Chapter {idx}/{len(script_files)} (Vocals-Only) ---")
+                for s_file in script_files:
+                    m = re.search(r"chapter_(\d+)", s_file.stem, re.IGNORECASE)
+                    ch_num = int(m.group(1)) if m else 1
+                    logger.info(f"\n--- Producing Chapter {ch_num} (Vocals-Only) ---")
                     self.produce_chapter(
                         project_dir=project_dir,
-                        chapter_num=idx,
+                        chapter_num=ch_num,
                         voice=voice,
                         workers=workers,
                         duck_db=duck_db,

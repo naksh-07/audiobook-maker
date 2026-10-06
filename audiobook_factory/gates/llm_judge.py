@@ -221,6 +221,8 @@ class BaseLLMJudge:
                 response_mime_type="application/json",
                 temperature=temperature,
                 max_retries=max_retries,
+                thinking_budget=0,
+                max_output_tokens=8192,
             )
         except Exception as e:
             raise GateAuditError(

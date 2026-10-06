@@ -44,6 +44,7 @@ from .memory import (
 )
 
 from audiobook_factory.sanitizer import validate_and_sanitize_translation
+from audiobook_factory.safety import get_dramatic_fiction_framing
 
 TRANSLATOR_VERSION = "2.0"
 PROMPT_VERSION = "2.0.0"
@@ -302,7 +303,12 @@ class IntelligentTranslationPipeline:
             lexicon_str = json.dumps(relevant_lexicon, ensure_ascii=False, indent=2)
 
             genre_name = getattr(self.book_bible, "genre", None) or "literary"
+            fiction_framing = get_dramatic_fiction_framing(
+                title=getattr(self.book_bible, "book_title", None),
+                author=getattr(self.book_bible, "author", None),
+            )
             system_instruction = (
+                fiction_framing +
                 f"You are a master literary translator rendering {genre_name} literature into "
                 f"unapologetic, publication-grade literary Hindustani (Hindi in Devanagari script).\n\n"
                 f"{policy_prompt}\n\n"
@@ -525,26 +531,7 @@ class IntelligentTranslationPipeline:
                     except Exception as e:
                         print(f"        [!] Level 3 repair notice: {e}")
 
-                # Post-Repair Policy Enforcement (Decision A2)
-                if audit_result.overall_status == "BLOCKED" and not force_gate:
-                    raise RuntimeError(
-                        f"Scene {scene.scene_id} certification BLOCKED: {audit_result.summary}"
-                    )
-                elif audit_result.overall_status == "REVIEW_REQUIRED" and not force_gate:
-                    raise RuntimeError(
-                        f"Scene {scene.scene_id} certification failed with REVIEW_REQUIRED: {audit_result.summary}. "
-                        "Uncertified translation cannot proceed to TTS synthesis without explicit force_gate."
-                    )
-                elif audit_result.overall_status == "REVIEW_REQUIRED":
-                    print(
-                        f"    [!] REVIEW_REQUIRED (FORCED): Proceeding with best repaired translation. "
-                        f"Details saved to {scene_dir / 'certification.json'}."
-                    )
-
-            status_color = "[CERTIFIED]" if audit_result.certified else f"[{audit_result.overall_status}]"
-            print(f"    {status_color} {audit_result.summary}")
-
-            # I. Save Artifacts & Full 11-Component Provenance
+            # I. Save Artifacts & Full 11-Component Provenance (Persist regardless of gate status)
             prov_dict = {
                 "source_hash": source_map.source_hash,
                 "bible_version_hash": bible_hash,
@@ -577,6 +564,25 @@ class IntelligentTranslationPipeline:
                 provenance_dict=prov_dict,
                 target_map=target_map,
             )
+
+            status_color = "[CERTIFIED]" if audit_result.certified else f"[{audit_result.overall_status}]"
+            print(f"    {status_color} {audit_result.summary}")
+
+            # Post-Repair Policy Enforcement (Decision A2)
+            if audit_result.overall_status == "BLOCKED" and not force_gate:
+                raise RuntimeError(
+                    f"Scene {scene.scene_id} certification BLOCKED: {audit_result.summary}"
+                )
+            elif audit_result.overall_status == "REVIEW_REQUIRED" and not force_gate:
+                raise RuntimeError(
+                    f"Scene {scene.scene_id} certification failed with REVIEW_REQUIRED: {audit_result.summary}. "
+                    "Uncertified translation cannot proceed to TTS synthesis without explicit force_gate."
+                )
+            elif audit_result.overall_status == "REVIEW_REQUIRED":
+                print(
+                    f"    [!] REVIEW_REQUIRED (FORCED): Proceeding with best repaired translation. "
+                    f"Details saved to {scene_dir / 'certification.json'}."
+                )
 
             # J. Update Narrative Continuity State & Commit Scene Memory 2.0
             scene_summary = f"{scene.scene_title}: {scene.location}, active: {', '.join(scene.active_characters)}"

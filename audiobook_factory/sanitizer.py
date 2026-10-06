@@ -197,6 +197,40 @@ def strip_preamble_and_postamble(text: str) -> str:
     return "\n".join(clean_lines).strip()
 
 
+def strip_internal_scratchpad_paragraphs(text: str) -> str:
+    """
+    Remove internal LLM reasoning, scratchpad notes, and self-corrections
+    that occasionally leak between paragraphs of translated text.
+    """
+    paragraphs = text.split("\n\n")
+    cleaned_paras: List[str] = []
+
+    scratchpad_prefixes = re.compile(
+        r"^(?:wait,?\s+|actually,?\s+|let'?s\s+(?:refine|see|continue|proceed|translate|use)|"
+        r"note\s*:|translator'?s?\s*note\s*:|i should\s+|i will\s+|let us\s+)",
+        re.IGNORECASE,
+    )
+
+    for p in paragraphs:
+        p_strip = p.strip()
+        if not p_strip:
+            continue
+        # Check if entire paragraph starts with scratchpad prefix
+        if scratchpad_prefixes.search(p_strip):
+            continue
+        # Check if paragraph matches any known refusal or meta commentary pattern
+        if any(pat.search(p_strip) for pat in COMPILED_META_PATTERNS):
+            if count_latin_words(p_strip) > 5 and count_devanagari_chars(p_strip) < count_latin_words(p_strip) * 2:
+                continue
+        # Check if it's a stand-alone English instruction like "Let's continue:"
+        if re.match(r"^let'?s\s+continue:?$", p_strip, re.IGNORECASE):
+            continue
+
+        cleaned_paras.append(p)
+
+    return "\n\n".join(cleaned_paras)
+
+
 def validate_and_sanitize_translation(text: str, is_hindi: bool = True) -> Tuple[bool, str, str]:
     """
     Validate and clean translation text before writing to disk cache or chapter markdown.
@@ -220,6 +254,9 @@ def validate_and_sanitize_translation(text: str, is_hindi: bool = True) -> Tuple
 
     # 3. Strip preamble / postamble chatter
     cleaned = strip_preamble_and_postamble(cleaned)
+
+    # 3.5. Strip internal scratchpad reasoning / self-corrections
+    cleaned = strip_internal_scratchpad_paragraphs(cleaned)
 
     # 4. Devanagari purity guardrail for Hindi translations
     if is_hindi:

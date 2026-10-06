@@ -4,6 +4,7 @@ import re
 import json
 import time
 from pathlib import Path
+from typing import Optional, List
 
 from audiobook_factory.cli.context import get_projects_dir, get_workspace_dir
 from audiobook_factory.extractor import process_book_file
@@ -21,19 +22,44 @@ def cmd_extract(args):
 
 
 
+def _parse_chapters_arg(args) -> Optional[List[int]]:
+    """Helper to parse --chapter and --chapters CLI arguments into a sorted list of chapter ints."""
+    if getattr(args, "chapter", None) is not None:
+        return [args.chapter]
+    ch_str = getattr(args, "chapters", None)
+    if not ch_str:
+        return None
+    result = []
+    for part in str(ch_str).split(","):
+        part = part.strip()
+        if "-" in part:
+            try:
+                s, e = part.split("-", 1)
+                result.extend(range(int(s.strip()), int(e.strip()) + 1))
+            except ValueError:
+                pass
+        elif part.isdigit():
+            result.append(int(part))
+    return sorted(list(set(result))) if result else None
+
+
 def cmd_translate(args):
     project_dir = get_projects_dir() / args.book
-    trans_dir = translate_book_project(project_dir, model=args.model)
+    chapters = _parse_chapters_arg(args)
+    force_gate = getattr(args, "force_gate", False)
+    trans_dir = translate_book_project(project_dir, model=args.model, force_gate=force_gate, chapters=chapters)
     print(f"\n[OK] Hindi translation complete at: {trans_dir}")
 
 
 
 def cmd_script(args):
     project_dir = get_projects_dir() / args.book
+    chapters = _parse_chapters_arg(args)
     scripts_dir = generate_project_scripts(
         project_dir,
         use_hindi=args.hindi,
         dramatized=args.dramatized,
+        chapters=chapters,
     )
     print(f"\n[OK] Scripts ready at: {scripts_dir}")
 
@@ -141,6 +167,7 @@ def cmd_auto(args):
     cover = Path(args.cover) if args.cover else None
     workers = getattr(args, "workers", 3)
     force_gate = getattr(args, "force_gate", False)
+    chapters = _parse_chapters_arg(args)
 
     orchestrator = PipelineOrchestrator(get_projects_dir())
     orchestrator.run_autonomous_pipeline(
@@ -151,6 +178,7 @@ def cmd_auto(args):
         cover_image=cover,
         workers=workers,
         force_gate=force_gate,
+        chapters=chapters,
     )
 
 

@@ -70,13 +70,18 @@ def main():
     # translate
     p_translate = subparsers.add_parser("translate", help="Translate extracted chapters into literary Hindi")
     p_translate.add_argument("book", help="Project book slug (folder name)")
-    p_translate.add_argument("--model", default="gemini-flash-latest", help="Gemini translation model")
+    p_translate.add_argument("--model", default="gemini-3.8-flash", help="Gemini translation model (default: gemini-3.8-flash)")
+    p_translate.add_argument("--chapter", type=int, default=None, help="Specific chapter number to translate")
+    p_translate.add_argument("--chapters", type=str, default=None, help="Comma-separated or range of chapters (e.g. 1-2 or 1,2)")
+    p_translate.add_argument("--force-gate", action="store_true", help="Bypass translation quality gate REVIEW failure and force production")
 
     # script
     p_script = subparsers.add_parser("script", help="Generate screenplay script JSON with speaker tags")
     p_script.add_argument("book", help="Project book slug")
     p_script.add_argument("--hindi", action="store_true", help="Use translated Hindi chapters")
     p_script.add_argument("--dramatized", action="store_true", help="Multi-voice character attribution mode")
+    p_script.add_argument("--chapter", type=int, default=None, help="Specific chapter number to script")
+    p_script.add_argument("--chapters", type=str, default=None, help="Comma-separated or range of chapters (e.g. 1-2 or 1,2)")
 
     # synthesize
     p_synth = subparsers.add_parser("synthesize", help="Synthesize audio segments via Gemini Cloud TTS")
@@ -108,6 +113,8 @@ def main():
     p_auto.add_argument("--cover", default=None, help="Cover art image path")
     p_auto.add_argument("--workers", default=3, type=int, help="Number of concurrent TTS synthesis workers (default: 3)")
     p_auto.add_argument("--force-gate", action="store_true", help="Bypass Extraction Quality Gate REVIEW failure and force production")
+    p_auto.add_argument("--chapter", type=int, default=None, help="Specific chapter number to produce")
+    p_auto.add_argument("--chapters", type=str, default=None, help="Comma-separated or range of chapters (e.g. 1-2 or 1,2)")
 
     # produce
     p_produce = subparsers.add_parser("produce", help="Produce mastered vocal chapters with EBU R128 (-19 LUFS) & timeline ledger")

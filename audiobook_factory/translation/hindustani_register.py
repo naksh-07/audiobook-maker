@@ -55,6 +55,8 @@ class HindustaniRegisterEngine:
 
         if "rural" in trad or "awadh" in trad or "bhojpuri" in trad or "village" in era:
             return cls.from_genre("rural_historical")
+        elif "fantasy" in trad or "medieval" in era or "witcher" in trad or "sword" in trad:
+            return cls.from_genre("fantasy")
         elif "sci" in trad or "cyber" in trad or "space" in era:
             return cls.from_genre("scifi")
         elif "period" in era or "19th" in era or "classic" in trad or "victorian" in trad:
@@ -73,6 +75,13 @@ class HindustaniRegisterEngine:
                 passion_and_somatics=["सुकून", "ममता", "पीड़ा", "धड़कन", "सांसें"],
                 combat_and_grit=["लाठी", "ज़ख़्म", "दर्द", "मार", "चीख़"],
                 scholastic_and_courtly=["बाबू", "मालिक", "हुज़ूर", "प्रणाम", "आशीर्वाद"],
+            )
+        elif "fantasy" in g or "medieval" in g or "epic" in g or "mythic" in g:
+            spec = HindustaniRegisterSpec(
+                atmosphere_words=["सन्नाटा", "ख़ौफ़", "वीरान", "तारीकी", "सिहरन", "धुंध", "अंधेरा"],
+                passion_and_somatics=["सुकून", "तन्हाई", "बेचैनी", "तपिश", "सांसें", "धड़कन"],
+                combat_and_grit=["ज़ख़्म", "फ़ौलाद", "वार", "ख़ंजर", "दर्द", "क़हर", "लहू"],
+                scholastic_and_courtly=["अदब", "हुज़ूर", "रियासत", "इल्म", "वजूद", "सलाम"],
             )
         elif "sci" in g or "cyber" in g or "space" in g:
             spec = HindustaniRegisterSpec(

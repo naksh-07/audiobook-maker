@@ -36,6 +36,7 @@ from audiobook_factory.advisory_lexicon import get_advisory_db
 pool = get_persistent_key_pool()
 
 
+from audiobook_factory.safety import get_dramatic_fiction_framing
 from audiobook_factory.llm_client import call_gemini as core_call_gemini, GeminiPayloadError
 
 
@@ -69,7 +70,7 @@ def call_gemini(
     else:
         resolved_task_type = task_type
 
-    effective_retries = max_retries if resolved_task_type == TaskType.TRANSLATION else min(max_retries, 4)
+    effective_retries = max_retries
 
     mime = "application/json" if json_mode else "text/plain"
     res = core_call_gemini(
@@ -131,9 +132,25 @@ def normalize_translated_lexicon(text: str, glossary: Dict[str, str] | Dict[str,
 
 def _extract_character_lexicon_agent(sample_text: str, book_metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Agent A: Extract character names, canonical Devanagari spellings, gender, and aliases."""
+    fiction_framing = get_dramatic_fiction_framing(
+        title=book_metadata.get("title"), author=book_metadata.get("author")
+    )
     sys_prompt = (
-        "You are an expert Literary Casting Director and Lexicographer for audiobooks. "
-        "Identify all characters in this passage and provide accurate, phonetically faithful Devanagari spellings."
+        fiction_framing +
+        "You are an expert Literary Casting Director and Lexicographer for audiobooks.\n"
+        "Identify all characters, monikers, and prominent figures in this passage and provide accurate, literary Devanagari spellings.\n\n"
+        "NON-NEGOTIABLE ENTITY PARTITION & TRANSLITERATION RULES:\n"
+        "1. PERSONAL GIVEN NAMES & SURNAMES (e.g. Victor -> विक्टर, Marcus -> मार्कस, Elena -> एलेना):\n"
+        "   Preserve foreign proper names via phonetic transliteration into clean Devanagari. NEVER replace them with Indian village names.\n"
+        "2. DESCRIPTIVE MONIKERS, OCCUPATIONS & EPITHETS (e.g. 'The Spotty-faced Man', 'The Butcher', 'The Alderman', 'The Innkeeper', 'The Blacksmith', 'The Beggar'):\n"
+        "   CRITICAL: DO NOT transliterate descriptive phrases phonetically into cartoonish comic-book Hinglish (STRICTLY BANNED: 'स्पॉटी-फेस्ड मैन', 'द बुचर', 'द इनकीपर')!\n"
+        "   Instead, TRANSLATE descriptive epithets and occupations into natural, evocative Hindustani:\n"
+        "   - 'The Spotty-faced Man' -> 'दाग़दार चेहरे वाला आदमी' (या 'चेचक के दाग़ों वाला आदमी')\n"
+        "   - 'The Butcher' -> 'कसाई'\n"
+        "   - 'The Alderman' -> 'एल्डरमैन' (या 'नगर प्रमुख')\n"
+        "   - 'The Barman' / 'Innkeeper' -> 'सरायवाला' (या 'मदिरालय वाला')\n"
+        "   - 'The Blacksmith' -> 'लोहार'\n"
+        "3. WORLD-ANCHOR RULE: For foreign/fantasy universes, NEVER use Indian rural caste/panchayat vocabulary ('पंच जी', 'लंबरदार', 'पटवारी')."
     )
     prompt = f"""Book Title: {book_metadata.get('title', 'Unknown')}
 Author: {book_metadata.get('author', 'Unknown')}
@@ -143,9 +160,9 @@ Sample Passage:
 {sample_text[:6000]}
 \"\"\"
 
-Output JSON: A list of objects for every character discovered:
-- "english_name": string
-- "hindi_name": Devanagari spelling (e.g. "नायक")
+Output JSON: A list of objects for every character or prominent figure discovered:
+- "english_name": string (e.g. "Marcus", "The Butcher", "The Spotty-faced Man")
+- "hindi_name": Devanagari spelling or translation adhering to the rules above (e.g. "कसाई", "दाग़दार चेहरे वाला आदमी", "मार्कस")
 - "gender": "male" | "female" | "other"
 - "aliases": list of strings (alternative names, titles, nicknames)
 - "voice_style": brief description of speech tone (e.g. "gruff, calm, authoritative")
@@ -165,8 +182,12 @@ def _extract_sociolects_and_honorifics_agent(
     sample_text: str, book_metadata: Dict[str, Any], characters: List[Dict[str, Any]]
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """Agent B: Determine Hindustani sociolect archetypes, pronoun levels ('तू'/'तुम'/'आप'), and relational dynamics."""
+    fiction_framing = get_dramatic_fiction_framing(
+        title=book_metadata.get("title"), author=book_metadata.get("author")
+    )
     sys_prompt = (
-        "You are an expert Hindustani Dramaturge and Dialogue Coach. "
+        fiction_framing +
+        "You are an expert Hindustani Dramaturge and Dialogue Coach.\n"
         "Analyze character power hierarchies and assign authentic Hindustani sociolect archetypes, "
         "takiya-kalam speech quirks, and mutual pronoun levels ('आप', 'तुम', or 'तू')."
     )
@@ -201,10 +222,16 @@ def _extract_world_terminology_agent(
     sample_text: str, book_metadata: Dict[str, Any]
 ) -> Tuple[Dict[str, str], str]:
     """Agent C: Extract world terminology, locations, weapons, factions, and overall narrative tone."""
+    fiction_framing = get_dramatic_fiction_framing(
+        title=book_metadata.get("title"), author=book_metadata.get("author")
+    )
     sys_prompt = (
-        "You are a Worldbuilding Lexicographer and Literary Lore Translator. "
-        "Extract key fictional locations, artifacts, weapons, factions, and lore terms, "
-        "providing consistent Hindi Devanagari equivalents while strictly preserving European fantasy proper nouns (70/30 rule)."
+        fiction_framing +
+        "You are a Worldbuilding Lexicographer and Literary Lore Translator.\n"
+        "WORLD-ANCHOR RULE: For foreign/fantasy universes, do NOT replace European currency or civic titles with Indian village terms "
+        "('अशर्फी', 'पंच जी', 'लंबरदार'). Currency should be 'सिक्के/मुद्राएं', civic titles should be 'मेयर/एल्डरमैन/नगर प्रमुख'.\n"
+        "SPOKEN DICTION & ANTI-SANSKRITIZATION: Translate everyday items into natural spoken Hindustani ('looking glass' -> 'आईना', 'ale/beer' -> 'मदिरा/बीयर', 'shilling' -> 'सिक्के/शिलिंग'). "
+        "STRICTLY FORBIDDEN to use textbook formal Sanskrit words like 'दर्पण' for gritty tavern objects."
     )
     prompt = f"""Book Title: {book_metadata.get('title', 'Unknown')}
 Author: {book_metadata.get('author', 'Unknown')}
@@ -607,6 +634,7 @@ def translate_book_project(
     model: Optional[str] = None,
     use_intelligent_pipeline: bool = True,
     force_gate: bool = False,
+    chapters: Optional[List[int]] = None,
 ) -> Path:
     """
     Batch translates all extracted chapters in a project into Hindi.
@@ -678,6 +706,11 @@ def translate_book_project(
         pass
 
     chapter_files = sorted(extracted_dir.glob("chapter_*.md"))
+    if chapters:
+        chapter_files = [
+            cf for cf in chapter_files
+            if any(cf.stem == f"chapter_{ch:03d}" or cf.stem == f"chapter_{ch}" or cf.stem.endswith(f"_{ch:03d}") for ch in chapters)
+        ]
     total = len(chapter_files)
 
     # Step 2: Intelligent Pipeline Translation (Default, Decision A1)
@@ -692,10 +725,13 @@ def translate_book_project(
             with open(chap_file, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            print(f"[*] [{idx}/{total}] Processing Intelligent Translation for {chap_file.name}...", flush=True)
+            m_ch = re.search(r"chapter_(\d+)", chap_file.stem)
+            ch_num = int(m_ch.group(1)) if m_ch else idx
+
+            print(f"[*] [{idx}/{total}] Processing Intelligent Translation for {chap_file.name} (Chapter {ch_num})...", flush=True)
             pipeline.translate_chapter(
                 chapter_text=content,
-                chapter_num=idx,
+                chapter_num=ch_num,
                 chapter_title=chap_file.stem,
                 call_llm_fn=call_gemini,
                 use_cache=True,

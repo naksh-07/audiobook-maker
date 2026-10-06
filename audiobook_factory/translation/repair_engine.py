@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from .terminology_auditor import COMMON_FORBIDDEN_VARIANTS
 from audiobook_factory.sanitizer import audit_literary_register
+from audiobook_factory.safety import get_dramatic_fiction_framing
 
 REPAIR_ENGINE_VERSION = "2.0"
 
@@ -156,7 +157,8 @@ class TieredRepairEngine:
         if semantic_beats:
             beats_formatted = "\n### CORE SEMANTIC BEATS TO PRESERVE:\n" + "\n".join(f"- {b}" for b in semantic_beats)
 
-        return f"""You are a master Hindi literary translator performing a surgical correction on a single paragraph.
+        framing = get_dramatic_fiction_framing()
+        return f"""{framing}You are a master Hindi literary translator performing a surgical correction on a single paragraph.
 
 ### SOURCE ENGLISH PARAGRAPH:
 \"\"\"
@@ -196,8 +198,12 @@ Output ONLY the corrected Hindi paragraph.
             failure_reasons=reasons,
             semantic_beats=semantic_beats,
         )
+        system_instruction = (
+            get_dramatic_fiction_framing()
+            + "You are a surgical translation repair editor. Output only the corrected paragraph."
+        )
         try:
-            repaired = call_llm_fn(prompt, "You are a surgical translation repair editor. Output only the corrected paragraph.").strip()
+            repaired = call_llm_fn(prompt, system_instruction).strip()
             if repaired and len(repaired) > 10:
                 return repaired, True
         except Exception:
@@ -214,8 +220,9 @@ Output ONLY the corrected Hindi paragraph.
         base_prompt: str = "",
     ) -> str:
         """Constructs full-scene prompt for Level 3 scene retranslation."""
+        framing = get_dramatic_fiction_framing()
         issues_formatted = "\n".join(f"- {r}" for r in failure_reasons) if failure_reasons else "- Systemic fidelity drift"
-        return f"""You are a world-class literary translator repairing a scene translation into Hindustani prose.
+        return f"""{framing}You are a world-class literary translator repairing a scene translation into Hindustani prose.
 The previous translation attempt failed certification with the following issues:
 
 ### DEFECTS IN PREVIOUS TRANSLATION:

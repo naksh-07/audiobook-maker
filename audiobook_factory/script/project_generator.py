@@ -24,6 +24,7 @@ def generate_project_scripts(
     use_hindi: bool = False,
     dramatized: bool = False,
     overwrite: bool = False,
+    chapters: Optional[List[int]] = None,
 ) -> Path:
     """Generates JSON screenplay scripts for all chapters in project."""
     project_dir = Path(project_dir).resolve()
@@ -32,6 +33,11 @@ def generate_project_scripts(
     scripts_dir.mkdir(parents=True, exist_ok=True)
 
     target_files = sorted(input_dir.glob("*.md"))
+    if chapters:
+        target_files = [
+            tf for tf in target_files
+            if any(f"_{ch:03d}" in tf.stem or tf.stem.endswith(f"_{ch}") or tf.stem == f"chapter_{ch:03d}" or tf.stem == f"chapter_{ch}" for ch in chapters)
+        ]
     if not target_files:
         raise FileNotFoundError(f"No markdown chapters found in {input_dir}")
 

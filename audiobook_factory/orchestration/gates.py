@@ -5,7 +5,7 @@ for robust, fail-closed studio production.
 """
 
 from pathlib import Path
-from typing import Any, Tuple, Optional
+from typing import Any, Tuple, Optional, List
 import os
 import json
 
@@ -263,12 +263,17 @@ def verify_post_mix_master_gates(
     return gate52_passed, gate53_passed, gate5_certified
 
 
-def verify_translation_coverage_gates(project_dir: Path, strict: bool = True) -> None:
+def verify_translation_coverage_gates(project_dir: Path, strict: bool = True, chapters: Optional[List[int]] = None) -> None:
     """Evaluates Gate 0 Translation Coverage and Gate 1 Anti-Censorship across all extracted chapters."""
     from audiobook_factory.gates.literary import audit_gate1_anticensorship_agent
     extracted_dir = project_dir / "extracted"
     translation_dir = project_dir / "translation"
     ext_files = sorted(extracted_dir.glob("chapter_*.md"))
+    if chapters:
+        ext_files = [
+            ef for ef in ext_files
+            if any(ef.stem == f"chapter_{ch:03d}" or ef.stem == f"chapter_{ch}" or ef.stem.endswith(f"_{ch:03d}") for ch in chapters)
+        ]
     for ef in ext_files:
         tf = translation_dir / f"{ef.stem}_hi.md"
         if not tf.exists():

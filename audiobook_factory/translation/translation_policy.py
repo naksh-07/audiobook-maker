@@ -58,7 +58,15 @@ class TranslationPolicyConfig(BaseModel):
             "Do not reduce every character to the same generic Hindi narrator tone.\n"
             "6. CANONICAL TERMINOLOGY: Strictly adhere to the canonical Book Bible proper nouns and source world terminology.\n"
             "7. ZERO METADATA / ZERO CHATTER: Output ONLY the translated literary prose in Devanagari Markdown. "
-            "Do not include translator notes, commentary, disclaimers, or scene overviews."
+            "Do not include translator notes, commentary, disclaimers, or scene overviews.\n"
+            "8. UNIVERSAL WORLD-ANCHOR & 70/30 ANTI-PARODY INVARIANT:\n"
+            "   - Maintain 70% Canon Sacredness / 30% Sensory Desi Spoken Amplification.\n"
+            "   - Strictly respect the cultural, historical, and geographical universe of the book:\n"
+            "     * If the setting is European, medieval fantasy, foreign, or sci-fi: STRICTLY FORBIDDEN to use Indian "
+            "rural administrative or caste/panchayat vocabulary ('पंच जी', 'लंबरदार', 'पटवारी', 'फतुही', 'अशर्फी'). "
+            "Translate civic titles as 'एल्डरमैन/मेयर/नगर प्रमुख', currency as 'सिक्के/मुद्राएं/स्वर्ण मुद्राएं', and attire as 'जैकेट/चोगा'.\n"
+            "     * If the setting is authentic Indian rural/heritage literature (e.g., Premchand): Faithfully celebrate authentic rustic Awadhi/Bhojpuri/Hindustani cadence.\n"
+            "   - NEVER replace the book's universe, lore, proper nouns, or geographic names with arbitrary mythology or comedy tapori spoofs."
         )
 
 
