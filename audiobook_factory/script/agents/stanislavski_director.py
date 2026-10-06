@@ -12,6 +12,7 @@ from typing import List, Dict, Any, Optional, Callable
 
 from audiobook_factory.llm_client import call_gemini as default_call_gemini
 from audiobook_factory.model_manager import get_model_manager, TaskType
+from audiobook_factory.safety import get_dramatic_fiction_framing
 
 logger = logging.getLogger("AudiobookFactory")
 
@@ -49,7 +50,8 @@ class StanislavskiSubtextDirector:
         ]
 
         sys_prompt = (
-            "You are an Academy-Award winning Audio Drama Director and Stanislavski Performance Coach.\n"
+            get_dramatic_fiction_framing()
+            + "You are an Academy-Award winning Audio Drama Director and Stanislavski Performance Coach.\n"
             "Enrich each dialogue turn with deep psychological subtext, transitive actioning verbs, "
             "concealed inner emotions, dynamic intensity headroom, and acting delivery style.\n\n"
             "Guidelines:\n"
@@ -60,7 +62,7 @@ class StanislavskiSubtextDirector:
             "- 'acting': {'delivery_style': 'whispering_fear' | 'cold_menace' | 'breathless_exhaustion' | 'ironic_mockery' | 'bellowing_rage' | 'combat_strain' | 'calm_authoritative' | 'gentle_tender' | 'neutral', 'pacing': float between 0.8 and 1.25}."
         )
 
-        prompt = f"""Dramatic Scene & Beat Context:
+        prompt = f"""{get_dramatic_fiction_framing()}Dramatic Scene & Beat Context:
 {dramatic_context if dramatic_context else "Standard narrative encounter."}
 
 Dialogue Turns to Direct (JSON):

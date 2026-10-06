@@ -10,6 +10,7 @@ from typing import List, Dict, Any, Optional
 
 from audiobook_factory.llm_client import call_gemini
 from audiobook_factory.model_manager import TaskType
+from audiobook_factory.safety import get_dramatic_fiction_framing
 
 
 def _parse_dialogue_turns_llm(
@@ -24,7 +25,8 @@ def _parse_dialogue_turns_llm(
     speakers from the canonical character roster, and adding neural vocal tags.
     """
     sys_prompt = (
-        "You are a Hollywood Audio Drama Dialogue Supervisor. "
+        get_dramatic_fiction_framing()
+        + "You are a Hollywood Audio Drama Dialogue Supervisor. "
         "Your sole responsibility is absolute dialogue turn isolation and character attribution.\n\n"
         "Core Mandates:\n"
         "1. ABSOLUTE DIALOGUE TURN ISOLATION:\n"
@@ -67,7 +69,7 @@ def _parse_dialogue_turns_llm(
                 + "\n"
             )
 
-    prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
+    prompt = f"""{get_dramatic_fiction_framing()}Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 Preceding Scene Context / Characters Speaking:
 {preceding_context if preceding_context else "Beginning of scene."}
 {roster_hint}

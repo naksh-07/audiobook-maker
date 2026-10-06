@@ -154,10 +154,12 @@ def generate_project_scripts(
                         if bible and isinstance(bible.characters, dict)
                         else ([c.canonical_name for c in bible.characters] if bible else [])
                     )
+                    from audiobook_factory.model_manager import TaskType
                     llm_wrapper = (
                         lambda prompt, system_instruction="", json_mode=True, **kw: json.dumps(
                             call_gemini(
                                 prompt=f"{system_instruction}\n\n{prompt}",
+                                task_type=TaskType.SCREENPLAY,
                                 response_mime_type="application/json",
                             )
                         )

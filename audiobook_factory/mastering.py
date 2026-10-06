@@ -407,8 +407,7 @@ def concatenate_and_master_chapter(
         )
         if loudnorm:
             filter_chain += (
-                f",loudnorm=I={target_lufs}:TP={target_tp:.1f}:LRA={effective_lra:.1f},"
-                f"alimiter=limit={limiter_limit}:attack={limiter_attack}:release=50"
+                f",loudnorm=I={target_lufs}:TP={target_tp:.1f}:LRA={effective_lra:.1f}"
             )
 
         ext = output_chapter_file.suffix.lower()

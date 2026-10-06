@@ -19,11 +19,11 @@
   6. **Runtime Hardening & WinError 32 Shield**: Centralized `_atomic_replace` backoff retry across all modules, explicit FFmpeg timeouts on 100% of subprocess calls, NaN float audio sanitization.
   7. **Docs & Guardrails Synchronization**: `AGENTS.md`, `README.md`, skills, and docs aligned to Pure Vocals-Only standards (`ADR-051`).
 - **Test Suite Status**: 764 passed, 8 skipped, 0 failed (100% green).
-- **Literary Translation Intelligence (Restored & Hardened)**:
-  - Universal World-Anchor eliminates cartoonish village proverbs (*लंबरदार/पंच जी*) on foreign fantasy while preserving Premchand Awadhi/Bhojpuri.
-  - Entity Partition: Personal proper names transliterated; descriptive monikers/occupations translated (*कसाई*, *दाग़दार चेहरे वाला आदमी*).
-  - Dynamic 11 Golden Invariants via `BookDNA` (`RAW_UNRATED` vs `CLASSIC_REVERENT`), macro-chunking (2,200 words), and `thinking_budget = 1024`.
-  - Streamlined Vocals-Only Engine translates full chapters in 1 single API call without 70-call micro-scene thrashing.
-  - Chapter 2 (*Sword of Destiny*) translated with 100% publication-grade Devanagari prose.
+- **Literary Translation & Pure Vocals Production (Chapter 2 Verified)**:
+  - Universal World-Anchor & Entity Partition: Proper names transliterated, descriptive titles translated (*कसाई*, *दाग़दार चेहरे वाला आदमी*).
+  - Dynamic 11 Golden Invariants via `BookDNA` (`RAW_UNRATED`), macro-chunking (2,200 words), and `thinking_budget = 1024`.
+  - Universal Dramatic Literary Framing (`get_dramatic_fiction_framing()`) injected across `llm_client`, `dialogue_parser`, and screenplay directors, eliminating `PROHIBITED_CONTENT` moderation blocks on dark fantasy action.
+  - Studio Mastering Chain Hardened: Removed post-`loudnorm` `alimiter` auto-scale gain boost, locking broadcast master to exact -18.7 LUFS / -1.6 dBTP (EBU R128 compliant).
+  - Chapter 2 (*Sword of Destiny*) 100% produced: 65 multi-voice segments, 10.44 minutes, EBU R128 mastered AAC (`chapter_002_hi_mastered.m4a`).
 - **CLI Commands**:
   `audiobook_cli.py [extract|translate|script|synthesize|master|package|produce|auto|audit|audit-book]`

@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional, Callable
 
 from audiobook_factory.llm_client import call_gemini as default_call_gemini
 from audiobook_factory.model_manager import get_model_manager, TaskType
+from audiobook_factory.safety import get_dramatic_fiction_framing
 
 logger = logging.getLogger("AudiobookFactory")
 
@@ -52,7 +53,8 @@ class PhysicalBlockingDirector:
         ]
 
         sys_prompt = (
-            "You are an expert Hollywood Spatial Audio Designer and Theatrical Blocking Director.\n"
+            get_dramatic_fiction_framing()
+            + "You are an expert Hollywood Spatial Audio Designer and Theatrical Blocking Director.\n"
             "Your task is to position characters physically in the soundscape and assign spatial audio coordinates.\n\n"
             "Directing Invariants:\n"
             "1. NARRATOR PLACEMENT: The Narrator MUST ALWAYS be centered (pan: 0.0, proximity: 'normal_room', blocking: 'standing').\n"
@@ -66,7 +68,7 @@ class PhysicalBlockingDirector:
             "6. ACOUSTIC ENV: Select the acoustic environment (e.g. 'tavern_hearth', 'stone_keep', 'dense_forest_night', 'open_road', 'quiet_chamber')."
         )
 
-        prompt = f"""Dramatic Scene Context:
+        prompt = f"""{get_dramatic_fiction_framing()}Dramatic Scene Context:
 {dramatic_context if dramatic_context else "Standard narrative encounter."}
 
 Active Speakers in Scene: {json.dumps(speakers, ensure_ascii=False)}

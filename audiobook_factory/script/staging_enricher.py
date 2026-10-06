@@ -12,6 +12,7 @@ from typing import List, Dict, Any, Optional
 
 from audiobook_factory.llm_client import call_gemini
 from audiobook_factory.model_manager import TaskType, LLMUnavailableError
+from audiobook_factory.safety import get_dramatic_fiction_framing
 from audiobook_factory.script.dialogue_parser import _parse_dialogue_turns_llm
 
 logger = logging.getLogger("AudiobookFactory")
@@ -41,7 +42,8 @@ def _enrich_performance_and_staging_llm(
         })
 
     sys_prompt = (
-        "You are an Academy-Award winning Audio Drama Director and Stanislavski Performance Coach. "
+        get_dramatic_fiction_framing()
+        + "You are an Academy-Award winning Audio Drama Director and Stanislavski Performance Coach. "
         "Enrich each dialogue turn with deep psychological subtext, transitive actioning verbs, "
         "concealed inner emotions, dynamic intensity headroom, acting delivery style, and spatial audio staging.\n\n"
         "Guidelines:\n"
@@ -54,7 +56,7 @@ def _enrich_performance_and_staging_llm(
         "- 'acoustic_env': environmental tone (e.g. 'domestic_room', 'suburban_street_day', 'dense_forest_night', 'stone_crypt')."
     )
 
-    prompt = f"""Dramatic Scene & Beat Context:
+    prompt = f"""{get_dramatic_fiction_framing()}Dramatic Scene & Beat Context:
 {dramatic_context if dramatic_context else "Standard narrative encounter."}
 
 Dialogue Turns to Enrich (JSON):

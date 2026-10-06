@@ -93,8 +93,24 @@ def call_gemini(
     pool = get_persistent_key_pool()
     model_mgr = get_model_manager()
 
-    from audiobook_factory.safety import get_universal_safety_settings
+    from audiobook_factory.safety import get_universal_safety_settings, get_dramatic_fiction_framing
     safety_settings = get_universal_safety_settings()
+
+    # Guarantee dramatic literary fiction framing for creative tasks to prevent false-positive moderation blocks
+    _CREATIVE_FICTION_TASKS = {
+        TaskType.TRANSLATION,
+        TaskType.SCREENPLAY,
+        TaskType.DRAMATURGY,
+        TaskType.DIRECTING,
+        TaskType.SOUND_DESIGN,
+        TaskType.AUDITING,
+    }
+    if task_type in _CREATIVE_FICTION_TASKS:
+        fiction_prefix = get_dramatic_fiction_framing()
+        if not system_instruction or "DRAMATIC LITERARY CONTEXT" not in system_instruction:
+            system_instruction = f"{fiction_prefix}{system_instruction or ''}"
+        if "DRAMATIC LITERARY CONTEXT" not in prompt:
+            prompt = f"{fiction_prefix}{prompt}"
 
     def _build_payload(current_thinking_budget: Optional[int]) -> Dict[str, Any]:
         """Build the API payload, optionally injecting thinkingConfig."""

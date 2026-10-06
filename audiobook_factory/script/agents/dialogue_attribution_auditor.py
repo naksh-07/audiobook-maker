@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Optional, Tuple, Callable
 
 from audiobook_factory.llm_client import call_gemini as default_call_gemini
 from audiobook_factory.model_manager import get_model_manager, TaskType
+from audiobook_factory.safety import get_dramatic_fiction_framing
 
 logger = logging.getLogger("AudiobookFactory")
 
@@ -197,7 +198,8 @@ class DialogueAttributionAuditor:
             })
 
         sys_prompt = (
-            "You are an Academy-Award winning Audio Drama Script Supervisor and Forensic Dialogue Attribution Auditor.\n"
+            get_dramatic_fiction_framing()
+            + "You are an Academy-Award winning Audio Drama Script Supervisor and Forensic Dialogue Attribution Auditor.\n"
             "Your sole mission is to cross-check candidate dialogue segments against the original source prose chunk "
             "and ensure 100% accurate character attribution with ZERO voice swapping.\n\n"
             "CRITICAL AUDIT RULES:\n"
@@ -215,7 +217,7 @@ class DialogueAttributionAuditor:
             "   - Do NOT rewrite, summarize, or translate the dialogue or narration. Maintain exact wording with tags removed.\n"
         )
 
-        user_prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
+        user_prompt = f"""{get_dramatic_fiction_framing()}Language: {"Hindi (Devanagari)" if is_hindi else "English"}
 
 Canonical Character Roster:
 {roster_summary}

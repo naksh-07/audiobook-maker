@@ -365,6 +365,7 @@ class PipelineOrchestrator:
         cmd_enc = [
             ff, "-y",
             "-i", str(vocal_wav),
+            "-af", "loudnorm=I=-19.0:TP=-1.5:LRA=11.0",
             "-c:a", "aac", "-b:a", "192k",
             str(mastered_out),
         ]
