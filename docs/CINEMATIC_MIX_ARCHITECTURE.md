@@ -1,4 +1,8 @@
-# 🎬 Stage 11: Cinematic Mix v2 Architecture
+# 🎬 Stage 11: Cinematic Mix v2 Architecture (ARCHIVED)
+
+> [!WARNING] ARCHIVED SUBSYSTEM (DECOUPLED)
+> This document describes the legacy 5-track cinematic BGM/SFX mixdown engine, which is decoupled and preserved in `archive/cinematic_audio/`.
+> The active production engine on `prestable-v4.0-baseline` is **Pure Vocals-Only Studio Audiobook Engine**. Do NOT attempt to run or reinstate sound bank or BGM pipelines from this document.
 
 ## Executive Architectural Law
 

@@ -46,78 +46,38 @@ GEMINI_DEFAULT_VOICE=Aoede
 
 ## 🧪 Testing Suite & Verification
 
-The codebase maintains **1,130+ passed unit and integration tests (100% green, 0 regressions)** across all test suites with a zero-regression, multi-script zero-hardcoding invariant:
+The codebase maintains **758 passed unit and integration tests (100% green, 0 regressions)** across all active test suites:
 
-### Running Modernized Production & Subsystem Suites
 ```powershell
-# Run Clean-Room Production Certification Harness (10 Gates, 24 Points)
-python -m unittest tests/test_production_certification.py -v
+# Run Full Test Suite (100% Green - 758 passing)
+uv run pytest
 
-# Run Fail-Closed Quality Gates Suite (ADR-047)
-python -m unittest tests/test_fail_closed_quality_gates.py -v
+# 4D Voice Formants & DSP Formant Chaining
+uv run pytest tests/test_4d_voice_formant_matrix.py tests/test_formant_shifted_tts_dsp.py tests/test_character_caster.py -v
 
-# Run Storage Abstraction & Path Safety Suite (ADR-047)
-python -m unittest tests/test_storage.py -v
+# Screenplay & Anti-Swap Dialogue Attribution Auditor
+uv run pytest tests/test_dialogue_attribution_auditor.py tests/test_multi_agent_screenplay.py -v
 
-# Run Stage 12 Mastering V2 Full Suite (Missions 1–4 Certified)
-pytest tests/test_mastering_contracts.py tests/test_mastering_analyzer.py tests/test_mastering_engine.py tests/test_mastering_closed_loop.py tests/test_mastering_judge.py tests/test_dialogue_protection.py tests/test_book_master_profile.py tests/test_chapter_consistency.py tests/test_perceptual_critic.py tests/test_reference_mastering.py tests/test_scene_aware_mastering.py tests/test_mastering_certification.py tests/test_golden_mastering_regression.py -v
+# 4-Agent Dramatic Translation Collective & Dual-Rule Invariant
+uv run pytest tests/test_multi_agent_translation.py tests/test_translation_collective_dual_rule.py -v
 
-# Run Stage 11 Cinematic Mix Automation Suites
-pytest tests/test_cinematic_mix_automation.py tests/test_uncompromised_cinema_audio.py -v
+# Pre-Production Intelligence & Universal Novel DeepSearch Grounding
+uv run pytest tests/test_universal_deepsearch_grounding.py tests/test_book_dna_agent.py tests/test_multi_agent_preproduction.py tests/test_multi_agent_voice_audition.py -v
 
-# Commercial Studio Quality Upgrade Waves A-E Benchmark Suite (50 tests)
-pytest tests/test_golden_take_selection_benchmark.py tests/test_take_selection_2.py tests/test_performance_evidence_and_evaluator_2.py tests/test_scene_selection_and_continuity.py tests/test_golden_alignment_benchmark.py -v
+# Model Manager Quota Shield & Strict Halt
+uv run pytest tests/test_model_manager_and_strict_halt.py -v
 
-# AST Zero-Hardcoding Contracts Verification
-pytest tests/test_zero_hardcoding_contracts.py -v
+# Pillar 1 Forensic Ingestion, Layout-Aware PDF & EPUB
+uv run pytest tests/test_pdf_engine.py tests/test_epub_parser.py tests/test_document_extractor_upgraded.py tests/test_forensic_analyzer.py -v
 
-# Dramatic Performance Realization Layer & Gate 2.8 (ADR-032, 23 tests)
-pytest tests/test_performance_realization.py -v
+# Dialogue Editorial Layer (DE-01 - DE-07)
+uv run pytest tests/test_dialogue_editorial_layer.py tests/test_dialogue_editing_integration.py -v
 
-# Stage 3 Dramaturgy, Beat Planner & Golden Scenes (7 test suites)
-pytest tests/dramaturgy/ -v
+# EBU R128 Broadcast Vocal Mastering
+uv run pytest tests/test_mastering_contracts.py tests/test_mastering_engine.py tests/test_mastering_certification.py -v
 
-# World + Character Memory 2.0 Test Suite (7 test suites, 35+ tests)
-python -m unittest discover tests/translation/memory -p "test_*.py"
-
-# Forensic Audit Remediation Probes (100-chapter stress, victim ordering, ghost event isolation)
-python -m unittest tests/translation/memory/test_audit_remediation.py
-
-# Literary Translation Intelligence & Memory 2.0 Suites (Pillar 2 - ADR-030)
-python -m unittest discover tests/translation -p "test_*.py"
-
-# Multi-Script (Latin + Devanagari) Zero-Hardcoding AST Contract Suite (ADR-030)
-python -m unittest tests/test_zero_hardcoding_contracts.py
-
-# Forensic Document Ingestion & Canonical AST Suite (Pillar 1 - ADR-029)
-python -m unittest tests/test_book_ingestion_pillar1.py
-
-# Zero-Voice-Drift Hardening & Deterministic Speaker Attribution (ADR-021)
-python -m unittest tests/test_zero_voice_drift_adr021.py
-
-# Audio Drama Sync, Foley Staging & Soundscape Remediation (ADR-022)
-python -m unittest tests/test_audio_sync_and_soundscape_remediation.py
-
-# Forensic Audit Remediation & Hardening Suite (ADR-020 - 13 Defects)
-python -m unittest tests/test_forensic_audit_remediation.py
-
-# 4-Stem Decoupled Scene Acoustics, Stochastic Generator & Occlusion Suite (ADR-018)
-python -m unittest tests/test_scene_acoustics_and_stochastic.py
-
-# Hollywood & AAA Combat Audio Drama Suite (ADR-017)
-python -m unittest tests/test_combat_audio_drama_fidelity.py
-
-# Adult Literary Fidelity & HBO Intimacy Suite (ADR-016 & ADR-019)
-python -m unittest tests/test_adult_literary_fidelity.py
-
-# Audit Remediation & Hardening Sprint (P0-P3 showstoppers)
-python -m unittest tests/test_audit_remediation_sprint.py
-
-# Phase 1: Audio Timing & State Integrity
-python -m unittest tests/test_phase1_remediation.py
-
-# Phase 2: Metadata Pipeline & Data Silos Unification
-python -m unittest tests/test_phase2_metadata_unification.py
+# Universal Zero-Hardcoding Contracts
+uv run pytest tests/test_zero_hardcoding_contracts.py -v
 
 # Phase 3: Spatial Audio Staging, Fail-Closed Gates & Checkpoint Safety
 python -m unittest tests/test_phase3_spatial_and_failclosed_gates.py

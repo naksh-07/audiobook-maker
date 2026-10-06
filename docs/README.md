@@ -1,46 +1,44 @@
-# 📖 Audiobook Maker Documentation Hub
+# 📖 Audiobook Maker Documentation Hub (Pure Vocals-Only Engine v4.0)
 
-Welcome to the comprehensive documentation suite for **Audiobook Maker (Audiobook Factory v4.0)** — the Hollywood-grade cinematic audio drama production framework.
+Welcome to the comprehensive documentation suite for **Audiobook Maker (Vocals-Only Studio Engine v4.0)** — the studio-grade multi-voice audiobook production framework.
+
+> [!IMPORTANT]
+> **Active Production Engine: Pure Vocals-Only**:
+> On branch `prestable-v4.0-baseline`, production is 100% focused on Audible-standard vocal excellence, character acting, 4D acoustic formants, and broadcast EBU R128 (-19 LUFS) vocal mastering. Legacy 5-track BGM/SFX mixdown systems are archived in `archive/cinematic_audio/`.
 
 ---
 
-## 🧭 Documentation Map
+## 🧭 Active Production Documentation Map
 
 | Guide | Description | Target Audience |
 |---|---|---|
-| **[📜 Forensic Literary Ingestion (Pillar 1)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/FORENSIC_DOCUMENT_INGESTION.md)** | Authoritative guide to the CanonicalBook AST, sacred raw archival, structural EPUB/PDF engines, and Gate 0.1 extraction audits. | System Architects, Data Engineers |
-| **[🧠 Literary Translation Intelligence (Pillar 2)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/LITERARY_TRANSLATION_INTELLIGENCE.md)** | Complete guide to BookBible v2.0, Contextual Hindustani Register, 7D Relationship & Intensity models, Gates T0–T11, Tiered Repair, and Memory 2.0. | Literary Translators, NLP Engineers, Architects |
-| **[🎭 Dramatic Adaptation & Screenplay (Stage 3)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Authoritative guide to the Stage 3 Dramaturgy Engine, SceneAnalyzer, BeatPlanner, beat-aligned chunk slicing, Performance Bible, and Gate 2.5 fidelity audits. | Dramaturges, Directing Agents, Scriptwriters |
-| **[🎭 Performance Realization & Actor Direction (Stage 3.5 / Gate 2.8)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md)** | Authoritative manual for the 14 capabilities, PerformanceDirection contracts, TimingRealizer, multi-take banking, 8D acoustic evaluation, intelligent take selection, and Gate 2.8 pre-mix verification. | Directing Agents, Sound Designers, Quality Engineers |
-| **[🎙️ Gemini 3.8 Flash TTS Engine & Directing (Stage 4 / Pillar 3)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)** | Authoritative guide to multimodal generative speech, 16k output audio tokens, unary & multi-speaker REST/Python contracts, physical inline tags (`<gasp>`, `<sigh>`), turn-level style directives, Devanagari synthesis, and SNR gatekeeping. | Directing Agents, Audio Engineers, Developers |
-| **[🎭 Voice Casting Director Manual & Character Matrix](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/VOICE_CASTING_DIRECTOR_GUIDE.md)** | Authoritative guide to Acoustic Invariance vs. Metadata Elasticity, top 12 character dossiers, 30 flagship voices, 120 regional Indian voices (`en-IN`), novel archetype casting, and screenplay directing recipes. | Casting Directors, Dramaturges, Directing Agents |
-| **[🧬 World + Character Memory 2.0](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/WORLD_AND_CHARACTER_MEMORY_2_0.md)** | Authoritative guide to deterministic event-driven continuity, 6-stage lifecycle, epistemic isolation (`MUST_NOT_KNOW`), 7 contradiction guardrails, and dramatic performance guidance. | Narrative Architects, NLP Engineers, Directing Agents |
-| **[🏛️ Architecture Blueprint](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)** | Deep dive into the 4-Room Architecture, the 5 discrete stems, the 9 metadata bridges, and the autonomous pipeline lifecycle. | System Architects, Engineers |
-| **[🎬 Cinematic Sound Design & Adult Fidelity](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_SOUND_DESIGN_AND_ADULT_FIDELITY.md)** | Comprehensive guide to Hollywood 3-layer combat design (ADR-017), Pottermore 4-stem scene acoustics (ADR-018), and adult intimacy (ADR-019). | Sound Designers, Directors, Authors |
-| **[🎵 Commercial Cinematic Sound Design Subsystem](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md)** | Authoritative guide to the 20 sound design capabilities (Phases A–G, ADR-034), 9-signal QC auditor, adapter boundary, and adversarial audit remediation (ADR-035). | Sound Designers, System Architects, Quality Engineers |
-| **[🎓 End-to-End Tutorial & Cookbook](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TUTORIAL_E2E.md)** | Step-by-step production recipes: 1-click autonomous runs, English audio drama, manual directing, resuming quota drops, and DAW stem exports. | All Users, Producers, Audio Engineers |
-| **[💻 CLI Reference](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CLI_REFERENCE.md)** | Complete CLI syntax, flags, autonomous pipeline commands, modular execution, exit codes, and environment variables. | Developers, Operators, Users |
-| **[📚 API Reference](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/API_REFERENCE.md)** | Pydantic v2 data contracts (`CanonicalBook`, `BookBible`, `CreativeManifest`, `ScreenplaySegment`, `StemLedger`), core engine classes, and public functions across 60+ modules. | Backend Developers, Integrators |
-| **[✂️ Dialogue Editorial Layer (DE-01 - DE-04)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DIALOGUE_EDITORIAL_LAYER.md)** | Intelligent endpoint editing, conservative breath decisions, contextual turn latencies, aposiopesis, vocal power dynamics, Hann micro-fades, and fail-closed QC. | Sound Designers, Dialogue Editors, Architects |
-| **[🎚️ Stage 11: Cinematic Mix v2 (Prompts 1–5)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_MIX_ARCHITECTURE.md)** | Authoritative guide to Stage 11: SceneMixIntent, AttentionMap, Automation Engine, Dynamic Masking, Acoustic Perspective, Silence & Impact Directors, 12-category Mix Judge, 20-scenario Golden Suite, and bounded remix cycles. | System Architects, Audio Engineers, Sound Designers |
-| **[🎛️ Audio Engineering & DSP](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)** | EBU R128 mastering, dynamic sidechain ducking (0.018 threshold), 2.2kHz spectral carving, room IR reverb, barrier occlusion, and spatial soundstage. | Sound Designers, Mixing Engineers |
-| **[🛡️ Quality Gates Manual](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/QUALITY_GATES.md)** | Comprehensive specifications for Gates 0.1 through 6E, Translation Gates T0 through T15, Unified LLM Creative Judges, Audio Reality Pre-Mix Gate (3.8), and Sound Bank Verification Gate (SB-1). | QA Engineers, Audio Engineers |
-| **[⚖️ Unified LLM Creative Quality Judges](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/QUALITY_GATES.md#the-unified-llm-creative-quality--audit-judge-protocol)** | Fail-closed dynamic model evaluators replacing heuristic scripts across translation fidelity, 3-agent anti-censorship, screenplay attribution, dramatic tension arc, vocal acting, and sound design. | Directing Agents, QA Engineers, System Architects |
-| **[🛡️ Pre-Mix Audio Reality & Verification](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/QUALITY_GATES.md#gate-38-audio-reality-pre-mix-gate)** | Millisecond pre-mix reality enforcement (`AudioRealityAuditor`: 3.5s foley cap, 180s cooldown, category isolation, era keyword hygiene) and Sound Bank physical verification (`AudioVerificationGate`). | Sound Designers, Audio Engineers |
-| **[🌍 Universal Project Classifier & Sonic Bible](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md#stage-05--stage-06-universal-project-classification--sonic-bible-generation)** | Stages 0.5 & 0.6 automated novel classification (era, genre, franchise affinity) and hands-free project compilation of `sound_bible.json`. | System Architects, Sound Curators |
-| **[📊 Production Telemetry Engine & Ledger](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/API_REFERENCE.md#production-telemetry-ledger)** | Thread-safe SQLite WAL telemetry ledger (`telemetry.db`), self-healing auto-registered runs, API token/cost metering, and true acoustic deliverables. | Backend Engineers, Operators |
-| **[🛡️ Audit Remediation & Hardening](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Authoritative engineering report on Phases 1–5: P0-P3 fixes, ADR-020 (13 defects), ADR-021 (Zero Voice Drift), ADR-022 (Audio Sync), ADR-049, and ADR-050 (5-Phase Master Forensic Remediation: Zero F821 lint, gate placebos purged, creative liberation, and Windows resilience). | System Architects, Audio Engineers, Developers |
-| **[🎹 Sound Bank & Asset Catalog](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/SOUND_BANK.md)** | SQLite FTS5 database schema, Sonic Genome indexing, UCS categories, cloud CC0 seeding, sub-millisecond retrieval, and permanent synthetic noise purge. | Sound Curators, Directing Engineers |
-| **[🎙️ Commercial Studio Voice Casting Architecture (ADR-023 / Waves 1-2)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TTS_CASTING_ARCHITECTURE.md)** | Authoritative guide to Voice Candidate Engine (12 personas, 10 dimensions), Audition Engine (10 modes), Multi-Pillar Casting Evaluator, CastLockManager (`cast_lock.json`), VoiceDNA, Reference Voice Bank (F0 median, centroid, flatness), and Voice Drift Analyzer. | Casting Directors, System Architects, Quality Engineers |
-| **[🎬 Commercial Studio TTS Generation & Acting Intelligence (ADR-023 / Waves 3-6)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/TTS_GENERATION_ARCHITECTURE.md)** | Authoritative guide to Scene Emotional State Tracker (6D vectors), Performance Constraint Resolver, Continuous Risk Engine ($R \in [0.0, 1.0]$), Multi-Take Banking, Conversational Chemistry, Performance Continuity Tracker (`character_continuity.json`), and Golden Audio Regression. | Directing Agents, Sound Designers, Quality Engineers |
-| **[🛠️ Developer & Contributor Guide](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DEVELOPER_GUIDE.md)** | Local environment setup, virtual environment, running tests (1,180+ passed, 100% green), multi-script zero-hardcoding invariants, Sound Bank ingestion, and troubleshooting. | Contributors, Maintainers |
-| **[🏛️ Master Modernization & Monolith Deconstruction (ADR-047 & ADR-048)](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md#section-6-master-modernization--monolith-decomposition-adr-047--adr-048)** | Deconstruction of 10 subsystems (contracts, sound bank, tts, gates, pdf, director, alignment, script, soundscape, orchestration), centralized chunking policy, and storage abstraction. | System Architects, Engineers |
+| **[📜 Forensic Literary Ingestion (Pillar 1)](FORENSIC_DOCUMENT_INGESTION.md)** | Authoritative guide to the CanonicalBook AST, sacred raw archival, structural EPUB/PDF engines, and Gate 0.1 extraction audits. | System Architects, Engineers |
+| **[🧠 Literary Translation Intelligence (Pillar 2)](LITERARY_TRANSLATION_INTELLIGENCE.md)** | Complete guide to the 4-Agent Translation Collective, BookBible v2.0, Contextual Hindustani Register, and Dual-Rule Invariant. | Literary Translators, NLP Engineers |
+| **[🎭 Dramatic Adaptation & Screenplay (Stage 3)](DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Authoritative guide to the Stage 3 Dramaturgy Engine, DialogueAttributionAuditor, and Gate 2.5 fidelity audits. | Dramaturges, Directing Agents |
+| **[🎭 Performance Realization & Actor Direction](PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md)** | Manual for performance directions, timing realizer, multi-take banking, and Gate 2.8 pre-mix verification. | Directing Agents, Quality Engineers |
+| **[🎙️ Gemini Flash TTS Engine & Directing](GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)** | Guide to multimodal generative speech, speech tags, turn-level style directives, Devanagari synthesis, and token-bucket key pool. | Audio Engineers, Developers |
+| **[🎭 Voice Casting & 4D Formants](VOICE_CASTING_DIRECTOR_GUIDE.md)** | Guide to 4D acoustic formant matrices (pitch $\pm 4-12\%$, tempo, parametric EQ curves), character dossiers, and non-colliding voice allocation. | Casting Directors, Dramaturges |
+| **[✂️ Dialogue Editorial Layer (DE-01 - DE-07)](DIALOGUE_EDITORIAL_LAYER.md)** | Intelligent endpoint zero-crossing snapping, Hann micro-fades (12ms/18ms), contextual turn latencies, and fail-closed QC. | Dialogue Editors, Audio Engineers |
+| **[🏛️ Architecture Blueprint](ARCHITECTURE.md)** | Deep dive into the 5-Room Pure Vocals-Only Architecture and autonomous pipeline lifecycle. | System Architects, Developers |
+| **[🎛️ Audio Engineering & Vocal Mastering](AUDIO_ENGINEERING.md)** | EBU R128 broadcast mastering (-19 LUFS vocal target, -1.5 dBTP), SOXR 48kHz / 24-bit studio pipeline, and M4B packaging. | Audio Engineers, Mastering Specialists |
+| **[💻 CLI Reference](CLI_REFERENCE.md)** | Complete syntax and flags for all 10 production commands (`auto`, `produce`, `extract`, `translate`, `script`, `synthesize`, `master`, `package`, `audit`, `audit-book`). | Developers, Operators |
+| **[🛡️ Quality Gates Manual](QUALITY_GATES.md)** | Comprehensive specifications for Gates 0.1 through 6E, Translation Gates T0 through T15, and fail-closed audit protocol. | QA Engineers, Audio Engineers |
+| **[🛠️ Developer & Contributor Guide](DEVELOPER_GUIDE.md)** | Local environment setup, virtual environment, and running the 758-test suite (100% green). | Contributors, Maintainers |
+
+---
+
+## 📦 Decoupled & Archived Subsystems
+
+The following documents describe the decoupled 5-track cinematic BGM/SFX mixdown engine, which is safely archived in `archive/cinematic_audio/` and is **NOT part of the active production pipeline**:
+- **[🎬 Cinematic Mix v2 Architecture](CINEMATIC_MIX_ARCHITECTURE.md)** *(Archived)*
+- **[🎬 Cinematic Sound Design & Adult Fidelity](CINEMATIC_SOUND_DESIGN_AND_ADULT_FIDELITY.md)** *(Archived)*
+- **[🎵 Commercial Sound Design Subsystem](CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md)** *(Archived)*
+- **[🎹 Sound Bank & Asset Catalog](SOUND_BANK.md)** *(Archived)*
 
 ---
 
 ## ⚡ Quick Links
-- Root Project Portal: [`README.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/README.md)
-- Core Python Engine: [`audiobook_factory/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/)
-- Mastering Suite: [`ffmpeg_mastering/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/ffmpeg_mastering/)
-- Test Suite: [`tests/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/tests/)
-- Agent Skills: [`.agents/skills/`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.agents/skills/)
+- Root Project Portal: [`README.md`](../README.md)
+- Core Python Engine: [`audiobook_factory/`](../audiobook_factory/)
+- Test Suite: [`tests/`](../tests/)
+- Agent Skills: [`.agents/skills/`](../.agents/skills/)

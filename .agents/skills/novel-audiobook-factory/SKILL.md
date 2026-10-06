@@ -1,17 +1,22 @@
 ---
 name: novel-audiobook-factory
 description: >-
-  Autonomous end-to-end studio audiobook production engine. Ingests any EPUB, PDF, TXT or Markdown novel,
-  extracts chapters, translates into literary dramatic Hindustani (optional), builds full-cast screenplay
-  with sliding-window dialogue attribution, synthesizes audio via Google Gemini 3.1 Flash TTS (token-bucket
-  concurrent pool), applies SQLite FTS5 Sound Bank ambience and -16dB dynamic sidechain ducking, masters vocals
-  to EBU R128 (-19 LUFS), and packages a chaptered M4B container with cover art in one autonomous run.
+  Autonomous studio-grade pure vocals-only audiobook production engine. Ingests any EPUB, PDF, TXT or Markdown novel,
+  extracts chapters, translates into literary dramatic Hindustani via a 4-Agent Collective (optional), builds multi-cast
+  screenplay with anti-swap dialogue attribution, synthesizes audio via Google Gemini Flash TTS with 4D acoustic formants
+  (pitch, tempo, parametric EQ curves), applies dialogue editorial snapping & micro-fades, masters vocals to EBU R128
+  (-19 LUFS), and packages a chaptered M4B container with cover art in one autonomous run.
   Activate whenever the user provides a book/novel file path and requests an audiobook.
 ---
 
-# Novel Audiobook Factory Skill
+# Novel Audiobook Factory Skill (Pure Vocals-Only Engine v4.0)
 
-This skill governs autonomous, studio-grade audiobook production on the high-performance PC workstation. It converts full-length novels (50,000–100,000+ words) into multi-cast, cinematic M4B audiobooks with zero manual editing.
+This skill governs autonomous, studio-grade audiobook production on the high-performance PC workstation. It converts full-length novels (50,000–100,000+ words) into multi-cast, studio-mastered M4B audiobooks with zero manual editing.
+
+> [!IMPORTANT]
+> **Pure Vocals-Only Architectural Mandate**:
+> On this branch, background music (BGM), sound effects (SFX), Archive.org sound bank harvesting, and 5-track multitrack mixdowns are **permanently decoupled and archived** in `archive/cinematic_audio/`.
+> The engine is 100% focused on Audible-standard vocal clarity, multi-character acting, dialogue nuance, and broadcast-grade vocal mastering.
 
 ---
 
@@ -20,16 +25,16 @@ This skill governs autonomous, studio-grade audiobook production on the high-per
 Whenever the user provides an input book file (`.epub`, `.pdf`, `.txt`, `.md`) and asks to produce an audiobook:
 
 ```bash
-# In c:\Users\Suraj\Documents\Antigravity\Audiobook:
+# In c:\Users\Suraj\Documents\antigravity\optimistic-kepler:
 python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voice Aoede --workers 3
 ```
 
 ### Command Flags:
-- `file`: Path to the input novel (`.epub` strongly preferred; `.pdf` parsed via Gemini multimodal document API).
-- `--hindi`: Translates English prose into dramatic, spoken Hindustani using Two-Pass Glossary Memory (*Aap/Tum/Tu* honorific hierarchy). Omit for original language.
-- `--dramatized`: Multi-voice character attribution mode using sliding-window chunking (no truncation).
+- `file`: Path to the input novel (`.epub` strongly preferred; `.pdf` parsed via layout-aware XY-cut engine).
+- `--hindi`: Translates English prose into dramatic spoken Hindustani using the 4-Agent Translation Collective. Omit for original language.
+- `--dramatized`: Multi-voice character casting with 4D acoustic formant modulation.
 - `--voice`: Lead narrator voice persona (`Aoede` female narrative, `Charon` deep male narrative).
-- `--workers`: Number of concurrent TTS synthesis workers (default: `3`, tuned for 15 RPM free tier).
+- `--workers`: Number of concurrent TTS synthesis workers (default: `3`, backed by 120+ active rotating Gemini API keys).
 - `--cover`: Optional path to cover art image (`.jpg` / `.png`) to embed in the M4B container.
 
 ---
@@ -38,75 +43,58 @@ python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voic
 
 ```mermaid
 flowchart TD
-    A["Input File (.epub / .pdf)"] --> B["Stage 1: Document Extractor<br/>(audiobook_factory.extractor)"]
-    B --> C["Stage 2: Literary Hindi Translation<br/>(audiobook_factory.translator)"]
-    C --> D["Stage 3: Sliding-Window Screenplay Attribution<br/>(audiobook_factory.script_builder)"]
-    D --> E["Stage 4: Deep Foley & Acoustic Miner<br/>(audiobook_factory.foley_miner)"]
-    D --> F["Stage 5: Multi-Cast TTS Dispatcher<br/>(audiobook_factory.tts_dispatcher)"]
-    E & F --> G["Stage 6: 5-Track FFmpeg Timeline Compositor<br/>(audiobook_factory.soundscape)"]
-    G --> H["Stage 7: Broadcast Mastering & M4B Container<br/>(audiobook_factory.packager)"]
+    A["Input File (.epub / .pdf / .txt)"] --> B["Room 1: Document Extractor & Pre-Production<br/>(ForensicPDFEngine + NovelDeepSearch + BookDNA)"]
+    B --> C["Room 2: 4-Agent Translation Collective<br/>(DraftTranslator + Cadence + Idioms + Critic)"]
+    C --> D["Room 3: Screenplay & Forensic Attribution<br/>(Dramaturgy + DialogueAttributionAuditor)"]
+    D --> E["Room 4: 4D Formants & Voice Performance<br/>(CharacterCaster + TTSDispatcher + TakeCritic)"]
+    E --> F["Room 5: Dialogue Editorial & Vocal Mastering<br/>(DE-01–DE-07 + EBU R128 -19 LUFS Master + M4B Packaging)"]
 ```
 
-### Stage 1: Document Ingestion & Canonical AST Engine ([`extractor.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/extractor.py), [`pdf_engine.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/pdf_engine.py), [`epub_parser.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/epub_parser.py))
-- **Sacred Source Preservation & Normalization**: SHA-256 manifest archival in `raw/`. Purges C0/C1 control characters (`\x00`, `\x07`) and soft hyphens (`\u00ad`) strictly in `normalized_text` while keeping `CanonicalBlock.raw_text` 100% sacred and unmutated.
-- **EPUB Structural Parsing**: Single-pass OPF manifest traversal, Nav/NCX anchor slicing with bracket (`<`) backtracking to prevent tag breakage, and sequential spine fallback tagging.
-- **PDF Layout XY-Cut Reading Order (`PDFLayoutReconstructor`)**: Geometric span extraction from `pypdf` content streams (`TextStateManager`), baseline horizontal segment grouping across column gutters ($\ge 14\text{pt}$), recursive XY-cut multi-column (2-col, 3-col) and spanning banner decomposition, cross-column mid-sentence continuation joining, single-column dialogue/epigraph false-split prevention (`same_row_pairs`, dense column stacks), and whitespace-aligned fallback.
-- **End-to-End PDF Provenance Indexing (`ForensicPDFEngine`)**: Character-accurate `_PDFPageSpanRecord` indexing mapping document ranges to source pages, tracking cross-page mid-sentence paragraph continuations (`page_number` + `page_end`), and lossless forwarding into canonical chapters and blocks.
-- **Multi-Signal Escalation Quality Gate (`PDFQualityAnalyzer`)**: Evaluates local pypdf vs. Gemini multimodal escalation across composite scoring ($0.40 \times \text{Reading Order} + 0.45 \times \text{Text Integrity} + 0.15 \times \text{Sentence Coherence}$) with hard disqualifiers for LLM refusals, 4-gram repetition loops, replacement char (`\ufffd`) regressions, and prose truncation ($> 45\%$ clean word loss).
-- **Literary Chapter vs. Production Chunk Architecture**: Distinguishes authentic authorial chapters (`unit_type="literary_chapter"`, `is_literary_chapter=True`) from artificial processing chunks (`unit_type="production_chunk"`), preserving section subheadings (`###`) and scene breaks (`* * *`) during Meso-tier >12k semantic splits. Offers `book.get_literary_chapters()` for unified reader TOCs and `book.get_production_chunks()` for execution limits.
-- **Gate 0.1 Ingestion Gatekeeper**: Independent fail-closed quality audit evaluating word floors, empty chapters, suspicious page ratios ($< 25\%$), and fallback chunk telemetry (`quality_report.json`).
+### Room 1: Document Ingestion & Pre-Production Intelligence
+- **Pillar 1 Forensic Ingestion**: Geometric PDF layout XY-cut reading order (`PDFLayoutReconstructor`), character-accurate `SourceProvenance` indexing (`_PDFPageSpanRecord`), and fail-closed Gate 0.1 quality audits.
+- **Novel DeepSearch Grounding**: Multi-angle factual dossier compilation (`NovelDeepSearchEngine`, `DeepSearchNovelDossier`) preventing hallucinations across world literature.
+- **Book DNA Profiler**: Dynamically resolves `literary_tradition`, `source_fidelity_tier`, `regional_dialect_cadence`, and `profanity_policy` without hardcoded titles or biases.
+- **Dramatis Personae & Phonetic Lexicon**: Character discovery and phonetic Devanagari transliteration locked in `book_bible.json` and `cast_lock.json`.
 
-### Stage 2: Sense-for-Sense Translation & Epistemic Continuity ([`translator.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translator.py) & [`translation/`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/translation/))
-- **Dynamic Model Resolution (ADR-043)**: Dynamically resolves active model via `ModelManager.resolve_active_model(TaskType.TRANSLATION)` with concurrent health pings and minimum Tier 2 quality floor. Strictly halts (`LLMUnavailableError`) on failure without silent fallback.
-- **BookBible & Memory 2.0 Integration**: Persistent canonical BookBible (`book_bible.json`) paired with World + Character Memory 2.0 (`memory_store.json`). Tracks character knowledge (`KNOWN`, `SUSPECTED`, `FALSE_BELIEF`, `UNKNOWN`, `DISPROVEN`), enforces epistemic isolation (`MUST_NOT_KNOW`), isolates flashbacks, and audits honorific continuity via Gate `T6_relationship_memory`.
-- **Sense-for-Sense Dramatic Hindustani**: Contextual register engine ("Aate mein Namak jitni Urdu") with zero clinical calques and natural interpersonal dynamics (*Aap/Tum/Tu*).
+### Room 2: Sense-for-Sense Translation Collective
+- **4-Agent Dramatic Translation Collective**:
+  - `LiteraryDraftTranslator`: Dramatic prose preserving 70% canon sacredness.
+  - `HindustaniCadenceSpecialist`: Natural actor breath pauses (`—`, `...`, `,`) and honorific status shifts (`TU <-> MAAI-BAAP`).
+  - `SubtextAndIdiomDramaturge`: Earthy Hindustani metaphors and 19-to-21 unrated amplification.
+  - `TranslationQualityCritic`: Anti-omission validation and BookBible terminology verification.
+- **The Dual-Rule Invariant ("Nothing Above Source")**:
+  - *Classical / Heritage Literature*: Authorial dignity and sacred regional pathos without modern street slang.
+  - *Raw Unrated Fiction*: 19-to-21 amplification of raw street curses, visceral combat gore, and unvarnished somatic intimacy.
 
-### Stage 3: Screenplay Attribution & Performance Guidance ([`script_builder.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/script_builder.py))
-- **Dynamic Model Resolution (ADR-043)**: Resolves active model via `TaskType.SCREENPLAY`. Strictly halts (`LLMUnavailableError`) on failure; silent fallback to flat narrator mode is permanently eliminated.
-- **Sliding-Window Parsing**: Chunks chapters into 1,200-word blocks with rolling context. Eliminates text truncation for long chapters.
-- **Multi-Cast Speaker Attribution**: Attributes character dialogue vs narrator, removes redundant speech tags, and tags acting emotions (`whispering`, `growl`, `calm_raspy`, `angry`).
-- **Memory 2.0 Vocal Constraint Propagation**: Automatically propagates physical states from Memory 2.0 (`memory_vocal_constraint`: `strained_breath`, `fatigued_low_energy`) to dialogue segments while preserving explicit director delivery styles, rendered natively into speechMetadata by the TTS dispatcher.
+### Room 3: Screenplay Dramaturgy & Anti-Swap Attribution
+- **Two-Pass Decoupled Screenplay Parser**: Deconstructs chapters into 500-word beat-aligned chunks, attributing dialogue turns, subtext actioning verbs, and spatial staging.
+- **Dialogue Attribution Auditor**: Dedicated QA agent preventing $A \leftrightarrow B$ speaker turn inversions, quote misattributions to Narrator, and speech tag leakage (`"उसने कहा"`).
 
-### Stage 4: Autonomous Directing Layer ([`agent_director.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/agent_director.py)) & Sonic Intelligence Engine ([`docs/SOUND_BANK.md`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/SOUND_BANK.md))
-- **Dynamic Directing Resolution & Strict Halts (ADR-043)**: Resolves active directing model via `TaskType.DIRECTING`. Strictly halts (`LLMUnavailableError`) if director LLM fails; generic acoustic templates are prohibited.
-- **3-Pass Dramaturgy & Multi-Scene Partitioning (ADR-018 & ADR-022)**:
-  - *Pass 1*: Carves acoustic silence ($\ge 60\%$).
-  - *Pass 1.5*: Partitions chapters dynamically into distinct scene blocks based on `acoustic_env` shifts (`_partition_script_ambience_scenes`).
-  - *Pass 2*: Queries FTS5 / Sonic Intelligence Sound Bank for scene-bound BGM underscore with `until_segment` duration calculation.
-  - *Pass 3*: Mines physical Foley interactions using `BILINGUAL_ANCHOR_MAP` without the 50% dead-center trap, strictly enforcing `DOMETabl` tableware isolation.
-  - Emits the authoritative Pydantic v2 `CreativeManifest`.
-- **Sonic Intelligence Engine Integration (Phases 1–3 Complete)**:
-  - **Phase 1 (DSP Foundation)**: Sonic Genome v2.1 with 14 measured physical properties (`DeterministicAudioAnalyzer`).
-  - **Phase 2 (AI Enrichment)**: AudioSet 527 taxonomy via AST and 512-d zero-shot semantic vectors via LAION-CLAP.
-  - **Phase 3 (Hybrid Retrieval)**: Multi-source candidate pooling (FTS5 + CLAP + AST + DSP), Hinglish query planning (15 intent types), linear reranking with diversity enforcement, and epistemic Agent Sound Cards v3.0 (`python audiobook_cli.py bank search-intelligence`).
+### Room 4: 4D Formants & Voice Performance Realization
+- **4D Acoustic Formant Modulation**: Pitch delta ($\pm 4-12\%$), tempo scaling, and 4D parametric EQ formant profiles (`equalizer=f=...`) dynamically applied via FFmpeg DSP to prevent vocal convergence when multiple characters share base voices.
+- **Formant-Sensitive Hash Caching**: Filename hashing incorporates the active EQ formant profile for deterministic cache invalidation.
+- **120+ Key Gemini Flash TTS Pool**: Concurrent token-bucket rate limiting with anti-bot jitter and permanent `BLOCK_NONE` safety settings.
+- **TakeAuditionCritic**: Judicial multi-take evaluation on climactic scenes.
 
-### Stage 5: Concurrent Multi-Cast TTS ([`tts_dispatcher.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/tts_dispatcher.py))
-- **Engine**: Google Gemini 3.1 Flash TTS (`gemini-3.1-flash-tts-preview`) generating 24kHz raw PCM.
-- **Multi-Cast Persona Routing**: Dynamically maps characters to distinct voices (`Charon` for Geralt, `Aoede` for Narrator, `Puck` for Dandelion/Guards, `Fenrir` for Kings/Nobles, `Kore` for Sorceresses).
-- **Rate-Limiter & Key Pool**: Rotates across 80+ keys with `TokenBucketRateLimiter` and single-worker human cadence.
-
-### Stage 6: 5-Track FFmpeg Timeline Compositor ([`soundscape.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/soundscape.py))
-- **Track 1 (Voice Bus)**: Multi-speaker dialogue with subtle room impulse reverberation (`aecho`).
-- **Track 2 (Foley Bus)**: Micro-timed physical object audio placed via FFmpeg `adelay`.
-- **Track 3 (Ambience Bus)**: Environmental room tone and weather from CC0 Sound Bank.
-- **Track 4 (Music Bus)**: Cinematic score with 1.2kHz–3.2kHz spectral carving (`equalizer=f=2200:t=q:w=1.5:g=-5.5`) and -16dB dynamic lookahead sidechain ducking.
-- **Master Bus**: EBU R128 (-19 LUFS) broadcast loudness normalization at 48kHz.
-
-### Stage 7: Broadcast Packaging ([`packager.py`](file:///C:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/packager.py))
-- **Single-Pass Stream Copy**: Concat demuxer streams directly to `.m4b` container with embedded chapter metadata and cover art.
+### Room 5: Dialogue Editorial & Broadcast Vocal Mastering
+- **Dialogue Editorial Layer (DE-01 - DE-07)**: Endpoint zero-crossing snapping (-52 dBFS speech floor), Hann micro-fades (12ms pre-speech, 18ms post-speech), and dramatic turn latency.
+- **Broadcast EBU R128 Vocal Master**: Standardized `-19.0 LUFS` ($\pm 0.5$ LU) integrated loudness and `-1.5 dBTP` true-peak ceiling at 48kHz / 24-bit.
+- **Chaptered M4B Container**: Streamlined packaging into `.m4b` container with FFMETADATA1 chapter markers, TOC navigation, and embedded high-resolution cover artwork.
 
 ---
 
-## 3. Voice Persona Guide (Gemini 3.1 Flash TTS)
+## 3. Voice Persona Guide (Gemini Flash TTS)
 
 | Persona Name | Gender | Vocal Profile & Character Casting |
 | :--- | :--- | :--- |
-| **Aoede** | Female | Expressive, warm, highly melodious narrative lead. Perfect for classic literature, drama, and main storytelling. |
+| **Aoede** | Female | Expressive, warm, melodious narrative lead. Perfect for classic literature, drama, and main storytelling. |
 | **Charon** | Male | Deep, commanding, resonant baritone. Ideal for authoritative male narrators, villains, mentors, and dark fantasy. |
 | **Kore** | Female | Soft, gentle, friendly, youthful female dialogue. |
 | **Puck** | Male | Energetic, dynamic, conversational young male voice. |
 | **Fenrir** | Male | Rugged, powerful, booming warrior/action character. |
 | **Zephyr** | Female | Calm, ethereal, whisper-soft atmosphere narrator. |
+| **Leda** | Female | Dignified, mature matriarch, noble or scholarly speaker. |
+| **Orpheus** | Male | Lyrical, melancholic, philosophical orator or bard. |
 
 ---
 

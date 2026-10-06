@@ -1,4 +1,8 @@
-# 🎹 Sonic Intelligence Engine & Virtual Sound Bank
+# 🎹 Sonic Intelligence Engine & Virtual Sound Bank (ARCHIVED)
+
+> [!WARNING] ARCHIVED SUBSYSTEM (DECOUPLED)
+> This document describes the legacy SQLite FTS5 Sound Bank and Archive.org asset harvesting system, which is decoupled and preserved in `archive/cinematic_audio/`.
+> The active production engine on `prestable-v4.0-baseline` is **Pure Vocals-Only Studio Audiobook Engine**. Do NOT attempt to run sound bank harvesting or database queries from this document.
 
 > **Specification Version:** 4.5  
 > **Status:** Production-Ready & Certified (Phases 1–5 Complete)  

@@ -16,5 +16,6 @@
   3. **Room 2 Translation Collective**: 4-Agent Collective (`DraftTranslator`, `CadenceSpecialist`, `IdiomDramaturge`, `TranslationCritic`) + Dual-Rule Invariant.
   4. **Room 3 Screenplay & Staging**: `DialogueAttributionAuditor` (anti-swap QA), physical blocking spatial coordinates.
   5. **Room 4 4D Vocal Timbre**: `CharacterCaster` 4D acoustic vector ($F_0$ pitch delta, tempo, parametric EQ formants), `TakeAuditionCritic`.
+  6. **Docs & Guardrails Synchronization**: `AGENTS.md`, `README.md`, skills, and docs aligned to Pure Vocals-Only standards (`ADR-051`).
 - **CLI Commands**:
   `audiobook_cli.py [extract|translate|script|synthesize|master|package|produce|auto|audit|audit-book]`

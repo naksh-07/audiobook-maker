@@ -1,4 +1,8 @@
-# 🎬 Commercial Cinematic Sound Design Subsystem Manual
+# 🎬 Commercial Cinematic Sound Design Subsystem Manual (ARCHIVED)
+
+> [!WARNING] ARCHIVED SUBSYSTEM (DECOUPLED)
+> This document describes the legacy 5-track cinematic BGM/SFX mixdown engine, which is decoupled and preserved in `archive/cinematic_audio/`.
+> The active production engine on `prestable-v4.0-baseline` is **Pure Vocals-Only Studio Audiobook Engine**. Do NOT attempt to run or reinstate sound bank or BGM pipelines from this document.
 
 > **Authoritative Technical Guide to the 20 Commercial Audio Drama Sound Design Capabilities (Phases A–G, ADR-034), Forensic Adversarial Audit Remediation (ADR-035), Next-Gen Production Upgrades (ADR-036), and Studio Quality Upgrades (ADR-037).**
 

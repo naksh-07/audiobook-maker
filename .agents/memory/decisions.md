@@ -1101,3 +1101,23 @@
      - AST verified zero hardcoded novel titles, characters, or franchise lore across all factory modules.
 - **Rationale:** Delivers Audible / GraphicAudio benchmark quality across any literature genre without puritanical moderation or vocal convergence, preserving 100% universal agility.
 
+## ADR-051: Pure Vocals-Only Studio Architecture & Decoupling of BGM/SFX Bloat
+- **Status:** Accepted
+- **Date:** 2026-10-06
+- **Context:**
+  1. The `main` branch introduced a 5-track cinematic mixdown engine (BGM scoring, Archive.org sound bank harvesting, Foley spotting) that suffered from Archive.org 503 URL rot, noisy -51.8 dB stems, vocal masking, and 10 RPD quota exhaustion.
+  2. Google Gemini 3.1/3.8 Flash TTS already provides comprehensive vocal and dramatic control (multi-voice character allocation, 4D acoustic formants: pitch, tempo, EQ; Stanislavski emotional subtext, speech tags, breath pauses).
+  3. Listeners and creators prioritize crystal-clear dialogue, authentic dramatic acting, and pristine Audible-style vocal narration over artificial background music and intrusive sound effects.
+  4. Documentation across `AGENTS.md`, `README.md`, skills, and `docs/` needed to be strictly synchronized to prevent future agents from re-introducing broken BGM/SFX dependencies.
+- **Decision:**
+  1. **Permanent Decoupling & Archival**: Decoupled and archived `AgentDirector`, `manifest_renderer`, `sound_design`, `soundscape_engine`, `cinematic_mix`, and `virtual_catalog` into `archive/cinematic_audio/`.
+  2. **5-Room Pure Vocals-Only Architecture**:
+     - Room 1: Pre-Production Intelligence (`NovelDeepSearchEngine`, `BookDNAAgent`, `DramatisPersonaeAgent`, `PhoneticLexiconDramaturge`).
+     - Room 2: Sense-for-Sense Translation Collective (4-Agent Collective + Dual-Rule Invariant).
+     - Room 3: Screenplay Dramaturgy & Forensic Anti-Swap `DialogueAttributionAuditor`.
+     - Room 4: 4D Acoustic Formants, Voice Performance & Gemini Flash TTS (`CharacterCaster`, `TakeAuditionCritic`, `TTSDispatcher`).
+     - Room 5: Dialogue Editorial Layer (DE-01 - DE-07), Broadcast Vocal Mastering (EBU R128 -19 LUFS) & Chaptered M4B Container Packaging.
+  3. **Immutable Agent Guardrail in `AGENTS.md`**: Codified strict prohibition on BGM/SFX and sound bank scraping on this branch.
+  4. **CLI Streamlining**: Cleaned `audiobook_cli.py` to expose exclusively the 10 active vocal commands (`auto`, `produce`, `extract`, `translate`, `script`, `synthesize`, `master`, `package`, `audit`, `audit-book`).
+- **Rationale:** Ensures guaranteed production stability, zero external asset failure modes, rapid synthesis turnaround, and Audible-grade broadcast vocal quality.
+

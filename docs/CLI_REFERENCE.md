@@ -1,46 +1,36 @@
-# 💻 CLI Reference: Complete Command & Workflow Guide
+# 💻 CLI Reference: Pure Vocals-Only Studio Audiobook Engine
 
 ## Overview
 
-The Audiobook Maker Command-Line Interface ([`audiobook_cli.py`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_cli.py)) provides complete operational control over the entire cinematic production pipeline. You can run an autonomous end-to-end novel production run with a single command or execute granular subcommands stage-by-stage.
+The Audiobook Maker Command-Line Interface ([`audiobook_cli.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_cli.py)) provides operational control over the entire studio-grade vocal production pipeline. You can run an autonomous end-to-end novel production run with a single command or execute granular subcommands stage-by-stage.
 
 ```bash
-# Entrypoint via Python script:
+# Entrypoint via Python:
 python audiobook_cli.py [COMMAND] [OPTIONS]
-
-# Or via installed console scripts (pip install -e .):
-audiobook-maker [COMMAND] [OPTIONS]
-audiobook-factory [COMMAND] [OPTIONS]
 ```
 
 ---
 
-## 🧭 Command Matrix
+## 🧭 Active Production Command Matrix
 
 | Subcommand | Scope | Description |
 |---|---|---|
 | **[`auto`](#1-autonomous-production-auto)** | Full Book | 1-Click autonomous pipeline (Extract $\rightarrow$ Translate $\rightarrow$ Script $\rightarrow$ Synth $\rightarrow$ Master $\rightarrow$ Package). |
-| **[`produce`](#2-chapter-production-produce)** | Chapter / All | Produces high-fidelity cinematic chapters with 5-track hierarchy and timeline ledger. |
+| **[`produce`](#2-chapter-production-produce)** | Chapter / All | Produces high-fidelity vocal chapters with EBU R128 (-19 LUFS) and timeline ledger. |
 | **[`extract`](#3-universal-document-extraction-extract)** | Ingestion | Ingests EPUB, PDF, TXT, or MD documents into clean Markdown chapters. |
-| **[`translate`](#4-literary-translation-translate)** | Translation | Translates extracted chapters into literary dramatic Hindustani with project glossary. |
+| **[`translate`](#4-literary-translation-translate)** | Translation | Translates extracted chapters into literary dramatic Hindustani with Translation Collective. |
 | **[`script`](#5-screenplay-scripting-script)** | Screenplay | Parses prose into standardized screenplay JSON with speaker attribution and acting tags. |
-| **[`synthesize`](#6-speech-synthesis-synthesize)** | Audio (TTS) | Synthesizes dialogue chunks using Google Gemini 3.1 Flash Cloud TTS. |
-| **[`timeline`](#7-master-timeline-ledger-timeline)** | Timeline | Builds and verifies the sample-accurate Gate 4.5 Audio Transcript & Timeline Ledger. |
-| **[`direct`](#8-agentic-dramaturgy-direct)** | Directing | Directs chapter dramaturgy via `AgentDirector`, producing a `CreativeManifest`. |
-| **[`render`](#9-deterministic-manifest-rendering-render)** | Compositing | Compiles and renders a `CreativeManifest` into master audio using FFmpeg filter graphs. |
-| **[`master`](#10-vocal-dsp-mastering-master)** | Mastering | Concatenates vocal chunks with 5-stage DSP chain and EBU R128 loudness normalization. |
-| **[`bgm`](#11-soundscape--ducking-bgm)** | Mixing | Generates ambient score and applies whisper-safe dynamic sidechain ducking. |
-| **[`stems`](#12-discrete-stem-inspection-stems)** | Stems | Inspects and verifies exported 5-track discrete DME stems and stem ledger. |
-| **[`audit`](#13-chapter-quality-audit-audit)** | QA (Chapter) | Runs Multi-Gate Independent Verification (Gates 0, 1, 2, 3, 4.5) on a specific chapter. |
-| **[`audit-book`](#14-full-book-macro-audit-audit-book)** | QA (Macro) | Runs Macro-Tier Gate 6 certification (Voice Continuity, Loudness, TOC Monotonicity). |
-| **[`package`](#15-m4b-container-packaging-package)** | Delivery | Packages all mastered chapters into a chapterized `.m4b` container with cover art. |
-| **[`bank`](#16-sound-bank-management-bank--soundbank)** | Assets | Manages, seeds, harvests, ingests, and searches the local SQLite FTS5 Sound Bank catalog. |
+| **[`synthesize`](#6-speech-synthesis-synthesize)** | Audio (TTS) | Synthesizes dialogue chunks using Google Gemini Flash Cloud TTS and 4D acoustic formants. |
+| **[`master`](#7-vocal-dsp-mastering-master)** | Mastering | Concatenates vocal chunks with 5-stage DSP chain and EBU R128 loudness normalization. |
+| **[`package`](#8-m4b-container-packaging-package)** | Delivery | Packages all mastered chapters into a chapterized `.m4b` container with cover art. |
+| **[`audit`](#9-chapter-quality-audit-audit)** | QA (Chapter) | Runs Multi-Gate Independent Verification (Gates 0, 1, 2, 2.5, 2.8) on a specific chapter. |
+| **[`audit-book`](#10-full-book-macro-audit-audit-book)** | QA (Macro) | Runs Macro-Tier Gate 6 certification (Voice Continuity, Loudness, TOC Monotonicity). |
 
 ---
 
 ## 1. Autonomous Production (`auto`)
 
-Executes the entire 6-stage production pipeline autonomously in a single command.
+Executes the entire pure vocals-only pipeline autonomously in a single command.
 
 ```bash
 python audiobook_cli.py auto <FILE> [OPTIONS]
@@ -54,242 +44,83 @@ python audiobook_cli.py auto <FILE> [OPTIONS]
 |---|:---:|:---:|---|
 | `--hindi` | Flag | `False` | Translate English source text to literary Hindustani. |
 | `--backend` | Choice | `gemini_tts` | Speech synthesis backend (`gemini_tts`). |
-| `--voice` | String | `Aoede` | Lead voice persona (`Aoede`, `Charon`, `Puck`, `Fenrir`, `Zephyr`). |
+| `--voice` | String | `Aoede` | Lead voice persona (`Aoede`, `Charon`, `Puck`, `Fenrir`, `Zephyr`, `Kore`, `Leda`, `Orpheus`). |
 | `--dramatized` | Flag | `False` | Multi-voice character casting vs single narrator reading. |
 | `--cover` | Path | `None` | Path to cover artwork image (JPEG/PNG, min $1400 \times 1400$ px). |
 | `--workers` | Integer | `3` | Number of concurrent TTS synthesis worker threads. |
-| `--force-gate` | Flag | `False` | Bypass Extraction Quality Gate (Gate 0.1) `REVIEW` failure and force production. |
+| `--force-gate` | Flag | `False` | Bypass Ingestion Quality Gate REVIEW warning and force production. |
 
 ### Example
 ```bash
-# Standard autonomous production:
-python audiobook_cli.py auto books/the_witcher.epub \
-  --hindi \
-  --dramatized \
-  --voice Charon \
-  --cover covers/witcher.jpg \
-  --workers 4
-
-# Autonomous production overriding Quality Gate REVIEW failure:
-python audiobook_cli.py auto books/unorthodox_layout.epub \
-  --voice Aoede \
-  --force-gate
+python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voice Aoede --workers 3
 ```
 
 ---
 
 ## 2. Chapter Production (`produce`)
 
-Executes cinematic chapter production incorporating the 5-track standard, token-bucket speech synthesis, timeline ledger assembly, and sidechain ducking.
+Produces mastered vocal chapters with EBU R128 (-19 LUFS) and timeline ledgers.
 
 ```bash
 python audiobook_cli.py produce <BOOK_SLUG> [OPTIONS]
 ```
 
 ### Positional Arguments
-- `BOOK_SLUG`: Name of the project directory inside `audiobooks/projects/`.
+- `BOOK_SLUG`: Project folder slug under `audiobooks/projects/`.
 
 ### Options
 | Flag | Type | Default | Description |
 |---|:---:|:---:|---|
 | `--chapter` | Integer | `None` | Specific chapter number to produce (e.g. `--chapter 1`). |
-| `--all` | Flag | `False` | Produce all chapters sequentially. |
+| `--all` | Flag | `False` | Produce all chapters in sequence. |
 | `--voice` | String | `Aoede` | Lead narrator voice persona. |
-| `--workers` | Integer | `3` | TTS synthesis worker threads. |
-| `--duck-db` | Float | `-16.0` | Sidechain ducking attenuation depth in dB. |
-
-### Example
-```bash
-# Produce Chapter 3 only:
-python audiobook_cli.py produce witcher1 --chapter 3 --voice Charon --workers 3
-
-# Produce all chapters across the project:
-python audiobook_cli.py produce witcher1 --all --duck-db -16.0
-```
+| `--workers` | Integer | `3` | Number of concurrent TTS synthesis worker threads. |
 
 ---
 
 ## 3. Universal Document Extraction (`extract`)
 
-Ingests raw book files (EPUB, PDF, TXT, MD) using the **Pillar 1 Forensic Ingestion Engine**. Builds a strongly typed Pydantic v2 AST, preserves sacred raw source files, evaluates the independent fail-closed Quality Gate (Gate 0.1), and projects clean Markdown chapters.
+Ingests any digital book into clean, segmented Markdown chapters.
 
 ```bash
-python audiobook_cli.py extract <FILE> [OPTIONS]
-```
-
-### Positional Arguments
-- `FILE`: Input file path (`.epub`, `.pdf`, `.txt`, `.md`).
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--force-gate` | Flag | `False` | Bypass Extraction Quality Gate (Gate 0.1) `REVIEW` failure and force file projection. |
-
-### Output Artifacts
-Each extraction run generates an isolated project workspace under `audiobooks/projects/<BOOK_SLUG>/`:
-- `raw/source_original.<ext>`: Bit-for-bit verbatim copy of the input document.
-- `raw/source_manifest.json`: Cryptographic SHA-256 verification hash, original path, and ingestion timestamp.
-- `canonical/book.json`: Strongly typed [`CanonicalBook`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L182-L262) AST with block-level forensic provenance.
-- `canonical/quality_report.json`: Machine-readable [`ExtractionQualityReport`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/book_model.py#L123-L180) containing Gate 0.1 status and page diagnostics.
-- `extracted/chapter_XXX.md`: Backward-compatible projected Markdown chapters for downstream translation and screenplay stages.
-- `metadata.json`: Legacy project metadata summary including chapter word counts and estimated durations.
-
-### Example
-```bash
-# Standard extraction with fail-closed Gate 0.1 enforcement:
-python audiobook_cli.py extract books/dune.epub
-
-# PDF extraction with automatic layout analysis & selective vision escalation:
-python audiobook_cli.py extract books/dracula.pdf
-
-# Bypassing Quality Gate REVIEW failure (operator override):
-python audiobook_cli.py extract books/scanned_book.pdf --force-gate
+python audiobook_cli.py extract <FILE> [--force-gate]
 ```
 
 ---
 
 ## 4. Literary Translation (`translate`)
 
-Performs two-pass dramatic Hindustani translation with persistent project glossary.
+Translates extracted chapters into literary dramatic Hindustani using the 4-Agent Translation Collective.
 
 ```bash
-python audiobook_cli.py translate <BOOK_SLUG> [OPTIONS]
+python audiobook_cli.py translate <BOOK_SLUG> [--model <MODEL>]
 ```
-
-### Positional Arguments
-- `BOOK_SLUG`: Project directory name.
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--model` | String | `gemini-flash-latest` | Gemini LLM model identifier for translation. |
-
-### Output Artifacts
-- Translated chapters: `audiobooks/projects/<BOOK_SLUG>/translated_hi/chapter_XXX_hi.md`
-- Project glossary: `audiobooks/projects/<BOOK_SLUG>/glossary.json`
 
 ---
 
 ## 5. Screenplay Scripting (`script`)
 
-Parses chapter prose into standardized screenplay JSON with speaker attribution, dynamic emotion tags, spatial panning, and acting directives.
+Parses chapter prose into standardized screenplay JSON with speaker attribution, 4D formant metadata, and Stanislavski acting cues.
 
 ```bash
-python audiobook_cli.py script <BOOK_SLUG> [OPTIONS]
+python audiobook_cli.py script <BOOK_SLUG> [--hindi] [--dramatized]
 ```
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--hindi` | Flag | `False` | Source text from `translated_hi/` instead of `extracted/`. |
-| `--dramatized` | Flag | `False` | Multi-voice character attribution (sliding-window memory bank). |
-
-### Output Artifacts
-- Screenplay scripts: `audiobooks/projects/<BOOK_SLUG>/scripts/chapter_XXX_script.json`
-- Character casting roster: `audiobooks/projects/<BOOK_SLUG>/character_roster.json`
-- Voice registry: `audiobooks/projects/<BOOK_SLUG>/voice_registry.json`
 
 ---
 
 ## 6. Speech Synthesis (`synthesize`)
 
-Synthesizes audio segments from screenplay JSON using Google Gemini 3.1 Flash Cloud TTS API with Token Bucket concurrency. Chapter indices are extracted dynamically via regex `chapter_(\d+)`, ensuring partial or non-sequential runs never corrupt chapter numbers.
+Synthesizes dialogue segments via Google Gemini Flash TTS with 4D acoustic formant modulation.
 
 ```bash
-python audiobook_cli.py synthesize <BOOK_SLUG> [OPTIONS]
-```
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--backend` | Choice | `gemini_tts` | Speech engine backend (`gemini_tts`). |
-| `--voice` | String | `Aoede` | Default fallback voice persona. |
-
-### Output Artifacts
-- Segment audio files: `audiobooks/projects/<BOOK_SLUG>/audio_chunks/cXXX_sYYYY_voice.wav`
-- 24kHz mono 16-bit uncompressed PCM speech segments.
-- Dispatched with explicit `safetySettings: [BLOCK_NONE]` across all 4 harm categories to prevent false-positive censorship blocks on mature/gritty dialogue.
-
----
-
-## 7. Master Timeline Ledger (`timeline`)
-
-Generates the sample-accurate Gate 4.5 Master Timeline & Audio Transcript Ledger and optionally stitches the continuous vocal master track.
-
-```bash
-python audiobook_cli.py timeline <BOOK_SLUG> --chapter <NUM> [OPTIONS]
-```
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--chapter` | Integer | *(Required)* | Chapter number to index. |
-| `--stitch` | Flag | `False` | Also stitch sample-accurate vocal master track (`chapter_XXX_dialogue.wav`). |
-
-### Example
-```bash
-python audiobook_cli.py timeline witcher1 --chapter 1 --stitch
+python audiobook_cli.py synthesize <BOOK_SLUG> [--voice <VOICE>] [--backend gemini_tts]
 ```
 
 ---
 
-## 8. Agentic Dramaturgy (`direct`)
+## 7. Vocal DSP Mastering (`master`)
 
-Invokes `AgentDirector` to run the 3-pass dramaturgy workflow (silence carving, FTS5 music selection, acoustic foley mining) and generate a `CreativeManifest`.
-
-```bash
-python audiobook_cli.py direct <BOOK_SLUG> --chapter <NUM> [OPTIONS]
-```
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--chapter` | Integer | *(Required)* | Chapter number to direct. |
-| `-o`, `--output` | Path | `None` | Custom output manifest JSON path. Defaults to `manifests/chapter_XXX_manifest.json`. |
-
-### Example
-```bash
-python audiobook_cli.py direct witcher1 --chapter 1
-```
-
----
-
-## 9. Deterministic Manifest Rendering (`render`)
-
-Compiles and renders a `CreativeManifest` into a master audio file using the Deterministic Engine.
-
-```bash
-python audiobook_cli.py render --manifest <PATH> [OPTIONS]
-```
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--manifest` | Path | *(Required)* | Path to `creative_manifest.json`. |
-| `--vocal` | Path | `None` | Optional vocal dialogue track. Dynamically inferred from manifest parent directories if omitted. |
-| `--output` | Path | `None` | Optional output audio master destination path. Defaults to `mastered/<chapter_id>_cinematic_v2.m4a`. |
-| `--skip-gate3-5` | Flag | `False` | Bypass Gate 3.5 Pre-Flight Feasibility Guard check. |
-
-> [!NOTE]
-> **Dynamic Vocal Track Inference**: If `--vocal` is not provided, the CLI dynamically checks `<project>/mastered/` for `<chapter_id>_dialogue.wav`, `<chapter_id>_mastered.wav`, `<chapter_id>_dialogue.m4a`, `<chapter_id>_mastered.m4a`, or simple `.wav` / `.m4a` stems. Hardcoded book paths have been completely eliminated.
-
-### Example
-```bash
-# Automated vocal stem inference:
-python audiobook_cli.py render \
-  --manifest audiobooks/projects/witcher1/manifests/chapter_001_manifest.json
-
-# Explicit vocal stem override:
-python audiobook_cli.py render \
-  --manifest audiobooks/projects/witcher1/manifests/chapter_001_manifest.json \
-  --vocal audiobooks/projects/witcher1/mastered/chapter_001_dialogue.wav
-```
-
----
-
-## 10. Vocal DSP Mastering (`master`)
-
-Concatenates speech WAV chunks with 5-stage DSP chain (SOXR 48kHz, rumble cut, de-esser, lowpass) and normalizes to EBU R128 (-19 LUFS). Segments are matched dynamically via regex `chapter_(\d+)` against `c{ch_num:03d}_*.wav` files, preventing chapter renumbering during partial runs.
+Concatenates speech segments with Hann micro-fades and normalizes to EBU R128 (-19 LUFS) at 48kHz / 24-bit.
 
 ```bash
 python audiobook_cli.py master <BOOK_SLUG>
@@ -297,48 +128,27 @@ python audiobook_cli.py master <BOOK_SLUG>
 
 ---
 
-## 11. Soundscape & Ducking (`bgm`)
+## 8. M4B Container Packaging (`package`)
 
-Generates ambient score and applies whisper-safe dynamic sidechain ducking. Automatically discovers dialogue stems across both uncompressed `.wav` and `.m4a` formats (`chapter_*_dialogue.wav`, `chapter_*_mastered.wav`, `chapter_*_dialogue.m4a`, `chapter_*_mastered.m4a`).
-
-```bash
-python audiobook_cli.py bgm <BOOK_SLUG> [OPTIONS]
-```
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--engine` | Choice | `ambient_bed` | Scoring engine (`ambient_bed`). |
-| `--duck-db` | Float | `-16.0` | Sidechain ducking attenuation depth in dB. |
-
----
-
-## 12. Discrete Stem Inspection (`stems`)
-
-Inspects and verifies exported 5-track discrete DME stems (`stem_DX`, `stem_MX`, `stem_FX`, `stem_AMB`, `stem_ME`) and the chapter stem ledger.
+Assembles all mastered chapters into a final chapterized `.m4b` container with TOC navigation and embedded cover art.
 
 ```bash
-python audiobook_cli.py stems <BOOK_SLUG> --chapter <NUM>
+python audiobook_cli.py package <BOOK_SLUG> [--cover <IMAGE_PATH>] [--enforce-gate6]
 ```
 
 ---
 
-## 13. Chapter Quality Audit (`audit`)
+## 9. Chapter Quality Audit (`audit`)
 
-Executes Multi-Gate Independent Verification on a single chapter, checking Gate 0, Gate 1, Gate 2, Gate 3, Gate 4.5, and Gate 5.
+Executes Multi-Gate Independent Verification on a single chapter.
 
 ```bash
 python audiobook_cli.py audit <BOOK_SLUG> --chapter <NUM>
 ```
 
-### Example
-```bash
-python audiobook_cli.py audit witcher1 --chapter 1
-```
-
 ---
 
-## 14. Full-Book Macro Audit (`audit-book`)
+## 10. Full-Book Macro Audit (`audit-book`)
 
 Executes Macro-Tier Gate 6 certification across the entire novel project.
 
@@ -346,186 +156,8 @@ Executes Macro-Tier Gate 6 certification across the entire novel project.
 python audiobook_cli.py audit-book <PROJECT_DIR_OR_SLUG>
 ```
 
-### Audit Invariants Verified:
-- **Gate 6A**: Cross-chapter character voice continuity.
-- **Gate 6B**: Inter-chapter loudness variance $\le 1.0\text{ LU}$.
-- **Gate 6C**: TOC timestamp monotonicity and non-overlapping chapters.
-- **Gate 6D**: Packaging container specs and cover resolution $\ge 1400 \times 1400$.
-
 ---
 
-## 15. M4B Container Packaging (`package`)
+## 📦 Archived Subsystems Notice
 
-Assembles all mastered chapters into a single chapterized `.m4b` container with embedded cover art and `FFMETADATA1` markers.
-
-> [!IMPORTANT]
-> **AAC Packaging Safety Guard**: `package` performs pre-flight codec validation (`is_all_aac`). Uncompressed WAV stems (`pcm_s16le`) or non-AAC assets are automatically transcoded to AAC (`-c:a aac -b:a 192k`) with `+faststart` MP4 metadata flags. If all inputs are already AAC (`.m4a` / `.aac`), stream copying (`-c:a copy`) is used for maximum speed.
-
-```bash
-python audiobook_cli.py package <BOOK_SLUG> [OPTIONS]
-```
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--cover` | Path | `None` | Path to square cover art image. |
-| `--enforce-gate6` | Flag | `False` | Abort packaging if any Gate 6 verification check fails. |
-
----
-
-## 16. Sound Bank Management (`bank` / `soundbank`)
-
-Manages, indexes, seeds, and searches the local SQLite FTS5 Sound Bank catalog.
-
-```bash
-python audiobook_cli.py bank <ACTION> [OPTIONS]
-# Alias:
-python audiobook_cli.py soundbank <ACTION> [OPTIONS]
-```
-
-### Sub-Actions:
-
-#### `scan`
-Scans and indexes audio assets located in `audiobooks/sound_bank/`:
-```bash
-python audiobook_cli.py bank scan
-```
-
-#### `stats`
-Displays statistics including total track count, audio hours, categories, and formats:
-```bash
-python audiobook_cli.py bank stats
-```
-
-#### `seed`
-Seeds virtual sound catalog entries from verified CC0 cloud repositories (Freesound, Internet Archive):
-```bash
-python audiobook_cli.py bank seed
-```
-
-#### `search <QUERY>`
-Executes Full-Text Search against the sound database:
-```bash
-python audiobook_cli.py bank search "dark fantasy tension cello" --limit 10
-```
-
-#### `search-intelligence <QUERY>`
-Executes Phase 3 Hybrid Sonic Intelligence retrieval across 5 multi-source candidate generators (FTS5 + CLAP 512-d embeddings + AST 527 classification + DSP acoustic scoring + negative constraints):
-```bash
-# Standard hybrid query (supports English, Hindi, and Hinglish intent):
-python audiobook_cli.py bank search-intelligence "heavy wooden door creak" --limit 5
-
-# Inspect top match AgentSoundCard v3.0 inline:
-python audiobook_cli.py bank search-intelligence "sharaabkhane ki bheed ka shor" --limit 3 --card
-
-# Disable acoustic diversity reranking:
-python audiobook_cli.py bank search-intelligence "distant thunder rolling" --limit 5 --no-diversity
-```
-
-#### `ingest <DIR>`
-Performs high-performance multi-threaded batch ingestion of an audio folder via `UniversalSoundBankIngester`:
-```bash
-python audiobook_cli.py bank ingest /path/to/raw_sounds/ --workers 4
-```
-
-#### `virtual-status`
-Displays total tracks in the virtual catalog, represented audio duration, downloaded vs virtual counts, and LRU cache usage:
-```bash
-python audiobook_cli.py bank virtual-status
-```
-
-#### `inspect <ID>`
-Displays the typed Phase 3 `AgentSoundCard` v3.0 with epistemic source provenance (`[MEASURED DSP]`, `[CLASSIFIER INFERENCE]`, `[SEMANTIC EMBEDDING]`, `[CANONICAL METADATA]`), the 9-dimensional Sonic Genome, and physical suitability metrics for a specific sound ID:
-```bash
-python audiobook_cli.py bank inspect 8563
-```
-
-#### `prune-cache [--target-mb <MB>]`
-Prunes the least-recently-used (LRU) files in the cache while protecting currently active renders:
-```bash
-python audiobook_cli.py bank prune-cache --target-mb 1000
-```
-
-#### `prefetch <QUERY> [--limit <N>]`
-Pre-downloads remote audio assets matching a query so offline mastering runs with zero network latency:
-```bash
-python audiobook_cli.py bank prefetch "tavern crowd murmur" --limit 3
-```
-
-#### `ingest-source <DIR> --source <NAME>`
-Ingests and normalizes third-party sound libraries (e.g. `sonniss`, `bbc`, `incompetech`, `kenney`) into the Sonic Intelligence Catalog:
-```bash
-python audiobook_cli.py bank ingest-source /path/to/archive/ --source sonniss
-```
-
-#### `harvest <DIR> [OPTIONS]`
-Harvests local sound libraries (~200GB physical collections) into the Sonic Intelligence Catalog using the 11-stage pipeline with non-destructive container metadata extraction (BWF, RIFF, ID3, Vorbis, UCS), length-aware multi-scale DSP and AI embeddings, and rapid 64KB SHA-256 header fingerprinting:
-```bash
-# Full 11-stage harvest (Metadata + DSP + AST 527 + CLAP 512-d embeddings):
-python audiobook_cli.py bank harvest /path/to/sound_library --stages all --workers 4 --batch-size 25
-
-# Fast CPU-only pass (extracts embedded container metadata and physical DSP metrics):
-python audiobook_cli.py bank harvest /path/to/sound_library --stages metadata_dsp --workers 8
-
-# AI enrichment only on existing catalog assets:
-python audiobook_cli.py bank harvest /path/to/sound_library --stages ai_only --batch-size 25
-
-# Force re-harvest of previously ingested assets:
-python audiobook_cli.py bank harvest /path/to/sound_library --force
-
-# Retry only previously errored assets and output summary report:
-python audiobook_cli.py bank harvest /path/to/sound_library --retry-failed --report harvest_report.json
-```
-
-#### `harvest-status`
-Displays total assets, completed DSP analyses, classifier tags, vector embeddings, and error tallies across the library harvest:
-```bash
-python audiobook_cli.py bank harvest-status
-```
-
-#### `rebuild-index`
-Rebuilds the SQLite FTS5 search index across all catalog tracks, syncing newly harvested container metadata, UCS tags, and directory tokens:
-```bash
-python audiobook_cli.py bank rebuild-index
-```
-
-#### Offline Composite Foley & Magic Asset Baking
-Pre-renders composite multi-phase tactile and magical audio assets (wand flick whoosh + electric ionization + 52Hz sub-bass thump) and auto-indexes them into SQLite FTS5:
-```bash
-python scripts/bake_foley_composites.py
-```
-
----
-
-## ⚙️ Environment Variables Reference
-
-Configure these in your [`.env`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/.env) file or shell:
-
-| Variable | Default | Description |
-|---|:---:|---|
-| `GEMINI_API_KEY` | *(Required)* | Google Gemini API key for TTS and LLM translation/dramaturgy. |
-| `TTS_PRIMARY_BACKEND` | `gemini_tts` | Primary speech engine (`gemini_tts`). |
-| `GEMINI_TTS_MODEL` | `gemini-3.1-flash-tts-preview` | Gemini TTS model endpoint identifier. |
-| `GEMINI_DEFAULT_VOICE` | `Aoede` | Default narration voice persona. |
-| `MAX_SOUND_BANK_CACHE_MB` | `1536` | Maximum disk capacity bound for Sound Bank LRU cache (1.5 GB default). |
-| `AUDIOBOOK_RETAIN_CHUNKS` | `0` | If set to `1`, auto-janitor preserves all raw WAV chunks for debugging. |
-| `AUDIOBOOK_PROJECTS_DIR` | `audiobooks/projects` | Directory where projects and stems are saved. |
-| `AUDIOBOOK_SOUND_BANK_DIR` | `audiobooks/sound_bank` | SQLite Sound Bank catalog directory. |
-| `AUDIOBOOK_STRICT_AUDIT` | `0` | If set to `1`, forces Gate 6B probe checks to fail-closed. |
-| `DEBUG` | `0` | If set to `1`, prints full Python tracebacks on exceptions. |
-
-> [!TIP]
-> **Key Sanitization, Quota Isolation & Safety**:
-> - **Quote Stripping**: The `.env` fallback loader automatically strips surrounding quotes (`'` or `"`) from API keys, preventing header corruption and HTTP 400 errors.
-> - **Quota Routing**: Soundscape mood analysis and auxiliary dramaturgy route explicitly to `service="text"`, ensuring text requests never consume scarce 10 RPD Gemini TTS quota allocations.
-> - **Permanent TTS Safety Unlock**: Speech requests pass `safetySettings: [BLOCK_NONE]` across all 4 categories, permanently preventing censorship blocks on mature dialogue.
-
----
-
-## 🛑 Exit Codes & Error Handling
-
-| Exit Code | Meaning | Recovery Action |
-|:---:|---|---|
-| `0` | Success | Operation completed successfully. |
-| `1` | General Pipeline Error | Review terminal error output; check API keys or missing input files. |
-| `130` | User Aborted (`Ctrl+C`) | Checkpoint safely saved on disk. Rerun the command to resume. |
+The legacy subcommands (`direct`, `render`, `bgm`, `stems`, `bank`) belong to the decoupled 5-track cinematic audio engine and are archived in `archive/cinematic_audio/`. They are not part of the active Vocals-Only pipeline.

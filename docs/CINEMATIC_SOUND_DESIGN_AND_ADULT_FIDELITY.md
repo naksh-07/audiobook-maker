@@ -1,4 +1,8 @@
-# 🎬 Cinematic Sound Design, Action Acoustics & Adult Literary Fidelity Manual
+# 🎬 Cinematic Sound Design, Action Acoustics & Adult Literary Fidelity Manual (ARCHIVED)
+
+> [!WARNING] ARCHIVED SUBSYSTEM (DECOUPLED)
+> This document describes the legacy 5-track cinematic BGM/SFX mixdown engine, which is decoupled and preserved in `archive/cinematic_audio/`.
+> The active production engine on `prestable-v4.0-baseline` is **Pure Vocals-Only Studio Audiobook Engine**. Adult literary fidelity and visceral somatic prose remain active in the Translation Collective and Screenplay rooms, but multi-track sound design is archived.
 
 > **Authoritative Technical Guide to Hollywood/AAA-Game Combat Sound Design (ADR-017), Pottermore-Grade 4-Stem Decoupled Scene Acoustics (ADR-018), and Unfiltered Adult Literary Fidelity (ADR-019).**
 
