@@ -9,7 +9,7 @@ from audiobook_factory.gate_auditor import audit_chapter_gates, audit_gate5_mast
 from audiobook_factory.key_manager import _load_env_fallback
 from audiobook_factory.soundscape import detect_chapter_mood
 from audiobook_factory.contracts import CreativeManifest
-from audiobook_cli import cmd_render, cmd_synthesize, cmd_master
+from audiobook_cli import cmd_produce, cmd_synthesize, cmd_master
 
 
 class TestAuditRemediationSprint(unittest.TestCase):

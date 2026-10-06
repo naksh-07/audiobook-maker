@@ -102,7 +102,7 @@ class ProductionCertificationHarness:
 
     def _get_git_revision(self) -> str:
         try:
-            res = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(self.root), capture_output=True, text=True)
+            res = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(self.root), capture_output=True, text=True, timeout=10.0)
             return res.stdout.strip()
         except Exception:
             return "unknown_rev"
@@ -110,7 +110,7 @@ class ProductionCertificationHarness:
     def _get_ffmpeg_version(self) -> str:
         try:
             ff = get_ffmpeg()
-            res = subprocess.run([ff, "-version"], capture_output=True, text=True)
+            res = subprocess.run([ff, "-version"], capture_output=True, text=True, timeout=10.0)
             return res.stdout.splitlines()[0] if res.stdout else "ffmpeg_unknown"
         except Exception:
             return "ffmpeg_missing"
@@ -384,7 +384,7 @@ class ProductionCertificationHarness:
                 "-i", str(master_wav),
                 "-c:a", "aac", "-b:a", "192k",
                 str(cinematic_out),
-            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=300.0)
             chapter_deliverables.append(cinematic_out)
 
             # Gate 5 Broadcast master probe

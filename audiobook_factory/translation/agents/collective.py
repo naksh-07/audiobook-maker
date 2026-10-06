@@ -52,18 +52,29 @@ class MultiAgentTranslationCollective:
         # Pass 1: Literary Draft Translator (Foundational Sense-for-Sense)
         # -------------------------------------------------------------
         logger.info(f"  [Room 2 Pass 1/4] LiteraryDraftTranslator running...")
-        pass1_draft = self.draft_translator.translate_draft(
-            text_block=text_block,
-            glossary=glossary,
-            block_title=block_title,
-            preceding_context=preceding_context,
-            adult_mode=adult_mode,
-            book_dna=eff_dna,
-            call_llm_fn=call_llm_fn,
-        )
+        pass1_draft: Optional[str] = None
+        last_err: Optional[Exception] = None
+        for attempt in range(2):
+            try:
+                pass1_draft = self.draft_translator.translate_draft(
+                    text_block=text_block,
+                    glossary=glossary,
+                    block_title=block_title,
+                    preceding_context=preceding_context,
+                    adult_mode=adult_mode,
+                    book_dna=eff_dna,
+                    call_llm_fn=call_llm_fn,
+                )
+                if pass1_draft and len(pass1_draft.strip()) >= 10:
+                    break
+            except Exception as e:
+                last_err = e
+                logger.warning(f"  [!] Pass 1 LiteraryDraftTranslator attempt {attempt + 1}/2 notice: {e}")
+                time.sleep(1.0)
 
         if not pass1_draft or len(pass1_draft.strip()) < 10:
-            raise RuntimeError(f"Pass 1 LiteraryDraftTranslator returned empty translation for {block_title}")
+            err_msg = f": {last_err}" if last_err else ""
+            raise RuntimeError(f"Pass 1 LiteraryDraftTranslator returned empty translation for {block_title}{err_msg}")
 
         # -------------------------------------------------------------
         # Pass 2: Hindustani Cadence Specialist (Spoken Prosody & Honorifics)

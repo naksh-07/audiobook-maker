@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Callable
 
 from .book_bible import BookBible
+from audiobook_factory.audio_utils import _atomic_replace
 from .entity_discovery import EntityDiscoveryEngine
 from .scene_planner import ScenePlanner, ScenePlan, ChapterPlan
 from .narrative_state import NarrativeContinuityState, NarrativeStateEngine
@@ -602,11 +603,11 @@ class IntelligentTranslationPipeline:
         
         with open(tmp_chapter_md, "w", encoding="utf-8") as f:
             f.write(full_chapter_hindi + "\n")
-        os.replace(tmp_chapter_md, chapter_md_path)
+        _atomic_replace(tmp_chapter_md, chapter_md_path)
 
         with open(tmp_top_md, "w", encoding="utf-8") as f:
             f.write(full_chapter_hindi + "\n")
-        os.replace(tmp_top_md, top_level_md_path)
+        _atomic_replace(tmp_top_md, top_level_md_path)
 
         # Synchronize titled markdown file (e.g. prologue_hi.md) if custom title provided
         clean_title = re.sub(r"[^\w\-]+", "_", chapter_title).strip("_")

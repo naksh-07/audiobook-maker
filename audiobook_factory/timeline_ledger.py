@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
 from audiobook_factory.contracts import TimelineSegment, TimelineLedger, ScreenplayScript, ScreenplaySegment
-from audiobook_factory.soundscape import get_audio_duration
+from audiobook_factory.audio_utils import _atomic_replace, get_audio_duration
 
 logger = logging.getLogger("audiobook_factory.timeline_ledger")
 
@@ -165,7 +165,7 @@ def build_audio_transcript_ledger(
     try:
         with open(tmp_path, "w", encoding="utf-8") as f:
             f.write(ledger.to_json(indent=2))
-        os.replace(tmp_path, output_ledger_file)
+        _atomic_replace(tmp_path, output_ledger_file)
     finally:
         if tmp_path.exists():
             try:
@@ -274,10 +274,10 @@ def stitch_dialogue_track_from_ledger(
         apply_studio_restoration_filter(tmp_out, tmp_polished, sample_rate=sample_rate)
         if tmp_out.exists():
             tmp_out.unlink()
-        os.replace(tmp_polished, output_wav_path)
+        _atomic_replace(tmp_polished, output_wav_path)
         logger.info(f"[+] Studio-restored dialogue stem (DSP polished): {output_wav_path.name}")
     else:
-        os.replace(tmp_out, output_wav_path)
+        _atomic_replace(tmp_out, output_wav_path)
         logger.info(f"[+] Dialogue track smoothly stitched from ledger: {output_wav_path.name}")
     return output_wav_path
 

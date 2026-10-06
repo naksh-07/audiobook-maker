@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 
+from audiobook_factory.audio_utils import _atomic_replace
 from .contracts import (
     PronunciationEntry,
     PronunciationStatus,
@@ -209,7 +210,7 @@ class PronunciationLexicon(BaseModel):
             json.dump(self.model_dump(), f, ensure_ascii=False, indent=2)
             f.flush()
             os.fsync(f.fileno())
-        os.replace(tmp_target, target)
+        _atomic_replace(tmp_target, target)
         return target
 
     @classmethod

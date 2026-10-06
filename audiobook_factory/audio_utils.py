@@ -8,8 +8,41 @@ Zero dependencies on BGM, sound banks, or external media catalogs.
 import os
 import shutil
 import subprocess
+import time
+import random
 from pathlib import Path
 from typing import Dict, Any, Optional
+
+from audiobook_factory.logger import logger
+
+DEFAULT_FFMPEG_TIMEOUT: int = 180
+
+
+def _atomic_replace(src: Path | str, dst: Path | str, max_attempts: int = 8, initial_delay: float = 0.05) -> None:
+    """
+    Atomically promotes src to dst with Windows file-locking retry backoff
+    and fallback to copy2 + unlink. Defends against WinError 32.
+    """
+    dst = Path(dst)
+    src = Path(src)
+    for attempt in range(max_attempts):
+        try:
+            src.replace(dst)
+            return
+        except (PermissionError, OSError) as e:
+            if attempt == max_attempts - 1:
+                try:
+                    shutil.copy2(src, dst)
+                    try:
+                        src.unlink()
+                    except OSError:
+                        pass
+                    return
+                except Exception as final_e:
+                    logger.error(f"  [ATOMIC REPLACE FAILED] Could not replace {dst.name}: {final_e}")
+                    raise final_e
+            sleep_sec = initial_delay * (2 ** attempt) + random.uniform(0.01, 0.05)
+            time.sleep(sleep_sec)
 
 
 def get_ffmpeg() -> str:
@@ -58,7 +91,7 @@ def get_audio_duration(file_path: Path | str) -> float:
         str(file_path.resolve()),
     ]
     try:
-        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=DEFAULT_FFMPEG_TIMEOUT)
         return float(res.stdout.strip())
     except Exception:
         # Fallback to wave if WAV format

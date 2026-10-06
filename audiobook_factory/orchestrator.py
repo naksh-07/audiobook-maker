@@ -364,7 +364,7 @@ class PipelineOrchestrator:
             "-c:a", "aac", "-b:a", "192k",
             str(mastered_out),
         ]
-        subprocess.run(cmd_enc, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        subprocess.run(cmd_enc, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=300.0)
         try:
             import shutil
             shutil.copy2(mastered_out, cinematic_out)

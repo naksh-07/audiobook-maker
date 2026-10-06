@@ -48,7 +48,7 @@ def test_filter_graph(filter_complex: str, has_foley: bool = True) -> str:
         "-f", "null", "-"
     ])
     try:
-        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=30.0)
         if res.returncode == 0:
             return "SUCCESS: Filter graph syntax is valid."
         else:

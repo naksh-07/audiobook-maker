@@ -44,6 +44,7 @@ from audiobook_factory.tts.constants import (
     UnregisteredSpeakerError,
 )
 from audiobook_factory.tts.rate_limiter import TokenBucketRateLimiter
+from audiobook_factory.audio_utils import _atomic_replace, DEFAULT_FFMPEG_TIMEOUT
 from audiobook_factory.tts.providers.gemini import (
     synthesize_gemini_tts,
     synthesize_gemini_multispeaker_batch,
@@ -728,7 +729,7 @@ class TTSDispatcher:
             ]
             try:
                 import subprocess
-                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=DEFAULT_FFMPEG_TIMEOUT)
                 try:
                     with wave.open(str(tmp_calib), "rb") as in_wf:
                         c_params = in_wf.getparams()
@@ -743,7 +744,7 @@ class TTSDispatcher:
                         out_wf.writeframes(c_samples.tobytes())
                 except Exception:
                     pass
-                tmp_calib.replace(out_file)
+                _atomic_replace(tmp_calib, out_file)
                 with wave.open(str(out_file), "rb") as wf:
                     dur = wf.getnframes() / float(wf.getframerate())
             except Exception as e:

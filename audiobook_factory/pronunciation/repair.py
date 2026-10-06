@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
 from audiobook_factory.logger import logger
+from audiobook_factory.audio_utils import _atomic_replace
 from audiobook_factory.performance.contracts import TakeVariant, PerformanceDirection
 from .contracts import (
     PronunciationAudioQAResult,
@@ -128,7 +129,7 @@ class PronunciationRepairEngine:
 
             # Atomic promotion of synthesized WAV to prevent orphan garbage on failure
             if tmp_repair_path.exists():
-                tmp_repair_path.replace(repair_take_path)
+                _atomic_replace(tmp_repair_path, repair_take_path)
 
             # Register take in TakeBank
             repaired_take = dispatcher.take_bank.create_take(

@@ -100,7 +100,7 @@ def concatenate_and_master_chapter(
                 "-c:a", "pcm_s16le",
                 str(panned_file),
             ]
-            res = subprocess.run(p_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            res = subprocess.run(p_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60.0)
             if res.returncode != 0 or not panned_file.exists():
                 return seg_path
         spatial_cache[str(panned_file)] = panned_file
@@ -128,7 +128,8 @@ def concatenate_and_master_chapter(
         return data, sr, ch
 
     def _write_wav_pcm(target_path: Path, data: np.ndarray, sr: int, ch: int) -> Path:
-        int16_data = np.clip(np.round(data), -32768.0, 32767.0).astype(np.int16)
+        clean_data = np.nan_to_num(data, nan=0.0, posinf=32767.0, neginf=-32768.0)
+        int16_data = np.clip(np.round(clean_data), -32768.0, 32767.0).astype(np.int16)
         with wave.open(str(target_path), "wb") as wf:
             wf.setnchannels(ch)
             wf.setsampwidth(2)
@@ -437,7 +438,9 @@ def concatenate_and_master_chapter(
 
         print(f"[*] Mastering chapter audio ({len(audio_segments)} segments) -> {output_chapter_file.name}...")
         try:
-            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=600.0)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(f"FFmpeg mastering timed out after 600s for {output_chapter_file.name}")
         except subprocess.CalledProcessError as e:
             err_msg = e.stderr.decode("utf-8", errors="ignore")
             raise RuntimeError(f"FFmpeg mastering failed: {err_msg}")

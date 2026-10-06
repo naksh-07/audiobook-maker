@@ -22,6 +22,7 @@ from audiobook_factory.gate_auditor import (
     audit_gate6d_packaging_specs,
     GateAuditError,
 )
+from audiobook_factory.audio_utils import _atomic_replace, DEFAULT_FFMPEG_TIMEOUT
 
 
 def get_audio_duration_ms(file_path: Path) -> int:
@@ -36,7 +37,7 @@ def get_audio_duration_ms(file_path: Path) -> int:
         str(file_path),
     ]
     try:
-        res = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        res = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60.0)
         sec = float(res.stdout.strip())
         return int(sec * 1000)
     except Exception:
@@ -56,7 +57,7 @@ def probe_audio_stream(file_path: Path) -> Dict[str, Any]:
         str(file_path),
     ]
     try:
-        res = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        res = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60.0)
         data = json.loads(res.stdout) if res.stdout else {}
         streams = data.get("streams", [])
         fmt = data.get("format", {})
@@ -264,7 +265,7 @@ def package_m4b_audiobook(
                 "-b:a", "192k",
                 str(dest_path),
             ]
-            subprocess.run(std_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(std_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300.0)
             return dest_path, dest_path, True
 
         from concurrent.futures import ThreadPoolExecutor
@@ -330,12 +331,12 @@ def package_m4b_audiobook(
 
     try:
         try:
-            subprocess.run(pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=600.0)
         except subprocess.CalledProcessError:
             # Fallback to two-step intermediate concatenation if single-pass demuxer metadata mapping fails
             temp_concat = output_dir / "temp_full.m4a"
             concat_cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list), "-c:a", "copy", str(temp_concat)]
-            subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(concat_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=600.0)
 
             fb_pack_cmd = [ffmpeg, "-y", "-i", str(temp_concat), "-i", str(meta_txt)]
             if has_cover:
@@ -345,20 +346,13 @@ def package_m4b_audiobook(
             fb_pack_cmd.extend(["-movflags", "+faststart"])
             fb_pack_cmd.append(str(tmp_m4b))
             try:
-                subprocess.run(fb_pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run(fb_pack_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=600.0)
             finally:
                 if temp_concat.exists():
                     temp_concat.unlink()
 
         # Atomic promotion with retry backoff for Windows file locks
-        for attempt in range(5):
-            try:
-                os.replace(tmp_m4b, final_m4b)
-                break
-            except (PermissionError, OSError):
-                if attempt == 4:
-                    raise
-                time.sleep(0.1 * (2 ** attempt))
+        _atomic_replace(tmp_m4b, final_m4b)
     finally:
         if tmp_m4b.exists():
             try:

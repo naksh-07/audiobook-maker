@@ -109,7 +109,7 @@ def read_surgically_cleaned_chunk(
             "-f", "s16le",
             "pipe:1"
         ]
-        proc = subprocess.run(cmd, input=clean_pcm, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        proc = subprocess.run(cmd, input=clean_pcm, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=60.0)
         clean_pcm = proc.stdout
 
     from audiobook_factory.audio_qc_agent import AudioQCAgent
@@ -237,5 +237,5 @@ def apply_studio_restoration_filter(
         str(out)
     ]
 
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, timeout=60.0)
     return out

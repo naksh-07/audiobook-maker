@@ -71,32 +71,7 @@ def _resolve_cadence_controller():
     return get_human_cadence_controller()
 
 
-def _atomic_replace(src: Path, dst: Path, max_attempts: int = 8) -> None:
-    """
-    Atomically promotes src to dst with Windows file-locking retry backoff
-    and fallback to copy2 + unlink.
-    """
-    dst = Path(dst)
-    src = Path(src)
-    for attempt in range(max_attempts):
-        try:
-            src.replace(dst)
-            return
-        except (PermissionError, OSError) as e:
-            if attempt == max_attempts - 1:
-                try:
-                    import shutil
-                    shutil.copy2(src, dst)
-                    try:
-                        src.unlink()
-                    except OSError:
-                        pass
-                    return
-                except Exception as final_e:
-                    logger.error(f"  [ATOMIC REPLACE FAILED] Could not replace {dst.name}: {final_e}")
-                    raise final_e
-            sleep_sec = 0.05 * (2 ** attempt) + random.uniform(0.01, 0.05)
-            time.sleep(sleep_sec)
+from audiobook_factory.audio_utils import _atomic_replace
 
 
 def resolve_speech_metadata_style(

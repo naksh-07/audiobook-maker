@@ -21,6 +21,7 @@ from audiobook_factory.tts.constants import (
     DEFAULT_DECLICK_FADE_MS,
     get_ffmpeg,
 )
+from audiobook_factory.audio_utils import _atomic_replace, DEFAULT_FFMPEG_TIMEOUT
 
 
 def compute_canonical_segment_filename(
@@ -142,7 +143,7 @@ def slice_and_declick_batch(
         ]
 
         try:
-            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=DEFAULT_FFMPEG_TIMEOUT)
             # Enforce exact zero-crossing endpoints on sliced chunk
             try:
                 with wave.open(str(tmp_slice), "rb") as in_wf:
@@ -158,7 +159,7 @@ def slice_and_declick_batch(
                     out_wf.writeframes(p_samples.tobytes())
             except Exception:
                 pass
-            tmp_slice.replace(out_wav)
+            _atomic_replace(tmp_slice, out_wav)
             actual_dur = dur_sec
             try:
                 with wave.open(str(out_wav), "rb") as wf:

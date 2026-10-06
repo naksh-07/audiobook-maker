@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from audiobook_factory.storage.base import IStorageBackend, StorageMetadata, StorageObject
+from audiobook_factory.audio_utils import _atomic_replace
 
 
 class LocalStorageBackend:
@@ -42,7 +43,7 @@ class LocalStorageBackend:
             with tempfile.NamedTemporaryFile("wb", dir=str(target.parent), delete=False) as tf:
                 tf.write(data)
                 temp_name = tf.name
-            os.replace(temp_name, str(target))
+            _atomic_replace(temp_name, target)
         else:
             target.write_bytes(data)
 

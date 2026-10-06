@@ -51,7 +51,7 @@ def _synthesize_local_winrt_fallback(text: str, output_file: Path, voice: str = 
         "-VoicePattern", voice_pattern,
         "-OutputPath", str(tmp_wav),
     ]
-    res = subprocess.run(cmd_ps, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    res = subprocess.run(cmd_ps, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=30.0)
     if res.returncode != 0 or not tmp_wav.exists() or tmp_wav.stat().st_size < 100:
         logger.warning(f"[!] WinRT synthesis notice: {res.stderr[:100]}. Using fallback harmonic synth.")
         sr = 24000
@@ -74,7 +74,7 @@ def _synthesize_local_winrt_fallback(text: str, output_file: Path, voice: str = 
         "-c:a", "pcm_s16le",
         str(output_file),
     ]
-    subprocess.run(cmd_ff, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    subprocess.run(cmd_ff, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=60.0)
     tmp_wav.unlink(missing_ok=True)
 
     dur = 1.0
@@ -122,7 +122,7 @@ def _synthesize_local_batch_winrt(batch: Any, output_file: Path, voice_map: Dict
             "-c:a", "pcm_s16le",
             str(output_file),
         ]
-        subprocess.run(cmd_cat, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        subprocess.run(cmd_cat, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=120.0)
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 

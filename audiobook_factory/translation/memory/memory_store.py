@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 
+from audiobook_factory.audio_utils import _atomic_replace
 from audiobook_factory.translation.book_bible import BookBible, FlaggedConflict
 from audiobook_factory.translation.relationship_state import DynamicRelationshipState
 from .events import StoryEvent
@@ -388,7 +389,7 @@ class MemoryStore(BaseModel):
             except Exception as e:
                 logger.warning(f"Failed to create backup at {bak_path}: {e}")
 
-        tmp_path.replace(target)
+        _atomic_replace(tmp_path, target)
 
     @classmethod
     def _validate_store_integrity(cls, data: Any, source_path: Path) -> MemoryStore:
