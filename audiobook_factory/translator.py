@@ -504,9 +504,17 @@ def translate_chapter(
     cache_dir = None
     effective_context = preceding_context
     block_label = chapter_title or "scene_001"
+    book_dna = None
     if project_dir:
         cache_dir = Path(project_dir) / "translation" / ".cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
+        dna_path = Path(project_dir) / "book_dna.json"
+        if dna_path.exists():
+            try:
+                with open(dna_path, "r", encoding="utf-8") as f:
+                    book_dna = json.load(f)
+            except Exception:
+                pass
         # Step 1: READ ONLY before translation
         mem_block = _retrieve_chapter_memory_in_translator(
             project_dir=Path(project_dir),
@@ -540,7 +548,7 @@ def translate_chapter(
             else:
                 print(f"    [INVALID CACHE] Cache failed guardrail ({err}). Re-translating...", flush=True)
 
-        res = _translate_single_block(chapter_text, glossary, chapter_title, effective_context, model)
+        res = _translate_single_block(chapter_text, glossary, chapter_title, effective_context, model, book_dna=book_dna)
         if cache_file:
             with open(cache_file, "w", encoding="utf-8") as f:
                 f.write(res)
@@ -606,7 +614,7 @@ def translate_chapter(
 
         print(f"    -> [Part {i}/{len(chunks)}] Translating {chunk_words} words...", flush=True)
         chunk_title = f"{chapter_title} (Part {i}/{len(chunks)})" if chapter_title else f"Part {i}/{len(chunks)}"
-        trans_part = _translate_single_block(chunk, glossary, chunk_title, rolling_ctx, model)
+        trans_part = _translate_single_block(chunk, glossary, chunk_title, rolling_ctx, model, book_dna=book_dna)
         if cache_file:
             with open(cache_file, "w", encoding="utf-8") as f:
                 f.write(trans_part)
@@ -632,7 +640,7 @@ def translate_chapter(
 def translate_book_project(
     project_dir: Path,
     model: Optional[str] = None,
-    use_intelligent_pipeline: bool = True,
+    use_intelligent_pipeline: bool = False,
     force_gate: bool = False,
     chapters: Optional[List[int]] = None,
 ) -> Path:
@@ -742,8 +750,8 @@ def translate_book_project(
         print(f"[DONE] All chapters intelligently translated into Hindi successfully -> {trans_dir}")
         return trans_dir
 
-    # Fallback: Legacy Chunk-Based Translation Loop
-    print(f"[*] Starting legacy chunk translation of {total} chapters using {model}...", flush=True)
+    # Streamlined Vocals-Only Translation Loop (Token-Optimized Single Pass)
+    print(f"[*] Starting token-optimized literary translation of {total} chapters using {model}...", flush=True)
     preceding_summary = f"Novel title: {meta.get('title')}. Setting out on journey."
 
     for idx, chap_file in enumerate(chapter_files, 1):

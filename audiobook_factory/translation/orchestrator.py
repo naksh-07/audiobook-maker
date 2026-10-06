@@ -64,7 +64,8 @@ class IntelligentTranslationPipeline:
         self.model = model
         self.policy = policy or get_default_translation_policy()
         self.book_bible = BookBible.load_from_project(self.project_dir)
-        self.hindustani_engine = HindustaniRegisterEngine()
+        self.book_dna = self._load_or_discover_book_dna()
+        self.hindustani_engine = HindustaniRegisterEngine.from_book_dna(self.book_dna)
         self.decision_memory_path = self.project_dir / "translation" / "translation_decisions.json"
         self.decision_memory = TranslationDecisionMemory.load(self.decision_memory_path)
         self.memory_store_path = MemoryStore.default_store_path(self.project_dir)
@@ -75,6 +76,46 @@ class IntelligentTranslationPipeline:
             world_state=self.memory_store.world_state,
             recent_events=list(self.memory_store.events.values())[-5:],
         )
+
+    def _load_or_discover_book_dna(self) -> Dict[str, Any]:
+        """Loads existing book_dna.json or dynamically profiles novel sample via BookDNAAgent."""
+        dna_path = self.project_dir / "book_dna.json"
+        if dna_path.exists():
+            try:
+                with open(dna_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict) and data.get("source_fidelity_tier"):
+                        return data
+            except Exception:
+                pass
+        try:
+            from audiobook_factory.preproduction.book_dna_agent import BookDNAAgent
+            meta_path = self.project_dir / "metadata.json"
+            meta = {}
+            if meta_path.exists():
+                try:
+                    with open(meta_path, "r", encoding="utf-8") as f:
+                        meta = json.load(f)
+                except Exception:
+                    pass
+            extracted_dir = self.project_dir / "extracted"
+            if not extracted_dir.exists() and (self.project_dir / "chapters").exists():
+                extracted_dir = self.project_dir / "chapters"
+            sample_text = ""
+            if extracted_dir.exists():
+                chap_files = sorted(extracted_dir.glob("*.md"))
+                if chap_files:
+                    sample_text = chap_files[0].read_text(encoding="utf-8")[:10000]
+            if sample_text:
+                agent = BookDNAAgent(model=self.model)
+                dna = agent.analyze_book_dna(sample_text, meta)
+                with open(dna_path, "w", encoding="utf-8") as f:
+                    json.dump(dna, f, ensure_ascii=False, indent=2)
+                return dna
+        except Exception as e:
+            from audiobook_factory.logger import logger
+            logger.warning(f"  [!] Dynamic BookDNA discovery notice: {e}")
+        return {}
 
     def _get_known_character_names(self) -> List[str]:
         if isinstance(self.book_bible.characters, dict):
@@ -281,7 +322,7 @@ class IntelligentTranslationPipeline:
                 continue
 
             # C. Construct Contextual Instructions
-            policy_prompt = self.policy.get_prompt_instructions()
+            policy_prompt = self.policy.get_prompt_instructions(book_dna=self.book_dna)
             hindustani_prompt = self.hindustani_engine.get_prompt_guidelines()
             scene_context = scene.get_prompt_context()
             narrative_context = self.narrative_state.get_prompt_context()
@@ -342,7 +383,7 @@ class IntelligentTranslationPipeline:
                 model=self.model,
                 json_mode=False,
                 task_type=TaskType.TRANSLATION,
-                thinking_budget=0,
+                thinking_budget=1024,
             ).strip()
             dur = time.time() - t0
             print(f"    [+] Scene translated in {dur:.1f}s ({len(raw_target)} chars)")

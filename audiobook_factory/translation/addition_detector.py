@@ -82,27 +82,25 @@ def evaluate_additions(
 
     if call_llm_fn is not None:
         props = source_map.propositions
-        chunk_size = 20
         hallucinated: List[str] = []
         fab: List[str] = []
         llm_warnings: List[str] = []
         notes: List[str] = []
 
-        for c_idx in range(0, max(1, len(props)), chunk_size):
-            chunk_props = props[c_idx:c_idx + chunk_size]
+        if props:
             source_summary = "\n".join(
-                f"- [Beat {p.beat_id}, Para {p.paragraph_idx}]: {p.source_sentence[:100]}"
-                for p in chunk_props
+                f"- [Beat {p.beat_id}, Para {p.paragraph_idx}]: {p.source_sentence[:120]}"
+                for p in props
             )
 
             prompt = f"""You are an independent translation QA auditor inspecting for UNSUPPORTED ADDITIONS & HALLUCINATIONS.
 Compare the SOURCE TEXT against the TARGET HINDI TRANSLATION.
 Focus EXCLUSIVELY on Additions:
-1. Did the translation invent any physical action, intimacy, or violence not present in the source?
+1. Did the translation invent any major physical action, intimacy, or violence not present in the source?
 2. Did it fabricate emotional backstories, character relationships, or plot facts?
-(Note: Organic literary idiom adaptation and natural sentence expansion are PERMISSIBLE; fabricating new story events is FORBIDDEN).
+(Note: Organic literary idiom adaptation, sensory descriptive texture, and natural sentence expansion are PERMISSIBLE; fabricating entirely new story events or characters is FORBIDDEN).
 
-### SOURCE TEXT:
+### SOURCE TEXT BEATS:
 {source_summary}
 
 ### TARGET HINDI TRANSLATION:

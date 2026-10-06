@@ -174,8 +174,8 @@ class ModelManager:
         Classifies an arbitrary model string into its semantic capability tier.
         """
         m = model_name.lower()
-        # Tier 3 Utility: explicitly lightweight models or gemma weights
-        if any(x in m for x in ("lite", "flash-lite", "gemma")):
+        # Tier 3 Utility: explicitly lightweight nano models or small gemma weights
+        if any(x in m for x in ("nano", "gemma", "1.5-flash-8b")):
             return ModelTier.TIER_3_UTILITY
 
         # Tier 1 Flagship: High reasoning models and pro previews
@@ -297,7 +297,7 @@ class ModelManager:
         batch_size = 3
         all_probed_results: List[Tuple[str, bool, float, Optional[str]]] = []
 
-        for i in range(0, min(len(candidates), 6), batch_size):
+        for i in range(0, min(len(candidates), 9), batch_size):
             batch = candidates[i:i + batch_size]
             logger.info(f"[*] Model Manager: Concurrently pinging favorable candidates for {task.value}: {batch}")
             probe_results = self.ping_candidate_models(batch, api_key=api_key, timeout=12.0)

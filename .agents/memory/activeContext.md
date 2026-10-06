@@ -20,8 +20,10 @@
   7. **Docs & Guardrails Synchronization**: `AGENTS.md`, `README.md`, skills, and docs aligned to Pure Vocals-Only standards (`ADR-051`).
 - **Test Suite Status**: 764 passed, 8 skipped, 0 failed (100% green).
 - **Literary Translation Intelligence (Restored & Hardened)**:
-  - Universal World-Anchor (Rule 8) eliminates cartoonish village proverbs (*लंबरदार/पंच जी*) on foreign fantasy while preserving Premchand Awadhi/Bhojpuri.
-  - `BLOCK_NONE` safety framing + multi-model safety rotation in `llm_client.py` and `repair_engine.py`.
-  - Chapter 2 (*The Bounds of Reason*) translated with publication-grade Devanagari prose.
+  - Universal World-Anchor eliminates cartoonish village proverbs (*लंबरदार/पंच जी*) on foreign fantasy while preserving Premchand Awadhi/Bhojpuri.
+  - Entity Partition: Personal proper names transliterated; descriptive monikers/occupations translated (*कसाई*, *दाग़दार चेहरे वाला आदमी*).
+  - Dynamic 11 Golden Invariants via `BookDNA` (`RAW_UNRATED` vs `CLASSIC_REVERENT`), macro-chunking (2,200 words), and `thinking_budget = 1024`.
+  - Streamlined Vocals-Only Engine translates full chapters in 1 single API call without 70-call micro-scene thrashing.
+  - Chapter 2 (*Sword of Destiny*) translated with 100% publication-grade Devanagari prose.
 - **CLI Commands**:
   `audiobook_cli.py [extract|translate|script|synthesize|master|package|produce|auto|audit|audit-book]`
