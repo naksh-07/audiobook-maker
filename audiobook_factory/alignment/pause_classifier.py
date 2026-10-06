@@ -55,7 +55,7 @@ def classify_pause(
             classification = "dead_air"
 
     # 2. Digital zero step discontinuity check (short dropout between words)
-    elif rms_dbfs < cfg.synthetic_gap_rms_dbfs and dur_ms >= 50:
+    elif rms_dbfs < cfg.synthetic_gap_rms_dbfs and 50 <= dur_ms < cfg.dramatic_pause_min_ms:
         classification = "synthetic_gap"
 
     # 3. Initial breath intake check

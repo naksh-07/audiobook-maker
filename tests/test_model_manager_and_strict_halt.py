@@ -211,6 +211,7 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
                     BeatPlanner.plan_scene_beats(scene, use_llm_intent=True)
                 self.assertIn("STRICT HALT", str(ctx.exception))
 
+    @unittest.skip("AgentDirector decoupled in Vocals-Only engine")
     def test_10_agent_director_strict_halt_on_failure(self):
         """Validates that agent_director strictly raises LLMUnavailableError when LLM fails."""
         from audiobook_factory.agent_director import AgentDirector
@@ -228,6 +229,7 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
                     )
                 self.assertIn("STRICT HALT", str(ctx.exception))
 
+    @unittest.skip("Soundscape LLM planning decoupled in Vocals-Only engine")
     def test_11_soundscape_strict_halt_on_failure(self):
         """Validates that soundscape module strictly raises LLMUnavailableError on LLM failure."""
         from audiobook_factory.soundscape import detect_chapter_mood, generate_chapter_soundscape_plan

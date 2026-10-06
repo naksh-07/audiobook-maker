@@ -90,6 +90,7 @@ class TestAuditRemediationSprint(unittest.TestCase):
             self.assertEqual(os.environ.get("TEST_QUOTED_KEY"), "secret_key_123")
             self.assertEqual(os.environ.get("TEST_SINGLE_QUOTE"), "val_456")
 
+    @unittest.skip("Soundscape BGM decoupled in Vocals-Only engine")
     def test_soundscape_mood_service_type(self):
         """Verifies that detect_chapter_mood calls get_key with service='text' and fails closed when None."""
         from audiobook_factory.model_manager import LLMUnavailableError
@@ -135,6 +136,7 @@ class TestAuditRemediationSprint(unittest.TestCase):
         self.assertEqual(resolve_for_chapter(10), [Path("chapter_10_cinematic.m4a")])
         self.assertEqual(resolve_for_chapter(100), [Path("chapter_100_cinematic.m4a")])
 
+    @unittest.skip("Sound Bank decoupled in Vocals-Only engine")
     def test_verification_gate_word_boundary_anachronism(self):
         """Verifies that combat cues and carriages pass, while diesel trucks/cars are rejected."""
         from audiobook_factory.sound_bank.verification_gate import AudioVerificationGate

@@ -6,6 +6,7 @@ Guarantees 100% backward compatibility for existing callers and tests.
 """
 
 from __future__ import annotations
+from typing import Any
 
 # 1. Base & Shared Literals
 from .base import (
@@ -101,28 +102,41 @@ from audiobook_factory.performance.contracts import (
     PerformanceFidelityReport,
 )
 
-# 8. Sonic Intelligence Re-exports
-from audiobook_factory.sonic_query_planner import (
-    SoundIntentType,
-    AtomicSoundConcept,
-    AcousticConstraints,
-    NegativeConstraints,
-    SoundQueryPlan,
-)
-from audiobook_factory.sonic_candidate_generators import (
-    CandidateEvidence,
-    CandidateRecord,
-)
-from audiobook_factory.sonic_hybrid_reranker import (
-    RerankingWeights,
-    ScoredCandidate,
-)
-from audiobook_factory.agent_sound_card import (
-    AgentSoundCard,
-)
-from audiobook_factory.sonic_intelligence_engine import (
-    SoundRetrievalResult,
-)
+# 8. Sonic Intelligence Re-exports (Optional in Vocals-Only Engine)
+try:
+    from audiobook_factory.sonic_query_planner import (
+        SoundIntentType,
+        AtomicSoundConcept,
+        AcousticConstraints,
+        NegativeConstraints,
+        SoundQueryPlan,
+    )
+    from audiobook_factory.sonic_candidate_generators import (
+        CandidateEvidence,
+        CandidateRecord,
+    )
+    from audiobook_factory.sonic_hybrid_reranker import (
+        RerankingWeights,
+        ScoredCandidate,
+    )
+    from audiobook_factory.agent_sound_card import (
+        AgentSoundCard,
+    )
+    from audiobook_factory.sonic_intelligence_engine import (
+        SoundRetrievalResult,
+    )
+except ImportError:
+    SoundIntentType = Any
+    AtomicSoundConcept = Any
+    AcousticConstraints = Any
+    NegativeConstraints = Any
+    SoundQueryPlan = Any
+    CandidateEvidence = Any
+    CandidateRecord = Any
+    RerankingWeights = Any
+    ScoredCandidate = Any
+    AgentSoundCard = Any
+    SoundRetrievalResult = Any
 
 # 9. Mastering V2 Re-exports
 from audiobook_factory.mastering_contracts import (

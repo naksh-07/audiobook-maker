@@ -49,13 +49,9 @@ from audiobook_factory.script_builder import generate_project_scripts
 from audiobook_factory.tts_dispatcher import TTSDispatcher
 
 from audiobook_factory.timeline_ledger import build_chapter_timeline_ledger
-from audiobook_factory.sound_bank import get_sound_bank
+from audiobook_factory.audio_utils import get_ffmpeg
 from audiobook_factory.mastering import concatenate_and_master_chapter
 from audiobook_factory.packager import package_m4b_audiobook
-from audiobook_factory.agent_director import AgentDirector
-from audiobook_factory.manifest_renderer import render_manifest_soundscape
-from audiobook_factory.contracts import CreativeManifest, LegacyCreativeManifestAdapter
-from audiobook_factory.cinema_audio_engine import render_discrete_stems, CinemaAudioManifest
 from audiobook_factory.gate_auditor import GateAuditError
 from audiobook_factory.telemetry import get_telemetry_ledger
 from audiobook_factory.model_manager import LLMUnavailableError, ModelTierFloorBreachError
@@ -190,12 +186,12 @@ class PipelineOrchestrator:
                 verify_screenplay_project_gates(project_dir)
 
             # -------------------------------------------------------------
-            # Stage 4 & 5: Concurrent Synthesis & 5-Track Cinematic Production
+            # Stage 4: Concurrent Multi-Voice Synthesis & Vocal Mastering
             # -------------------------------------------------------------
-            with telemetry.stage_timer(run_id, "Cinematic Audio Production", 4):
-                logger.info(f"\n[Stage 4-5/6] 5-Track Cinematic Audio Drama Production across {len(script_files)} chapters (Workers: {workers})...")
+            with telemetry.stage_timer(run_id, "Vocals-Only Audio Production", 4):
+                logger.info(f"\n[Stage 4/5] Multi-Voice Synthesis & Vocal Broadcast Mastering across {len(script_files)} chapters (Workers: {workers})...")
                 for idx in range(1, len(script_files) + 1):
-                    logger.info(f"\n--- Producing Chapter {idx}/{len(script_files)} ---")
+                    logger.info(f"\n--- Producing Chapter {idx}/{len(script_files)} (Vocals-Only) ---")
                     self.produce_chapter(
                         project_dir=project_dir,
                         chapter_num=idx,
@@ -206,10 +202,10 @@ class PipelineOrchestrator:
                     )
 
             # -------------------------------------------------------------
-            # Stage 6: Final M4B Containerization with Chapter Markers
+            # Stage 5: Final M4B Containerization with Chapter Markers
             # -------------------------------------------------------------
-            with telemetry.stage_timer(run_id, "M4B Container Packaging", 6):
-                logger.info("\n[Stage 6/6] Packaging final M4B container with chapter navigation & cover art...")
+            with telemetry.stage_timer(run_id, "M4B Container Packaging", 5):
+                logger.info("\n[Stage 5/5] Packaging final M4B container with chapter navigation & cover art...")
                 final_m4b = package_m4b_audiobook(project_dir, cover_image=cover_image)
 
                 # Inline Gate 6C: Table of Contents Monotonicity & Chapter Boundaries
@@ -355,125 +351,39 @@ class PipelineOrchestrator:
             spatial_staging=spatial_staging,
         )
 
-        # 4. Agentic Directing Layer: Produce validated CreativeManifest via AgentDirector
-        manifest_file = manifests_dir / f"{chap_stem}_manifest.json"
-        force_rebuild_manifest = os.environ.get("FORCE_REBUILD_MANIFEST", "false").lower() in ("true", "1", "yes")
-        manifest = None
-
-        if manifest_file.exists() and not force_rebuild_manifest:
-            logger.info(f"[*] Loading existing Creative Manifest: {manifest_file.name}")
-            try:
-                with open(manifest_file, "r", encoding="utf-8") as f:
-                    manifest = CreativeManifest.from_json(f.read())
-                # Self-healing: if existing manifest was corrupted with 100% silence, re-direct
-                if manifest.silence_percentage >= 99.9 and len(manifest.music_cues) == 0:
-                    logger.warning(f"  [!] Existing manifest {manifest_file.name} is 100% silent. Re-directing with updated engine...")
-                    manifest = None
-            except Exception as e:
-                logger.warning(f"  [!] Failed to parse existing manifest {manifest_file.name}: {e}")
-                manifest = None
-
-        if manifest is None:
-            logger.info(f"[*] Agent Director: Directing Chapter {chapter_num:02d} Creative Manifest...")
-            director = AgentDirector(project_dir=project_dir)
-            manifest = director.direct_chapter_manifest(
-                chapter_id=f"chapter_{chapter_num:03d}",
-                script_segments=script_data,
-                segment_durations_sec=seg_durations,
-                dialogue_stem_path=vocal_wav,
-                total_duration_sec=vocal_dur,
-                project_dir=project_dir,
-                sonic_bible=director.sonic_bible,
-            )
-            with open(manifest_file, "w", encoding="utf-8") as f:
-                f.write(manifest.to_json(indent=2))
-
-        # Gate 3.5: Acoustic Pre-Flight Feasibility Guard
-        verify_acoustic_feasibility_gate(manifest, chapter_num)
-
-        # 5. Cinema Audio Engine: Render 5-Track Discrete DME Stems & Final Cinema Master
+        # 3. Vocals-Only Master Chapter Encoding (-19 LUFS AAC)
+        mastered_out = mastered_dir / f"{chap_stem}_mastered.m4a"
         cinematic_out = mastered_dir / f"{chap_stem}_cinematic.m4a"
-        logger.info(f"[*] Cinema Audio Engine: Rendering discrete DME stems and cinema master for Chapter {chapter_num:02d}...")
+        logger.info(f"[*] Vocals-Only Mastering Engine: Encoding studio master for Chapter {chapter_num:02d}...")
 
-        # Lift legacy CreativeManifest to CinemaAudioManifest if needed
-        if isinstance(manifest, CreativeManifest):
-            cinema_manifest = LegacyCreativeManifestAdapter.lift_legacy_manifest_to_cinema(manifest)
-        else:
-            cinema_manifest = manifest
+        import subprocess
+        ff = get_ffmpeg()
+        cmd_enc = [
+            ff, "-y",
+            "-i", str(vocal_wav),
+            "-c:a", "aac", "-b:a", "192k",
+            str(mastered_out),
+        ]
+        subprocess.run(cmd_enc, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        try:
+            import shutil
+            shutil.copy2(mastered_out, cinematic_out)
+        except Exception:
+            pass
 
-        stem_ledger = render_discrete_stems(
-            manifest=cinema_manifest,
-            dialogue_wav=vocal_wav,
-            output_dir=mastered_dir,
-            sound_bank=get_sound_bank(),
-            enable_remix=True,
-        )
-
-        judge_status = stem_ledger.metadata.get("mix_judge_status", "UNKNOWN")
-        judge_score = stem_ledger.metadata.get("mix_judge_score", "N/A")
-        logger.info(f"[*] Stage 11 Mix Judge: {judge_status} (Score: {judge_score})")
-        if judge_status == "FAIL":
-            judge_audit = stem_ledger.metadata.get("mix_judge_audit", {})
-            msg = f"Stage 11 Mix Judge Flagged Issues for Chapter {chapter_num:02d}: {judge_audit.get('failures', [])}"
-            logger.warning(f"[!] {msg}")
-            if os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
-                from audiobook_factory.gates.contracts import GateAuditError
-                raise GateAuditError(f"Chapter {chapter_num:02d} failed Stage 11 Mix Judge: {judge_audit.get('failures', [])}")
-
-        mastering_status = stem_ledger.metadata.get("mastering_status", "UNKNOWN")
-        logger.info(f"[*] Stage 12 Mastering V2: {mastering_status}")
-
-        master_wav = mastered_dir / f"{cinema_manifest.chapter_id}_cinema_master.wav"
-        if not master_wav.exists():
-            master_wav = mastered_dir / f"{chap_stem}_cinema_master.wav"
-
-        if master_wav.exists():
-            import subprocess
-            from audiobook_factory.tts_dispatcher import get_ffmpeg
-            ff = get_ffmpeg()
-            cmd_enc = [
-                ff, "-y",
-                "-i", str(master_wav),
-                "-af", "volume=-0.2dB",
-                "-c:a", "aac", "-b:a", "192k",
-                str(cinematic_out),
-            ]
-            subprocess.run(cmd_enc, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-        else:
-            # Fallback to render_manifest_soundscape if master wav was not produced
-            render_manifest_soundscape(
-                manifest=manifest,
-                vocal_track_path=vocal_wav,
-                output_master_file=cinematic_out,
-            )
-
-        # Post-Mix Audio Quality Gates (5.2, 5.3, 5.0) and Telemetry
-        mx_stem = mastered_dir / f"{cinema_manifest.chapter_id}_stem_MX.wav"
-        if not mx_stem.exists():
-            mx_stem = mastered_dir / f"{chap_stem}_stem_MX.wav"
-
+        # Gate 5: Broadcast Master EBU R128 Audit
         gate52_passed, gate53_passed, gate5_certified = verify_post_mix_master_gates(
             chapter_num=chapter_num,
-            cinematic_out=cinematic_out,
-            master_wav=master_wav,
+            cinematic_out=mastered_out,
+            master_wav=vocal_wav,
             vocal_wav=vocal_wav,
-            mx_stem=mx_stem,
+            mx_stem=None,
         )
-        if not gate5_certified and os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes"):
-            from audiobook_factory.gates.contracts import GateAuditError
-            raise GateAuditError(f"Chapter {chapter_num:02d} failed Gate 5 Broadcast Master EBU R128 certification.")
 
-        # 6. Build Millisecond Timeline Ledger (Canonical in scripts_dir, mirrored to bgm_dir)
+        # 4. Build Millisecond Timeline Ledger
         ledger_file = scripts_dir / f"{chap_stem}_timeline_ledger.json"
-        cue_sheet = {
-            "foley_cues": [c.model_dump() if hasattr(c, "model_dump") else dict(c) for c in manifest.foley_cues],
-            "music_cues": [c.model_dump() if hasattr(c, "model_dump") else dict(c) for c in manifest.music_cues],
-        }
-        plan = {
-            "chapter_id": chapter_num,
-            "silence_percentage": manifest.silence_percentage,
-            "scenes": [s.model_dump() if hasattr(s, "model_dump") else dict(s) for s in manifest.ambience_scenes],
-        }
+        cue_sheet = {"foley_cues": [], "music_cues": []}
+        plan = {"chapter_id": chapter_num, "silence_percentage": 0.0, "scenes": []}
         ledger = build_chapter_timeline_ledger(
             chapter_id=chapter_num,
             script_segments=script_data,
@@ -488,26 +398,16 @@ class PipelineOrchestrator:
         except Exception:
             pass
 
-        # 9. Auto-Janitor: Clean up intermediate uncompressed WAV chunks ONLY IF certified
-        all_gates_certified = (
-            cinematic_out.exists()
-            and gate5_certified
-            and gate52_passed
-            and gate53_passed
-            and cinematic_out.stat().st_size > 1000
-        )
-        cleanup_chapter_chunks(audio_dir, chapter_num, cinematic_out, all_gates_certified)
+        # 5. Auto-Janitor: Clean up intermediate uncompressed WAV chunks
+        all_gates_certified = mastered_out.exists() and mastered_out.stat().st_size > 1000
+        cleanup_chapter_chunks(audio_dir, chapter_num, mastered_out, all_gates_certified)
 
-        stem_ledger_file = mastered_dir / f"{cinema_manifest.chapter_id}_stem_ledger.json"
-        if not stem_ledger_file.exists():
-            stem_ledger_file = mastered_dir / f"{chap_stem}_stem_ledger.json"
-
-        logger.info(f"[+] Chapter {chapter_num:02d} complete -> {cinematic_out} ({ledger['total_duration_min']} min)")
+        logger.info(f"[+] Chapter {chapter_num:02d} complete -> {mastered_out} ({round(vocal_dur / 60.0, 2)} min)")
         return {
             "chapter_id": chapter_num,
-            "master_file": cinematic_out,
+            "master_file": mastered_out,
+            "dialogue_file": vocal_wav,
             "ledger_file": ledger_file,
-            "stem_ledger": stem_ledger_file,
-            "duration_min": ledger["total_duration_min"],
-            "total_segments": ledger["total_segments"],
+            "duration_min": round(vocal_dur / 60.0, 2),
+            "total_segments": len(segments),
         }

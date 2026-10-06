@@ -24,9 +24,9 @@ def run_standalone_pipeline(*args, **kwargs):
     return None
 
 def parse_literature_offline(*args, **kwargs):
-    """Backward compatibility forwarder to archived legacy parser."""
-    from archive.standalone_pipeline_legacy import parse_literature_offline as _legacy_parse
-    return _legacy_parse(*args, **kwargs)
+    """Offline screenplay generator forwarding to offline_parser."""
+    from audiobook_factory.offline_parser import parse_literature_offline as _offline_parse
+    return _offline_parse(*args, **kwargs)
 
 if __name__ == "__main__":
     sys.exit(main())

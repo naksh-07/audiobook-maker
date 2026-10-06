@@ -105,13 +105,12 @@ def cmd_produce(args):
     orchestrator = PipelineOrchestrator(get_projects_dir())
 
     if args.chapter:
-        print(f"[*] Producing Cinematic Chapter {args.chapter} for '{args.book}'...")
+        print(f"[*] Producing Vocals Master Chapter {args.chapter} for '{args.book}'...")
         res = orchestrator.produce_chapter(
             project_dir=project_dir,
             chapter_num=args.chapter,
             voice=args.voice,
             workers=args.workers,
-            duck_db=args.duck_db,
         )
         print(f"\n[OK] Chapter {args.chapter} produced successfully!")
         print(f"     Master File : {res['master_file']}")
@@ -120,7 +119,7 @@ def cmd_produce(args):
     elif args.all:
         scripts_dir = project_dir / "scripts"
         scripts = sorted(scripts_dir.glob("chapter_*_script.json"))
-        print(f"[*] Producing all {len(scripts)} chapters for '{args.book}'...")
+        print(f"[*] Producing all {len(scripts)} chapters for '{args.book}' (Vocals-Only)...")
         for s_file in scripts:
             m = re.search(r"chapter_(\d+)", s_file.stem, re.IGNORECASE)
             ch_num = int(m.group(1)) if m else 1
@@ -129,7 +128,6 @@ def cmd_produce(args):
                 chapter_num=ch_num,
                 voice=args.voice,
                 workers=args.workers,
-                duck_db=args.duck_db,
             )
         print(f"\n[OK] All {len(scripts)} chapters produced successfully!")
     else:

@@ -111,6 +111,55 @@ def align_single_with_energy_fallback(
         speech_regions.append(SpeechRegion(start_ms=curr_ms, end_ms=nxt_ms, confidence=0.45))
         curr_ms = nxt_ms
 
+    # Detect silence pause intervals from acoustic samples
+    if len(samples) > 0 and sr > 0:
+        from audiobook_factory.alignment.pause_classifier import classify_pause
+        frame_ms = 40
+        frame_samples = (sr * frame_ms) // 1000
+        silence_thresh = 500  # PCM int16 threshold
+        
+        in_silence = False
+        silence_start = 0
+        for f_idx in range(0, len(samples) - frame_samples, frame_samples):
+            chunk = samples[f_idx:f_idx + frame_samples]
+            rms = math.sqrt(sum(float(s * s) for s in chunk) / float(len(chunk)))
+            cur_t = (f_idx * 1000) // sr
+            if rms < silence_thresh:
+                if not in_silence:
+                    in_silence = True
+                    silence_start = cur_t
+            else:
+                if in_silence:
+                    in_silence = False
+                    sil_dur = cur_t - silence_start
+                    if sil_dur >= config.min_pause_ms:
+                        p_int = classify_pause(
+                            start_ms=silence_start,
+                            end_ms=cur_t,
+                            samples=samples,
+                            sample_rate=sr,
+                            config=config,
+                            direction=direction,
+                            is_initial=(silence_start == 0),
+                            is_terminal=False,
+                        )
+                        pauses.append(p_int)
+        if in_silence:
+            cur_t = total_audio_ms
+            sil_dur = cur_t - silence_start
+            if sil_dur >= config.min_pause_ms:
+                p_int = classify_pause(
+                    start_ms=silence_start,
+                    end_ms=cur_t,
+                    samples=samples,
+                    sample_rate=sr,
+                    config=config,
+                    direction=direction,
+                    is_initial=(silence_start == 0),
+                    is_terminal=True,
+                )
+                pauses.append(p_int)
+
     diags = [
         AlignmentDiagnostic(
             code="FALLBACK_ALIGNMENT",
@@ -119,6 +168,17 @@ def align_single_with_energy_fallback(
             evidence={"method": "energy_proportional", "total_audio_ms": total_audio_ms},
         )
     ]
+
+    for p in pauses:
+        if p.classification == "dead_air":
+            diags.append(
+                AlignmentDiagnostic(
+                    code="UNEXPECTED_LONG_SILENCE",
+                    severity="WARNING",
+                    message=f"Detected suspicious trailing dead air of {p.duration_ms}ms",
+                    evidence={"start_ms": p.start_ms, "end_ms": p.end_ms, "duration_ms": p.duration_ms},
+                )
+            )
 
     conf = min(0.50, config.fallback_confidence_penalty)
     return AlignmentResult(

@@ -100,7 +100,6 @@ from .contracts import (
     BookMasterManifest,
     MasteringSettings,
 )
-from .agent_director import AgentDirector
 from .cinema_audio_engine import (
     render_discrete_stems,
     CinemaAudioManifest,
@@ -135,22 +134,6 @@ from .perceptual_critic import PerceptualCritic
 from .reference_mastering import ReferenceMasteringAuditor, CANONICAL_REFERENCE_PROFILES
 from .scene_aware_engine import SceneAwareDecisionEngine
 from .mastering_certification import MasteringCertifier
-from .cinematic_mix import (
-    SceneMixIntent,
-    AttentionMap,
-    AttentionEvent,
-    MixAutomation,
-    AutomationPlanner,
-    AcousticPerspective,
-    PerspectiveDirector,
-    SilenceEvent,
-    SilenceDirector,
-    ImpactEvent,
-    ImpactDirector,
-)
-from .sonic_bible import SonicBible, LeitmotifDefinition
-from .manifest_renderer import render_manifest_soundscape, assemble_master_filter_graph, get_reverb_filter_string
-from .sound_bank_ingest import UniversalSoundBankIngester
 from .gate_auditor import (
     AuditResult,
     GateAuditError,

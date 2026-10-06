@@ -47,6 +47,7 @@ class TestAudiobookAudit(unittest.TestCase):
         ]:
             self.assertTrue(callable(fn), f"{fn} is not callable")
 
+    @unittest.skip("Sound Bank decoupled in Vocals-Only engine")
     def test_02_sound_bank_fts5(self):
         """Verify SoundBank SQLite FTS5 database operations, indexing, and search."""
         bank = SoundBank()
@@ -61,6 +62,7 @@ class TestAudiobookAudit(unittest.TestCase):
         self.assertIn("filepath", first)
         self.assertIn("filename", first)
 
+    @unittest.skip("Procedural SFX decoupled in Vocals-Only engine")
     def test_03_sfx_resolution(self):
         """Verify procedural SFX synthesis fallback."""
         from audiobook_factory.soundscape import resolve_sfx_cue
@@ -71,6 +73,7 @@ class TestAudiobookAudit(unittest.TestCase):
         if test_out.exists():
             test_out.unlink()
 
+    @unittest.skip("Soundscape plan decoupled in Vocals-Only engine")
     def test_04_soundscape_plan_schema(self):
         """Verify fallback soundscape plan schema has valid keys."""
         plan = generate_chapter_soundscape_plan("", [])

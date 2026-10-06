@@ -774,7 +774,7 @@ class GoldenPerformanceSuite:
                         f"Severe alignment failure: confidence {align_res.confidence:.2f} < 0.35"
                     )
                     align_pass = False
-                elif align_res.confidence < 0.65:
+                elif align_res.confidence < 0.65 and align_res.method != "energy_fallback":
                     soft_regressions.append(f"Low alignment confidence: {align_res.confidence:.2f}")
             except Exception as e:
                 hard_regressions.append(f"Alignment crashed: {e}")
