@@ -402,8 +402,9 @@ def concatenate_and_master_chapter(
         target_tp = min(true_peak_db, -2.0) if has_explosive else true_peak_db
 
         filter_chain = (
-            f"aresample=osr={target_sample_rate},highpass=f=60,afftdn=nr=8:nf=-35,deesser=i=0.35:m=0.5:f=0.14,"
-            f"lowpass=f=14000"
+            f"aresample=osr={target_sample_rate},"
+            f"highpass=f=50,"
+            f"deesser=i=0.10:m=0.5:f=0.15"
         )
         if loudnorm:
             filter_chain += (

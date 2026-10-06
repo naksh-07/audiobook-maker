@@ -81,6 +81,11 @@ def _call_key_pool():
     return get_persistent_key_pool()
 
 
+def _norm_speaker_key(s: str) -> str:
+    """Normalizes speaker names across case, spaces, underscores, and Devanagari nukta (U+093C)."""
+    return s.strip().lower().replace("_", " ").replace("\u093c", "")
+
+
 class TTSDispatcher:
     """Orchestrates concurrent speech synthesis with TokenBucket rate limiting and SQLite ledger state."""
 
@@ -196,6 +201,7 @@ class TTSDispatcher:
                     alias_map[c_clean.lower()] = c_clean
                     alias_map[c_clean.lower().replace("_", " ")] = c_clean
                     alias_map[c_clean.lower().replace(" ", "_")] = c_clean
+                    alias_map[_norm_speaker_key(c_clean)] = c_clean
                     if isinstance(details, dict):
                         gender_map[c_clean] = details.get("gender", "neutral").lower()
                         for alias in details.get("aliases", []):
@@ -204,6 +210,7 @@ class TTSDispatcher:
                                 alias_map[a_clean.lower()] = c_clean
                                 alias_map[a_clean.lower().replace("_", " ")] = c_clean
                                 alias_map[a_clean.lower().replace(" ", "_")] = c_clean
+                                alias_map[_norm_speaker_key(a_clean)] = c_clean
             elif isinstance(chars, list):
                 for item in chars:
                     if isinstance(item, dict):
@@ -212,17 +219,39 @@ class TTSDispatcher:
                             c_clean = canon_name.strip()
                             alias_map[c_clean.lower()] = c_clean
                             alias_map[c_clean.lower().replace("_", " ")] = c_clean
+                            alias_map[_norm_speaker_key(c_clean)] = c_clean
                             gender_map[c_clean] = item.get("gender", "neutral").lower()
                             hindi = item.get("hindi_name", "")
                             if hindi:
                                 alias_map[hindi.strip().lower()] = c_clean
+                                alias_map[_norm_speaker_key(hindi)] = c_clean
                             for alias in item.get("aliases", []):
                                 if isinstance(alias, str) and alias.strip():
                                     a_clean = alias.strip()
                                     alias_map[a_clean.lower()] = c_clean
                                     alias_map[a_clean.lower().replace("_", " ")] = c_clean
+                                    alias_map[_norm_speaker_key(a_clean)] = c_clean
         except Exception as e:
             logger.warning(f"  [ROSTER LOAD NOTICE] Failed to parse character_roster.json: {e}")
+
+        # Also load character mappings from translation/glossary.json if available
+        glossary_file = self.project_dir / "translation" / "glossary.json"
+        if glossary_file.exists():
+            try:
+                with open(glossary_file, "r", encoding="utf-8") as f:
+                    gdata = json.load(f)
+                for item in gdata.get("characters", []):
+                    if isinstance(item, dict):
+                        eng = item.get("english_name", "").strip()
+                        hin = item.get("hindi_name", "").strip()
+                        canon = hin or eng
+                        if canon:
+                            if eng:
+                                alias_map.setdefault(_norm_speaker_key(eng), canon)
+                            if hin:
+                                alias_map.setdefault(_norm_speaker_key(hin), canon)
+            except Exception:
+                pass
 
         return alias_map, gender_map
 
@@ -287,30 +316,20 @@ class TTSDispatcher:
         if sp_clean in self.voice_map:
             return dict(self.voice_map[sp_clean])
 
-        # 2. Case-insensitive / normalized underscore match in voice_map
+        # 2. Normalized match in voice_map (Devanagari nukta, case & whitespace insensitive)
+        sp_norm_key = _norm_speaker_key(sp_clean)
         for k, cfg in self.voice_map.items():
-            k_lower = k.strip().lower()
-            if k_lower == sp_lower or k_lower.replace("_", " ") == sp_lower.replace("_", " "):
+            if _norm_speaker_key(k) == sp_norm_key:
                 return dict(cfg)
 
-        # 3. Alias resolution via character_roster.json
-        if sp_lower in self.alias_map:
-            canon = self.alias_map[sp_lower]
+        # 3. Alias resolution via character_roster.json / glossary.json
+        canon = self.alias_map.get(sp_lower) or self.alias_map.get(sp_clean.lower().replace("_", " ")) or self.alias_map.get(sp_norm_key)
+        if canon:
             if canon in self.voice_map:
                 return dict(self.voice_map[canon])
-            canon_norm = canon.lower().replace("_", " ")
+            canon_norm = _norm_speaker_key(canon)
             for k, cfg in self.voice_map.items():
-                if k.strip().lower() == canon.lower() or k.strip().lower().replace("_", " ") == canon_norm:
-                    return dict(cfg)
-
-        sp_norm = sp_lower.replace("_", " ")
-        if sp_norm in self.alias_map:
-            canon = self.alias_map[sp_norm]
-            if canon in self.voice_map:
-                return dict(self.voice_map[canon])
-            canon_norm = canon.lower().replace("_", " ")
-            for k, cfg in self.voice_map.items():
-                if k.strip().lower() == canon.lower() or k.strip().lower().replace("_", " ") == canon_norm:
+                if _norm_speaker_key(k) == canon_norm:
                     return dict(cfg)
 
         # 4. Narrator / Foley / Narration segment type
@@ -1035,6 +1054,7 @@ class TTSDispatcher:
                 if sels:
                     selected_takes.append(sels[0])
                 elif cands:
+                    cands[0].is_selected = True
                     selected_takes.append(cands[0])
 
             if selected_takes:

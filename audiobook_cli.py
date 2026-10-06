@@ -82,6 +82,7 @@ def main():
     p_script.add_argument("--dramatized", action="store_true", help="Multi-voice character attribution mode")
     p_script.add_argument("--chapter", type=int, default=None, help="Specific chapter number to script")
     p_script.add_argument("--chapters", type=str, default=None, help="Comma-separated or range of chapters (e.g. 1-2 or 1,2)")
+    p_script.add_argument("--overwrite", action="store_true", help="Overwrite existing script files")
 
     # synthesize
     p_synth = subparsers.add_parser("synthesize", help="Synthesize audio segments via Gemini Cloud TTS")

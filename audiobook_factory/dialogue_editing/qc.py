@@ -155,13 +155,32 @@ class DialogueEditingQC:
                         segment_uid=plan.segment_uid,
                     )
                 )
-            pinned = int(np.sum(np.abs(samples) >= 32760))
-            if pinned > 12:
+            # Genuine flat-top clipping: consecutive pinned samples (>48 consecutive samples = >1ms flat-topped distortion)
+            pinned_count = int(np.sum(np.abs(samples) >= 32760))
+            max_consecutive = 0
+            if pinned_count > 0:
+                is_pinned = (np.abs(samples) >= 32760).astype(np.int8)
+                diffs = np.diff(np.concatenate(([0], is_pinned, [0])))
+                starts = np.where(diffs == 1)[0]
+                ends = np.where(diffs == -1)[0]
+                if len(starts) > 0 and len(ends) > 0:
+                    max_consecutive = int(np.max(ends - starts))
+
+            if max_consecutive > 48:
                 diagnostics.append(
                     QCDiagnostic(
                         code="SEVERE_CLIPPING_DETECTED",
                         severity="HARD_FAILURE",
-                        message=f"Take contains {pinned} rail-pinned samples (>12 allowed).",
+                        message=f"Take contains flat-topped clipping ({max_consecutive} consecutive rail-pinned samples).",
+                        segment_uid=plan.segment_uid,
+                    )
+                )
+            elif pinned_count > 12:
+                diagnostics.append(
+                    QCDiagnostic(
+                        code="TRANSIENT_PEAK_OBSERVED",
+                        severity="WARNING",
+                        message=f"Take contains {pinned_count} transient peak samples (max consecutive {max_consecutive}).",
                         segment_uid=plan.segment_uid,
                     )
                 )

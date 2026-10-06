@@ -327,7 +327,7 @@ class PipelineOrchestrator:
                 max_workers=workers,
                 allow_dynamic_cast=True,
             )
-            dispatcher.synthesize_chapter_script(script_file, chapter_num)
+            synth_segments = dispatcher.synthesize_chapter_script(script_file, chapter_num)
         except AllKeysExhaustedTodayError as e:
             if os.environ.get("ENABLE_EMERGENCY_FALLBACK", "").lower() in ("true", "1", "yes"):
                 logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted; emergency local WinRT fallback was applied.")
@@ -353,6 +353,7 @@ class PipelineOrchestrator:
             audio_dir=audio_dir,
             mastered_dir=mastered_dir,
             spatial_staging=spatial_staging,
+            segment_files=synth_segments,
         )
 
         # 3. Vocals-Only Master Chapter Encoding (-19 LUFS AAC)
@@ -365,7 +366,6 @@ class PipelineOrchestrator:
         cmd_enc = [
             ff, "-y",
             "-i", str(vocal_wav),
-            "-af", "loudnorm=I=-19.0:TP=-1.5:LRA=11.0",
             "-c:a", "aac", "-b:a", "192k",
             str(mastered_out),
         ]

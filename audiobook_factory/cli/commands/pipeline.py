@@ -59,6 +59,7 @@ def cmd_script(args):
         project_dir,
         use_hindi=args.hindi,
         dramatized=args.dramatized,
+        overwrite=getattr(args, "overwrite", False),
         chapters=chapters,
     )
     print(f"\n[OK] Scripts ready at: {scripts_dir}")

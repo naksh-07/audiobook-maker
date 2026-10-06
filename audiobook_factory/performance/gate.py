@@ -81,7 +81,10 @@ class PerformanceFidelityGate:
         critical_defects: List[str] = []
 
         take_by_seg = {t.segment_uid: t for t in selected_takes if t.is_selected}
-        unselected_by_seg = {t.segment_uid: t for t in selected_takes if not t.is_selected}
+        for t in selected_takes:
+            if t.segment_uid not in take_by_seg:
+                take_by_seg[t.segment_uid] = t
+        unselected_by_seg = {t.segment_uid: t for t in selected_takes if not t.is_selected and t.segment_uid not in take_by_seg}
 
         for d in directions:
             # Action beats / Foley cues don't generate spoken vocal takes

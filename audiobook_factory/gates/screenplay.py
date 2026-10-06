@@ -80,6 +80,23 @@ def audit_gate2_script(
             except Exception as e:
                 logger.warning(f"  [GATE 2 NOTICE] Could not parse {roster_file.name}: {e}")
 
+        glossary_file = pdir / "translation" / "glossary.json"
+        if glossary_file.exists():
+            try:
+                with open(glossary_file, "r", encoding="utf-8") as f:
+                    gdata = json.load(f)
+                chars_g = gdata.get("characters", [])
+                if isinstance(chars_g, list):
+                    for item in chars_g:
+                        if isinstance(item, dict):
+                            for key in ("english_name", "hindi_name", "display_name", "name"):
+                                val = item.get(key)
+                                if val and isinstance(val, str) and val.strip():
+                                    discovered.add(val.strip())
+                                    discovered.add(val.strip().replace("_", " "))
+            except Exception as e:
+                logger.warning(f"  [GATE 2 NOTICE] Could not parse {glossary_file.name}: {e}")
+
         if reg_file.exists():
             try:
                 with open(reg_file, "r", encoding="utf-8") as f:
@@ -94,6 +111,9 @@ def audit_gate2_script(
 
         if has_catalog and len(discovered) > 2:
             allowed_speakers = discovered
+
+    def _norm_speaker_key(s: str) -> str:
+        return s.strip().lower().replace("_", " ").replace("\u093c", "")
 
     unknown_speakers = set()
     speaker_breakdown: Dict[str, int] = {}
@@ -119,10 +139,10 @@ def audit_gate2_script(
                 swallowed_quotes.append((seg.index, actual_dialogue))
 
         if allowed_speakers:
-            # Check canonical, normalized lower, or space-to-underscore match
-            sp_norm = sp.lower()
-            allowed_norm = {a.lower() for a in allowed_speakers}
-            if sp_norm not in allowed_norm and sp_norm.replace("_", " ") not in allowed_norm:
+            # Check canonical, normalized lower, space-to-underscore, and Devanagari nukta match
+            sp_norm = _norm_speaker_key(sp)
+            allowed_norm = {_norm_speaker_key(a) for a in allowed_speakers}
+            if sp_norm not in allowed_norm:
                 unknown_speakers.add(sp)
 
     if swallowed_quotes:

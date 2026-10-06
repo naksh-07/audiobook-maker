@@ -21,25 +21,29 @@ def process_and_master_dialogue_stem(
     audio_dir: Path,
     mastered_dir: Path,
     spatial_staging: bool = True,
+    segment_files: Optional[List[Path]] = None,
 ) -> Tuple[Path, float, Dict[int, float], List[Path]]:
     """
     Executes the dialogue editorial layer, masters vocal bus,
     and maps exact segment durations and word alignments.
     Returns: (vocal_wav, vocal_dur, seg_durations, segments)
     """
-    raw_segments = sorted(audio_dir.glob(f"c{chapter_num:03d}_*.wav"))
-    if not raw_segments:
-        raise RuntimeError(f"No audio segments found for Chapter {chapter_num}")
+    if segment_files:
+        segments = segment_files
+    else:
+        raw_segments = sorted(audio_dir.glob(f"c{chapter_num:03d}_*.wav"))
+        if not raw_segments:
+            raise RuntimeError(f"No audio segments found for Chapter {chapter_num}")
 
-    # Deduplicate multiple takes per segment index, retaining the latest modified take
-    seg_dict = {}
-    for p in raw_segments:
-        m_s = re.search(r"_s(\d{4})_", p.name)
-        if m_s:
-            s_idx = int(m_s.group(1))
-            if s_idx not in seg_dict or p.stat().st_mtime > seg_dict[s_idx].stat().st_mtime:
-                seg_dict[s_idx] = p
-    segments = [seg_dict[k] for k in sorted(seg_dict.keys())] if seg_dict else raw_segments
+        # Deduplicate multiple takes per segment index, retaining the latest modified take
+        seg_dict = {}
+        for p in raw_segments:
+            m_s = re.search(r"_s(\d{4})_", p.name)
+            if m_s:
+                s_idx = int(m_s.group(1))
+                if s_idx not in seg_dict or p.stat().st_mtime > seg_dict[s_idx].stat().st_mtime:
+                    seg_dict[s_idx] = p
+        segments = [seg_dict[k] for k in sorted(seg_dict.keys())] if seg_dict else raw_segments
 
     edit_plans = None
     edited_segments = segments

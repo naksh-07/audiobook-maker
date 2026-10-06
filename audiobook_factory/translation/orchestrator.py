@@ -46,8 +46,8 @@ from .memory import (
 from audiobook_factory.sanitizer import validate_and_sanitize_translation
 from audiobook_factory.safety import get_dramatic_fiction_framing
 
-TRANSLATOR_VERSION = "2.0"
-PROMPT_VERSION = "2.0.0"
+TRANSLATOR_VERSION = "3.0.0"
+PROMPT_VERSION = "3.0.0"
 
 
 class IntelligentTranslationPipeline:

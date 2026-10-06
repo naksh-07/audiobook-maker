@@ -19,11 +19,9 @@
   6. **Runtime Hardening & WinError 32 Shield**: Centralized `_atomic_replace` backoff retry across all modules, explicit FFmpeg timeouts on 100% of subprocess calls, NaN float audio sanitization.
   7. **Docs & Guardrails Synchronization**: `AGENTS.md`, `README.md`, skills, and docs aligned to Pure Vocals-Only standards (`ADR-051`).
 - **Test Suite Status**: 764 passed, 8 skipped, 0 failed (100% green).
-- **Literary Translation & Pure Vocals Production (Chapter 2 Verified)**:
-  - Universal World-Anchor & Entity Partition: Proper names transliterated, descriptive titles translated (*कसाई*, *दाग़दार चेहरे वाला आदमी*).
-  - Dynamic 11 Golden Invariants via `BookDNA` (`RAW_UNRATED`), macro-chunking (2,200 words), and `thinking_budget = 1024`.
-  - Universal Dramatic Literary Framing (`get_dramatic_fiction_framing()`) injected across `llm_client`, `dialogue_parser`, and screenplay directors, eliminating `PROHIBITED_CONTENT` moderation blocks on dark fantasy action.
-  - Studio Mastering Chain Hardened: Removed post-`loudnorm` `alimiter` auto-scale gain boost, locking broadcast master to exact -18.7 LUFS / -1.6 dBTP (EBU R128 compliant).
-  - Chapter 2 (*Sword of Destiny*) 100% produced: 65 multi-voice segments, 10.44 minutes, EBU R128 mastered AAC (`chapter_002_hi_mastered.m4a`).
+- **Literary Translation & Pure Vocals Remediation (Chapter 2 Verified & Mastered)**:
+  - 4 Regressions Resolved: Restored 4-pass Collective (Cadence + Idiom + Critic), fixed stale chunk globbing, relaxed false-positive clipping in QC, stripped `afftdn`/`lowpass 14000` and double `loudnorm`.
+  - Gate 2 & TTS Devanagari Unicode Invariance: Fixed Nukta (U+093C) comparison differences (`गेराल्ट ऑफ रिविया` vs `गेराल्ट ऑफ़ रिविया`).
+  - Chapter 2 Produced: 73 segments, 10.31 min, 146 natural breaths rendered via Dialogue Editorial Layer, EBU R128 mastered (-18.6 LUFS, -1.9 dBTP, stereo r: 0.918) -> `chapter_002_hi_mastered.m4a`.
 - **CLI Commands**:
   `audiobook_cli.py [extract|translate|script|synthesize|master|package|produce|auto|audit|audit-book]`

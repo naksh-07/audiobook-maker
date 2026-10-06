@@ -25,8 +25,8 @@ from audiobook_factory.logger import logger
 from audiobook_factory.chunking_policy import chunking_policy
 
 ADULT_LITERARY_MODE = os.environ.get("ADULT_LITERARY_MODE", "true").lower() in ("true", "1", "yes")
-TRANSLATOR_VERSION = "2.1"
-PROMPT_VERSION = "2.1.0"
+TRANSLATOR_VERSION = "3.0.0"
+PROMPT_VERSION = "3.0.0"
 
 
 from audiobook_factory.key_manager import get_persistent_key_pool
@@ -528,30 +528,44 @@ def translate_chapter(
     words = chapter_text.split()
     # Enforce strict chunking policy (750 words ceiling) to prevent cognitive fatigue & lost-in-the-middle
     if len(words) <= chunking_policy.TRANSLATION_MAX_WORDS:
+        import hashlib
+        full_hash = hashlib.sha256(chapter_text.encode("utf-8")).hexdigest()[:12]
+        full_fp = f"{full_hash}:{TRANSLATOR_VERSION}:{PROMPT_VERSION}:{model}"
         cache_file = (cache_dir / f"{chapter_title}_full.txt") if cache_dir and chapter_title else None
-        if cache_file and cache_file.exists() and cache_file.stat().st_size > 10:
-            with open(cache_file, "r", encoding="utf-8") as f:
-                cached_text = f.read().strip()
-            is_valid, cleaned_cached, err = validate_and_sanitize_translation(cached_text, is_hindi=True)
-            if is_valid:
-                print(f"    [CACHED] Chapter loaded from cache ({len(cleaned_cached)} chars).", flush=True)
-                if project_dir:
-                    _commit_chapter_memory_in_translator(
-                        project_dir=Path(project_dir),
-                        source_text=chapter_text,
-                        block_label=block_label,
-                        glossary=glossary,
-                        model=model,
-                        call_llm_fn=None,
-                    )
-                return cleaned_cached
-            else:
-                print(f"    [INVALID CACHE] Cache failed guardrail ({err}). Re-translating...", flush=True)
+        fp_file = (cache_dir / f"{chapter_title}_full.fp") if cache_dir and chapter_title else None
+
+        if cache_file and cache_file.exists() and cache_file.stat().st_size > 10 and fp_file and fp_file.exists():
+            try:
+                with open(fp_file, "r", encoding="utf-8") as f:
+                    saved_fp = f.read().strip()
+                if saved_fp == full_fp:
+                    with open(cache_file, "r", encoding="utf-8") as f:
+                        cached_text = f.read().strip()
+                    is_valid, cleaned_cached, err = validate_and_sanitize_translation(cached_text, is_hindi=True)
+                    if is_valid:
+                        print(f"    [CACHED] Chapter loaded from cache ({len(cleaned_cached)} chars).", flush=True)
+                        if project_dir:
+                            _commit_chapter_memory_in_translator(
+                                project_dir=Path(project_dir),
+                                source_text=chapter_text,
+                                block_label=block_label,
+                                glossary=glossary,
+                                model=model,
+                                call_llm_fn=None,
+                            )
+                        return cleaned_cached
+                    else:
+                        print(f"    [INVALID CACHE] Cache failed guardrail ({err}). Re-translating...", flush=True)
+            except Exception:
+                pass
 
         res = _translate_single_block(chapter_text, glossary, chapter_title, effective_context, model, book_dna=book_dna)
         if cache_file:
             with open(cache_file, "w", encoding="utf-8") as f:
                 f.write(res)
+            if fp_file:
+                with open(fp_file, "w", encoding="utf-8") as f:
+                    f.write(full_fp)
         if project_dir:
             _commit_chapter_memory_in_translator(
                 project_dir=Path(project_dir),
@@ -756,7 +770,7 @@ def translate_book_project(
 
     for idx, chap_file in enumerate(chapter_files, 1):
         target_file = trans_dir / f"{chap_file.stem}_hi.md"
-        if target_file.exists() and target_file.stat().st_size > 100:
+        if target_file.exists() and target_file.stat().st_size > 100 and not force_gate:
             print(f"[-] Chapter {idx}/{total} already translated: {target_file.name} (Skipping)", flush=True)
             try:
                 with open(chap_file, "r", encoding="utf-8") as src_f:

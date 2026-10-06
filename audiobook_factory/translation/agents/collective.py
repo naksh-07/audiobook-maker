@@ -49,9 +49,9 @@ class MultiAgentTranslationCollective:
         eff_dna = book_dna or (glossary.get("book_dna") if isinstance(glossary, dict) else None)
 
         # -------------------------------------------------------------
-        # Pass 1: Master Literary Draft (High-Fidelity Single Pass with Thinking Budget)
+        # Pass 1: Literary Draft Translator (Foundational Sense-for-Sense)
         # -------------------------------------------------------------
-        logger.info(f"  [Room 2 Pass 1] LiteraryDraftTranslator running with thinking_budget=1024...")
+        logger.info(f"  [Room 2 Pass 1/4] LiteraryDraftTranslator running...")
         pass1_draft: Optional[str] = None
         last_err: Optional[Exception] = None
         for attempt in range(2):
@@ -77,32 +77,59 @@ class MultiAgentTranslationCollective:
             raise RuntimeError(f"Pass 1 LiteraryDraftTranslator returned empty translation for {block_title}{err_msg}")
 
         # -------------------------------------------------------------
-        # Anti-Omission Quality Verification (Token-Optimized)
+        # Pass 2: Hindustani Cadence Specialist (Spoken Prosody & Honorifics)
         # -------------------------------------------------------------
-        src_words = len(text_block.split())
-        hi_words = len(pass1_draft.split())
-        ratio = hi_words / max(1, src_words)
+        logger.info(f"  [Room 2 Pass 2/4] HindustaniCadenceSpecialist running...")
+        try:
+            pass2_cadence = self.cadence_specialist.refine_cadence(
+                source_text=text_block,
+                draft_hindi=pass1_draft,
+                glossary=glossary,
+                block_title=block_title,
+                preceding_context=preceding_context,
+                call_llm_fn=call_llm_fn,
+            )
+        except Exception as e:
+            logger.warning(f"  [!] Pass 2 HindustaniCadenceSpecialist notice: {e}. Falling back to Pass 1 draft.")
+            pass2_cadence = pass1_draft
 
-        # In natural Hindi, expansion is usually 0.9x - 1.5x. If ratio < 0.60, paragraphs were dropped.
-        if ratio < 0.60:
-            logger.warning(f"  [!] Anti-Omission trigger: word ratio {ratio:.2f} < 0.60 ({hi_words} Hindi vs {src_words} English). Running QualityCritic audit...")
-            try:
-                final_certified, report = self.quality_critic.audit_and_certify(
-                    source_text=text_block,
-                    hindi_text=pass1_draft,
-                    glossary=glossary,
-                    block_title=block_title,
-                    call_llm_fn=call_llm_fn,
-                )
-                total_elapsed = time.time() - t_start
-                logger.info(f"[+] [Translation Collective] Audited & Certified '{block_title}' in {total_elapsed:.1f}s ({len(final_certified)} chars)")
-                return final_certified
-            except Exception as e:
-                logger.warning(f"  [!] QualityCritic notice: {e}. Preserving Pass 1 draft.")
+        # -------------------------------------------------------------
+        # Pass 3: Subtext & Idiom Dramaturge (Earthy Metaphor & Rustic Grit)
+        # -------------------------------------------------------------
+        logger.info(f"  [Room 2 Pass 3/4] SubtextAndIdiomDramaturge running...")
+        try:
+            pass3_enriched = self.idiom_dramaturge.enrich_idioms_and_subtext(
+                source_text=text_block,
+                cadence_hindi=pass2_cadence,
+                glossary=glossary,
+                block_title=block_title,
+                preceding_context=preceding_context,
+                book_dna=eff_dna,
+                call_llm_fn=call_llm_fn,
+            )
+        except Exception as e:
+            logger.warning(f"  [!] Pass 3 SubtextAndIdiomDramaturge notice: {e}. Falling back to Pass 2 cadence.")
+            pass3_enriched = pass2_cadence
+
+        # -------------------------------------------------------------
+        # Pass 4: Translation Quality Critic (Canon Inspection & Reflection)
+        # -------------------------------------------------------------
+        logger.info(f"  [Room 2 Pass 4/4] TranslationQualityCritic auditing...")
+        try:
+            final_certified, report = self.quality_critic.audit_and_certify(
+                source_text=text_block,
+                hindi_text=pass3_enriched,
+                glossary=glossary,
+                block_title=block_title,
+                call_llm_fn=call_llm_fn,
+            )
+        except Exception as e:
+            logger.warning(f"  [!] Pass 4 TranslationQualityCritic notice: {e}. Preserving Pass 3 text.")
+            final_certified = pass3_enriched
 
         total_elapsed = time.time() - t_start
-        logger.info(f"[+] [Translation Collective] Successfully translated '{block_title}' in {total_elapsed:.1f}s ({len(pass1_draft)} chars, {ratio:.2f}x ratio)")
-        return pass1_draft
+        logger.info(f"[+] [Translation Collective] Certified '{block_title}' in {total_elapsed:.1f}s ({len(final_certified)} chars)")
+        return final_certified
 
 
 _collective_instance: Optional[MultiAgentTranslationCollective] = None
