@@ -1121,3 +1121,19 @@
   4. **CLI Streamlining**: Cleaned `audiobook_cli.py` to expose exclusively the 10 active vocal commands (`auto`, `produce`, `extract`, `translate`, `script`, `synthesize`, `master`, `package`, `audit`, `audit-book`).
 - **Rationale:** Ensures guaranteed production stability, zero external asset failure modes, rapid synthesis turnaround, and Audible-grade broadcast vocal quality.
 
+## ADR-052: Screenplay Dialogue Attribution Anti-Theft, Split-Quote Unification, and Interlocutor Polarity (Issue 2 Remediation)
+- **Status:** Accepted
+- **Date:** 2026-10-07
+- **Context:**
+  1. In Chapter 2 pilot production, screenplay dialogue attribution exhibited two major failure modes:
+     a. Line Theft (A <-> B swaps): `screenplay_cleaner.py` line 118 reassigned any generic speaker (`stranger`, `someone`, `a voice`) to `last_active_character`, causing entering strangers (e.g. Borch) to have their lines stolen by the preceding character (The Butcher).
+     b. Audio Stutter & Quote Confetti: `dialogue_parser.py` commanded the LLM to "isolate every spoken quote", splitting single sentences across mid-sentence tags into choppy fragments (e.g. 81 segments for Chapter 2).
+- **Decision:**
+  1. **Purged Destructive Overwrite**: Eliminated `speaker = last_active_character` for generic descriptors; lines remain attributed to the descriptor or canonical alias.
+  2. **Bidirectional Article-Stripped Alias Matching**: Enhanced `alias_map` across cleaner and auditor to normalize leading articles (`"the stranger"` <-> `"stranger"` -> canonical character).
+  3. **Deterministic Split-Quote Unification (`stitch_split_dialogue_turns`)**: Any adjacent turns by the same character separated by a short narration tag (<= 35 words) are rejoined into a unified thought, and the narration is positioned before the dialogue as a narrative lead-in ending with an em-dash (`—`).
+  4. **Conversational Turn Alternation**: Directing prompts and `DialogueAttributionAuditor` enforce conversational polarity: responses to questions belong to the interlocutor, never the questioner.
+  5. **Residual Speech Tag Scrubbing**: Authorial speech tags (`उसने कहा,`, `he said,`) are cleanly scrubbed from spoken character text.
+- **Rationale:** Collapsed 81 choppy micro-clips to 68 unified cinematic beats in Chapter 2 with zero line theft, ensuring continuous actor delivery and Audible-standard narrative flow.
+
+
