@@ -46,11 +46,11 @@ def call_gemini(
     task_type: TaskType = TaskType.UTILITY,
     response_mime_type: str = "application/json",
     temperature: Optional[float] = None,
-    max_output_tokens: int = 8192,
+    max_output_tokens: Optional[int] = None,
     max_retries: int = 6,
     service: str = "text",
     explicit_key: Optional[str] = None,
-    timeout_sec: float = 45.0,
+    timeout_sec: float = 120.0,
     model: Optional[str] = None,
     response_schema: Optional[Dict[str, Any]] = None,
     return_raw_text: bool = False,
@@ -68,15 +68,12 @@ def call_gemini(
     5. Fail-closed: Raises LLMUnavailableError if all retries fail.
     6. Task-adaptive temperature: Creative tasks default to 0.85, utility to 0.2.
     7. thinkingConfig injection: Separates reasoning tokens from output tokens.
-    8. MAX_TOKENS truncation retry: Retries with halved thinking budget before failing.
+    8. High Headroom: Screenplay 64k, Translation 32k tokens, preventing truncation.
     9. json_mode backward compatibility: Automatically maps json_mode to response_mime_type.
     """
     if json_mode is not None:
         response_mime_type = "application/json" if json_mode else "text/plain"
     # --- Task-Adaptive Temperature (Phase 2 Fix) ---
-    # Creative / literary tasks need expressive range (0.80–0.92).
-    # Analytical / utility tasks stay deterministic (0.20).
-    # Callers may always override by passing an explicit temperature.
     _TASK_TEMPERATURE_MAP: Dict[TaskType, float] = {
         TaskType.TRANSLATION:  0.85,  # Literary — needs stylistic range & dialect variety
         TaskType.SCREENPLAY:   0.88,  # Dramatic — expressive dialogue construction
@@ -89,9 +86,20 @@ def call_gemini(
     }
     resolved_temperature = temperature if temperature is not None else _TASK_TEMPERATURE_MAP.get(task_type, 0.20)
 
+    # --- Task-Adaptive Maximum Output Tokens (Headroom Upgrade) ---
+    _TASK_MAX_OUTPUT_TOKENS: Dict[TaskType, int] = {
+        TaskType.SCREENPLAY:   65536,
+        TaskType.TRANSLATION:  32768,
+        TaskType.DRAMATURGY:   32768,
+        TaskType.DIRECTING:    32768,
+        TaskType.SOUND_DESIGN: 16384,
+        TaskType.AUDITING:     16384,
+        TaskType.EXTRACTION:   16384,
+        TaskType.UTILITY:      8192,
+    }
+    resolved_max_tokens = max_output_tokens if max_output_tokens is not None else _TASK_MAX_OUTPUT_TOKENS.get(task_type, 32768)
+
     # --- thinkingConfig: separate reasoning tokens from output tokens (Phase 2 Fix) ---
-    # Creative reasoning tasks get a thinking budget so internal CoT tokens don't
-    # cannibalize maxOutputTokens and cause premature MAX_TOKENS truncation.
     _THINKING_TASK_TYPES = {TaskType.TRANSLATION, TaskType.SCREENPLAY, TaskType.DRAMATURGY, TaskType.DIRECTING}
     _DEFAULT_THINKING_BUDGET = 1024  # balanced budget — leaves ample room for long multi-turn JSON responses
 
@@ -123,7 +131,7 @@ def call_gemini(
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": resolved_temperature,
-                "maxOutputTokens": max_output_tokens,
+                "maxOutputTokens": resolved_max_tokens,
             },
             "safetySettings": safety_settings,
         }

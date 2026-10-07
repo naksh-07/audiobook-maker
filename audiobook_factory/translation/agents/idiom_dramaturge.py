@@ -145,11 +145,11 @@ Output ONLY the enriched Devanagari Markdown:
                     system_instruction=system_instruction,
                     task_type=TaskType.TRANSLATION,
                     response_mime_type="text/plain",
-                    max_output_tokens=16384,
+                    max_output_tokens=32768,
                     max_retries=6,
                     model=model,
                     return_raw_text=True,
-                    thinking_budget=512,
+                    thinking_budget=1024,
                 ).strip()
 
             elapsed = time.time() - t0

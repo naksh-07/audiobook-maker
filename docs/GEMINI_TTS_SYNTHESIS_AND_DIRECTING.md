@@ -93,7 +93,7 @@ Content-Type: application/json
         }
       }
     },
-    "temperature": 0.70
+    "temperature": 0.38
   },
   "safetySettings": [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -232,7 +232,7 @@ response = client.models.generate_content(
     config=types.GenerateContentConfig(
         response_modalities=["AUDIO"],
         speech_config=speech_config,
-        temperature=0.70
+        temperature=0.38
     )
 )
 
@@ -354,10 +354,17 @@ Sustained performance direction belongs exclusively in the `style` string of `sp
 ```
 
 #### Tested Directing Descriptors:
-- **Tonal Pitch & Vocal Weight**: `"deep gravelly baritone"`, `"high-strung shrill pitch"`, `"husky chest resonance"`, `"dry thin elder timbre"`.
-- **Emotional States**: `"trembling with terror"`, `"booming authoritative fury"`, `"wry melancholy irony"`, `"suppressed sexual tension"`.
-- **Vocal Delivery Mechanics**: `"rapid breathless staccato"`, `"slow regal cadence"`, `"intimate ASMR proximity"`, `"weary soldier drawl"`.
+- **Tonal Pitch & Vocal Weight**: `"deep gravelly baritone"`, `"low resonant chest register"`, `"husky chest resonance"`, `"dry thin elder timbre"`.
+- **Emotional States**: `"wry melancholy irony"`, `"quiet menace"`, `"iron restraint"`, `"understated natural dialogue (never theatrical)"`.
+- **Vocal Delivery Mechanics**: `"measured, steady pacing"`, `"slow regal cadence"`, `"intimate, close-mic proximity"`, `"weary soldier drawl"`.
 - **Linguistic/Cultural Registers**: `"authentic rustic Bundeli inflection"`, `"refined aristocrat Urdu cadence"`, `"harsh northern brogue"`.
+
+#### 🚫 Overacting Elimination & Restraint Protocol (v5.0 Upgrade):
+- **Why Gemini TTS Overacts**: When the neural vocoder receives active theatrical verbs (e.g. `"acting to threaten"`, `"sobbing with grief"`), it exaggerates acoustic inflections into melodramatic stage acting, breathless panting, and cartoonish caricature.
+- **Stripping Theatrical Verbs**: All `"acting to..."` directives are stripped from `speechMetadata.style`. Only objective physical vocal textures (pitch, tempo, chest resonance, breath state) are permitted.
+- **Narrator Transparency Invariant**: Narrator turns must NEVER receive dramatic or acting directives. The Narrator is strictly locked to `"calm, steady, articulate, measured audiobook delivery"`, temperature `0.32`, and zero melodrama.
+- **Universal Anti-Theatrical Anchor**: Every character dialogue turn is anchored with `"understated natural dialogue (never theatrical)"`.
+- **Temperature Clamping (`0.30 - 0.52`)**: In generative audio models, temperature $\ge 0.70$ causes pitch dispersion, instability, and unmotivated sobbing/whispering. Clamping generationConfig `temperature` strictly to `0.30 - 0.52` (Narrator: `0.32`, dialogue: `0.35 - 0.42`, climactic scenes: $\le 0.50$) stabilizes vocal timbre and ensures natural, conversational phrasing.
 
 ---
 

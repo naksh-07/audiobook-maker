@@ -139,18 +139,27 @@ def _extract_character_lexicon_agent(sample_text: str, book_metadata: Dict[str, 
         fiction_framing +
         "You are an expert Literary Casting Director and Lexicographer for audiobooks.\n"
         "Identify all characters, monikers, and prominent figures in this passage and provide accurate, literary Devanagari spellings.\n\n"
-        "NON-NEGOTIABLE ENTITY PARTITION & TRANSLITERATION RULES:\n"
-        "1. PERSONAL GIVEN NAMES & SURNAMES (e.g. Victor -> विक्टर, Marcus -> मार्कस, Elena -> एलेना):\n"
+        "NON-NEGOTIABLE TRI-PARTITE ENTITY PARTITION & TRANSLITERATION RULES:\n"
+        "1. PERSONAL GIVEN NAMES & SURNAMES (e.g. Victor -> विक्टर, Marcus -> मार्कस, Elena -> एलेना, Valerius -> वालेरियस, Corwin -> कॉरविन):\n"
         "   Preserve foreign proper names via phonetic transliteration into clean Devanagari. NEVER replace them with Indian village names.\n"
-        "2. DESCRIPTIVE MONIKERS, OCCUPATIONS & EPITHETS (e.g. 'The Tall Stranger', 'The Old Sailor', 'The Innkeeper', 'The Blacksmith', 'The Beggar'):\n"
-        "   CRITICAL: DO NOT transliterate descriptive phrases phonetically into cartoonish Hinglish (STRICTLY BANNED: 'टॉल स्ट्रेंजर', 'ओल्ड सेलर', 'द इनकीपर')!\n"
-        "   Instead, TRANSLATE descriptive epithets and occupations into natural, evocative Hindustani:\n"
+        "2. HERALDIC MONIKERS, COGNOMENS & COAT-OF-ARMS TITLES (e.g. 'Silver Falcon', 'Night Raven', 'Gold-Tooth'):\n"
+        "   CRITICAL: Treat heraldic monikers, nicknames, and cognomens as PROPER NAMES! Phonetically transliterate into Devanagari:\n"
+        "   - 'Silver Falcon' -> 'सिल्वर फाल्कन'\n"
+        "   - 'Night Raven' -> 'नाइट रेवेन'\n"
+        "   - 'Gold-Tooth' -> 'गोल्ड-टूथ'\n"
+        "   STRICTLY FORBIDDEN: NEVER translate heraldic personal monikers literally word-for-word into Hindi (STRICTLY BANNED: 'चांदी का बाज़', 'रात का कौवा' as personal monikers)!\n"
+        "3. OCCUPATIONAL ROLES & GENERIC DESCRIPTORS (e.g. 'The Tall Stranger', 'The Old Sailor', 'The Innkeeper', 'The Blacksmith', 'The Beggar', 'The Butcher'):\n"
+        "   Translate descriptive occupational roles into natural, evocative Hindustani:\n"
         "   - 'The Tall Stranger' -> 'लंबा अजनबी'\n"
         "   - 'The Old Sailor' -> 'बूढ़ा नाविक'\n"
         "   - 'The Innkeeper' -> 'सरायवाला'\n"
         "   - 'The Blacksmith' -> 'लोहार'\n"
+        "   - 'The Butcher' -> 'कसाई'\n"
         "   - 'The Beggar' -> 'भिखारी'\n"
-        "3. WORLD-ANCHOR RULE: For foreign/fantasy universes, NEVER use Indian rural caste/panchayat vocabulary ('पंच जी', 'लंबरदार', 'पटवारी')."
+        "4. ALIAS UNIFICATION & LINKING:\n"
+        "   If a character is introduced by a descriptive role or moniker before revealing their true name (e.g. 'The Stranger' / 'Silver Falcon' -> Lord Corwin),\n"
+        "   link them explicitly in the 'aliases' list so voice casting and screenplay attribution never split actor personas!\n"
+        "5. WORLD-ANCHOR RULE: For foreign/fantasy universes, NEVER use Indian rural caste/panchayat vocabulary ('पंच जी', 'लंबरदार', 'पटवारी')."
     )
     prompt = f"""Book Title: {book_metadata.get('title', 'Unknown')}
 Author: {book_metadata.get('author', 'Unknown')}
@@ -515,6 +524,20 @@ def translate_chapter(
                     book_dna = json.load(f)
             except Exception:
                 pass
+        # Step 0: Room 1.5 - Autonomous Chapter Entity & Moniker Harvester
+        try:
+            from audiobook_factory.translation.entity_discovery import ChapterEntityHarvester
+            m_ch = re.search(r"(\d+)", block_label or "")
+            ch_num = int(m_ch.group(1)) if m_ch else 1
+            glossary = ChapterEntityHarvester.harvest_and_sync(
+                chapter_text=chapter_text,
+                project_dir=Path(project_dir),
+                chapter_num=ch_num,
+                global_glossary=glossary,
+            )
+        except Exception as e:
+            logger.warning(f"  [!] ChapterEntityHarvester pre-translation sync notice: {e}")
+
         # Step 1: READ ONLY before translation
         mem_block = _retrieve_chapter_memory_in_translator(
             project_dir=Path(project_dir),

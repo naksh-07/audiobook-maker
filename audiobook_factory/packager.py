@@ -190,11 +190,16 @@ def package_m4b_audiobook(
                 return m is not None and int(m.group(1)) == c_num
 
             ch_files = [f for f in all_audio if _belongs_to_chapter(f)]
-            # 1. Prefer cinematic
-            candidates = sorted([f for f in ch_files if "_cinematic." in f.name.lower()])
-            if not candidates:
-                # 2. Fall back to mastered
+            # In Vocals-Only mode, prefer pristine vocal master (_mastered), else cinematic
+            is_vocals_only = os.environ.get("VOCALS_ONLY", "true").lower() in ("true", "1", "yes")
+            if is_vocals_only:
                 candidates = sorted([f for f in ch_files if "_mastered." in f.name.lower()])
+                if not candidates:
+                    candidates = sorted([f for f in ch_files if "_cinematic." in f.name.lower()])
+            else:
+                candidates = sorted([f for f in ch_files if "_cinematic." in f.name.lower()])
+                if not candidates:
+                    candidates = sorted([f for f in ch_files if "_mastered." in f.name.lower()])
             if not candidates:
                 # 3. Fall back to any file with chapter number
                 candidates = sorted(ch_files)

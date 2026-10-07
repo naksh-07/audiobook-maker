@@ -202,35 +202,90 @@ class TTSDispatcher:
                     alias_map[c_clean.lower().replace("_", " ")] = c_clean
                     alias_map[c_clean.lower().replace(" ", "_")] = c_clean
                     alias_map[_norm_speaker_key(c_clean)] = c_clean
+                    all_variants = [c_clean]
                     if isinstance(details, dict):
-                        gender_map[c_clean] = details.get("gender", "neutral").lower()
+                        g = details.get("gender", "neutral").lower()
+                        gender_map[c_clean] = g
+                        eng_name = details.get("english_name", "").strip()
+                        if eng_name:
+                            all_variants.append(eng_name)
+                            alias_map[eng_name.lower()] = c_clean
+                            alias_map[_norm_speaker_key(eng_name)] = c_clean
+                            gender_map[eng_name] = g
                         for alias in details.get("aliases", []):
                             if isinstance(alias, str) and alias.strip():
                                 a_clean = alias.strip()
+                                all_variants.append(a_clean)
                                 alias_map[a_clean.lower()] = c_clean
                                 alias_map[a_clean.lower().replace("_", " ")] = c_clean
                                 alias_map[a_clean.lower().replace(" ", "_")] = c_clean
                                 alias_map[_norm_speaker_key(a_clean)] = c_clean
+                                gender_map[a_clean] = g
+
+                    # Bi-directional voice_map cross-resolution:
+                    # Find if any name variant has an assigned voice in self.voice_map
+                    matched_cfg = None
+                    for v in all_variants:
+                        if v in self.voice_map:
+                            matched_cfg = self.voice_map[v]
+                            break
+                        v_norm = _norm_speaker_key(v)
+                        for vk, vcfg in self.voice_map.items():
+                            if _norm_speaker_key(vk) == v_norm:
+                                matched_cfg = vcfg
+                                break
+                        if matched_cfg:
+                            break
+
+                    if matched_cfg:
+                        for v in all_variants:
+                            if v not in self.voice_map:
+                                self.voice_map[v] = dict(matched_cfg)
             elif isinstance(chars, list):
                 for item in chars:
                     if isinstance(item, dict):
                         canon_name = item.get("english_name") or item.get("display_name") or item.get("name", "")
                         if canon_name:
                             c_clean = canon_name.strip()
+                            all_variants = [c_clean]
                             alias_map[c_clean.lower()] = c_clean
                             alias_map[c_clean.lower().replace("_", " ")] = c_clean
                             alias_map[_norm_speaker_key(c_clean)] = c_clean
-                            gender_map[c_clean] = item.get("gender", "neutral").lower()
+                            g = item.get("gender", "neutral").lower()
+                            gender_map[c_clean] = g
                             hindi = item.get("hindi_name", "")
                             if hindi:
-                                alias_map[hindi.strip().lower()] = c_clean
-                                alias_map[_norm_speaker_key(hindi)] = c_clean
+                                h_clean = hindi.strip()
+                                all_variants.append(h_clean)
+                                alias_map[h_clean.lower()] = c_clean
+                                alias_map[_norm_speaker_key(h_clean)] = c_clean
+                                gender_map[h_clean] = g
                             for alias in item.get("aliases", []):
                                 if isinstance(alias, str) and alias.strip():
                                     a_clean = alias.strip()
+                                    all_variants.append(a_clean)
                                     alias_map[a_clean.lower()] = c_clean
                                     alias_map[a_clean.lower().replace("_", " ")] = c_clean
                                     alias_map[_norm_speaker_key(a_clean)] = c_clean
+                                    gender_map[a_clean] = g
+
+                            matched_cfg = None
+                            for v in all_variants:
+                                if v in self.voice_map:
+                                    matched_cfg = self.voice_map[v]
+                                    break
+                                v_norm = _norm_speaker_key(v)
+                                for vk, vcfg in self.voice_map.items():
+                                    if _norm_speaker_key(vk) == v_norm:
+                                        matched_cfg = vcfg
+                                        break
+                                if matched_cfg:
+                                    break
+
+                            if matched_cfg:
+                                for v in all_variants:
+                                    if v not in self.voice_map:
+                                        self.voice_map[v] = dict(matched_cfg)
         except Exception as e:
             logger.warning(f"  [ROSTER LOAD NOTICE] Failed to parse character_roster.json: {e}")
 
@@ -248,8 +303,15 @@ class TTSDispatcher:
                         if canon:
                             if eng:
                                 alias_map.setdefault(_norm_speaker_key(eng), canon)
+                                alias_map.setdefault(eng.lower(), canon)
                             if hin:
                                 alias_map.setdefault(_norm_speaker_key(hin), canon)
+                                alias_map.setdefault(hin.lower(), canon)
+                            # Cross-bridge voice_map
+                            if hin in self.voice_map and eng and eng not in self.voice_map:
+                                self.voice_map[eng] = dict(self.voice_map[hin])
+                            elif eng in self.voice_map and hin and hin not in self.voice_map:
+                                self.voice_map[hin] = dict(self.voice_map[eng])
             except Exception:
                 pass
 
@@ -704,8 +766,7 @@ class TTSDispatcher:
                 post_filters.append("asoftclip=type=tanh:param=1.2")
             if abs(volume_gain_db) > 0.1:
                 post_filters.append(f"volume={volume_gain_db:+.1f}dB")
-            if abs(speed - 1.0) > 0.02 and speed > 0.01:
-                post_filters.append(f"atempo={speed:.3f}")
+            # WSOLA atempo is strictly disabled for neural speech to prevent metallic phasing/flange
         else:
             if highpass_hz > 20:
                 post_filters.append(f"highpass=f={highpass_hz}")
@@ -719,11 +780,7 @@ class TTSDispatcher:
             if abs(pitch - 1.0) > 0.005:
                 new_rate = int(24000 * pitch)
                 post_filters.append(f"asetrate={new_rate},aresample=24000")
-                eff_tempo = speed / pitch
-                if abs(eff_tempo - 1.0) > 0.01:
-                    post_filters.append(f"atempo={eff_tempo:.3f}")
-            elif abs(speed - 1.0) > 0.01:
-                post_filters.append(f"atempo={speed:.3f}")
+            # WSOLA atempo disabled to preserve phase coherence
 
             if bass_boost_db > 0.1:
                 post_filters.append(f"equalizer=f=100:t=q:w=1.2:g={bass_boost_db:.1f}")
@@ -754,7 +811,7 @@ class TTSDispatcher:
             post_filters.append("alimiter=limit=-1.2dB:attack=5:release=50:asc=true")
             fade_dur_ms = 15.0
             f_sec = fade_dur_ms / 1000.0
-            eff_dur = dur / speed if (abs(speed - 1.0) > 0.005 and speed > 0.01) else dur
+            eff_dur = dur
             f_out_st = max(0.0, eff_dur - f_sec)
             post_filters.append(f"afade=t=in:ss=0:d={f_sec:.3f}:curve=qsin")
             post_filters.append(f"afade=t=out:st={f_out_st:.3f}:d={f_sec:.3f}:curve=qsin")

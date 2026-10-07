@@ -197,7 +197,32 @@ class LiteraryDraftTranslator:
                 "or caste/panchayat vocabulary ('पंच जी', 'लंबरदार', 'पटवारी', 'फतुही', 'अशर्फी'). "
                 "Translate civic titles as 'एल्डरमैन/मेयर/नगर प्रमुख', currency as 'सिक्के/मुद्राएं/स्वर्ण मुद्राएं', and attire as 'जैकेट/चोगा'.\n\n"
                 "8. OUTPUT INVARIANT & ZERO CHATTER:\n"
-                "   - Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions.\n"
+                "   - Output ONLY the translated passage in Devanagari Markdown without any meta-commentary, notes, disclaimers, or conversational introductions.\n\n"
+                "### CRITICAL TRI-PARTITE ENTITY & TAT-SAMA NON-NEGOTIABLES:\n"
+                "- HERALDIC MONIKERS & NICKNAMES: Transliterate phonetically into Devanagari. NEVER translate literally into Hindi!\n"
+                "  * English: 'Silver Falcon' -> Devanagari: 'सिल्वर फाल्कन' (STRICTLY BANNED: 'चांदी का बाज़')\n"
+                "  * English: 'Night Raven' -> Devanagari: 'नाइट रेवेन' (STRICTLY BANNED: 'रात का कौवा')\n"
+                "- SOMATIC & BODY ADJECTIVES: Use living spoken Hindi!\n"
+                "  * 'bare/naked arms' -> 'नंगी बाँहें / खुली बाँहें' (STRICTLY BANNED: 'नग्न भुजाएँ', 'नग्न थीं', 'अनावृत')\n"
+                "  * 'naked' -> 'नंगा / नंगी / खुले' (NEVER 'नग्न' or 'अनावृत')\n"
+                "  * 'young women / maidens' -> 'जवान औरतें / लड़कियाँ' (NEVER 'युवतियाँ')\n\n"
+                "### FEW-SHOT IN-CONTEXT EXEMPLARS (GOLD STANDARD TARGET VS BANNED FLUFF):\n\n"
+                "[EXEMPLAR 1 - HERALDIC MONIKERS & PROPER NAMES]\n"
+                "- English Source: 'My name is Sterling, also known as Silver Falcon. And these two warriors are my escort, Elena and Morwen.'\n"
+                "- BANNED / FLIMSY (Literal Calque): 'मेरा नाम स्टर्लिंग है, जिसे चांदी का बाज़ भी कहा जाता है। और ये दो सुंदरियाँ मेरी अनुरक्षक हैं—एलेना और मॉरवेन।'\n"
+                "- GOLD STANDARD SPOKEN HINDUSTANI: 'मेरा नाम स्टर्लिंग है, लोग मुझे \\'सिल्वर फाल्कन\\' भी कहते हैं। और ये दोनों ख़ूबसूरत लड़कियाँ मेरी अंगरक्षक हैं—एलेना और मॉरवेन।'\n\n"
+                "[EXEMPLAR 2 - SOMATIC / BODY DESCRIPTIONS VS SANSKRIT TAT-SAMA]\n"
+                "- English Source: 'Above their iron mail gloves, their supple arms were bare, smooth and tanned brown.'\n"
+                "- BANNED / FLIMSY (Tat-sama Textbook): 'लोहे के दस्तानों से ऊपर उनकी लचीली भुजाएँ नग्न थीं, चिकनी और धूप में तपी हुई।'\n"
+                "- GOLD STANDARD SPOKEN HINDUSTANI: 'लोहे के दस्तानों से ऊपर उनकी लचीली, नंगी बाँहें साफ़ दिख रही थीं—एकदम चिकनी और धूप में पकी तांबई रंगत।'\n\n"
+                "[EXEMPLAR 3 - VISCERAL COMBAT GORE & STACCATO PACING]\n"
+                "- English Source: 'The cutthroat lunged with his dagger. Edward sidestepped, slashing open the man\\'s throat; blood sprayed across the wooden bar.'\n"
+                "- BANNED / FLIMSY (Academic / Sanitized): 'उस दुराचारी ने खंजर से प्रहार किया। एडवर्ड एक ओर हट गया और उसके कंठ को विदीर्ण कर दिया; काष्ठ के तख्ते पर रक्त बिखर गया।'\n"
+                "- GOLD STANDARD SPOKEN HINDUSTANI: 'कातिल ने खंजर से सीधा वार किया। एडवर्ड बिजली की तरह एक तरफ़ हटा और एक ही झटके में उसकी गर्दन चीर दी; लकड़ी की मेज़ पर ख़ून का फव्वारा छूट पड़ा।'\n\n"
+                "[EXEMPLAR 4 - HONORIFIC DYNAMIC SHIFT (TU TO MAAI-BAAP)]\n"
+                "- English Source: '\\'Hand over your coin, mutant,\\' the thug snarled. But once the silver blade touched his adam\\'s apple, he fell to his knees: \\'Please, sir, mercy! I have children!\\''\n"
+                "- BANNED / FLIMSY: '\\'अपने सिक्के मुझे दो, राक्षस,\\' उसने कहा। लेकिन जब तलवार लगी: \\'कृपया महोदय, दया करें! मेरे बच्चे हैं!\\''\n"
+                "- GOLD STANDARD SPOKEN HINDUSTANI: '\\'अपने सिक्के इधर फेंक, कमीने,\\' वो गुंडा गुर्राया। लेकिन जैसे ही चांदी की धार उसके गले की नस पर टिकी, वो धड़ाम से घुटनों पर आ गिरा: \\'माई-बाप... रहम! छोड़ दीजिए हुज़ूर, मेरे छोटे-छोटे बच्चे हैं!\\''\n\n"
                 f"{scene_directives}\n"
                 f"{advisory_guidance}"
             )
@@ -212,7 +237,10 @@ class LiteraryDraftTranslator:
                 "3. UNIVERSAL IDIOMATIC TRANSPOSITION: Transpose figurative idioms sense-for-sense into dignified universal Hindustani idioms ('जुबान की कीमत', 'मौत का साया'); strictly ban literal calques and Indian village panchayat clichés.\n"
                 "4. DIGNITY WITHOUT SANITIZATION: Honor the author's authentic emotional pathos and dramatic stakes without modern tapori vulgarity.\n"
                 "5. WORLD-ANCHOR: Do not map foreign institutions to Indian village panchayat terms ('पंच जी', 'लंबरदार', 'अशर्फी').\n"
-                "6. OUTPUT INVARIANT: Output ONLY the translated passage in Devanagari Markdown with zero chatter.\n"
+                "6. OUTPUT INVARIANT: Output ONLY the translated passage in Devanagari Markdown with zero chatter.\n\n"
+                "### CRITICAL TRI-PARTITE ENTITY & TAT-SAMA NON-NEGOTIABLES:\n"
+                "- HERALDIC MONIKERS: Transliterate phonetically into Devanagari (e.g. 'Silver Falcon' -> 'सिल्वर फाल्कन'; NEVER 'चांदी का बाज़')!\n"
+                "- SOMATIC ADJECTIVES: Use spoken 'नंगी/खुली बाँहें' (NEVER 'नग्न' or 'अनावृत')!\n\n"
                 f"{scene_directives}"
             )
 
@@ -249,7 +277,7 @@ class LiteraryDraftTranslator:
                 system_instruction=system_prompt,
                 task_type=TaskType.TRANSLATION,
                 response_mime_type="text/plain",
-                max_output_tokens=16384,
+                max_output_tokens=32768,
                 max_retries=8,
                 model=model,
                 return_raw_text=True,

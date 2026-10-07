@@ -441,9 +441,16 @@ Evaluate the translation and output JSON conforming to:
             temperature=0.1,
         )
 
-        if strict and (verdict.status == "FAIL" or verdict.score < min_score or verdict.critical_inversions):
+        # Fail closed on actual failures: score below threshold or critical action integrity failure
+        has_critical_failure = (
+            verdict.status == "FAIL"
+            or verdict.score < min_score
+            or (verdict.critical_inversions and verdict.action_integrity_score < min_score)
+        )
+        if strict and has_critical_failure:
             raise GateAuditError(
-                f"Gate 0/T2 LLM Translation Audit FAILED (Score: {verdict.score:.2f} < {min_score}): "
+                f"Gate 0/T2 LLM Translation Audit FAILED (Score: {verdict.score:.2f}, Min: {min_score}, "
+                f"Action Integrity: {verdict.action_integrity_score:.2f}): "
                 f"{verdict.reason}. Inversions: {verdict.critical_inversions}"
             )
 

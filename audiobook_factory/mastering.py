@@ -459,7 +459,7 @@ def concatenate_and_master_chapter(
                                 safe_silence = str(s_file.resolve()).replace("\\", "/").replace("'", "'\\''")
                                 f.write(f"file '{safe_silence}'\n")
 
-        # 2. Studio Mastering Filter Chain with dynamic loudnorm & resample parameters:
+        # 2. Studio Mastering Filter Chain (Two-Pass Measured Linear EBU R128 & Clean Sinc Resampling):
         has_explosive = any(
             (s.get("intensity_level") if isinstance(s, dict) else getattr(s, "intensity_level", None)) in ("explosive", "high")
             for s in seg_meta_by_idx.values()
@@ -476,16 +476,55 @@ def concatenate_and_master_chapter(
         limiter_attack = 2 if has_explosive else 5
         target_tp = min(true_peak_db, -2.0) if has_explosive else true_peak_db
 
-        filter_chain = (
-            f"aresample=osr={target_sample_rate},"
-            f"highpass=f=50,"
-            f"deesser=i=0.10:m=0.5:f=0.15,"
-            f"alimiter=limit={limiter_limit}:attack={limiter_attack}:release=50:asc=true"
-        )
+        pass1_stats = None
         if loudnorm:
-            filter_chain += (
-                f",loudnorm=I={target_lufs}:TP={target_tp:.1f}:LRA={effective_lra:.1f}"
-            )
+            # Pass 1: Measure integrated loudness and dynamics across entire concatenated audio
+            pass1_filter = f"highpass=f=45,loudnorm=I={target_lufs}:TP={target_tp:.1f}:LRA={effective_lra:.1f}:print_format=json"
+            pass1_cmd = [
+                ffmpeg, "-y",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", str(concat_list),
+                "-af", pass1_filter,
+                "-f", "null", "-",
+            ]
+            try:
+                proc1 = subprocess.run(pass1_cmd, capture_output=True, text=True, errors="ignore", timeout=300.0)
+                if proc1.returncode == 0:
+                    import re
+                    import json
+                    m = re.search(r"\{[\s\S]*?\"input_i\"[\s\S]*?\}", proc1.stderr)
+                    if m:
+                        st = json.loads(m.group(0))
+                        req_k = ["input_i", "input_tp", "input_lra", "input_thresh", "target_offset"]
+                        if all(k in st for k in req_k):
+                            pass1_stats = {k: str(st[k]) for k in req_k}
+            except Exception:
+                pass1_stats = None
+
+        # Pass 2: Deterministic Linear Rendering Chain
+        # 1. Highpass 45Hz (subsonic rumble cut)
+        # 2. Measured Linear Loudnorm (ZERO dynamic pumping / breathing)
+        # 3. Transparent lookahead peak limiter (alimiter with level=0)
+        # 4. Kaiser sinc resampler AFTER loudnorm with triangular dither (fixes 192kHz output bug)
+        filter_parts = ["highpass=f=45"]
+        if loudnorm:
+            if pass1_stats and pass1_stats.get("input_i") not in ("-inf", "inf") and float(pass1_stats.get("input_i", 0.0)) > -69.0:
+                filter_parts.append(
+                    f"loudnorm=I={target_lufs}:TP={target_tp:.1f}:LRA={effective_lra:.1f}:"
+                    f"measured_I={pass1_stats['input_i']}:"
+                    f"measured_TP={pass1_stats['input_tp']}:"
+                    f"measured_LRA={pass1_stats['input_lra']}:"
+                    f"measured_thresh={pass1_stats['input_thresh']}:"
+                    f"offset={pass1_stats['target_offset']}:"
+                    f"linear=true"
+                )
+            else:
+                filter_parts.append(f"loudnorm=I={target_lufs}:TP={target_tp:.1f}:LRA={effective_lra:.1f}")
+
+        filter_parts.append(f"alimiter=limit={limiter_limit}:attack={limiter_attack}:release=50:asc=0:level=0")
+        filter_parts.append(f"aresample=osr={target_sample_rate}:filter_type=kaiser:dither_method=triangular")
+        filter_chain = ",".join(filter_parts)
 
         ext = output_chapter_file.suffix.lower()
         if ext in (".m4a", ".m4b"):

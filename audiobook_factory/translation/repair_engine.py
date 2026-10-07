@@ -135,7 +135,7 @@ class TieredRepairEngine:
         if apply_calque_substitutions and cleaned_reg != repaired:
             repaired = cleaned_reg
             for w in warnings:
-                if "Antipattern detected" in w:
+                if "antipattern detected" in w.lower():
                     actions.append(RepairAction(
                         level="DETERMINISTIC",
                         target_scope="calque",

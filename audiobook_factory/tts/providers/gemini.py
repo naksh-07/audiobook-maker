@@ -111,8 +111,9 @@ def resolve_speech_metadata_style(
             descriptors.append(constraint_str)
 
     if not descriptors:
-        return "neutral"
+        return "calm, steady, articulate, measured audiobook delivery"
 
+    descriptors.append("understated, natural spoken dialogue, never theatrical")
     return ", ".join(descriptors)
 
 
@@ -223,16 +224,15 @@ def synthesize_gemini_tts(
         ],
     }
 
-    # --- TTS Temperature (Phase 2 Fix) ---
-    # Old clamp: max(0.2, min(1.0, ...)) — floor of 0.2 kills expressive TTS performance.
-    # Gemini TTS valid range is [0.0, 2.0]; dramatic audiobook range should be [0.70, 1.40].
-    # Default spread widened from [0.685, 0.715] to [0.90, 1.10] for dramatic vocal range.
+    # --- TTS Temperature Calibration (v5.0 Acoustic Grounding) ---
+    # Clamped strictly between [0.30, 0.55] to prevent pitch instability, slurring,
+    # and melodramatic overacting while ensuring natural conversational human nuance.
     gen_config = payload["generationConfig"]
     if base_temp is not None:
-        jitter = random.uniform(-0.02, 0.02)
-        gen_config["temperature"] = round(max(0.70, min(1.40, float(base_temp) + jitter)), 3)
+        jitter = random.uniform(-0.01, 0.01)
+        gen_config["temperature"] = round(max(0.30, min(0.55, float(base_temp) + jitter)), 3)
     else:
-        gen_config["temperature"] = round(random.uniform(0.90, 1.10), 3)
+        gen_config["temperature"] = round(random.uniform(0.35, 0.42), 3)
 
     data = json.dumps(payload).encode("utf-8")
     cadence = _resolve_cadence_controller()

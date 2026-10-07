@@ -132,4 +132,13 @@ Output JSON: A list of objects matching by "index":
                     seg.setdefault("acting", {})
                     seg["acting"].update(e["acting"])
 
+        # Narrator Transparency Invariant: Narrator is strictly calm and measured, zero melodrama
+        for seg in segments:
+            if seg.get("speaker", "").strip().lower() in ("narrator", "narration", ""):
+                seg["actioning"] = "narrate"
+                seg["acting"] = {"delivery_style": "calm_authoritative"}
+                seg["intensity_level"] = "medium"
+                seg["subtext"] = ""
+                seg["underlying_emotion"] = "neutral"
+
         return segments

@@ -624,6 +624,25 @@ All 32 modules in `audiobook_factory/translation/` and `audiobook_factory/transl
 
 All book-specific entities, aliases, and forbidden spelling variants reside exclusively in the runtime project workspace (`<project_dir>/book_bible.json`).
 
+### 10.3 The Tri-Partite Entity Partition & Anti-Calque Taxonomy (v4.0 Architecture)
+To eliminate catastrophic naming anomalies—such as translating heraldic monikers literally word-for-word (*Three Jackdaws* $\rightarrow$ *तीन कउवे*) or substituting foreign names with Indian village titles—the translation collective enforces a strict Tri-Partite Entity Partition:
+
+1. **Category 1: Personal Given Names & Surnames (Proper Nouns)**:
+   - Preserved 1:1 via phonetic transliteration into clean Devanagari (*Victor* $\rightarrow$ *विक्टर*, *Marcus* $\rightarrow$ *मार्कस*, *Elena* $\rightarrow$ *एलेना*, *Valerius* $\rightarrow$ *वालेरियस*).
+   - Never replaced with Indian rural names or mythological equivalents.
+2. **Category 2: Heraldic Monikers, Nicknames & Cognomens (Coat-of-Arms Titles)**:
+   - Treated strictly as **Proper Names**! Phonetically transliterated into Devanagari (*Silver Falcon* $\rightarrow$ *सिल्वर फाल्कन*, *Night Raven* $\rightarrow$ *नाइट रेवेन*, *Gold-Tooth* $\rightarrow$ *गोल्ड-टूथ*).
+   - **STRICT BAN ON LITERAL CALQUES**: Never translated word-for-word into Hindi (e.g. BANNED: *चांदी का बाज़*, *रात का कौवा* as personal monikers).
+3. **Category 3: Occupational Roles & Generic Situational Descriptors**:
+   - Translated into natural, evocative spoken Hindustani (*The Tall Stranger* $\rightarrow$ *लंबा अजनबी*, *The Old Sailor* $\rightarrow$ *बूढ़ा नाविक*, *The Innkeeper* $\rightarrow$ *सरायवाला*, *The Blacksmith* $\rightarrow$ *लोहार*, *The Butcher* $\rightarrow$ *कसाई*).
+4. **Living Somatic Register (Anti-Tat-Sama Ban)**:
+   - Spoken audio fiction requires tactile, living language that flows naturally when performed by actors.
+   - Body parts and sensual descriptions must use living spoken words (*कमर, कूल्हे, नंगी/खुली बाँहें, जांघें, सीना*).
+   - Sanskrit textbook tat-sama words (*नितंब, कटि, उरु, वक्ष, नग्न भुजाएँ, अनावृत*) are strictly banned in dramatic speech.
+5. **Alias Unification for Audio Drama Casting**:
+   - Descriptive roles introduced before a character's true name is revealed are explicitly linked under the canonical entity record in `book_bible.json`.
+   - Prevents the downstream screenplay and TTS engines from fracturing a single character into multiple voice personas.
+
 ---
 
 ## 11. Programmatic Usage

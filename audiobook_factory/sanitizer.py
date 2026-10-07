@@ -355,6 +355,28 @@ UNAMBIGUOUS_CALQUE_REPAIRS = {
     r"(?<![\u0900-\u097F])स्ट्रेस(?![\u0900-\u097F])": "तनाव",
 }
 
+# Unambiguous tat-sama Sanskritization repairs and literal moniker corrections
+TAT_SAMA_REGISTER_REPAIRS = {
+    # Exposed / bare limbs & somatic anatomy
+    r"(?:\b|से\s+)ऊपर\s+नग्न\s+(?:थीं|थी)": "ऊपर बाँहें खुली थीं",
+    r"(?<![\u0900-\u097F])नग्न\s+भुजाएँ(?![\u0900-\u097F])": "खुली बाँहें",
+    r"(?<![\u0900-\u097F])नग्न\s+शरीर(?![\u0900-\u097F])": "नंगा बदन",
+    r"(?<![\u0900-\u097F])नग्न\s+तलवार(?![\u0900-\u097F])": "नंगी तलवार",
+    r"(?<![\u0900-\u097F])नग्न\s+सत्य(?![\u0900-\u097F])": "कड़वा सच",
+    r"(?<![\u0900-\u097F])दृष्टिगोचर\s+हो": "नज़र आ",
+    r"(?<![\u0900-\u097F])कदाचित(?![\u0900-\u097F])": "शायद",
+    r"(?<![\u0900-\u097F])अविलंब(?![\u0900-\u097F])": "फौरन",
+    r"(?<![\u0900-\u097F])विस्मित(?![\u0900-\u097F])": "हैरान",
+    r"(?<![\u0900-\u097F])दो\s+युवतियाँ(?![\u0900-\u097F])": "दो जवान औरतें",
+    r"(?<![\u0900-\u097F])युवतियों(?![\u0900-\u097F])": "लड़कियों",
+    r"(?<![\u0900-\u097F])युवतियाँ(?![\u0900-\u097F])": "लड़कियाँ",
+    # Literal bird calque repairs for Three Jackdaws moniker
+    r"(?<![\u0900-\u097F])तीन\s+क[उू]वे(?![\u0900-\u097F])": "थ्री जैकडॉज",
+    r"(?<![\u0900-\u097F])तीन\s+कौवे(?![\u0900-\u097F])": "थ्री जैकडॉज",
+    r"(?<![\u0900-\u097F])तीन\s+कौए(?![\u0900-\u097F])": "थ्री जैकडॉज",
+    r"(?<![\u0900-\u097F])तीन\s+कौवों(?![\u0900-\u097F])": "थ्री जैकडॉज",
+}
+
 # Contextual dialectal / register expressions: valid in rustic/tavern/folklore dialogue, NEVER auto-replaced!
 CONTEXTUAL_REGISTER_ADVISORIES = {
     r"सोने\s+की\s+लड़की": "Contextual poetic descriptor (सोने की लड़की) - preserved",
@@ -372,9 +394,10 @@ def audit_literary_register(
     """
     Meso-Tier Literary Register Guard:
     Scans generated Hindi text for robotic literalisms, clinical English loanwords,
-    or immersion-breaking vocabulary.
+    tat-sama Sanskritization, or immersion-breaking vocabulary.
     By default (apply_substitutions=False), it acts as a non-destructive diagnostic auditor.
-    When apply_substitutions=True is explicitly requested, only UNAMBIGUOUS calques are replaced.
+    When apply_substitutions=True is explicitly requested, unambiguous calques and
+    tat-sama antipatterns are repaired.
     Legitimate literary and dialectal choices ('नमस्ते', 'राम-राम', 'नमस्कार', 'दारू', 'सोने की लड़की')
     are NEVER automatically overwritten.
     Returns (is_clean, cleaned_text, detected_warnings).
@@ -385,11 +408,19 @@ def audit_literary_register(
     warnings: List[str] = []
     cleaned_text = text
 
-    # Check unambiguous calques (auto-repaired only if apply_substitutions is True)
+    # Check unambiguous calques (auto-repaired if apply_substitutions is True)
     for pattern, replacement in UNAMBIGUOUS_CALQUE_REPAIRS.items():
         if re.search(pattern, cleaned_text):
             matches = re.findall(pattern, cleaned_text)
-            warnings.append(f"Antipattern detected: {matches[0]} -> normalized to '{replacement}'")
+            warnings.append(f"Calque antipattern detected: {matches[0]} -> normalized to '{replacement}'")
+            if apply_substitutions:
+                cleaned_text = re.sub(pattern, replacement, cleaned_text)
+
+    # Check and repair tat-sama Sanskritization antipatterns
+    for pattern, replacement in TAT_SAMA_REGISTER_REPAIRS.items():
+        if re.search(pattern, cleaned_text):
+            matches = re.findall(pattern, cleaned_text)
+            warnings.append(f"Tat-sama / Moniker antipattern detected: {matches[0]} -> normalized to '{replacement}'")
             if apply_substitutions:
                 cleaned_text = re.sub(pattern, replacement, cleaned_text)
 

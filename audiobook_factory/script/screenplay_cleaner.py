@@ -118,6 +118,13 @@ def clean_screenplay_pass2(
                 elif prefix.replace("_", " ") in alias_map:
                     speaker = alias_map[prefix.replace("_", " ")]
 
+            # Substring / compound moniker matching (e.g. "बोर्च थ्री जैकडॉज" -> "बोर्च")
+            if speaker not in alias_map.values():
+                for alias_k, canon_v in alias_map.items():
+                    if len(alias_k) >= 3 and (alias_k in speaker.lower() or speaker.lower() in alias_k):
+                        speaker = canon_v
+                        break
+
         speaker_lower = speaker.lower().strip()
 
         # Disambiguate pronouns if LLM attributed dialogue to a pronoun

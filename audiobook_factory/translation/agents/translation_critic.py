@@ -64,17 +64,24 @@ class TranslationQualityCritic:
             if re.search(pattern, hindi_text, re.IGNORECASE):
                 untranslated_found.append((eng_name, hin_name))
 
-        # Check source vs hindi word length ratio
+        # Check source vs hindi word length ratio and paragraph count parity
         src_words = len(source_text.split())
         hin_words = len(hindi_text.split())
         ratio = hin_words / max(1, src_words)
 
-        is_omission_suspected = ratio < 0.60 or ratio > 2.20
+        src_paras = [p for p in source_text.split("\n\n") if p.strip()]
+        hin_paras = [p for p in hindi_text.split("\n\n") if p.strip()]
+        para_gap = abs(len(src_paras) - len(hin_paras))
+        is_para_drop_suspected = len(src_paras) > 3 and para_gap > max(2, int(len(src_paras) * 0.20))
+
+        is_omission_suspected = ratio < 0.60 or ratio > 2.20 or is_para_drop_suspected
 
         audit_report: Dict[str, Any] = {
             "block_title": block_title,
             "source_words": src_words,
             "hindi_words": hin_words,
+            "source_paragraphs": len(src_paras),
+            "hindi_paragraphs": len(hin_paras),
             "word_ratio": round(ratio, 2),
             "untranslated_terms_count": len(untranslated_found),
             "omission_suspected": is_omission_suspected,
@@ -87,15 +94,24 @@ class TranslationQualityCritic:
             pattern = rf"(?<![\w\u0900-\u097F]){re.escape(eng)}(?![\w\u0900-\u097F])"
             certified_text = re.sub(pattern, hin, certified_text, flags=re.IGNORECASE)
 
+        # Deterministic moniker calque repair (e.g. Three Jackdaws literally translated)
+        calque_repairs = [
+            (r"\bतीन\s+कउवे\b", "थ्री जैकडॉज"),
+            (r"\bतीन\s+कौवे\b", "थ्री जैकडॉज"),
+            (r"\bतीन\s+कौए\b", "थ्री जैकडॉज"),
+        ]
+        for c_pat, c_sub in calque_repairs:
+            certified_text = re.sub(c_pat, c_sub, certified_text)
+
         # If significant omission is suspected or major discrepancies found, trigger Reflection Repair Pass
         if is_omission_suspected or len(untranslated_found) > 3:
-            logger.info(f"  [TranslationQualityCritic] Reflection Repair triggered for {block_title} (ratio={ratio:.2f}, untranslated={len(untranslated_found)})")
+            logger.info(f"  [TranslationQualityCritic] Reflection Repair triggered for {block_title} (ratio={ratio:.2f}, para_gap={para_gap}, untranslated={len(untranslated_found)})")
             repaired_text = self._reflection_repair(
                 source_text=source_text,
                 current_hindi=certified_text,
                 glossary=glossary,
                 block_title=block_title,
-                issues=f"Word ratio {ratio:.2f}, untranslated names: {[u[0] for u in untranslated_found[:5]]}",
+                issues=f"Word ratio {ratio:.2f}, paragraph gap {para_gap} (src: {len(src_paras)}, hin: {len(hin_paras)}), untranslated names: {[u[0] for u in untranslated_found[:5]]}",
                 call_llm_fn=call_llm_fn,
             )
             if repaired_text and len(repaired_text.split()) >= src_words * 0.65:
@@ -109,8 +125,8 @@ class TranslationQualityCritic:
         else:
             logger.warning(f"  [TranslationQualityCritic] Sanitizer notice: {reason}")
 
-        # Literary register audit
-        _, certified_text, warnings = audit_literary_register(certified_text)
+        # Literary register audit & substitutions
+        _, certified_text, warnings = audit_literary_register(certified_text, apply_substitutions=True)
         audit_report["literary_warnings"] = warnings
         audit_report["status"] = "CERTIFIED"
 
@@ -178,11 +194,11 @@ Produce the complete, fully repaired, publication-grade Devanagari Markdown tran
                     system_instruction=system_instruction,
                     task_type=TaskType.TRANSLATION,
                     response_mime_type="text/plain",
-                    max_output_tokens=16384,
+                    max_output_tokens=32768,
                     max_retries=6,
                     model=model,
                     return_raw_text=True,
-                    thinking_budget=512,
+                    thinking_budget=1024,
                 ).strip()
 
             is_valid, cleaned, _ = validate_and_sanitize_translation(raw, is_hindi=True)

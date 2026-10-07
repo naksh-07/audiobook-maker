@@ -158,12 +158,27 @@ def audit_gate1_roster(
     for role in active:
         if role in ("Foley", "SFX"):
             continue
+        # Cross-language and alias resolution
+        actual_role_key = role
         if role != "Narrator" and role not in roster_data:
-            raise GateAuditError(f"Gate 1 Failed: Character '{role}' not found in roster!")
-        if role not in registry_data:
-            raise GateAuditError(f"Gate 1 Failed: Character '{role}' not configured in voice registry!")
+            for r_key, r_info in roster_data.items():
+                if isinstance(r_info, dict):
+                    if role == r_info.get("english_name") or role == r_info.get("name") or role in r_info.get("aliases", []):
+                        actual_role_key = r_key
+                        break
+            if actual_role_key not in roster_data:
+                raise GateAuditError(f"Gate 1 Failed: Character '{role}' not found in roster!")
 
-        cfg = registry_data[role]
+        cfg = registry_data.get(role) or registry_data.get(actual_role_key)
+        if not cfg and actual_role_key in roster_data:
+            r_info = roster_data[actual_role_key]
+            if isinstance(r_info, dict):
+                for candidate in [r_info.get("english_name"), r_info.get("name")] + r_info.get("aliases", []):
+                    if candidate and candidate in registry_data:
+                        cfg = registry_data[candidate]
+                        break
+        if not cfg:
+            raise GateAuditError(f"Gate 1 Failed: Character '{role}' not configured in voice registry!")
         if isinstance(cfg, str):
             voice = cfg
             pitch = 1.0

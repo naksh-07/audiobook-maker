@@ -77,6 +77,28 @@ def generate_project_scripts(
     except Exception:
         pass
 
+    # Enrich roster with BookBible canonical characters and all aliases
+    if bible and bible.characters:
+        if not roster or not isinstance(roster, dict):
+            roster = {"characters": {}}
+        elif "characters" not in roster:
+            roster["characters"] = {}
+        for c_name, c_ent in bible.characters.items():
+            h_name = c_ent.hindi_name or c_name
+            target_key = h_name if use_hindi else c_name
+            existing = roster["characters"].get(target_key, {})
+            current_aliases = set(existing.get("aliases", []))
+            for a in c_ent.aliases + [c_name, h_name]:
+                if a:
+                    current_aliases.add(a)
+            roster["characters"][target_key] = {
+                "english_name": c_name,
+                "gender": c_ent.gender or existing.get("gender", "male"),
+                "aliases": sorted(list(current_aliases)),
+            }
+            if c_name not in roster["characters"]:
+                roster["characters"][c_name] = roster["characters"][target_key]
+
     if dramatized:
         try:
             from audiobook_factory.dramaturgy.performance_bible import PerformanceBibleGenerator

@@ -374,5 +374,54 @@ Stage 12 transforms the raw cinematic mix into a commercially certified, percept
      - **Clean 5-Pillar Passage** $\rightarrow$ `CERTIFIED`.
    - Packages actionable `HumanReviewItem` lists containing timestamp intervals, suggested parameter corrections, and severity ratings for audio engineers.
 
+---
+
+## 🎙️ 14. Pure Vocals-Only Mastering Architecture v5.0 (`mastering.py`)
+
+In v5.0, the chapter vocal mastering chain was completely overhauled to eradicate dynamic pumping, consonant lisping, and neural flanging artifacts:
+
+```text
+[Vocal Chunks Concat] 
+          ↓
+[Pass 1: Pre-Analysis Measurement]
+(highpass=f=45, loudnorm=i=-19.0:tp=-1.5:lra=7.0:print_format=json -> -f null -)
+          ↓
+[JSON Stat Extraction: measured_I, measured_TP, measured_LRA, measured_thresh, offset]
+          ↓
+[Pass 2: Linear EBU R128 Loudnorm]
+(highpass=f=45, loudnorm=i=-19.0:tp=-1.5:lra=7.0:measured_I=...:measured_TP=...:measured_LRA=...:measured_thresh=...:offset=...:linear=true)
+          ↓
+[Post-Loudnorm Kaiser Sinc Resampling]
+(aresample=osr=48000:filter_type=kaiser:dither_method=triangular)
+          ↓
+[Commercial Chapter Master: 48kHz / 24-bit Lossless & AAC 192k]
+```
+
+### A. Two-Pass Measured Linear EBU R128 Loudnorm
+- **The Problem with Single-Pass Dynamic Loudnorm**: Single-pass `loudnorm` performs sliding-window automatic gain control (AGC). During dialogue pauses or character hesitations, the algorithm perceives silence as a deficit and ramps up gain by up to $+10\text{ dB}$, amplifying room tone and background noise into noticeable "breathing" or "pumping".
+- **The Solution (Two-Pass Linear Mode)**:
+  1. *Pass 1 (Measurement)*: Scans the concatenated chapter audio with `highpass=f=45,loudnorm=...:print_format=json` against `-f null -`. FFmpeg outputs the true physical statistics of the chapter:
+     - `input_i`: Measured integrated loudness
+     - `input_tp`: Measured true peak
+     - `input_lra`: Measured loudness range
+     - `input_thresh`: Measured speech threshold
+     - `target_offset`: Calibrated gain offset
+  2. *Pass 2 (Linear Normalization)*: Re-runs the master with `linear=true` and passes all five measured values. Instead of dynamic sliding gain, FFmpeg applies a uniform, linear gain offset across the entire waveform, locking dialogue to exactly $-19.0\text{ LUFS} \pm 0.5\text{ LU}$ and $-1.5\text{ dBTP}$ with **zero pause breathing**.
+
+### B. De-Esser Elimination for Pristine Hindi Consonants
+- **The Pitfall of Hardware De-Essers on Neural Audio**: Traditional de-essers (`deesser=i=0.10:m=0.5:f=0.15`) were designed for condenser microphone capsules that exhibit harsh 6–8 kHz resonance peaks when actors speak into physical diaphragms.
+- Neural vocoders (Google Gemini Flash TTS) do not suffer from physical microphone capsule sibilance.
+- Applying a hardware de-esser to synthetic Hindi dialogue severely clips the upper harmonics of dental and aspirated consonants (*स, श, ष, ज़, छ, थ, ध, ख*), turning crisp dramatic dialogue into a muffled, lisping delivery.
+- In v5.0, the de-esser was **completely eliminated** from `mastering.py`, restoring 100% phonetic intelligibility and consonant crispness.
+
+### C. Post-Loudnorm Kaiser Sinc Resampling (192kHz Bloat Fix)
+- **The FFmpeg Loudnorm Up-sampling Bug**: The FFmpeg `loudnorm` filter internally converts and upsamples audio to $192,000\text{ Hz}$ for true-peak oversampling calculations.
+- If resampling (`aresample=osr=48000`) is placed *before* `loudnorm`, the resulting output file is exported at 192 kHz, bloating a 15-minute chapter WAV to over $350\text{ MB}$.
+- In v5.0, high-precision Kaiser windowed sinc resampling (`aresample=osr=48000:filter_type=kaiser:dither_method=triangular`) is positioned strictly **after** `loudnorm`, ensuring that output masters are guaranteed $48,000\text{ Hz}$ stereo files.
+
+### D. Elimination of WSOLA `atempo` Flange
+- Waveform Similarity Overlap-Add (WSOLA) algorithms (`atempo=...`) slice waveforms into grains and crossfade them to adjust speed. On synthetic neural speech, this produces phase cancellation, metallic comb filtering, and robotic flanging.
+- In v5.0, `atempo` time-stretching was eliminated from `dispatcher.py`. Pacing is controlled naturally out-of-band via punctuation cadence, dramatic hesitation pauses, and Gemini `speechMetadata.style` directives.
+
 
 

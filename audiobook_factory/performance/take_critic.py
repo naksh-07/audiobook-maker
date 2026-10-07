@@ -52,13 +52,12 @@ class TakeAuditionCritic:
 
         sys_prompt = (
             fiction_framing +
-            "You are an Academy-Award winning Audio Drama Director and Sound Editor.\n"
-            "You are auditioning takes for a high-stakes dramatic scene.\n"
-            "Compare the audition takes based on:\n"
-            "1. Subtext alignment: Does the delivery convey the unspoken psychological truth?\n"
-            "2. Emotional truth & vocal strain: Does the performance sound like authentic human experience, "
-            "avoiding generic robotic cadence?\n"
-            "3. Intensity & Breath: Are the breath intakes, pauses, and intensity appropriate for the stakes?\n\n"
+            "You are a master Audiobook Director and Sound Supervisor.\n"
+            "You are auditioning takes for a professional studio audiobook.\n"
+            "Compare the candidate takes based on:\n"
+            "1. Grounded Realism: Does the delivery sound like authentic, natural human speech? Heavily penalize melodramatic overacting, breathless panting, and theatrical melodrama.\n"
+            "2. Subtext & Restraint: Is the delivery disciplined, subtle, and understated rather than histrionic?\n"
+            "3. Pacing & Cadence: Is the timing natural and immersive for audiobook listeners?\n\n"
             "Output JSON with:\n"
             "- 'winner_index': int (0-based index of the superior take)\n"
             "- 'justification': string (concise artistic justification)"

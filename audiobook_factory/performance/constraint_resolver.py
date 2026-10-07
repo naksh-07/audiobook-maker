@@ -26,7 +26,7 @@ class ResolvedPerformanceConstraints(BaseModel):
     primary_intention: str = Field(..., description="Lead actioning and delivery emotion")
     secondary_modifiers: List[str] = Field(default_factory=list, description="At most 2-3 essential modifiers")
     forbidden_behaviors: List[str] = Field(default_factory=list, description="Styles that must NOT occur")
-    effective_temperature: float = Field(default=0.95, ge=0.5, le=1.4)
+    effective_temperature: float = Field(default=0.40, ge=0.1, le=1.4)
     clean_style_descriptor: str = Field(..., description="Concise, non-contradictory style descriptor for TTS API")
 
 
@@ -47,17 +47,34 @@ class PerformanceConstraintResolver:
         """
         Harmonizes PerformanceDirection, VoiceDNA, and SceneEmotionalVector into concise directives.
         """
-        # 1. Primary Intention: actioning + delivery emotion
+        # Narrator Transparency Invariant: Narrator NEVER receives theatrical/emotional acting directives
+        is_narrator = getattr(direction, "speaker", "").strip().lower() in ("narrator", "narration", "")
+        if is_narrator:
+            primary = "calm, steady, articulate, measured audiobook delivery"
+            clean_descriptor = primary
+            temp = 0.32
+            return ResolvedPerformanceConstraints(
+                primary_intention=primary,
+                secondary_modifiers=[],
+                forbidden_behaviors=["theatrical acting", "screaming", "melodrama", "uncontrolled emotion"],
+                effective_temperature=round(temp, 2),
+                clean_style_descriptor=clean_descriptor,
+            )
+
+        # 1. Primary Intention: surface emotion + vocal actioning (WITHOUT "acting to..." theatrical command)
         surf_emo = direction.surface_emotion.lower().replace("_", " ")
-        act_verb = direction.actioning.lower().replace("_", " ")
+        act_verb = direction.actioning.lower().replace("_", " ").replace("acting to ", "")
 
         if act_verb and act_verb not in ("speak", "inform", "say", "talk", "convey"):
-            primary = f"{surf_emo}, acting to {act_verb}"
+            if surf_emo not in ("neutral", "standard"):
+                primary = f"{surf_emo}, {act_verb}"
+            else:
+                primary = act_verb
         else:
             primary = surf_emo
 
         if primary in ("neutral", "standard"):
-            primary = "natural conversational delivery"
+            primary = "natural conversational dialogue"
 
         # 2. Secondary Modifiers (Max 2 or 3 curated nuances)
         secondaries: List[str] = []
@@ -100,21 +117,21 @@ class PerformanceConstraintResolver:
         elif variant_type == "vulnerable":
             secondaries.append("underlying vulnerability")
         elif variant_type == "exposed":
-            secondaries.append("heightened emotional adrenaline")
+            secondaries.append("heightened adrenaline")
         elif variant_type == "alternative_cadence":
             secondaries.append("pregnant pauses and measured cadence")
 
-        # Limit secondary modifiers to at most 3 to avoid adjective dilution
-        curated_secondaries = secondaries[:3]
+        # Limit secondary modifiers to at most 2 to avoid adjective dilution and comma bloat
+        curated_secondaries = secondaries[:2]
 
         # 3. Forbidden Behaviors
-        forbidden: List[str] = []
+        forbidden: List[str] = ["theatrical acting", "screaming", "melodrama"]
         if voice_dna and voice_dna.forbidden.forbidden_behaviors:
             forbidden.extend(voice_dna.forbidden.forbidden_behaviors)
 
         # Contextual forbidden rules
         if restraint >= 0.70:
-            forbidden.extend(["screaming", "melodrama", "uncontrolled sobbing"])
+            forbidden.extend(["uncontrolled sobbing", "breathless panting"])
         if direction.proximity == "close_mic":
             forbidden.extend(["shouting", "loud projection"])
 
@@ -134,23 +151,28 @@ class PerformanceConstraintResolver:
             if not any(f in sec_l for f in clean_forbidden):
                 filtered_secondaries.append(sec)
 
-        # 5. Compose Concise Style Descriptor
+        # 5. Compose Concise Style Descriptor with Explicit Anti-Theatrical Anchor
         style_parts = [primary]
         if filtered_secondaries:
             style_parts.extend(filtered_secondaries)
 
+        # Universal Grounding Anchor: Prevents neural model from slipping into theatrical anime/melodrama
+        style_parts.append("understated natural dialogue (never theatrical)")
+
         # Clean style descriptor string
         clean_descriptor = ", ".join(style_parts)
 
-        # 6. Temperature Micro-Entropy Calibration (Phase 3 Creative Liberation)
-        # Broaden from narrow monotone 0.65-0.76 to expressive acting range 0.85-1.10
-        temp = 0.95
+        # 6. Temperature Micro-Entropy Calibration
+        # Strictly calibrated between 0.30 - 0.52 to ensure acoustic stability and natural human cadence
+        temp = 0.40
         if restraint >= 0.75 or variant_type == "restraint":
-            temp = 0.85  # Tighter acoustic stability under emotional restraint
+            temp = 0.35  # Tighter acoustic stability under emotional restraint
         elif variant_type == "exposed" or (scene_vector and scene_vector.energy > 0.85):
-            temp = 1.10  # Full dramatic acting variance for high-energy/exposed beats
+            temp = 0.50  # Heightened dramatic energy capped at safe ceiling (<= 0.55)
         elif variant_type == "vulnerable":
-            temp = 1.00  # Raw vulnerability with heightened vocal inflection
+            temp = 0.42  # Raw vulnerability with grounded inflection
+        elif variant_type == "alternative_cadence":
+            temp = 0.38
 
         return ResolvedPerformanceConstraints(
             primary_intention=primary,

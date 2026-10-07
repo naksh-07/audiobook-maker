@@ -9,7 +9,7 @@ description: >-
   Activate whenever the user provides a book/novel file path and requests an audiobook.
 ---
 
-# Novel Audiobook Factory Skill (Pure Vocals-Only Engine v4.0)
+# Novel Audiobook Factory Skill (Pure Vocals-Only Engine v5.0)
 
 This skill governs autonomous, studio-grade audiobook production on the high-performance PC workstation. It converts full-length novels (50,000–100,000+ words) into multi-cast, studio-mastered M4B audiobooks with zero manual editing.
 
@@ -26,7 +26,7 @@ Whenever the user provides an input book file (`.epub`, `.pdf`, `.txt`, `.md`) a
 
 ```bash
 # In c:\Users\Suraj\Documents\antigravity\optimistic-kepler:
-python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voice Aoede --workers 3
+python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voice Aoede --workers 1
 ```
 
 ### Command Flags:
@@ -34,7 +34,7 @@ python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voic
 - `--hindi`: Translates English prose into dramatic spoken Hindustani using the 4-Agent Translation Collective. Omit for original language.
 - `--dramatized`: Multi-voice character casting with 4D acoustic formant modulation.
 - `--voice`: Lead narrator voice persona (`Aoede` female narrative, `Charon` deep male narrative).
-- `--workers`: Number of concurrent TTS synthesis workers (default: `3`, backed by 120+ active rotating Gemini API keys).
+- `--workers`: Number of concurrent TTS synthesis workers (default: `1` sequential key rotation, backed by 124+ active rotating Gemini API keys).
 - `--cover`: Optional path to cover art image (`.jpg` / `.png`) to embed in the M4B container.
 
 ---
@@ -47,7 +47,7 @@ flowchart TD
     B --> C["Room 2: 4-Agent Translation Collective<br/>(DraftTranslator + Cadence + Idioms + Critic)"]
     C --> D["Room 3: Screenplay & Forensic Attribution<br/>(Dramaturgy + DialogueAttributionAuditor)"]
     D --> E["Room 4: 4D Formants & Voice Performance<br/>(CharacterCaster + TTSDispatcher + TakeCritic)"]
-    E --> F["Room 5: Dialogue Editorial & Vocal Mastering<br/>(DE-01–DE-07 + EBU R128 -19 LUFS Master + M4B Packaging)"]
+    E --> F["Room 5: Dialogue Editorial & Vocal Mastering<br/>(DE-01–DE-07 + Two-Pass Linear Loudnorm + M4B Packaging)"]
 ```
 
 ### Room 1: Document Ingestion & Pre-Production Intelligence
@@ -56,36 +56,38 @@ flowchart TD
 - **Book DNA Profiler**: Dynamically resolves `literary_tradition`, `source_fidelity_tier`, `regional_dialect_cadence`, and `profanity_policy` without hardcoded titles or biases.
 - **Dramatis Personae & Phonetic Lexicon**: Character discovery and phonetic Devanagari transliteration locked in `book_bible.json` and `cast_lock.json`.
 
-### Room 2: Sense-for-Sense Translation Collective
+### Room 2: Sense-for-Sense Translation Collective & Tri-Partite Taxonomy
 - **4-Agent Dramatic Translation Collective**:
   - `LiteraryDraftTranslator`: Dramatic prose preserving 70% canon sacredness.
   - `HindustaniCadenceSpecialist`: Natural actor breath pauses (`—`, `...`, `,`) and honorific status shifts (`TU <-> MAAI-BAAP`).
   - `SubtextAndIdiomDramaturge`: Earthy Hindustani metaphors and 19-to-21 unrated amplification.
   - `TranslationQualityCritic`: Anti-omission validation and BookBible terminology verification.
-- **The Dual-Rule Invariant ("Nothing Above Source")**:
-  - *Classical / Heritage Literature*: Authorial dignity and sacred regional pathos without modern street slang.
-  - *Raw Unrated Fiction*: 19-to-21 amplification of raw street curses, visceral combat gore, and unvarnished somatic intimacy.
+- **Tri-Partite Entity Partition**:
+  - Proper Names: Phonetically transliterated into Devanagari.
+  - Heraldic Monikers: Transliterated phonetically as proper names (e.g. *Silver Falcon* $\to$ *सिल्वर फाल्कन*), strictly banning literal calques (*चांदी का बाज़*).
+  - Occupational Roles: Evocative natural Hindustani (*अजनबी, कसाई, सरायवाला*).
+- **Living Somatic Register**: Spoken body language (*कमर, कूल्हे, नंगी/खुली बाँहें*), permanently banning Sanskrit tat-sama words (*नितंब, नग्न भुजाएँ*).
 
 ### Room 3: Screenplay Dramaturgy & Anti-Swap Attribution
-- **Two-Pass Decoupled Screenplay Parser**: Deconstructs chapters into 500-word beat-aligned chunks, attributing dialogue turns, subtext actioning verbs, and spatial staging.
+- **Two-Pass Decoupled Screenplay Parser**: Deconstructs chapters into beat-aligned chunks, attributing dialogue turns, subtext actioning verbs, and spatial staging.
 - **Dialogue Attribution Auditor**: Dedicated QA agent preventing $A \leftrightarrow B$ speaker turn inversions, quote misattributions to Narrator, and speech tag leakage (`"उसने कहा"`).
 
-### Room 4: 4D Formants & Voice Performance Realization
+### Room 4: 4D Formants & Performance Restraint
+- **Actor Overacting Elimination**: Strips theatrical `"acting to..."` directives; anchors delivery with physical vocal cues and universal restraint anchor `"understated natural dialogue (never theatrical)"`.
+- **Narrator Transparency Invariant**: Narrator locked strictly to `"calm, steady, articulate, measured audiobook delivery"` at temperature `0.32` with zero melodrama.
+- **Temperature Clamping (`0.30 - 0.52`)**: Eliminates pitch screeching, panting, and caricatures (dialogue `0.35 - 0.42`, climactic $\le 0.50$).
 - **Dynamic 2,089 Voice Catalog (`VoiceCatalog`)**: Integrates all 2,089 verified voices (114 native Hindi voices, 120 regional Indian English personas, 215 English Gemini studio voices).
-- **LLM Dialect-Aware Casting Director**: Dynamically scores characters against regional dialects (Awadhi, Bhojpuri, Haryanvi, Bundeli, Urdu/Delhi) without hardcoding.
-- **Child & Youth Voice Solutions**:
-  - *Anime Seiyū Child Engine*: Young children and girls (<14yo) use high-pitch female base voices modulated with $+10\text{--}15\%$ pitch shift and youthful resonance EQ.
-  - *Rustic Teen Fighter Profile*: Adolescent boys (14–17yo) utilize young 22–23yo rustic male bases (Haryanvi/Bhojpuri) with physical presence EQ.
-- **POV-Aware Narrator Alignment**: `Aoede` is locked as default for third-person narratives; automatically aligns with the male protagonist's voice profile for first-person POV novels.
-- **4D Acoustic Formant Modulation**: Pitch delta ($\pm 4-12\%$), tempo scaling, and 4D parametric EQ formant profiles (`equalizer=f=...`) dynamically applied via FFmpeg DSP to prevent vocal convergence when multiple characters share base voices.
-- **Formant-Sensitive Hash Caching**: Filename hashing incorporates the active EQ formant profile for deterministic cache invalidation.
-- **120+ Key Gemini Flash TTS Pool**: Concurrent token-bucket rate limiting with anti-bot jitter and permanent `BLOCK_NONE` safety settings.
-- **TakeAuditionCritic**: Judicial multi-take evaluation on climactic scenes.
+- **Elimination of WSOLA `atempo` Flange**: Speech tempo modulated through organic phrasing and punctuation rather than phase-destructive time-stretching.
+- **124+ Key Gemini Flash TTS Pool**: Concurrent token-bucket rate limiting with anti-bot jitter and permanent `BLOCK_NONE` safety settings.
+- **TakeAuditionCritic Realignment**: Judicial multi-take evaluation rewarding grounded human realism over theatrical melodrama.
 
 ### Room 5: Dialogue Editorial & Broadcast Vocal Mastering
 - **Dialogue Editorial Layer (DE-01 - DE-07)**: Endpoint zero-crossing snapping (-52 dBFS speech floor), Hann micro-fades (12ms pre-speech, 18ms post-speech), and dramatic turn latency.
-- **Broadcast EBU R128 Vocal Master**: Standardized `-19.0 LUFS` ($\pm 0.5$ LU) integrated loudness and `-1.5 dBTP` true-peak ceiling at 48kHz / 24-bit.
-- **Uniform 2-Channel Stereo Mastering**: Guarantees identical 2-channel stereo rendering for all segments under spatial staging, eliminating mono/stereo FFmpeg concat crashes.
+- **Two-Pass Measured Linear EBU R128 Loudnorm**:
+  - Pass 1 measurement with `-f null -` extracts exact integrated loudness and speech threshold.
+  - Pass 2 linear application (`linear=true`) with measured stats offset: **zero pause gain pumping or room-tone breathing**.
+- **Consonant Clarity (Zero De-Esser)**: Eliminated destructive hardware de-essers, preserving 100% crispness for Hindi dental/aspirated sibilants (*स, श, छ, थ, ध*).
+- **Post-Loudnorm Kaiser Sinc Resampling**: Strict 48kHz / 24-bit studio container positioned *after* loudnorm, eradicating 192kHz WAV bloat.
 - **Chaptered M4B Container**: Streamlined packaging into `.m4b` container with FFMETADATA1 chapter markers, TOC navigation, and embedded high-resolution cover artwork.
 
 ---

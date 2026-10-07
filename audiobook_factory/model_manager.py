@@ -95,8 +95,6 @@ EXCLUDED_PATTERNS = (
     "customtools",
     "omni",
     "gemma",
-    "-pro",
-    "gemini-pro",
 )
 
 

@@ -303,19 +303,27 @@ Screens sequential dialogue segments spoken by the same character for volatile, 
 - **Class:** [`GeminiTTSPerformanceAdapter`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/performance/tts_adapter.py#L32-L161)
 
 The bridge between `PerformanceDirection` contracts and Google Gemini 3.8 Flash TTS payload formats:
-- **Rich Multi-Token Style Descriptors:** Generates natural language `speechMetadata.style` strings synthesizing delivery emotion, tactical actioning, restraint, pitch contour, articulation, and physical staging:
+- **Restrained Physical Style Descriptors:** Generates natural language `speechMetadata.style` strings synthesizing delivery emotion, physical vocal posture, restraint, pitch contour, and articulation—strictly stripping theatrical `"acting to..."` verbs:
   ```json
   {
     "speechMetadata": {
-      "style": "cold menace, acting to threaten, iron restraint, tightly controlled, low resonant chest register, deliberate crisp articulation"
+      "style": "cold menace, iron restraint, tightly controlled, low resonant chest register, understated natural dialogue (never theatrical)"
     }
   }
   ```
-- **Micro-Entropy Temperature Calibration:** Calibrates generation temperature based on the candidate take variant:
-  - `restraint`: $\text{temperature} = 0.65$ (disciplined, deterministic formants).
-  - `standard`: $\text{temperature} = 0.70$.
-  - `vulnerable`: $\text{temperature} = 0.72$ (micro-hesitation entropy).
-  - `exposed`: $\text{temperature} = 0.76$ (raw emotional dynamic range).
+- **Narrator Transparency Invariant:**
+  - Narrator turns NEVER receive emotional directives or dramatic subtext.
+  - Locked strictly to `"calm, steady, articulate, measured audiobook delivery"` at $\text{temperature} = 0.32$ with zero melodrama.
+- **V5.0 Micro-Entropy Temperature Clamping (`0.30 - 0.52`):**
+  - Generative audio models degrade into unstable theatrical overacting at temperatures $\ge 0.70$.
+  - In v5.0, temperature is clamped across candidate take variants:
+    - `restraint` / `Narrator`: $\text{temperature} = 0.32$ (disciplined, grounded formants).
+    - `standard`: $\text{temperature} = 0.35 - 0.38$.
+    - `vulnerable`: $\text{temperature} = 0.42$ (subtle hesitation entropy).
+    - `exposed` / `climactic`: $\text{temperature} = 0.48 - 0.50$ (raw dynamic range safely capped against vocoder screeching).
+- **TakeAuditionCritic Realignment:**
+  - Judicial take evaluation heavily penalizes theatrical melodrama, breathless panting, and anime-dub exaggerated cadences.
+  - Strongly prioritizes understated realism, character subtext, and grounded emotional restraint.
 - **Sacred Text Invariance:** Guarantees that the author's dialogue is never polluted with inline stage directions or delivery adjectives. Spoken text passes into `part_payload["text"]` completely unaltered.
 
 ---

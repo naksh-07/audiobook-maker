@@ -63,13 +63,17 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
         components: List[str] = []
 
         # 1. Actioning verb & Surface Delivery
+        if getattr(direction, "speaker", "").strip().lower() in ("narrator", "narration", ""):
+            return "calm, steady, articulate, measured audiobook delivery"
+
         surf = direction.surface_emotion.lower().replace("_", " ")
         if surf not in ("neutral", "standard"):
             components.append(surf)
 
         act = direction.actioning.lower().replace("_", " ")
         if act and act not in ("speak", "inform", "say", "talk"):
-            components.append(f"acting to {act}")
+            clean_act = act.replace("acting to ", "")
+            components.append(f"{clean_act} tone")
 
         # 2. Restraint & Social Mask
         if direction.social_mask:
@@ -115,6 +119,9 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
                 if mod not in components:
                     components.append(mod)
 
+        # Universal Anti-Melodrama Anchor
+        components.append("understated, natural spoken dialogue, never theatrical")
+
         # Deduplicate while preserving order
         seen = set()
         unique = []
@@ -125,7 +132,7 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
                 unique.append(c.strip())
 
         if not unique:
-            return "neutral"
+            return "natural spoken dialogue"
 
         return ", ".join(unique)
 
@@ -156,13 +163,13 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
             temp = resolved.effective_temperature
         except Exception:
             style_desc = self.compose_style_descriptor(direction, variant_type=variant_type)
-            temp = 0.95
+            temp = 0.40
             if variant_type == "restraint":
-                temp = 0.85
+                temp = 0.35
             elif variant_type == "exposed":
-                temp = 1.10
+                temp = 0.50
             elif variant_type == "vulnerable":
-                temp = 1.00
+                temp = 0.42
 
         part_payload: Dict[str, Any] = {"text": clean_text}
         if style_desc and style_desc.lower() not in ("neutral", "standard"):

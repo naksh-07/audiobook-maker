@@ -85,7 +85,7 @@ Output JSON: A list of objects where each object corresponds by "index" to the i
             system_instruction=sys_prompt,
             task_type=TaskType.SCREENPLAY,
             response_mime_type="application/json",
-            max_output_tokens=16384,
+            max_output_tokens=65536,
             thinking_budget=1024,
             max_retries=8,
         )
@@ -126,6 +126,14 @@ Output JSON: A list of objects where each object corresponds by "index" to the i
                 seg["spatial"] = e["spatial"]
             if e.get("acoustic_env"):
                 seg["acoustic_env"] = e["acoustic_env"]
+
+        # Narrator Transparency Invariant: Narrator is strictly calm and measured, zero melodrama
+        if seg.get("speaker", "").strip().lower() in ("narrator", "narration", ""):
+            seg["actioning"] = "narrate"
+            seg["acting"] = {"delivery_style": "calm_authoritative"}
+            seg["intensity_level"] = "medium"
+            seg["subtext"] = ""
+            seg["underlying_emotion"] = "neutral"
 
     try:
         from audiobook_factory.script.agents.dramaturgy_judge import DramaturgyConsistencyJudge

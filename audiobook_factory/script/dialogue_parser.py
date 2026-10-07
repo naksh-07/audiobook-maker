@@ -43,6 +43,8 @@ def _parse_dialogue_turns_llm(
             "2. CONVERSATIONAL TURN ALTERNATION & ZERO VOICE SWAPPING:\n"
             "   - In rapid back-and-forth dialogue exchanges without explicit speech tags, track conversational polarity strictly: the answer to a question belongs to the interlocutor, NEVER to the person who asked the question!\n"
             "   - Attribute dialogue to canonical character names based on narrative descriptions and epithets matching the Canonical Character Roster provided below.\n"
+            "   - ANTI-ALIAS SPLITTING RULE: If a character is introduced by a descriptive role, epithet, or moniker before revealing their true name (e.g. 'The Stranger' / 'अजनबी' or 'Silver Falcon' / 'सिल्वर फाल्कन' is revealed to be 'Lord Sterling' / 'लॉर्ड स्टर्लिंग'), ATTRIBUTE ALL TURNS to the canonical character name ('Lord Sterling' or 'लॉर्ड स्टर्लिंग')! NEVER split the character into two different speakers!\n"
+            "   - Similarly, if 'The scarred captain' / 'दाग़ी कप्तान' is 'Captain Drake' / 'कैप्टन ड्रेक', attribute to canonical 'Captain Drake' / 'कैप्टन ड्रेक'!\n"
             "   - Never use generic pronouns ('he', 'she', 'उसने', 'वह') as speaker names. Always resolve to the canonical character.\n"
             "3. PRESERVE ALL NARRATIVE PROSE & DIALOGUE TAGS:\n"
             "   - NEVER delete, skip, or summarize author narrative prose or descriptions. The Narrator delivers atmospheric exposition, setting up character dialogue.\n"
@@ -61,6 +63,7 @@ def _parse_dialogue_turns_llm(
             "1. UNIFIED DIALOGUE TURNS: Merge split quotes into a single continuous dialogue segment per character turn. "
             "Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' completely from character spoken text.\n"
             "2. CANONICAL SPEAKER ASSIGNMENT: Attribute dialogue strictly to the canonical character from Known Canon Characters. "
+            "ANTI-ALIAS SPLITTING: Never split a character across aliases (e.g. 'The Stranger' and 'Lord Sterling' must both be 'Lord Sterling'). "
             "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('he', 'she', 'उसने', 'वह') as the speaker name.\n"
             "3. NEURAL VOCAL TAGS: Prepend vocal tags directly inside the 'text' field when dialogue demands it: "
             "`[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, `[gasp]`, `[growl]`, `[bellowing rage]`, `[combat strain]`, `[mocking chuckle]`.\n"
@@ -117,7 +120,7 @@ Output JSON: A list of objects where each object has:
         system_instruction=sys_prompt,
         task_type=TaskType.SCREENPLAY,
         response_mime_type="application/json",
-        max_output_tokens=16384,
+        max_output_tokens=65536,
         thinking_budget=1024,
         max_retries=8,
     )

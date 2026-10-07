@@ -98,7 +98,17 @@ def cmd_synthesize(args):
         if ch_num not in scripts_by_ch or "_hi_script" in sf.stem:
             scripts_by_ch[ch_num] = sf
 
-    script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys())]
+    target_chs = None
+    if getattr(args, "chapter", None) is not None:
+        target_chs = [args.chapter]
+    elif getattr(args, "chapters", None) is not None:
+        from audiobook_factory.cli.utils import parse_chapters_arg
+        target_chs = parse_chapters_arg(args.chapters)
+
+    if target_chs:
+        script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys()) if k in target_chs]
+    else:
+        script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys())]
 
     for sf in script_files:
         m = re.search(r"chapter_(\d+)", sf.stem)
@@ -125,7 +135,17 @@ def cmd_master(args):
         if ch_num not in scripts_by_ch or "_hi_script" in sf.stem:
             scripts_by_ch[ch_num] = sf
 
-    script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys())]
+    target_chs = None
+    if getattr(args, "chapter", None) is not None:
+        target_chs = [args.chapter]
+    elif getattr(args, "chapters", None) is not None:
+        from audiobook_factory.cli.utils import parse_chapters_arg
+        target_chs = parse_chapters_arg(args.chapters)
+
+    if target_chs:
+        script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys()) if k in target_chs]
+    else:
+        script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys())]
 
     from audiobook_factory.orchestration.dialogue_runner import process_and_master_dialogue_stem
     from audiobook_factory.tts.constants import get_ffmpeg

@@ -1,20 +1,20 @@
-# 🎙️ Audiobook Maker (Vocals-Only Studio Engine v4.0)
+# 🎙️ Audiobook Maker (Vocals-Only Studio Engine v5.0)
 
-> **Autonomous Studio-Grade Multi-Voice Audiobook Production Engine with 4D Acoustic Formants, Anti-Swap Dialogue Attribution, Gemini Flash TTS & Broadcast EBU R128 (-19 LUFS) M4B Packaging.**
+> **Autonomous Studio-Grade Multi-Voice Audiobook Production Engine with Restrained Actor Performance, Two-Pass Linear EBU R128 Mastering, Anti-Swap Dialogue Attribution, Gemini Flash TTS & Broadcast M4B Packaging.**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-6.0%2B%20%7C%208.0-red.svg)](https://ffmpeg.org/)
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-4D%20Acoustic%20Formant%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
-[![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-805%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Broadcast Standard](https://img.shields.io/badge/Broadcast-Two--Pass%20Linear%20EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
+[![Verification](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
 
 ## 📖 Overview
 
-**Audiobook Maker (Vocals-Only Studio Engine v4.0)** is an enterprise-grade, autonomous audiobook production system engineered specifically for **crystal-clear, multi-voice character acting and pristine vocal narration** modeled after the benchmark standards of **Audible Studios**.
+**Audiobook Maker (Vocals-Only Studio Engine v5.0)** is an enterprise-grade, autonomous audiobook production system engineered specifically for **grounded, natural multi-voice character acting and pristine vocal narration** modeled after the benchmark standards of **Audible Studios**.
 
 It ingests raw literature (**EPUB, PDF, TXT, Markdown**) and autonomously produces chapterized `.m4b` audiobooks with rich chapter markers and cover art in one command.
 
@@ -128,23 +128,26 @@ python audiobook_cli.py package <book_slug> --cover "cover.jpg"
 - **Forensic Anti-Swap Auditor**: Dedicated LLM QA agent that catches $A \leftrightarrow B$ speaker turn inversions, corrects quotes mistakenly assigned to Narrator, and scrubs leaked speech tags (e.g. `"उसने कहा"`).
 - **Chronological Action-Blocking Protection**: Split-quote stitching is strictly bounded to short speech tags ($\le 6$ words with explicit speech verbs), ensuring authentic physical narrative sequences (`Dialogue 1 -> Physical Action -> Dialogue 2`) are never inverted or compressed.
 
-### 3. Room 2 4-Agent Translation Collective & Dual-Rule Invariant
+### 3. Room 2 4-Agent Translation Collective & Tri-Partite Invariant
 *(See [`collective.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/translation/agents/collective.py) & [`translator.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/translator.py))*
 - **4-Agent Collective**:
   - `LiteraryDraftTranslator`: Sense-for-sense dramatic prose maintaining 70% canon sacredness.
   - `HindustaniCadenceSpecialist`: Natural actor breath pauses (`—`, `...`, `,`) and `TU <-> MAAI-BAAP` power shifts.
   - `SubtextAndIdiomDramaturge`: Earthy Hindustani metaphors and 19-to-21 unrated amplification.
   - `TranslationQualityCritic`: Anti-omission checks and BookBible terminology verification.
-- **The Dual-Rule Invariant ("Nothing Above Source")**:
-  - *Classic / Heritage Fiction*: Preserves sacred authorial dignity, emotional pathos, and authentic regional cadence with zero modern street slang.
-  - *Raw Unrated Fiction*: 19-to-21 amplification of raw street curses, visceral combat gore, and somatic intimacy without puritanical moralizing.
-- **Creative Autonomy Preservation**: Preserves expressive acting directives (`[ironic smirk]`, `[hesitates, catches breath]`) for TTS delivery and protects in-story bilingual/code-switching dialogue.
+- **Universal Novel-Agnostic Tri-Partite Taxonomy**:
+  1. *Personal Proper Names*: Phonetically transliterated into Devanagari (*Victor* $\to$ *विक्टर*, *Marcus* $\to$ *मार्कस*).
+  2. *Heraldic Monikers & Titles*: Transliterated phonetically as proper names (*Silver Falcon* $\to$ *सिल्वर फाल्कन*), strictly banning literal word-for-word calques (*चांदी का बाज़*).
+  3. *Occupational Roles*: Evocative spoken Hindustani (*अजनबी, कसाई, सरायवाला, लोहार*).
+- **Living Somatic Register (Anti-Tat-Sama Ban)**: Strictly mandates natural spoken anatomy (*कमर, कूल्हे, नंगी/खुली बाँहें*), permanently eliminating archaic textbook words (*नितंब, नग्न भुजाएँ, अनावृत*).
 
-### 4. High-Concurrency Gemini TTS Pool & Quota Shield
-*(See [`model_manager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/model_manager.py) & [`key_manager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/key_manager.py))*
+### 4. High-Concurrency Gemini TTS Pool & Overacting Elimination
+*(See [`model_manager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/model_manager.py) & [`constraint_resolver.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/performance/constraint_resolver.py))*
+- **Actor Overacting Elimination**: Strips theatrical `"acting to..."` directives, anchors performance with physical vocal cues and universal restraint (`"understated natural dialogue (never theatrical)"`).
+- **Narrator Transparency Invariant**: Narrator locked strictly to `"calm, steady, articulate, measured audiobook delivery"` (temp 0.32, zero melodrama).
+- **Temperature Clamping (0.30 - 0.52)**: Eliminates pitch dispersion, panting, and theatrical screeching (default `0.35 - 0.42`).
 - **Persistent SQLite Round-Robin Pool**: Rotates across 120+ active Gemini API keys with token-bucket rate limiting and anti-bot jitter.
-- **Quota Trap Shield**: Excludes 10 RPD quota-trap models (`omni`, `gemma`, `-pro`, `gemini-pro`) from general tasks, keeping production locked to high-limit, lightning-fast Flash tiers.
-- **Permanent Developer Permissive Threshold (`BLOCK_NONE`)**: Automatically sets `BLOCK_NONE` across all 4 harm categories, preventing false-positive censorship of legitimate dramatic literature.
+- **Permanent Developer Permissive Threshold (`BLOCK_NONE`)**: Automatically sets `BLOCK_NONE` across all harm categories, preventing false-positive censorship of legitimate dramatic literature.
 
 ### 5. Dialogue Editorial Layer (DE-01 - DE-07)
 *(See [`docs/DIALOGUE_EDITORIAL_LAYER.md`](docs/DIALOGUE_EDITORIAL_LAYER.md))*
@@ -154,9 +157,14 @@ python audiobook_cli.py package <book_slug> --cover "cover.jpg"
 
 ### 6. Broadcast Vocal Mastering & Chaptered M4B Container
 *(See [`mastering.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/mastering.py) & [`packager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/packager.py))*
-- **EBU R128 Loudness Target**: Broadcast-compliant `-19.0 LUFS` integrated loudness ($\pm 0.5$ LU) and `-1.5 dBTP` true-peak ceiling.
-- **Uniform 2-Channel Stereo Mastering**: Under spatial staging, all vocal segments (including center-panned narrator) render into identical 2-channel stereo streams, eradicating mono/stereo FFmpeg concat crashes.
-- **SOXR Resampling**: High-quality 48kHz / 24-bit studio pipeline.
+- **Two-Pass Measured Linear EBU R128 Loudnorm**:
+  - *Pass 1*: Forensic integrated measurement (`print_format=json`) with `-f null -`.
+  - *Pass 2*: Linear loudnorm (`linear=true`) with measured stats offset. Completely eliminates pause gain pumping and room-tone breathing.
+- **Zero Sibilance Distortion & Zero Phase Flange**:
+  - Permanently removed WSOLA `atempo` time-stretching, preserving neural vocal formants and phase coherence.
+  - Eliminated destructive `deesser=i=0.10`, restoring crisp Hindi dental & aspirated consonants (*स, श, छ, थ, ध, ख*).
+- **Post-Loudnorm Kaiser Sinc Resampling**: Strict 48kHz / 24-bit studio pipeline positioned *after* loudnorm, eliminating 192kHz WAV bloat.
+- **Broadcast Standards Target**: `-19.0 LUFS` integrated loudness ($\pm 0.5$ LU) and `-1.5 dBTP` true-peak ceiling.
 - **Chaptered M4B Container**: Assembles final `.m4b` container with FFMETADATA1 chapter markers, TOC navigation, and embedded high-resolution cover artwork.
 
 ---

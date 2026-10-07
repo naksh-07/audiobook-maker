@@ -69,6 +69,9 @@ class HindustaniCadenceSpecialist:
             "Key Focus Areas:\n"
             "1. SPOKEN HINDUSTANI CADENCE & DIALOGUE REFACTORING: Eliminate stiff written translation artifacts, dictionary Sanskrit roots, or Doordarshan phrasing. "
             "If you see 'नितंब' or 'कटि', immediately rewrite to natural spoken 'कमर' or 'कूल्हे'! "
+            "If you see 'नग्न' or 'अनावृत', rewrite to living spoken 'नंगा / नंगी / खुला / खुली' (e.g. 'नग्न भुजाएँ' -> 'खुली बाँहें', 'नग्न थीं' -> 'बाँहें खुली थीं / नंगी थीं')! "
+            "If you see 'युवतियाँ', rewrite to 'जवान औरतें / लड़कियाँ'! "
+            "If you see literal calques of heraldic titles/monikers like 'तीन कउवे' / 'तीन कौवे', rewrite to phonetic transliteration 'थ्री जैकडॉज'! "
             "If you see 'वीरांगनाएं', rewrite to 'लड़ाकू औरतें / महिला योद्धा'! "
             "If you see 'प्रस्ताव', rewrite to 'सौदा / बात'! "
             "If you see raw English profanity in source, ensure authentic visceral spoken delivery ('गांड', 'हरामी', 'बकचोदी') without bowdlerization. "
@@ -113,11 +116,11 @@ Output ONLY the refined Devanagari Markdown:
                     system_instruction=system_instruction,
                     task_type=TaskType.TRANSLATION,
                     response_mime_type="text/plain",
-                    max_output_tokens=16384,
+                    max_output_tokens=32768,
                     max_retries=6,
                     model=model,
                     return_raw_text=True,
-                    thinking_budget=512,
+                    thinking_budget=1024,
                 ).strip()
 
             elapsed = time.time() - t0

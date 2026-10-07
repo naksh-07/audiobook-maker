@@ -89,12 +89,16 @@ def main():
     # synthesize
     p_synth = subparsers.add_parser("synthesize", help="Synthesize audio segments via Gemini Cloud TTS")
     p_synth.add_argument("book", help="Project book slug")
+    p_synth.add_argument("--chapter", type=int, default=None, help="Specific chapter number to synthesize")
+    p_synth.add_argument("--chapters", type=str, default=None, help="Comma-separated or range of chapters (e.g. 1-2 or 1,2)")
     p_synth.add_argument("--backend", default="gemini_tts", choices=["gemini_tts"], help="TTS engine (default: gemini_tts)")
     p_synth.add_argument("--voice", default="Aoede", help="Default voice persona")
 
     # master
     p_master = subparsers.add_parser("master", help="Concatenate segments and master audio with EBU R128 (-19 LUFS)")
     p_master.add_argument("book", help="Project book slug")
+    p_master.add_argument("--chapter", type=int, default=None, help="Specific chapter number to master")
+    p_master.add_argument("--chapters", type=str, default=None, help="Comma-separated or range of chapters (e.g. 1-2 or 1,2)")
 
     # package
     p_pack = subparsers.add_parser("package", help="Assemble final chapterized M4B container")

@@ -42,12 +42,20 @@ aresample=48000,asetrate=48000*0.94,aresample=48000,atempo=1.0638,equalizer=f=12
 
 ---
 
-## 3. Broadcast Vocal Loudnorm Recipe
+## 3. Broadcast Vocal Loudnorm Recipe (v5.0 Two-Pass Linear)
 
 ```ffmpeg
-# Dual-Pass / Linear Phase Broadcast Mastering:
-[0:a]aresample=48000,highpass=f=60,loudnorm=I=-19.0:TP=-1.5:LRA=9.0:measured_I=MEASURED_I:measured_TP=MEASURED_TP:measured_LRA=MEASURED_LRA:measured_thresh=MEASURED_THRESH:offset=OFFSET:linear=true,alimiter=limit=0.84:attack=5:release=50[out]
+# Pass 1: Pre-Analysis Measurement
+ffmpeg -y -i input.wav -af "highpass=f=45,loudnorm=I=-19.0:TP=-1.5:LRA=7.0:print_format=json" -f null -
+
+# Pass 2: Linear Phase Broadcast Mastering (Zero Pause Pumping) + Post-Loudnorm Resampling
+ffmpeg -y -i input.wav -af "highpass=f=45,loudnorm=I=-19.0:TP=-1.5:LRA=7.0:measured_I=MEASURED_I:measured_TP=MEASURED_TP:measured_LRA=MEASURED_LRA:measured_thresh=MEASURED_THRESH:offset=OFFSET:linear=true,aresample=osr=48000:filter_type=kaiser:dither_method=triangular" output_master.wav
 ```
+
+### Critical DSP Invariants (v5.0):
+1. **Zero Hardware De-Esser**: Synthetic neural voices have zero physical mic capsule sibilance. Destructive `deesser` filters are strictly banned because they attenuate authentic Hindi dental sibilants (*स, श, छ, थ, ध*).
+2. **Post-Loudnorm Resampling**: Resampling (`aresample=osr=48000`) MUST be placed strictly *after* `loudnorm` to prevent FFmpeg's 192kHz internal upsampling from bloating chapter WAVs.
+3. **No WSOLA `atempo` on Neural Dialogues**: WSOLA time-stretching causes robotic comb-filtering and phase cancellation on synthesized neural stems. Cadence is governed via speech tags, dramatic pauses, and LLM text formatting.
 
 ---
 
