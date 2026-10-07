@@ -84,13 +84,24 @@ def clean_screenplay_pass2(
         speaker = speaker.strip(" \"':()[]")
         speaker_lower = speaker.lower()
 
-        # Robust alias matching
-        if speaker_lower in alias_map:
-            speaker = alias_map[speaker_lower]
-        elif speaker_lower.replace("_", " ") in alias_map:
-            speaker = alias_map[speaker_lower.replace("_", " ")]
-        elif speaker_lower.replace(" ", "_") in alias_map:
-            speaker = alias_map[speaker_lower.replace(" ", "_")]
+        # Robust alias matching with article and punctuation normalization
+        clean_key = speaker_lower.strip()
+        stripped_key = re.sub(r"^(?:the|a|an|वह|उस)\s+", "", clean_key)
+
+        if clean_key in alias_map:
+            speaker = alias_map[clean_key]
+        elif stripped_key in alias_map:
+            speaker = alias_map[stripped_key]
+        elif f"the {clean_key}" in alias_map:
+            speaker = alias_map[f"the {clean_key}"]
+        elif clean_key.replace("_", " ") in alias_map:
+            speaker = alias_map[clean_key.replace("_", " ")]
+        elif stripped_key.replace("_", " ") in alias_map:
+            speaker = alias_map[stripped_key.replace("_", " ")]
+        elif clean_key.replace(" ", "_") in alias_map:
+            speaker = alias_map[clean_key.replace(" ", "_")]
+        elif stripped_key.replace(" ", "_") in alias_map:
+            speaker = alias_map[stripped_key.replace(" ", "_")]
         else:
             # Check parenthetical annotations e.g. "Hero (Warrior)" or "नायक (योद्धा)"
             m = re.search(r"\(([^)]+)\)", speaker)
@@ -115,8 +126,8 @@ def clean_screenplay_pass2(
                 speaker = last_male_character if last_male_character != "Narrator" else last_active_character
             elif speaker_lower in FEMALE_PRONOUNS:
                 speaker = last_female_character if last_female_character != "Narrator" else last_active_character
-            elif speaker_lower in ("unknown", "someone", "voice", "a voice", "stranger"):
-                speaker = last_active_character
+            # NOTE: Generic descriptors like 'stranger', 'voice', or 'someone' are NEVER
+            # overwritten to last_active_character to prevent speaker line theft.
 
         # Dedicated action beat support: keep Foley speaker and action type intact
         is_action_beat = item.get("type") == "action" or speaker_lower == "foley"
@@ -366,4 +377,64 @@ def clean_screenplay_pass2(
                 if not entry.get("narrative_distance") and sc.narrative_distance:
                     entry["narrative_distance"] = sc.narrative_distance
 
-    return final_script
+    # Deterministic Split-Quote Stitching (Audible Flow Standard)
+    # Eliminates mid-sentence narrator stutter and unifies character speech turns.
+    return stitch_split_dialogue_turns(final_script)
+
+
+def stitch_split_dialogue_turns(segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Deterministic Split-Quote Unifier (Audible Flow Standard):
+    If segment[i] and segment[i+2] are both dialogue by the SAME character,
+    and segment[i+1] is a short narration tag (< 35 words):
+    Rejoins segment[i] and segment[i+2] into a single continuous dialogue turn,
+    and positions segment[i+1] as a narrative lead-in BEFORE the dialogue.
+    """
+    if not segments or len(segments) < 3:
+        return segments
+
+    stitched: List[Dict[str, Any]] = []
+    i = 0
+    n = len(segments)
+
+    while i < n:
+        if (
+            i + 2 < n
+            and segments[i].get("type") == "dialogue"
+            and segments[i + 2].get("type") == "dialogue"
+            and segments[i].get("speaker") == segments[i + 2].get("speaker")
+            and segments[i + 1].get("type") == "narration"
+        ):
+            narr_text = segments[i + 1].get("text", "").strip()
+            narr_words = len(narr_text.split())
+
+            if narr_words <= 35:
+                d1 = segments[i].get("text", "").strip()
+                d2 = segments[i + 2].get("text", "").strip().lstrip(",। ")
+
+                # Format narrative lead-in
+                narr_lead = narr_text
+                if not narr_lead.endswith("—") and not narr_lead.endswith(":"):
+                    narr_lead = narr_lead.rstrip(".,।:; ") + "—"
+
+                # Add Narrator lead-in
+                narr_item = dict(segments[i + 1])
+                narr_item["text"] = narr_lead
+                stitched.append(narr_item)
+
+                # Add Unified Dialogue
+                unified_item = dict(segments[i])
+                unified_item["text"] = f"{d1} {d2}"
+                stitched.append(unified_item)
+
+                i += 3
+                continue
+
+        stitched.append(segments[i])
+        i += 1
+
+    # Re-index all segments sequentially
+    for idx, seg in enumerate(stitched, 1):
+        seg["index"] = idx
+
+    return stitched

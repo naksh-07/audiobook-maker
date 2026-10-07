@@ -15,6 +15,7 @@ from typing import List, Dict, Any, Optional, Tuple, Callable
 from audiobook_factory.llm_client import call_gemini as default_call_gemini
 from audiobook_factory.model_manager import get_model_manager, TaskType
 from audiobook_factory.safety import get_dramatic_fiction_framing
+from audiobook_factory.script.screenplay_cleaner import stitch_split_dialogue_turns
 
 logger = logging.getLogger("AudiobookFactory")
 
@@ -49,15 +50,34 @@ class DialogueAttributionAuditor:
         if not character_roster:
             return alias_map, ""
 
+        def _register_alias_variants(term: str, target: str):
+            t_low = term.lower().strip()
+            if not t_low:
+                return
+            alias_map[t_low] = target
+            alias_map[t_low.replace("_", " ")] = target
+            alias_map[t_low.replace(" ", "_")] = target
+
+            bare = t_low
+            for art in ("the ", "a ", "an "):
+                if bare.startswith(art):
+                    bare = bare[len(art):].strip()
+                    break
+
+            alias_map[bare] = target
+            alias_map[bare.replace("_", " ")] = target
+            alias_map[bare.replace(" ", "_")] = target
+            for art in ("the ", "a ", "an "):
+                alias_map[art + bare] = target
+                alias_map[(art + bare).replace(" ", "_")] = target
+
         chars = character_roster.get("characters", {})
         if isinstance(chars, dict):
             for canon_name, details in chars.items():
                 if canon_name in ("Narrator", "Foley"):
                     continue
                 c_clean = canon_name.strip()
-                alias_map[c_clean.lower()] = c_clean
-                alias_map[c_clean.lower().replace("_", " ")] = c_clean
-                alias_map[c_clean.lower().replace(" ", "_")] = c_clean
+                _register_alias_variants(c_clean, c_clean)
 
                 gender = "neutral"
                 aliases = []
@@ -66,10 +86,7 @@ class DialogueAttributionAuditor:
                     aliases = details.get("aliases", [])
                     for a in aliases:
                         if isinstance(a, str) and a.strip():
-                            a_clean = a.strip()
-                            alias_map[a_clean.lower()] = c_clean
-                            alias_map[a_clean.lower().replace("_", " ")] = c_clean
-                            alias_map[a_clean.lower().replace(" ", "_")] = c_clean
+                            _register_alias_variants(a.strip(), c_clean)
 
                 alias_info = f", aliases: {', '.join(aliases[:4])}" if aliases else ""
                 roster_lines.append(f"- {c_clean} [{gender}{alias_info}]")
@@ -81,18 +98,15 @@ class DialogueAttributionAuditor:
                     if is_hindi and c.get("hindi_name"):
                         h_name = c.get("hindi_name", "").strip()
                         if h_name:
-                            alias_map[h_name.lower()] = canon_name
+                            _register_alias_variants(h_name, canon_name)
                     if canon_name and canon_name not in ("Narrator", "Foley"):
                         c_clean = canon_name.strip()
-                        alias_map[c_clean.lower()] = c_clean
-                        alias_map[c_clean.lower().replace("_", " ")] = c_clean
-                        alias_map[c_clean.lower().replace(" ", "_")] = c_clean
+                        _register_alias_variants(c_clean, c_clean)
                         gender = c.get("gender", "neutral")
                         aliases = c.get("aliases", [])
                         for a in aliases:
                             if isinstance(a, str) and a.strip():
-                                a_clean = a.strip()
-                                alias_map[a_clean.lower()] = c_clean
+                                _register_alias_variants(a.strip(), c_clean)
                         alias_info = f", aliases: {', '.join(aliases[:4])}" if aliases else ""
                         roster_lines.append(f"- {c_clean} [{gender}{alias_info}]")
 
@@ -119,30 +133,37 @@ class DialogueAttributionAuditor:
 
         cleaned = core_text.strip()
 
-        # Leading speech tags (Hindi)
+        # Leading & Trailing speech tags (Hindi)
+        hindi_verbs = (
+            r"(?:कहा|पूछा|बोला|बोली|बोले|पुकारा|चिल्लाया|चिल्लाई|फुसफुसाया|फुसफुसाई|"
+            r"जवाब\s+दिया|उत्तर\s+दिया|हँसकर\s+कहा|धीमे\s+स्वर\s+में\s+कहा|कड़क\s+कर\s+कहा|"
+            r"गुर्राया|गुर्राई|चीखा|चीखी|दहाड़ा|दहाड़ी|चेतावनी\s+दी)"
+        )
         hindi_leading = [
-            r"^(?:उसने|वह|उन्होंने|आपने|तूने|मैंने)\s+[^।!?\n]{0,25}?(?:कहा|पूछा|बोला|बोली|बोले|पुकारा|चिल्लाया|चिल्लाई|फुसफुसाया|फुसफुसाई|जवाब\s+दिया|उत्तर\s+दिया|हँसकर\s+कहा|धीमे\s+स्वर\s+में\s+कहा|कड़क\s+कर\s+कहा|गुर्राया|गुर्राई)[,:\s।\-–—]+",
-            r"^[^।!?\n]{1,25}?\s+ने\s+[^।!?\n]{0,25}?(?:कहा|पूछा|बोला|बोली|बोले|जवाब\s+दिया|पुकारा)[,:\s।\-–—]+",
-            r"^[^।!?\n]{1,20}?(?:हँसकर|बिगड़कर|मुस्कुराकर|रोकर|झल्लाकर|चीखकर|फुसफुसाकर)\s+(?:कहा|पूछा|बोला|बोली|बोले)[,:\s।\-–—]+",
-            r"^(?:कहा|पूछा|बोला|बोली|बोले|चिल्लाया|फुसफुसाया|जवाब\s+दिया)[,:\s।\-–—]+",
+            rf"^(?:उसने|वह|उन्होंने|आपने|तूने|मैंने)\s+[^।!?\n]{{0,25}}?{hindi_verbs}[,:\s।\-–—]+",
+            rf"^[^।!?\n]{{1,25}}?\s+ने\s+[^।!?\n]{{0,25}}?{hindi_verbs}[,:\s।\-–—]+",
+            rf"^[^।!?\n]{{1,20}}?(?:हँसकर|बिगड़कर|मुस्कुराकर|रोकर|झल्लाकर|चीखकर|फुसफुसाकर)\s+{hindi_verbs}[,:\s।\-–—]+",
+            rf"^{hindi_verbs}[,:\s।\-–—]+",
         ]
-        # Trailing speech tags (Hindi)
         hindi_trailing = [
-            r"[,:\s\-–—]+(?:उसने|वह|उन्होंने|तूने|मैंने)\s+[^।!?\n]{0,20}?(?:कहा|पूछा|बोला|बोली|बोले|पुकारा|चिल्लाया|चिल्लाई|फुसफुसाया|फुसफुसाई|जवाब\s+दिया|उत्तर\s+दिया|हँसकर\s+कहा)[।\.!?]?$",
-            r"[,:\s\-–—]+[^।!?\n]{1,25}?\s+ने\s+[^।!?\n]{0,20}?(?:कहा|पूछा|बोला|बोली|बोले|जवाब\s+दिया|पुकारा)[।\.!?]?$",
-            r"[,:\s\-–—]+(?:कहा|पूछा|बोला|बोली|बोले)[।\.!?]?$",
+            rf"[,:\s\-–—]+(?:उसने|वह|उन्होंने|तूने|मैंने)\s+[^।!?\n]{{0,20}}?{hindi_verbs}[।\.!?]?$",
+            rf"[,:\s\-–—]+[^।!?\n]{{1,25}}?\s+ने\s+[^।!?\n]{{0,20}}?{hindi_verbs}[।\.!?]?$",
+            rf"[,:\s\-–—]+{hindi_verbs}[।\.!?]?$",
         ]
 
         # Leading speech tags (English)
+        eng_verbs = (
+            r"(?:said|replied|asked|muttered|whispered|screamed|growled|snapped|"
+            r"shouted|cried|laughed|demanded|yelled|warned|commanded|inquired)"
+        )
         eng_leading = [
-            r"^(?:he|she|they|the man|the woman|the elder|the girl|the boy)\s+(?:said|replied|asked|muttered|whispered|screamed|growled|snapped|shouted|cried|laughed|demanded)[,:\s\-–—]+",
-            r"^(?:said|replied|asked|muttered|whispered)[,:\s\-–—]+",
-            r"^[A-Z][a-z]+\s+(?:said|replied|asked|muttered|whispered|growled|snapped)[,:\s\-–—]+",
+            rf"^(?:the\s+[a-z]+|he|she|they|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+{eng_verbs}[,:\s\-–—]+",
+            rf"^{eng_verbs}[,:\s\-–—]+",
         ]
         # Trailing speech tags (English)
         eng_trailing = [
-            r"[,:\s\-–—]+(?:he|she|they|the man|the woman)\s+(?:said|replied|asked|muttered|whispered|screamed|growled|snapped|shouted|cried|laughed|demanded)[\.!?]?$",
-            r"[,:\s\-–—]+[A-Z][a-z]+\s+(?:said|replied|asked|muttered|whispered|growled|snapped)[\.!?]?$",
+            rf"[,:\s\-–—]+(?:the\s+[a-z]+|he|she|they|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+{eng_verbs}[\.!?]?$",
+            rf"[,:\s\-–—]+{eng_verbs}[\.!?]?$",
         ]
 
         patterns_leading = hindi_leading if is_hindi else eng_leading
@@ -205,10 +226,11 @@ class DialogueAttributionAuditor:
             "CRITICAL AUDIT RULES:\n"
             "1. DETECT & FIX SPEAKER ALTERNATION FLIPS (A <-> B INVERSIONS):\n"
             "   - In rapid back-and-forth dialogue exchanges, verify that Speaker A and Speaker B are NOT inverted.\n"
+            "   - Track conversational polarity: the answer to a question belongs to the OTHER speaker/interlocutor, never to the person who asked the question.\n"
             "   - Cross-check who actually spoke each line using narrative attribution verbs (e.g. 'Protagonist said', 'Inquirer asked', "
             "'उसने कहा', 'वक्ता बोला') or clear conversational turn logic.\n"
             "2. RESOLVE SPOKEN QUOTES ATTRIBUTED TO NARRATOR OR PRONOUNS:\n"
-            "   - Spoken dialogue lines must NEVER be attributed to 'Narrator' or pronouns ('he', 'she', 'उसने', 'वह').\n"
+            "   - Spoken dialogue lines must NEVER be attributed to 'Narrator', generic descriptors, or pronouns ('he', 'she', 'उसने', 'वह', 'the stranger').\n"
             "   - Attribute strictly to the canonical character name from the Known Canon Characters list.\n"
             "3. STRIP RESIDUAL SPEECH TAGS:\n"
             "   - Strip redundant speech tags that leaked into character dialogue text (e.g. 'उसने कहा, ', 'he said, ').\n"
@@ -343,6 +365,20 @@ Output JSON: A list of objects matching each segment by "index":
                 if canonical != current_spk:
                     s_copy["speaker"] = canonical
                     current_spk = canonical
+            else:
+                for art in ("the ", "a ", "an ", "वह ", "उस "):
+                    if spk_lower.startswith(art):
+                        bare = spk_lower[len(art):].strip()
+                        if bare in alias_map:
+                            s_copy["speaker"] = alias_map[bare]
+                            current_spk = alias_map[bare]
+                            break
+                    else:
+                        with_art = art + spk_lower
+                        if with_art in alias_map:
+                            s_copy["speaker"] = alias_map[with_art]
+                            current_spk = alias_map[with_art]
+                            break
 
             # Deterministic Step B: Residual Speech Tag Scrubbing
             if s_copy.get("type") == "dialogue":
@@ -354,6 +390,13 @@ Output JSON: A list of objects matching each segment by "index":
                     corrections_log.append(f"Turn {idx}: Stripped residual speech tags from dialogue")
 
             audited_turns.append(s_copy)
+
+        # Deterministic Step C: Split-Quote Unification (Audible Flow Standard)
+        initial_turn_count = len(audited_turns)
+        audited_turns = stitch_split_dialogue_turns(audited_turns)
+        stitched_count = initial_turn_count - len(audited_turns)
+        if stitched_count > 0:
+            corrections_log.append(f"Unified {stitched_count} split dialogue fragments into continuous thoughts.")
 
         report = {
             "status": "AUDITED_AND_CERTIFIED",

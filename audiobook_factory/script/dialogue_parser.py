@@ -33,18 +33,21 @@ def _parse_dialogue_turns_llm(
             + "You are a Master Literary Audiobook Director and Dialogue Supervisor. "
             "Your sole responsibility is to translate literary novel prose into an Audible-standard literary spoken-word script.\n\n"
             "Core Mandates:\n"
-            "1. PRESERVE ALL NARRATIVE PROSE & DIALOGUE TAGS:\n"
-            "   - NEVER delete, skip, or summarize author narrative prose or dialogue tags (e.g. 'उसने खिड़की से बाहर देखते हुए धीमी आवाज़ में कहा', 'she replied softly while stepping forward'). "
-            "These provide essential dramatic pacing, breath, and literary texture.\n"
-            "   - In an audiobook, the Narrator delivers the narrative exposition, physical descriptions, and dialogue tags, leading naturally into character dialogue turns.\n"
-            "   - Spoken dialogue inside quotes (\"...\", “...”, ‘...’) belongs to the attributed canonical character. Spoken dialogue must contain clean spoken words (do not leak tags like 'उसने कहा' into character spoken lines).\n"
-            "2. COHESIVE SENTENCE CHUNKING (NO MICRO-FRAGMENTS):\n"
-            "   - Do NOT isolate single-word interjections ('हाँ', 'नहीं', 'क्या?') into disconnected micro-clips if they naturally flow within a narrative sentence (e.g., 'उसने सिर हिलाते हुए हाँ कहा' should remain cohesive narrative prose).\n"
-            "   - Group prose into complete thoughts and natural conversational turns.\n"
-            "3. ZERO FOLEY / ACTIONS:\n"
+            "1. UNIFIED CHARACTER TURNS & PROSE-LEAD FRAMING:\n"
+            "   - A character's spoken dialogue turn must be a complete, unbroken thought. NEVER slice a character's dialogue in two because of an author's mid-sentence dialogue tag.\n"
+            "   - If an author writes a split quote ('Quote Part 1,' said X, 'Quote Part 2'), UNIFY it into a single continuous 'dialogue' turn for Character X.\n"
+            "   - Position the author's narrative attribution or physical description BEFORE the dialogue turn as a narrative lead-in ending with an em-dash ('—') so the listener has instant context.\n"
+            "     Pattern: When source prose has split quotes around attribution (e.g. '\"Part 1,\" said the speaker, \"Part 2.\"'), emit:\n"
+            "       Turn 1: Narrator: 'वक्ता ने पूछा—' / 'The speaker asked—'\n"
+            "       Turn 2: Speaker: 'Part 1, Part 2.'\n"
+            "2. CONVERSATIONAL TURN ALTERNATION & ZERO VOICE SWAPPING:\n"
+            "   - In rapid back-and-forth dialogue exchanges without explicit speech tags, track conversational polarity strictly: the answer to a question belongs to the interlocutor, NEVER to the person who asked the question!\n"
+            "   - Attribute dialogue to canonical character names based on narrative descriptions and epithets matching the Canonical Character Roster provided below.\n"
+            "   - Never use generic pronouns ('he', 'she', 'उसने', 'वह') as speaker names. Always resolve to the canonical character.\n"
+            "3. PRESERVE ALL NARRATIVE PROSE:\n"
+            "   - NEVER delete, skip, or summarize author narrative prose or descriptions. The Narrator delivers atmospheric exposition, setting up character dialogue.\n"
+            "4. ZERO FOLEY / ACTIONS:\n"
             "   - This is a pure spoken-word vocal audiobook. NEVER output 'Foley' or '[ACTION]' segments. Physical hits and environmental events are conveyed through the author's narrative prose.\n"
-            "4. CANONICAL SPEAKER ASSIGNMENT:\n"
-            "   - Attribute character dialogue strictly to canonical names from Known Canon Characters. Narration always belongs to 'Narrator'. Never use pronouns as speaker names.\n"
             "5. NEURAL VOCAL TAGS:\n"
             "   - Prepend vocal delivery tags directly inside character text when dramatic context demands it: "
             "`[whispers]`, `[cold menace]`, `[weary drawl]`, `[shouting]`, `[intimate, breathy]`, `[calm]`, `[trembling voice]`, `[sighs]`, `[growl]`.\n"
@@ -55,11 +58,8 @@ def _parse_dialogue_turns_llm(
             + "You are a Hollywood Audio Drama Dialogue Supervisor. "
             "Your sole responsibility is absolute dialogue turn isolation and character attribution.\n\n"
             "Core Mandates:\n"
-            "1. ABSOLUTE DIALOGUE TURN ISOLATION:\n"
-            "   - EVERY spoken dialogue line (anything inside quotation marks \"...\", “...”, ‘...’ or dialogue dashes) MUST be its own discrete segment with type: 'dialogue' and the canonical speaker name.\n"
-            "   - NEVER, under any circumstance, merge spoken dialogue into a 'narration' segment. Even a 1-word reply (e.g. 'Yes', 'हाँ', 'Little tyke') MUST be isolated as a character dialogue.\n"
-            "   - Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' completely from character spoken text.\n"
-            "   - Surrounding narrative actions and exposition MUST be placed in separate 'narration' segments for the Narrator.\n"
+            "1. UNIFIED DIALOGUE TURNS: Merge split quotes into a single continuous dialogue segment per character turn. "
+            "Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' completely from character spoken text.\n"
             "2. CANONICAL SPEAKER ASSIGNMENT: Attribute dialogue strictly to the canonical character from Known Canon Characters. "
             "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('he', 'she', 'उसने', 'वह') as the speaker name.\n"
             "3. NEURAL VOCAL TAGS: Prepend vocal tags directly inside the 'text' field when dialogue demands it: "
@@ -77,7 +77,7 @@ def _parse_dialogue_turns_llm(
                     continue
                 gender = details.get("gender", "neutral") if isinstance(details, dict) else "neutral"
                 aliases = details.get("aliases", []) if isinstance(details, dict) else []
-                alias_str = f", aliases: {', '.join(aliases[:4])}" if aliases else ""
+                alias_str = f", aliases/epithets: {', '.join(aliases[:5])}" if aliases else ""
                 formatted_chars.append(f"{cname} [{gender}{alias_str}]")
         elif isinstance(chars, list):
             for c in chars:
@@ -86,7 +86,7 @@ def _parse_dialogue_turns_llm(
                     if cname and cname not in ("Narrator", "Foley"):
                         gender = c.get("gender", "neutral")
                         aliases = c.get("aliases", [])
-                        alias_str = f", aliases: {', '.join(aliases[:4])}" if aliases else ""
+                        alias_str = f", aliases/epithets: {', '.join(aliases[:5])}" if aliases else ""
                         formatted_chars.append(f"{cname} [{gender}{alias_str}]")
         if formatted_chars:
             roster_hint = (
@@ -106,7 +106,7 @@ Current Scene Text:
 
 Output JSON: A list of objects where each object has:
 - "index": int (1-based relative to this chunk)
-- "type": "narration" | "dialogue" | "action" (isolate every spoken quote into a dedicated "dialogue" segment)
+- "type": "narration" | "dialogue" (group character speech into complete unified dialogue turns with narrative lead-ins)
 - "speaker": canonical character name, "Narrator", or "Foley"
 - "text": spoken dialogue or narrative text with optional inline vocal tags like [whispers], [shouting], or "[ACTION]"
 - "emotion": "neutral" | "angry" | "whispering" | "sad" | "excited" | "growl" | "calm_raspy"

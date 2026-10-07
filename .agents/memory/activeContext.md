@@ -23,5 +23,11 @@
     - Fixed BookBible category routing (locations, creatures, titles partitioned).
     - Shifted persona to Netflix/HBO Dialogue Adapter with 4-Tier Cognitive Semantic Register Ladder (zero hardcoded word replacements).
     - **Universal Idiomatic Transposition ('Pinch of Salt') Framework**: Category A (Universal Spoken Idioms) vs Category B (Banned Village Parody) implemented across `DraftTranslator`, `CadenceSpecialist`, `IdiomDramaturge`, and `AdvisoryLexiconDB`. Live verified on Gemini Flash (*"लिख के ले लो"*, *"मौत के मुँह में कूदना"*, *"टांग अड़ाना"*, *"खाल उधेड़ना"*). 16 unit tests passing.
-  - **Issue 2 (Screenplay Attribution & $A \leftrightarrow B$ Swaps)**: Pending next.
-  - **Issue 3 (Voice Convergence & 4D Acoustic Formants Restore)**: Pending.
+  - **Issue 2 (Screenplay Attribution & Split Quotes) [RESOLVED & VERIFIED]**:
+    - Purged destructive `speaker = last_active_character` theft in `screenplay_cleaner.py`.
+    - Added bidirectional article-stripped alias resolution (`"the stranger"` <-> `"stranger"` -> canonical character).
+    - Implemented deterministic `stitch_split_dialogue_turns`: unifies split thoughts around narrative tags (< 35 words), pre-positions narration with em-dash (`—`), eliminating mid-sentence audio stutter.
+    - Updated `dialogue_parser.py` and `DialogueAttributionAuditor` with conversational turn polarity (question-answer interlocutor tracking) and speech tag scrubbing.
+    - Chapter 2 screenplay verified: 81 choppy micro-clips collapsed to 68 unified beats with zero line theft. 24 unit tests passing.
+  - **Issue 3 (Voice Convergence & 4D Acoustic Formants Restore)**: Next active target.
+
