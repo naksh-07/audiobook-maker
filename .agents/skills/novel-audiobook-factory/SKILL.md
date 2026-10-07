@@ -71,6 +71,12 @@ flowchart TD
 - **Dialogue Attribution Auditor**: Dedicated QA agent preventing $A \leftrightarrow B$ speaker turn inversions, quote misattributions to Narrator, and speech tag leakage (`"उसने कहा"`).
 
 ### Room 4: 4D Formants & Voice Performance Realization
+- **Dynamic 2,089 Voice Catalog (`VoiceCatalog`)**: Integrates all 2,089 verified voices (114 native Hindi voices, 120 regional Indian English personas, 215 English Gemini studio voices).
+- **LLM Dialect-Aware Casting Director**: Dynamically scores characters against regional dialects (Awadhi, Bhojpuri, Haryanvi, Bundeli, Urdu/Delhi) without hardcoding.
+- **Child & Youth Voice Solutions**:
+  - *Anime Seiyū Child Engine*: Young children and girls (<14yo) use high-pitch female base voices modulated with $+10\text{--}15\%$ pitch shift and youthful resonance EQ.
+  - *Rustic Teen Fighter Profile*: Adolescent boys (14–17yo) utilize young 22–23yo rustic male bases (Haryanvi/Bhojpuri) with physical presence EQ.
+- **POV-Aware Narrator Alignment**: `Aoede` is locked as default for third-person narratives; automatically aligns with the male protagonist's voice profile for first-person POV novels.
 - **4D Acoustic Formant Modulation**: Pitch delta ($\pm 4-12\%$), tempo scaling, and 4D parametric EQ formant profiles (`equalizer=f=...`) dynamically applied via FFmpeg DSP to prevent vocal convergence when multiple characters share base voices.
 - **Formant-Sensitive Hash Caching**: Filename hashing incorporates the active EQ formant profile for deterministic cache invalidation.
 - **120+ Key Gemini Flash TTS Pool**: Concurrent token-bucket rate limiting with anti-bot jitter and permanent `BLOCK_NONE` safety settings.
@@ -79,22 +85,23 @@ flowchart TD
 ### Room 5: Dialogue Editorial & Broadcast Vocal Mastering
 - **Dialogue Editorial Layer (DE-01 - DE-07)**: Endpoint zero-crossing snapping (-52 dBFS speech floor), Hann micro-fades (12ms pre-speech, 18ms post-speech), and dramatic turn latency.
 - **Broadcast EBU R128 Vocal Master**: Standardized `-19.0 LUFS` ($\pm 0.5$ LU) integrated loudness and `-1.5 dBTP` true-peak ceiling at 48kHz / 24-bit.
+- **Uniform 2-Channel Stereo Mastering**: Guarantees identical 2-channel stereo rendering for all segments under spatial staging, eliminating mono/stereo FFmpeg concat crashes.
 - **Chaptered M4B Container**: Streamlined packaging into `.m4b` container with FFMETADATA1 chapter markers, TOC navigation, and embedded high-resolution cover artwork.
 
 ---
 
 ## 3. Voice Persona Guide (Gemini Flash TTS)
 
-| Persona Name | Gender | Vocal Profile & Character Casting |
-| :--- | :--- | :--- |
-| **Aoede** | Female | Expressive, warm, melodious narrative lead. Perfect for classic literature, drama, and main storytelling. |
-| **Charon** | Male | Deep, commanding, resonant baritone. Ideal for authoritative male narrators, villains, mentors, and dark fantasy. |
-| **Kore** | Female | Soft, gentle, friendly, youthful female dialogue. |
-| **Puck** | Male | Energetic, dynamic, conversational young male voice. |
-| **Fenrir** | Male | Rugged, powerful, booming warrior/action character. |
-| **Zephyr** | Female | Calm, ethereal, whisper-soft atmosphere narrator. |
-| **Leda** | Female | Dignified, mature matriarch, noble or scholarly speaker. |
-| **Orpheus** | Male | Lyrical, melancholic, philosophical orator or bard. |
+| Persona / Archetype | Voice ID / Base | Dialect / Pitch | Character Casting Profile |
+| :--- | :--- | :--- | :--- |
+| **Supreme Narrator (3rd Person)** | `Aoede` | English / Warm Mid | Expressive, warm, melodious literary narrative benchmark. |
+| **First-Person Male Narrator** | `Charon` / `hi-in-csagent-11` | English / Urdu Mid | Resonant, reflective protagonist narrator for first-person POV. |
+| **Rustic Fighter / Teen Boy** | `hi-in-podcaster-12` | Haryanvi / Low | 22yo rustic fighter; agile apprentice, rough-and-tumble teen (14–17yo). |
+| **Anime Seiyū Child Voice** | `hi-in-commercial-5` (+12% pitch) | Awadhi / High | Young child, young girl (<14yo); crisp, agile youth resonance. |
+| **Lyrical Companion / Bard** | `Puck` / `hi-in-tutor-5` | English / Bhojpuri Mid | Energetic, witty, theatrical companion, charismatic youth. |
+| **Hardened Veteran / Commander** | `Algenib` / `hi-in-advisor-9` | English / Bhojpuri Low | Gravelly, grounded, world-weary warrior, veteran captain. |
+| **Dignified Matriarch / Sorceress** | `Leda` / `hi-in-training-2` | English / Bundeli Mid | Dignified, authoritative noble, wise scholar or sorceress. |
+| **Gentle / Ethereal Ally** | `Kore` / `hi-in-tutor-3` | English / Awadhi Mid | Soft, warm, soothing healer or loyal apprentice. |
 
 ---
 

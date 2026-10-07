@@ -68,6 +68,7 @@ audiobooks/soundscapes/
 audiobooks/real_audio_golden/
 audiobooks/cache/
 temp_audio/
+temp_podcast/
 tmp/
 tmp_test/
 standalone_*_run/

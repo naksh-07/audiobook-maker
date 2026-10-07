@@ -663,15 +663,46 @@ uvx ruff check audiobook_factory tests --select E9,F63,F7,F821
 | `test_domestic_vs_combat_foley_taxonomy` | `acoustic_bus_matrix.py` | `DOMETabl` strictly isolates tableware from sword clash assets (ADR-022). | **PASS** |
 | `test_scene_bound_bgm_duration` | `agent_director.py` | `until_segment` dynamically extends BGM across scene boundaries (ADR-022). | **PASS** |
 | `test_dynamic_multi_scene_ambience_partitioning` | `agent_director.py` | `acoustic_env` shifts cleanly partition chapter ambience beds (ADR-022). | **PASS** |
-| **Master Remediation Total** | **All Core Engines** | **82/82 master remediation unit and regression tests passing with 0 errors.** | **100% PASS** |
+| `test_acoustic_bus_matrix_zero_witcher_lore_and_universal` | `acoustic_bus_matrix.py` | Purges Witcher lore and verifies firearms, vehicles, and electronics (ADR-056). | **PASS** |
+| `test_voice_casting_catalog_zero_franchise_names` | `voice_casting_catalog.json` | Verifies zero franchise character names in casting archetypes (ADR-056). | **PASS** |
+| `test_null_gender_handling_does_not_crash` | `character_caster.py` | Safe fallback on null gender metadata without crashing (ADR-056). | **PASS** |
+| `test_gate1_dynamic_voice_catalog_integration` | `gates/literary.py` | Gate 1 queries dynamic 2,089 voice catalog with Seiyū child exceptions (ADR-056). | **PASS** |
+| `test_split_quote_stitching_speech_verbs_only` | `screenplay_cleaner.py` | Limits quote stitching to speech tags <=6 words, preserving action sequence (ADR-056). | **PASS** |
+| `test_acting_tags_preservation_in_sanitizer` | `sanitizer.py` | Preserves expressive vocal acting cues while stripping foley sound effects (ADR-056). | **PASS** |
+| `test_bilingual_dialogue_preserved_in_hindi` | `sanitizer.py` | Protects in-story bilingual/code-switching dialogue from blunt Latin filters (ADR-056). | **PASS** |
+| **Master Remediation Total** | **All Core Engines** | **90+ master remediation unit and regression tests passing with 0 errors.** | **100% PASS** |
+
+---
+
+## 🚀 Phase 6: Forensic Multi-Expert Audit Remediation & Universal Invariance (ADR-056)
+
+During an exhaustive multi-subagent forensic audit across hardcoding, creative autonomy, and runtime audio robustness, the following remediations were implemented:
+
+### 1. Track 1: Zero-Hardcoding & Universal Novel Invariants
+- **Acoustic Bus Matrix**: Purged specific Witcher lore (`igni`, `aard`, `quen`, `axii`, `yrden`, `striga`) from [`acoustic_bus_matrix.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/acoustic_bus_matrix.py). Added universal acoustic tags (`GUNPist`, `VEHCar`, `ELECGen`, universal magic, generic creatures).
+- **Voice Casting Catalog**: Generalized archetypes in [`audiobooks/voice_casting_catalog.json`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobooks/voice_casting_catalog.json), replacing franchise characters with universal literary descriptions.
+- **Dynamic Gate 1 Verification**: Upgraded Gate 1 in [`audiobook_factory/gates/literary.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/gates/literary.py) to dynamically validate voices against [`VoiceCatalog`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/voice_catalog.py) across all 2,089 voices, with formal support for Seiyū child casting exceptions.
+- **Full English Voice Pool & Fallbacks**: Removed static 22-persona clamps in [`character_caster.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/character_caster.py), opening the full 215 English Gemini voice pool and dynamic gendered fallbacks in [`dispatcher.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/dispatcher.py).
+
+### 2. Track 2: Creative Autonomy & LLM Decision Integrity
+- **Acting Cue Preservation**: [`sanitizer.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/sanitizer.py) now distinguishes between non-vocal Foley sound cues (which are cleanly stripped from dialogue) and expressive vocal acting directions (`[whispers]`, `[ironic smirk]`, `[hesitates]`), preserving acting tags for TTS `speechMetadata.style` extraction.
+- **Bilingual & Code-Switching Dialogue**: Replaced crude Latin word count drop with targeted refusal preamble detection in `sanitizer.py`, preserving genuine multilingual character dialogue and incantations.
+- **Chronological Action Blocking**: In [`screenplay_cleaner.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/script/screenplay_cleaner.py), `stitch_split_dialogue_turns` is restricted to short speech tags ($\le 6$ words with explicit speech verbs), preventing accidental reordering of physical action beats (`Dialogue 1 -> Physical Action -> Dialogue 2`).
+- **Translation Repair Bypass**: Added `apply_calque_substitutions: bool = True` to [`repair_engine.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/translation/repair_engine.py) to ensure advisory replacements can be bypassed to honor LLM creative intent.
+
+### 3. Track 3: Runtime Bugs & Audio Engineering Robustness
+- **FFmpeg Concat Layout Uniformity**: In [`mastering.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/mastering.py), removed premature mono exit on `abs(pan) < 0.01` when `spatial_staging=True`. All segments (including phantom center narrator) render to uniform 2-channel stereo, eradicating mono/stereo FFmpeg filter graph crashes.
+- **Null Gender Immunity**: Guarded `(ch.get("gender") or "male").lower()` across `character_caster.py` and `voice_catalog.py`, preventing unhandled `AttributeError`.
+- **Odd-Byte PCM Buffer Fix**: Sliced `raw_pcm[:sample_count * 2]` prior to `struct.unpack` in [`gemini.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/providers/gemini.py), eliminating odd-byte unpack crashes.
 
 ---
 
 ## 📚 Related Documentation Links
-- [🏛️ Architecture Blueprint](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/ARCHITECTURE.md)
-- [🎬 Cinematic Sound Design & Adult Fidelity](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CINEMATIC_SOUND_DESIGN_AND_ADULT_FIDELITY.md)
-- [🎛️ Audio Engineering & DSP Manual](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/AUDIO_ENGINEERING.md)
-- [🛡️ Quality Gates Specification](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/QUALITY_GATES.md)
-- [💻 CLI Reference](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/CLI_REFERENCE.md)
-- [📚 API Reference](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/API_REFERENCE.md)
-- [🛠️ Developer & Contributor Guide](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/docs/DEVELOPER_GUIDE.md)
+- [🏛️ Architecture Blueprint](ARCHITECTURE.md)
+- [🎛️ Audio Engineering & DSP Manual](AUDIO_ENGINEERING.md)
+- [🎭 Voice Casting Director Manual](VOICE_CASTING_DIRECTOR_GUIDE.md)
+- [🇮🇳 Complete Hindi Voice Catalog](HINDI_VOICE_CATALOG.md)
+- [🛡️ Quality Gates Specification](QUALITY_GATES.md)
+- [💻 CLI Reference](CLI_REFERENCE.md)
+- [🛠️ Developer & Contributor Guide](DEVELOPER_GUIDE.md)
+

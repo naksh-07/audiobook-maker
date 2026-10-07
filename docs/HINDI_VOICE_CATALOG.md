@@ -133,3 +133,22 @@ realistic age diversity (20 to 69 years old), distinct pitch baselines ($F_0$), 
 | `hi-in-csagent-12` | 56yo | Bhojpuri Hindi | MEDIUM | peer-to-peer and curious | advisor, elder, grandfather |
 | `hi-in-techagent-7` | 61yo | Bhojpuri Hindi | MEDIUM | clear, medium-pitch, and friendly | advisor, elder, grandfather |
 | `hi-in-concierge-8` | 62yo | Urdu | MEDIUM | highly approachable | advisor, elder, grandfather |
+
+---
+
+## 3. Dynamic Querying & Dialect-Aware Casting (v4.0)
+
+In v4.0, casting is never hardcoded. Instead, [`CharacterCaster`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/character_caster.py) dynamically queries [`VoiceCatalog`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/voice_catalog.py):
+
+### 3.1 Dialect Search Flow
+1. LLM analyzes book text and outputs regional cadence for each character (e.g. `Bhojpuri Hindi`, `Haryanvi Hindi`, `Awadhi Hindi`, `Bundeli Hindi`, `Urdu`).
+2. `CharacterCaster` searches the 114 native Hindi voices filtered by `gender` and `dialect`.
+3. If a direct dialect match exists, candidate voices are ranked by age proximity and timbre description.
+4. If no exact dialect match exists, it smoothly falls back to neutral Hindi while logging the adaptation rationale.
+
+### 3.2 Child & Adolescent Roles
+- **Young Children & Girls (<14yo)**: Uses the **Anime Seiyū Technique** — high-pitch young female voices (`hi-in-commercial-5`, `hi-in-commercial-7`) modulated with $+10\text{--}15\%$ pitch shift and child resonance EQ (boosting upper presence, attenuating chest frequencies).
+- **Adolescent Boys (14–17yo)**: Matched with young rustic male voices (e.g. `hi-in-podcaster-12` 22yo Haryanvi or `hi-in-podcaster-2` 23yo Bhojpuri) using physical presence EQ rather than artificial chipmunk warping.
+
+### 3.3 Gate 1 Certification
+All cast Hindi voices are dynamically verified by Gate 1 (`gates/literary.py`) against `VoiceCatalog`, ensuring strict gender consistency with Seiyū exceptions.

@@ -7,7 +7,7 @@
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-4D%20Acoustic%20Formant%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-758%20Passed%20(100%25)-brightgreen.svg)](tests/)
+[![Verification](https://img.shields.io/badge/Tests-805%20Passed%20(100%25)-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
@@ -105,22 +105,28 @@ python audiobook_cli.py package <book_slug> --cover "cover.jpg"
 
 ### 1. 4D Acoustic Formant Casting & Zero Voice Convergence
 *(See [`character_caster.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/character_caster.py) & [`dispatcher.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/dispatcher.py))*
-- **4D Acoustic Vector Modulation**: When multiple characters share the same base voice model (e.g. Aoede or Charon), the engine dynamically modulates a 4D acoustic vector:
+- **Dynamic 2,089 Voice Catalog (`VoiceCatalog`)**: Integrates all 2,089 verified voices (including 114 native Hindi voices, 120 regional Indian English personas, and 215 English Gemini studio voices).
+- **LLM Dialect-Aware Casting**: Dynamically matches characters to regional cadences (Awadhi, Bhojpuri, Haryanvi, Bundeli, Urdu/Delhi, Mumbaiya, Dakhini) based on LLM narrative profiles without hardcoding.
+- **Child & Adolescent Voice Solutions**:
+  - *Anime Seiyū Child Engine*: Young children and girls are dynamically voiced using high-pitch female base voices modulated with $+10\text{--}15\%$ pitch shift and youthful resonance EQ curves (`equalizer=f=...`), replicating Japanese anime voice acting traditions.
+  - *Rustic Teen Fighter Profile*: Adolescent boys (14–17yo) utilize young 22yo rustic male bases (Haryanvi/Bhojpuri) with physical EQ curves rather than artificial chipmunk warping.
+- **POV-Aware Narrator Alignment**: Automatically selects matching gendered protagonist voices for first-person novels while strictly preserving `Aoede` as the supreme default for third-person literary prose.
+- **4D Acoustic Vector Modulation**: When multiple characters share base voice models, the engine modulates:
   1. $F_0$ Pitch Delta ($\pm 4-12\%$) via `asetrate` and `aresample`.
   2. Tempo compensation via `atempo`.
   3. Bass/presence boost and clarity reduction.
-  4. 4D Parametric EQ formant profiles (`equalizer=f=...`) chaining distinct acoustic timbres.
+  4. 4D Parametric EQ formant profiles chaining distinct acoustic timbres.
 - **Formant-Sensitive Hash Caching**: Filename hashes incorporate the active EQ formant profile to guarantee deterministic cache invalidation.
-- **`TakeAuditionCritic`**: Judicially evaluates candidate takes during climactic scenes (`CRITICAL_SCENE_TAKE`), scoring vocal strain, emotional breakthrough, and subtext delivery.
 
 ### 2. Room 3 Forensic Screenplay Engine & Anti-Swap Attribution
-*(See [`dialogue_attribution_auditor.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/script/agents/dialogue_attribution_auditor.py))*
+*(See [`dialogue_attribution_auditor.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/script/agents/dialogue_attribution_auditor.py) & [`screenplay_cleaner.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/script/screenplay_cleaner.py))*
 - **Multi-Agent Screenplay Room**: Deconstructs script writing across 4 specialized agents:
   - `DialogueTurnIsolator`: Extracts pristine spoken text and isolates speech turns.
   - `StanislavskiSubtextDirector`: Injects emotional subtext, actioning verbs, and speech tags.
   - `PhysicalBlockingDirector`: Encodes spatial proximity and stereo azimuth panning.
   - `DramaturgyConsistencyJudge`: Evaluates dramatic continuity and emotional arcs.
 - **Forensic Anti-Swap Auditor**: Dedicated LLM QA agent that catches $A \leftrightarrow B$ speaker turn inversions, corrects quotes mistakenly assigned to Narrator, and scrubs leaked speech tags (e.g. `"उसने कहा"`).
+- **Chronological Action-Blocking Protection**: Split-quote stitching is strictly bounded to short speech tags ($\le 6$ words with explicit speech verbs), ensuring authentic physical narrative sequences (`Dialogue 1 -> Physical Action -> Dialogue 2`) are never inverted or compressed.
 
 ### 3. Room 2 4-Agent Translation Collective & Dual-Rule Invariant
 *(See [`collective.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/translation/agents/collective.py) & [`translator.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/translator.py))*
@@ -132,6 +138,7 @@ python audiobook_cli.py package <book_slug> --cover "cover.jpg"
 - **The Dual-Rule Invariant ("Nothing Above Source")**:
   - *Classic / Heritage Fiction*: Preserves sacred authorial dignity, emotional pathos, and authentic regional cadence with zero modern street slang.
   - *Raw Unrated Fiction*: 19-to-21 amplification of raw street curses, visceral combat gore, and somatic intimacy without puritanical moralizing.
+- **Creative Autonomy Preservation**: Preserves expressive acting directives (`[ironic smirk]`, `[hesitates, catches breath]`) for TTS delivery and protects in-story bilingual/code-switching dialogue.
 
 ### 4. High-Concurrency Gemini TTS Pool & Quota Shield
 *(See [`model_manager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/model_manager.py) & [`key_manager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/key_manager.py))*
@@ -148,6 +155,7 @@ python audiobook_cli.py package <book_slug> --cover "cover.jpg"
 ### 6. Broadcast Vocal Mastering & Chaptered M4B Container
 *(See [`mastering.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/mastering.py) & [`packager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/packager.py))*
 - **EBU R128 Loudness Target**: Broadcast-compliant `-19.0 LUFS` integrated loudness ($\pm 0.5$ LU) and `-1.5 dBTP` true-peak ceiling.
+- **Uniform 2-Channel Stereo Mastering**: Under spatial staging, all vocal segments (including center-panned narrator) render into identical 2-channel stereo streams, eradicating mono/stereo FFmpeg concat crashes.
 - **SOXR Resampling**: High-quality 48kHz / 24-bit studio pipeline.
 - **Chaptered M4B Container**: Assembles final `.m4b` container with FFMETADATA1 chapter markers, TOC navigation, and embedded high-resolution cover artwork.
 
@@ -157,8 +165,8 @@ python audiobook_cli.py package <book_slug> --cover "cover.jpg"
 
 The entire repository is certified with **100% green test passing**:
 ```bash
-uv run pytest
-# ============ 758 passed, 8 skipped, 1 warning in 156.92s ============
+python -m pytest
+# ============ 805 passed, 8 skipped, 1 warning in 302.52s ============
 ```
 
 ---
@@ -172,8 +180,10 @@ uv run pytest
 | **[🎭 Dramatic Adaptation & Screenplay (Stage 3)](docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Authoritative guide to the Stage 3 Dramaturgy Engine and DialogueAttributionAuditor. |
 | **[🎙️ Gemini Flash TTS Engine & Directing (Stage 4)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)** | Authoritative guide to multimodal generative speech, speech tags, and token bucket key pool. |
 | **[🎭 Voice Casting Director Manual & 4D Formants](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)** | Guide to 4D acoustic formant matrices, character dossiers, and non-colliding voice allocation. |
+| **[🇮🇳 Complete Hindi Voice Catalog](docs/HINDI_VOICE_CATALOG.md)** | Directory of 114 native Hindi voices, regional dialects, age categories, and timbres. |
 | **[✂️ Dialogue Editorial Layer (DE-01 - DE-07)](docs/DIALOGUE_EDITORIAL_LAYER.md)** | Zero-crossing snapping, Hann micro-fades, and contextual turn latencies. |
 | **[🎛️ Audio Engineering & Vocal Mastering](docs/AUDIO_ENGINEERING.md)** | Broadcast EBU R128 (-19 LUFS) vocal loudness mastering and FFmpeg filter graphs. |
+| **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Exhaustive engineering record of Phases 1 through 6 forensic audit fixes and zero-hardcoding invariants. |
 | **[💻 CLI Reference](docs/CLI_REFERENCE.md)** | Complete CLI syntax and flags for all 10 production commands. |
 | **[🛠️ Developer Guide](docs/DEVELOPER_GUIDE.md)** | Local environment setup, test suites, and contribution standards. |
 
@@ -182,4 +192,4 @@ uv run pytest
 ## 📦 Decoupled & Archived Subsystems
 
 The legacy 5-track cinematic audio engine (dynamic BGM scoring, SQLite FTS5 sound bank harvesting, and multitrack stem mixdowns) has been safely decoupled and archived in `archive/cinematic_audio/`.
-The active production pipeline on `prestable-v4.0-baseline` is **100% focused on pure vocal excellence**.
+The active production pipeline on `Voculs` is **100% focused on pure vocal excellence**.

@@ -135,5 +135,52 @@ Interactive CLI tool located at [`scripts/casting_console.py`](file:///c:/Users/
 
 ## 5. Quality Gate Audits
 
-- **Gate 1 (Voice Casting & Collision Elimination)**: Verifies that no two active speaking characters share identical acoustic signatures, and validates `voice_registry.json` against `cast_lock.json`.
+- **Gate 1 (Voice Casting & Collision Elimination)**: Verifies that no two active speaking characters share identical acoustic signatures, and validates `voice_registry.json` against `cast_lock.json`. Dynamically validates all 2,089 catalog voices with Seiyū child exceptions.
 - **Gate 6A (Cross-Chapter Voice Continuity)**: Enforces that characters speaking across multiple chapters retain identical voice IDs anchored by `cast_lock.json`.
+
+---
+
+## 6. Dynamic 2,089 Voice Catalog (`VoiceCatalog`)
+
+Starting in v4.0, casting extends beyond the initial 12 studio voices:
+- **Comprehensive Voice Universe**: [`audiobook_factory/tts/voice_catalog.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/voice_catalog.py) manages all 2,089 verified voices across Gemini 3.8 Flash TTS.
+  - 114 native Hindi voices (`hi-IN`) across diverse regional dialects.
+  - 120 regional Indian English personas (`en-IN`).
+  - 215 English Gemini studio voices (`en-US`, `en-GB`, `en-AU`).
+- **Dynamic Dialect Resolution**:
+  Instead of static mapping, LLM character profiles indicate target regional dialects:
+  - `Awadhi Hindi` (UP)
+  - `Bhojpuri Hindi` (Bihar)
+  - `Haryanvi Hindi` (Haryana)
+  - `Bundeli Hindi` (MP)
+  - `Urdu / Delhi Hindi`
+  - `Mumbaiya / Tapori Hindi`
+  - `Dakhini Hindi` (Deccan)
+  `CharacterCaster` searches the catalog dynamically for matching dialect and gender tags.
+
+---
+
+## 7. Child & Adolescent Voice Architecture
+
+Due to the absence of native child voices in the underlying TTS API, a dual-tier acoustic architecture is implemented:
+
+### 1. The Anime Seiyū Child Engine (Girls & Young Boys <14yo)
+- **Principle**: Modeled after Japanese anime voice acting (where adult female seiyū voice young boys like Naruto, Luffy, Goku):
+- **Base Voice**: Young, high-pitch female voices (`hi-in-commercial-5`, `hi-in-commercial-7`, `Kore`).
+- **Acoustic Modulation**:
+  - Pitch Shift: $+10\text{--}15\%$ via `asetrate` and `aresample`.
+  - Child Resonance EQ: High-shelf brightness boost (+2.5dB @ 3.2kHz), low-cut chest attenuation (-4dB @ 200Hz).
+  - Pacing: Agile, energetic cadence ($1.05\text{--}1.10\times$).
+
+### 2. Young Rustic Fighter Profile (Adolescent Boys 14–17yo)
+- **Problem**: Pitch-shifting adult males produces synthetic chipmunk artifacts; using female voices sounds overly feminine.
+- **Solution**: Dynamic casting pairs adolescent male roles with 22–23yo rustic young male bases (`hi-in-podcaster-12`, `hi-in-commercial-8`, `hi-in-techagent-6`) with subtle physical EQ rather than pitch warping.
+
+---
+
+## 8. Narrator POV & Gate 1 Dynamic Contracts
+
+- **Third-Person Narratives**: `Aoede` remains the immutable default for omniscient, elegant storytelling.
+- **First-Person POV Protagonists**: If the novel is written from a male protagonist's first-person perspective, `CharacterCaster` dynamically aligns the Narrator voice with the protagonist's gender and vocal archetype.
+- **Zero-Hardcoding Gate 1**: Gate 1 literary verification dynamically queries `VoiceCatalog` to validate gender and persona matching, supporting child seiyū casting exceptions without static whitelist clamps.
+

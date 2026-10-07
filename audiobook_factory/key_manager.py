@@ -10,8 +10,15 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
 from zoneinfo import ZoneInfo
-
 import contextlib
+
+from audiobook_factory.guard_shield import (
+    ModelQuotaProfile,
+    resolve_model_profile,
+    classify_universal_api_error,
+    ApiErrorClassification,
+    get_circuit_breaker,
+)
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "audiobooks" / "key_pool_state.db"
 
@@ -30,6 +37,11 @@ def _google_quota_date_str() -> str:
         pacific_tz = timezone(timedelta(hours=-7))
         pacific_now = datetime.now(pacific_tz)
     return pacific_now.strftime("%Y-%m-%d")
+
+
+def _utc_quota_date_str() -> str:
+    """Standard UTC midnight rollover for OpenAI, Anthropic, Cerebras, Groq, OpenRouter."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
 def _load_env_fallback():
@@ -53,45 +65,11 @@ _load_env_fallback()
 
 def classify_gemini_error(status_code: int, error_body: str) -> Tuple[str, float, str]:
     """
-    Gold Standard Error Classifier for Google Gemini API:
-    Strictly differentiates between:
-    1. 'DAILY_QUOTA_EXHAUSTED': Genuine daily limit hit (10 RPD per project/model).
-       Only this marks the key EXHAUSTED_TODAY for date YYYY-MM-DD.
-    2. 'RPM_RATE_LIMIT': Temporary 15 RPM burst limit.
-       Only triggers short TEMP_BACKOFF (5-20s), does NOT burn the key for today.
-    3. 'TRANSIENT_SERVER_ERROR': HTTP 500/502/503/504 temporary backend hiccups.
-       Only triggers short TEMP_BACKOFF (5-10s), keeps key ACTIVE.
-    4. 'INVALID_KEY': HTTP 400/403 Bad API key / permission denied.
-       Marks key INVALID so it is permanently bypassed.
-    5. 'UNKNOWN_ERROR': Other uncategorized error.
+    Backward-compatible facade wrapping classify_universal_api_error for Google Gemini.
+    Returns: Tuple[category, wait_sec, message]
     """
-    body_lower = error_body.lower()
-
-    # 1. Invalid API Key / Bad Authentication
-    if status_code in (400, 403) and any(
-        x in body_lower for x in ["api_key_invalid", "api key not valid", "permission_denied", "forbidden"]
-    ):
-        return "INVALID_KEY", 0.0, "API key is invalid or lacks Gemini API permissions."
-
-    # 2. HTTP 429 Resource Exhausted
-    if status_code == 429:
-        # Check for genuine daily quota (10 RPD per model per project)
-        # Google specifies: "GenerateRequestsPerDayPerProjectPerModel-FreeTier" or "quotaValue": "10" or "perday"
-        if "generaterequestsperday" in body_lower or "perday" in body_lower or "daily" in body_lower:
-            return "DAILY_QUOTA_EXHAUSTED", 0.0, "Daily TTS quota reached (10 RPD per project)."
-
-        # Check for RPM rate limit (15 RPM)
-        delay_match = re.search(r"retry in (\d+\.?\d*)s", error_body, re.IGNORECASE)
-        wait_sec = float(delay_match.group(1)) + 2.0 if delay_match else 15.0
-        return "RPM_RATE_LIMIT", wait_sec, f"Temporary RPM rate limit (Cooling off {wait_sec:.1f}s)."
-
-    # 3. Transient 5xx server errors
-    if status_code in (500, 502, 503, 504):
-        delay_match = re.search(r"retry in (\d+\.?\d*)s", error_body, re.IGNORECASE)
-        wait_sec = float(delay_match.group(1)) + 2.0 if delay_match else 8.0
-        return "TRANSIENT_SERVER_ERROR", wait_sec, f"Google server transient error HTTP {status_code}."
-
-    return "UNKNOWN_ERROR", 5.0, f"HTTP {status_code}: {error_body[:120]}"
+    res = classify_universal_api_error(status_code=status_code, error_body=error_body, provider="gemini")
+    return res.category, res.wait_sec, res.message
 
 
 class AllKeysExhaustedTodayError(Exception):
@@ -101,13 +79,15 @@ class AllKeysExhaustedTodayError(Exception):
 
 class PersistentKeyPool:
     """
-    Gold Standard Thread-Safe Persistent Key Quota Pool.
+    Gold Standard Thread-Safe Persistent Universal Key & Model Quota Pool.
     Guarantees:
-    1. Quota exhaustion is saved with exact calendar date (YYYY-MM-DD).
-    2. Auto-resets keys on date rollover without manual intervention.
-    3. Distinguishes genuine daily quota (10 RPD) from temporary 503/RPM rate spikes.
-    4. Never hammers exhausted keys in an infinite loop.
-    5. Injects natural random jitter into request pacing.
+    1. Multi-Provider & Multi-Model support: Gemini, OpenRouter, Cerebras, Groq, OpenAI, Anthropic, Local CUDA.
+    2. Model-isolated quota ledger: Exhausting quota on one model (e.g. Gemini 2.5 Pro or TTS)
+       does NOT block other models (e.g. Gemini 3.8 Flash, Flash-Lite) on the same key!
+    3. Multi-timezone date rollovers (Midnight PT for Google, Midnight UTC for others).
+    4. In-flight concurrency tracking preventing thread dogpiling on individual keys.
+    5. Thread-safe SQLite ACID ledger with WAL mode and busy timeout.
+    6. Jittered round-robin rotation favoring least-used and healthy keys.
     """
 
     def __init__(self, keys: Optional[List[str]] = None, db_path: Optional[Path] = None):
@@ -116,16 +96,11 @@ class PersistentKeyPool:
         self.lock = threading.RLock()
         self._init_db()
 
-        # Load keys from environment if not passed
-        if not keys:
-            raw = os.environ.get("GEMINI_API_KEYS", "")
-            if raw:
-                keys = [k.strip() for k in raw.split(",") if k.strip()]
-            else:
-                single = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-                keys = [single] if single else []
-
-        self.register_keys(keys)
+        # Load keys from environment if not explicitly passed
+        if keys is not None:
+            self.register_keys(keys, provider="gemini")
+        else:
+            self._auto_discover_and_register_env_keys()
 
     @contextlib.contextmanager
     def _connection(self):
@@ -142,22 +117,48 @@ class PersistentKeyPool:
     def _init_db(self):
         with self._connection() as conn:
             conn.execute("PRAGMA journal_mode=WAL;")
+            # Base Key Ledger
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS key_quota_ledger (
                     key_hash TEXT PRIMARY KEY,
                     key_preview TEXT NOT NULL,
                     api_key TEXT NOT NULL,
                     status TEXT DEFAULT 'ACTIVE',       -- ACTIVE, EXHAUSTED_TODAY, TEMP_BACKOFF, INVALID
-                    exhausted_date TEXT,                -- YYYY-MM-DD (Google PT date when daily quota hits)
+                    exhausted_date TEXT,                -- YYYY-MM-DD
                     total_calls_today INTEGER DEFAULT 0,
                     success_calls_today INTEGER DEFAULT 0,
                     failed_calls_today INTEGER DEFAULT 0,
                     last_used TIMESTAMP,
                     backoff_until TIMESTAMP,
                     last_error TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_reset_date TEXT,
+                    provider TEXT DEFAULT 'gemini',
+                    in_flight INTEGER DEFAULT 0,
+                    max_concurrency INTEGER DEFAULT 4
                 );
             """)
+
+            # Model-Specific Quota Ledger (Per key and per model isolation)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS model_quota_ledger (
+                    key_hash TEXT,
+                    provider TEXT DEFAULT 'gemini',
+                    model TEXT NOT NULL,
+                    status TEXT DEFAULT 'ACTIVE',       -- ACTIVE, EXHAUSTED_TODAY, TEMP_BACKOFF
+                    exhausted_date TEXT,
+                    total_calls_today INTEGER DEFAULT 0,
+                    success_calls_today INTEGER DEFAULT 0,
+                    failed_calls_today INTEGER DEFAULT 0,
+                    total_tokens_today INTEGER DEFAULT 0,
+                    last_used TIMESTAMP,
+                    backoff_until TIMESTAMP,
+                    last_error TEXT,
+                    last_reset_date TEXT,
+                    PRIMARY KEY (key_hash, model)
+                );
+            """)
+
             # Ensure columns exist if table was previously created with older schema
             columns = [col["name"] for col in conn.execute("PRAGMA table_info(key_quota_ledger);").fetchall()]
             if "success_calls_today" not in columns:
@@ -166,6 +167,13 @@ class PersistentKeyPool:
                 conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN failed_calls_today INTEGER DEFAULT 0;")
             if "last_reset_date" not in columns:
                 conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN last_reset_date TEXT;")
+            if "provider" not in columns:
+                conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN provider TEXT DEFAULT 'gemini';")
+            if "in_flight" not in columns:
+                conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN in_flight INTEGER DEFAULT 0;")
+            if "max_concurrency" not in columns:
+                conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN max_concurrency INTEGER DEFAULT 4;")
+
             conn.commit()
 
     @staticmethod
@@ -179,12 +187,38 @@ class PersistentKeyPool:
         return f"{api_key[:8]}...{api_key[-6:]}"
 
     @staticmethod
-    def _today_str() -> str:
-        # Use Google Pacific Time to synchronize with Google daily quota reset
-        return _google_quota_date_str()
+    def _today_str(provider: str = "gemini") -> str:
+        if provider == "gemini":
+            return _google_quota_date_str()
+        return _utc_quota_date_str()
 
-    def register_keys(self, keys: List[str]):
+    def _auto_discover_and_register_env_keys(self):
+        """Auto-discovers keys for all configured providers from environment."""
+        provider_env_map = {
+            "gemini": ["GEMINI_API_KEYS", "GEMINI_API_KEY", "GOOGLE_API_KEY"],
+            "openrouter": ["OPENROUTER_API_KEYS", "OPENROUTER_API_KEY"],
+            "cerebras": ["CEREBRAS_API_KEYS", "CEREBRAS_API_KEY"],
+            "groq": ["GROQ_API_KEYS", "GROQ_API_KEY"],
+            "openai": ["OPENAI_API_KEYS", "OPENAI_API_KEY"],
+            "anthropic": ["ANTHROPIC_API_KEYS", "ANTHROPIC_API_KEY"],
+            "elevenlabs": ["ELEVENLABS_API_KEYS", "ELEVENLABS_API_KEY"],
+            "local": ["LOCAL_API_KEY"],
+        }
+        for provider, var_names in provider_env_map.items():
+            found_keys: List[str] = []
+            for var in var_names:
+                val = os.environ.get(var, "")
+                if val:
+                    for k in val.split(","):
+                        clean_k = k.strip()
+                        if clean_k and clean_k not in found_keys:
+                            found_keys.append(clean_k)
+            if found_keys:
+                self.register_keys(found_keys, provider=provider)
+
+    def register_keys(self, keys: List[str], provider: str = "gemini"):
         """Register or sync API keys in persistent SQLite ledger without erasing existing quota history."""
+        today = self._today_str(provider)
         with self.lock, self._connection() as conn:
             for k in keys:
                 k = k.strip()
@@ -193,17 +227,18 @@ class PersistentKeyPool:
                 kh = self._hash_key(k)
                 kp = self._preview_key(k)
                 conn.execute("""
-                    INSERT INTO key_quota_ledger (key_hash, key_preview, api_key, status)
-                    VALUES (?, ?, ?, 'ACTIVE')
+                    INSERT INTO key_quota_ledger (key_hash, key_preview, api_key, status, provider, last_reset_date)
+                    VALUES (?, ?, ?, 'ACTIVE', ?, ?)
                     ON CONFLICT(key_hash) DO UPDATE SET
                         api_key = excluded.api_key,
-                        key_preview = excluded.key_preview;
-                """, (kh, kp, k))
+                        key_preview = excluded.key_preview,
+                        provider = excluded.provider;
+                """, (kh, kp, k, provider, today))
             conn.commit()
 
-    def _check_date_rollover(self, conn: sqlite3.Connection):
-        """Automatically re-activates keys whose exhausted_date is prior to today (Google PT date) and resets daily counters."""
-        today = self._today_str()
+    def _check_date_rollover(self, conn: sqlite3.Connection, provider: str = "gemini"):
+        """Automatically re-activates keys whose exhausted_date is prior to today and resets daily counters."""
+        today = self._today_str(provider)
         cursor = conn.execute("""
             UPDATE key_quota_ledger
             SET status = CASE WHEN status = 'EXHAUSTED_TODAY' THEN 'ACTIVE' ELSE status END,
@@ -217,52 +252,93 @@ class PersistentKeyPool:
             WHERE (exhausted_date IS NOT NULL AND exhausted_date != ?)
                OR (last_reset_date IS NULL OR last_reset_date != ?);
         """, (today, today, today))
+
+        # Also reset model quota ledger
+        conn.execute("""
+            UPDATE model_quota_ledger
+            SET status = CASE WHEN status = 'EXHAUSTED_TODAY' THEN 'ACTIVE' ELSE status END,
+                exhausted_date = NULL,
+                total_calls_today = 0,
+                success_calls_today = 0,
+                failed_calls_today = 0,
+                total_tokens_today = 0,
+                backoff_until = NULL,
+                last_error = NULL,
+                last_reset_date = ?
+            WHERE (exhausted_date IS NOT NULL AND exhausted_date != ?)
+               OR (last_reset_date IS NULL OR last_reset_date != ?);
+        """, (today, today, today))
+
         if cursor.rowcount > 0:
             from audiobook_factory.logger import logger
-            logger.info(f"  [DATE ROLLOVER] Google midnight passed! Reset {cursor.rowcount} API keys to ACTIVE for {today}.")
+            logger.info(f"  [DATE ROLLOVER] Midnight passed for {provider}! Reset {cursor.rowcount} API keys to ACTIVE for {today}.")
 
-    def get_key(self, service: str = "tts") -> str:
+    def get_key(self, service: str = "tts", provider: str = "gemini", model: Optional[str] = None) -> str:
         """
         Retrieves the next eligible API key using round-robin rotation.
-        - For service='tts': strictly checks 'ACTIVE' status so keys whose 10 RPD quota is exhausted
-          today are safely bypassed until midnight.
-        - For service='text': keys whose TTS quota was exhausted can still be used for text translation
-          and screenplay formatting because Gemini text models have a separate 1,500 RPD quota.
-        Uses iterative loop instead of recursion to prevent stack overflow under sustained backoff.
+        Supports:
+        - service='tts': checks 'ACTIVE' status in key_quota_ledger.
+        - service='text' with no model: selects valid keys not in active temp backoff.
+        - model specified: checks both key validity and model-specific quota in model_quota_ledger!
+          If key is exhausted on model A (e.g. Gemini 2.5 Pro or TTS), it can still be chosen for model B!
+        - Balances load by lowest in-flight concurrency, oldest last_used, and fewest calls today.
         """
         while True:
-            today = self._today_str()
+            today = self._today_str(provider)
             now_ts = datetime.now().isoformat()
             sleep_dur = 0.0
 
             with self.lock:
                 with self._connection() as conn:
-                    self._check_date_rollover(conn)
+                    self._check_date_rollover(conn, provider=provider)
 
-                    # Check if any temp backoffs have expired
+                    # Clear expired temporary backoffs
                     conn.execute("""
                         UPDATE key_quota_ledger
                         SET status = 'ACTIVE', backoff_until = NULL
                         WHERE status = 'TEMP_BACKOFF' AND backoff_until <= ?;
                     """, (now_ts,))
+                    conn.execute("""
+                        UPDATE model_quota_ledger
+                        SET status = 'ACTIVE', backoff_until = NULL
+                        WHERE status = 'TEMP_BACKOFF' AND backoff_until <= ?;
+                    """, (now_ts,))
                     conn.commit()
 
-                    if service == "tts":
-                        # For TTS: only select ACTIVE keys (exhausted_today keys are excluded)
+                    if model:
+                        # Model-aware selection:
+                        # For TTS, key MUST be ACTIVE in key_quota_ledger (exhausted_today keys cannot be used for TTS).
+                        # For other services, key only needs to be != 'INVALID'.
+                        is_tts_req = (service == "tts") or ("-tts" in model.lower())
+                        key_status_clause = "k.status = 'ACTIVE'" if is_tts_req else "k.status != 'INVALID'"
+                        query = f"""
+                            SELECT k.api_key, k.key_preview, k.key_hash, k.in_flight
+                            FROM key_quota_ledger k
+                            LEFT JOIN model_quota_ledger m ON (k.key_hash = m.key_hash AND m.model = ?)
+                            WHERE k.provider = ?
+                              AND {key_status_clause}
+                              AND (k.backoff_until IS NULL OR k.backoff_until <= ?)
+                              AND (m.status IS NULL OR m.status = 'ACTIVE' OR (m.status = 'TEMP_BACKOFF' AND m.backoff_until <= ?))
+                              AND (m.exhausted_date IS NULL OR m.exhausted_date != ?)
+                            ORDER BY k.in_flight ASC, k.last_used ASC NULLS FIRST, k.success_calls_today ASC;
+                        """
+                        rows = conn.execute(query, (model, provider, now_ts, now_ts, today)).fetchall()
+                    elif service == "tts":
+                        # For TTS: only select ACTIVE keys (exhausted_today keys excluded)
                         rows = conn.execute("""
-                            SELECT api_key, key_preview, key_hash
+                            SELECT api_key, key_preview, key_hash, in_flight
                             FROM key_quota_ledger
-                            WHERE status = 'ACTIVE'
-                            ORDER BY last_used ASC NULLS FIRST, success_calls_today ASC;
-                        """).fetchall()
+                            WHERE provider = ? AND status = 'ACTIVE'
+                            ORDER BY in_flight ASC, last_used ASC NULLS FIRST, success_calls_today ASC;
+                        """, (provider,)).fetchall()
                     else:
-                        # For Text: select any valid key not in active temporary backoff
+                        # For Text (general): select valid keys not in active temp backoff
                         rows = conn.execute("""
-                            SELECT api_key, key_preview, key_hash
+                            SELECT api_key, key_preview, key_hash, in_flight
                             FROM key_quota_ledger
-                            WHERE status != 'INVALID' AND (backoff_until IS NULL OR backoff_until <= ?)
-                            ORDER BY last_used ASC NULLS FIRST;
-                        """, (now_ts,)).fetchall()
+                            WHERE provider = ? AND status != 'INVALID' AND (backoff_until IS NULL OR backoff_until <= ?)
+                            ORDER BY in_flight ASC, last_used ASC NULLS FIRST;
+                        """, (provider, now_ts)).fetchall()
 
                     if rows:
                         chosen = rows[0]
@@ -272,51 +348,106 @@ class PersistentKeyPool:
                                 total_calls_today = total_calls_today + 1
                             WHERE key_hash = ?;
                         """, (chosen["key_hash"],))
+                        if model:
+                            conn.execute("""
+                                INSERT INTO model_quota_ledger (key_hash, provider, model, total_calls_today, last_used)
+                                VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+                                ON CONFLICT(key_hash, model) DO UPDATE SET
+                                    total_calls_today = total_calls_today + 1,
+                                    last_used = CURRENT_TIMESTAMP;
+                            """, (chosen["key_hash"], provider, model))
                         conn.commit()
                         return chosen["api_key"]
 
-                    # If no active keys, check status breakdown
-                    if service == "tts":
+                    # Check if all keys exhausted today for TTS
+                    if service == "tts" or (model and "-tts" in model.lower()):
                         exhausted_today = conn.execute("""
                             SELECT count(*) as count FROM key_quota_ledger
-                            WHERE status = 'EXHAUSTED_TODAY' AND exhausted_date = ?;
-                        """, (today,)).fetchone()["count"]
+                            WHERE provider = ? AND status = 'EXHAUSTED_TODAY' AND exhausted_date = ?;
+                        """, (provider, today)).fetchone()["count"]
 
-                        total_valid_keys = conn.execute(
-                            "SELECT count(*) as count FROM key_quota_ledger WHERE status != 'INVALID';"
-                        ).fetchone()["count"]
+                        total_valid = conn.execute("""
+                            SELECT count(*) as count FROM key_quota_ledger
+                            WHERE provider = ? AND status != 'INVALID';
+                        """, (provider,)).fetchone()["count"]
 
-                        if total_valid_keys > 0 and exhausted_today == total_valid_keys:
+                        if total_valid > 0 and exhausted_today >= total_valid:
                             raise AllKeysExhaustedTodayError(
-                                f"All {total_valid_keys} Gemini API keys have reached their daily TTS quota (10 RPD) for date {today}. "
+                                f"All {total_valid} {provider.upper()} API keys have reached their daily TTS quota for date {today}. "
                                 f"System is safely paused until midnight quota reset. (Text translation models remain usable)."
                             )
 
-                    temp_backoff_keys = conn.execute("""
-                        SELECT backoff_until FROM key_quota_ledger
-                        WHERE status = 'TEMP_BACKOFF'
-                        ORDER BY backoff_until ASC;
-                    """).fetchall()
+                    # Check if all keys exhausted today for this specific model
+                    if model:
+                        exhausted_model = conn.execute("""
+                            SELECT count(*) as count FROM model_quota_ledger
+                            WHERE provider = ? AND model = ? AND status = 'EXHAUSTED_TODAY' AND exhausted_date = ?;
+                        """, (provider, model, today)).fetchone()["count"]
+
+                        total_valid = conn.execute("""
+                            SELECT count(*) as count FROM key_quota_ledger
+                            WHERE provider = ? AND status != 'INVALID';
+                        """, (provider,)).fetchone()["count"]
+
+                        if total_valid > 0 and exhausted_model >= total_valid:
+                            raise AllKeysExhaustedTodayError(
+                                f"All {total_valid} {provider.upper()} API keys have reached their daily quota for model '{model}' on date {today}. "
+                                f"System is safely paused until midnight quota reset."
+                            )
+
+                    # Check temp backoffs across key_quota_ledger and model_quota_ledger
+                    if model:
+                        temp_backoff_keys = conn.execute("""
+                            SELECT backoff_until FROM (
+                                SELECT backoff_until FROM key_quota_ledger
+                                WHERE provider = ? AND status = 'TEMP_BACKOFF'
+                                UNION ALL
+                                SELECT backoff_until FROM model_quota_ledger
+                                WHERE provider = ? AND model = ? AND status = 'TEMP_BACKOFF'
+                            )
+                            ORDER BY backoff_until ASC;
+                        """, (provider, provider, model)).fetchall()
+                    else:
+                        temp_backoff_keys = conn.execute("""
+                            SELECT backoff_until FROM key_quota_ledger
+                            WHERE provider = ? AND status = 'TEMP_BACKOFF'
+                            ORDER BY backoff_until ASC;
+                        """, (provider,)).fetchall()
 
                     if temp_backoff_keys:
-                        first_expiry = temp_backoff_keys[0]["backoff_until"]
+                        first_exp = temp_backoff_keys[0]["backoff_until"]
                         try:
-                            expiry_dt = datetime.fromisoformat(first_expiry)
-                            sleep_dur = max(1.0, min(20.0, (expiry_dt - datetime.now()).total_seconds() + 0.5))
+                            exp_dt = datetime.fromisoformat(first_exp)
+                            sleep_dur = max(1.0, min(20.0, (exp_dt - datetime.now()).total_seconds() + 0.5))
                         except Exception:
                             sleep_dur = 3.0
 
-            # If keys are cooling down, sleep OUTSIDE the lock and connection, then loop (no recursion)
             if sleep_dur > 0:
                 from audiobook_factory.logger import logger
-                logger.info(f"  [KEY POOL] All active {service.upper()} keys cooling down. Waiting {sleep_dur:.1f}s for backoff expiry...")
+                target_desc = f"{model} ({provider})" if model else f"{service.upper()} ({provider})"
+                logger.info(f"  [KEY POOL] All active keys cooling down for {target_desc}. Waiting {sleep_dur:.1f}s...")
                 time.sleep(sleep_dur)
-                continue  # Iterate instead of recurse — prevents RecursionError
+                continue
 
-            raise ValueError("No eligible Gemini API keys registered in key quota ledger.")
+            raise ValueError(f"No eligible {provider.upper()} API keys registered in key quota ledger.")
 
-    def record_success(self, api_key: str):
-        """Records a successful synthesis call for the given API key."""
+    @contextlib.contextmanager
+    def lease_key(self, service: str = "text", provider: str = "gemini", model: Optional[str] = None):
+        """Context manager leasing a key with active in-flight concurrency tracking."""
+        key = self.get_key(service=service, provider=provider, model=model)
+        kh = self._hash_key(key)
+        with self.lock, self._connection() as conn:
+            conn.execute("UPDATE key_quota_ledger SET in_flight = in_flight + 1 WHERE key_hash = ?;", (kh,))
+            conn.commit()
+        try:
+            yield key
+        finally:
+            with self.lock, self._connection() as conn:
+                conn.execute("UPDATE key_quota_ledger SET in_flight = MAX(0, in_flight - 1) WHERE key_hash = ?;", (kh,))
+                conn.commit()
+
+    def record_success(self, api_key: str, model: Optional[str] = None, provider: str = "gemini", tokens_used: int = 0):
+        """Records a successful synthesis or generation call."""
         kh = self._hash_key(api_key)
         with self.lock, self._connection() as conn:
             conn.execute("""
@@ -327,43 +458,71 @@ class PersistentKeyPool:
                     last_error = NULL
                 WHERE key_hash = ?;
             """, (kh,))
+            if model:
+                conn.execute("""
+                    INSERT INTO model_quota_ledger (key_hash, provider, model, status, success_calls_today, total_tokens_today)
+                    VALUES (?, ?, ?, 'ACTIVE', 1, ?)
+                    ON CONFLICT(key_hash, model) DO UPDATE SET
+                        status = 'ACTIVE',
+                        success_calls_today = success_calls_today + 1,
+                        total_tokens_today = total_tokens_today + excluded.total_tokens_today,
+                        backoff_until = NULL,
+                        last_error = NULL;
+                """, (kh, provider, model, tokens_used))
             conn.commit()
 
-    def mark_daily_quota_exhausted(self, api_key: str, error_msg: str):
+        if model:
+            get_circuit_breaker().record_success(provider, model)
+
+    def mark_daily_quota_exhausted(self, api_key: str, error_msg: str, model: Optional[str] = None, provider: str = "gemini", service: str = ""):
         """
-        Marks key as genuinely exhausted for today (10 RPD reached).
-        Will NOT be retried until calendar date changes (midnight rollover).
+        Marks key as exhausted for today (e.g. 10 RPD reached on TTS).
+        If model is specified and not TTS, only marks model_quota_ledger exhausted today!
         """
         from audiobook_factory.logger import logger
-        today = self._today_str()
+        today = self._today_str(provider)
         kh = self._hash_key(api_key)
         kp = self._preview_key(api_key)
 
+        is_tts = (service == "tts") or (model is None) or ("-tts" in model.lower())
+
         with self.lock, self._connection() as conn:
-            conn.execute("""
-                UPDATE key_quota_ledger
-                SET status = 'EXHAUSTED_TODAY',
-                    exhausted_date = ?,
-                    failed_calls_today = failed_calls_today + 1,
-                    last_error = ?
-                WHERE key_hash = ?;
-            """, (today, error_msg[:200], kh))
+            if is_tts:
+                conn.execute("""
+                    UPDATE key_quota_ledger
+                    SET status = 'EXHAUSTED_TODAY',
+                        exhausted_date = ?,
+                        failed_calls_today = failed_calls_today + 1,
+                        last_error = ?,
+                        last_reset_date = ?
+                    WHERE key_hash = ?;
+                """, (today, error_msg[:200], today, kh))
+
+            if model:
+                conn.execute("""
+                    INSERT INTO model_quota_ledger (key_hash, provider, model, status, exhausted_date, failed_calls_today, last_error, last_reset_date)
+                    VALUES (?, ?, ?, 'EXHAUSTED_TODAY', ?, 1, ?, ?)
+                    ON CONFLICT(key_hash, model) DO UPDATE SET
+                        status = 'EXHAUSTED_TODAY',
+                        exhausted_date = excluded.exhausted_date,
+                        failed_calls_today = failed_calls_today + 1,
+                        last_error = excluded.last_error,
+                        last_reset_date = excluded.last_reset_date;
+                """, (kh, provider, model, today, error_msg[:200], today))
+
             conn.commit()
 
             active_rem = conn.execute("""
-                SELECT count(*) as count FROM key_quota_ledger WHERE status = 'ACTIVE';
-            """).fetchone()["count"]
+                SELECT count(*) as count FROM key_quota_ledger WHERE provider = ? AND status = 'ACTIVE';
+            """, (provider,)).fetchone()["count"]
 
             logger.warning(
-                f"  [QUOTA LEDGER] Key {kp} marked EXHAUSTED_TODAY for date {today}. "
+                f"  [QUOTA LEDGER] Key {kp} marked EXHAUSTED_TODAY for date {today} (model={model or 'all'}). "
                 f"Active keys remaining: {active_rem}"
             )
 
-    def mark_temporary_backoff(self, api_key: str, backoff_seconds: float, error_msg: str = ""):
-        """
-        Marks key for temporary backoff (e.g. 503 spike or 15 RPM burst).
-        Does NOT burn the key for the entire day.
-        """
+    def mark_temporary_backoff(self, api_key: str, backoff_seconds: float, error_msg: str = "", model: Optional[str] = None, provider: str = "gemini"):
+        """Marks key for temporary backoff without burning it for the whole day."""
         from audiobook_factory.logger import logger
         kh = self._hash_key(api_key)
         kp = self._preview_key(api_key)
@@ -378,13 +537,28 @@ class PersistentKeyPool:
                     last_error = ?
                 WHERE key_hash = ?;
             """, (backoff_until, error_msg[:200], kh))
+
+            if model:
+                conn.execute("""
+                    INSERT INTO model_quota_ledger (key_hash, provider, model, status, backoff_until, failed_calls_today, last_error)
+                    VALUES (?, ?, ?, 'TEMP_BACKOFF', ?, 1, ?)
+                    ON CONFLICT(key_hash, model) DO UPDATE SET
+                        status = CASE WHEN status = 'EXHAUSTED_TODAY' THEN status ELSE 'TEMP_BACKOFF' END,
+                        backoff_until = excluded.backoff_until,
+                        failed_calls_today = failed_calls_today + 1,
+                        last_error = excluded.last_error;
+                """, (kh, provider, model, backoff_until, error_msg[:200]))
+
             conn.commit()
 
             logger.warning(
-                f"  [TEMP BACKOFF] Key {kp} cooling off for {backoff_seconds:.1f}s (Until {backoff_until[:19]})."
+                f"  [TEMP BACKOFF] Key {kp} cooling off for {backoff_seconds:.1f}s (model={model or 'key'})."
             )
 
-    def mark_invalid(self, api_key: str, error_msg: str):
+        if model:
+            get_circuit_breaker().record_failure(provider, model, error_msg)
+
+    def mark_invalid(self, api_key: str, error_msg: str, provider: str = "gemini"):
         """Marks key as permanently invalid or disabled."""
         from audiobook_factory.logger import logger
         kh = self._hash_key(api_key)
@@ -399,10 +573,10 @@ class PersistentKeyPool:
             """, (error_msg[:200], kh))
             conn.commit()
 
-            logger.error(f"  [INVALID KEY] Key {kp} marked INVALID: {error_msg[:100]}")
+            logger.error(f"  [INVALID KEY] Key {kp} marked INVALID for {provider}: {error_msg[:100]}")
 
     def reset_all_for_today(self):
-        """Force reset all keys back to ACTIVE state (e.g. for testing or new quota window)."""
+        """Force reset all keys and models back to ACTIVE state."""
         with self.lock, self._connection() as conn:
             conn.execute("""
                 UPDATE key_quota_ledger
@@ -411,28 +585,45 @@ class PersistentKeyPool:
                     backoff_until = NULL,
                     last_error = NULL;
             """)
+            conn.execute("""
+                UPDATE model_quota_ledger
+                SET status = 'ACTIVE',
+                    exhausted_date = NULL,
+                    backoff_until = NULL,
+                    last_error = NULL;
+            """)
             conn.commit()
+        get_circuit_breaker().force_reset()
 
-    def get_status_summary(self) -> Dict[str, Any]:
-        """Returns live statistics of all keys in the persistent ledger."""
-        today = self._today_str()
+    def get_status_summary(self, provider: str = "gemini") -> Dict[str, Any]:
+        """Returns live statistics of all keys and models in the persistent ledger."""
+        today = self._today_str(provider)
         with self.lock, self._connection() as conn:
-            self._check_date_rollover(conn)
+            self._check_date_rollover(conn, provider=provider)
             rows = conn.execute("""
-                SELECT key_preview, status, exhausted_date, total_calls_today,
-                       success_calls_today, failed_calls_today, last_used, backoff_until, last_error
+                SELECT key_preview, status, provider, exhausted_date, total_calls_today,
+                       success_calls_today, failed_calls_today, last_used, backoff_until, in_flight, last_error
                 FROM key_quota_ledger
+                WHERE provider = ?
                 ORDER BY key_preview ASC;
-            """).fetchall()
+            """, (provider,)).fetchall()
+
+            model_rows = conn.execute("""
+                SELECT key_hash, model, status, total_calls_today, success_calls_today, total_tokens_today
+                FROM model_quota_ledger
+                WHERE provider = ?;
+            """, (provider,)).fetchall()
 
             return {
                 "date": today,
+                "provider": provider,
                 "total_keys": len(rows),
                 "active_keys": sum(1 for r in rows if r["status"] == "ACTIVE"),
                 "exhausted_today": sum(1 for r in rows if r["status"] == "EXHAUSTED_TODAY"),
                 "temp_backoff": sum(1 for r in rows if r["status"] == "TEMP_BACKOFF"),
                 "invalid_keys": sum(1 for r in rows if r["status"] == "INVALID"),
-                "keys": [dict(r) for r in rows]
+                "keys": [dict(r) for r in rows],
+                "models": [dict(mr) for mr in model_rows]
             }
 
 

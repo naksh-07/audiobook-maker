@@ -251,7 +251,7 @@ def synthesize_gemini_tts(
             )
 
         try:
-            api_key = pool.get_key(service="tts")  # Raises AllKeysExhaustedTodayError when all keys reach 10 RPD
+            api_key = pool.get_key(service="tts", model=model)  # Raises AllKeysExhaustedTodayError when all keys reach 10 RPD
         except AllKeysExhaustedTodayError:
             if ENABLE_EMERGENCY_FALLBACK:
                 logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted. Falling back to local WinRT speech synthesis for: {output_file.name}")
@@ -264,7 +264,7 @@ def synthesize_gemini_tts(
         # Inner Loop: Network retries on the currently selected key (max 3 attempts)
         for network_attempt in range(3):
             if rate_limiter:
-                rate_limiter.acquire()
+                rate_limiter.acquire(model=model, api_key=api_key)
 
             t_req_start = time.perf_counter()
             req = urllib.request.Request(
@@ -390,7 +390,7 @@ def synthesize_gemini_tts(
                         _atomic_replace(tmp_file, output_file)
 
                         # Record success in persistent key pool
-                        pool.record_success(api_key)
+                        pool.record_success(api_key, model=model)
                         run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
                         try:
                             from audiobook_factory.telemetry import get_telemetry_ledger
@@ -452,9 +452,9 @@ def synthesize_gemini_tts(
                     pass
 
                 if category == "DAILY_QUOTA_EXHAUSTED":
-                    pool.mark_daily_quota_exhausted(api_key, err)
+                    pool.mark_daily_quota_exhausted(api_key, err, model=model)
                     logger.warning(
-                        f"  [KEY ROTATION] Key ...{api_key[-6:]} daily quota reached (10 RPD). "
+                        f"  [KEY ROTATION] Key ...{api_key[-6:]} daily quota reached (10 RPD) for {model}. "
                         f"Parked for today."
                     )
                     cadence.wait_for_key_switch(api_key[-6:], "next_project")
@@ -470,18 +470,23 @@ def synthesize_gemini_tts(
                     break
 
                 elif category == "RPM_RATE_LIMIT":
-                    pool.mark_temporary_backoff(api_key, wait_sec, err)
+                    pool.mark_temporary_backoff(api_key, wait_sec, err, model=model)
                     logger.warning(
                         f"  [RPM BURST] Key ...{api_key[-6:]} hit temporary rate limit. "
                         f"Cooling off {wait_sec:.1f}s. Switching key from pool..."
                     )
-                    if rate_limiter and hasattr(rate_limiter, "trigger_global_pause"):
-                        rate_limiter.trigger_global_pause(wait_sec)
+                    if rate_limiter:
+                        if hasattr(rate_limiter, "trigger_key_pause"):
+                            rate_limiter.trigger_key_pause(api_key, wait_sec)
+                        if hasattr(rate_limiter, "trigger_model_pause"):
+                            rate_limiter.trigger_model_pause(model, wait_sec)
+                        elif hasattr(rate_limiter, "trigger_global_pause"):
+                            rate_limiter.trigger_global_pause(wait_sec)
                     key_exhausted_or_invalid = False
                     break
 
                 elif category == "TRANSIENT_SERVER_ERROR":
-                    pool.mark_temporary_backoff(api_key, wait_sec, err)
+                    pool.mark_temporary_backoff(api_key, wait_sec, err, model=model)
                     logger.warning(
                         f"  [SERVER GLITCH] HTTP {e.code} temporary Google hiccup. "
                         f"Cooling off {wait_sec:.1f}s (Attempt {network_attempt+1}/3)..."
@@ -626,7 +631,7 @@ def synthesize_gemini_multispeaker_batch(
             )
 
         try:
-            api_key = pool.get_key(service="tts")
+            api_key = pool.get_key(service="tts", model=model)
         except AllKeysExhaustedTodayError:
             if ENABLE_EMERGENCY_FALLBACK:
                 logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted. Falling back to local WinRT synthesis for batch {batch.batch_id}")
@@ -637,7 +642,7 @@ def synthesize_gemini_multispeaker_batch(
         logger.info(f"  [TTS GEMINI 3.8 FLASH] Synthesizing multi-speaker batch '{batch.batch_id}' via '{model}'...")
         for network_attempt in range(3):
             if rate_limiter:
-                rate_limiter.acquire()
+                rate_limiter.acquire(model=model, api_key=api_key)
 
             t_req_start = time.perf_counter()
             req = urllib.request.Request(
@@ -724,7 +729,7 @@ def synthesize_gemini_multispeaker_batch(
                                 )
 
                         _atomic_replace(tmp_file, output_file)
-                        pool.record_success(api_key)
+                        pool.record_success(api_key, model=model)
                         run_id = os.environ.get("CURRENT_AUDIOBOOK_RUN_ID", "studio_run")
                         try:
                             from audiobook_factory.telemetry import get_telemetry_ledger
@@ -786,7 +791,7 @@ def synthesize_gemini_multispeaker_batch(
                     pass
 
                 if category == "DAILY_QUOTA_EXHAUSTED":
-                    pool.mark_daily_quota_exhausted(api_key, err)
+                    pool.mark_daily_quota_exhausted(api_key, err, model=model)
                     cadence.wait_for_key_switch(api_key[-6:], "next_project")
                     key_exhausted_or_invalid = True
                     break
@@ -797,14 +802,19 @@ def synthesize_gemini_multispeaker_batch(
                     break
 
                 elif category == "RPM_RATE_LIMIT":
-                    pool.mark_temporary_backoff(api_key, wait_sec, err)
-                    if rate_limiter and hasattr(rate_limiter, "trigger_global_pause"):
-                        rate_limiter.trigger_global_pause(wait_sec)
+                    pool.mark_temporary_backoff(api_key, wait_sec, err, model=model)
+                    if rate_limiter:
+                        if hasattr(rate_limiter, "trigger_key_pause"):
+                            rate_limiter.trigger_key_pause(api_key, wait_sec)
+                        if hasattr(rate_limiter, "trigger_model_pause"):
+                            rate_limiter.trigger_model_pause(model, wait_sec)
+                        elif hasattr(rate_limiter, "trigger_global_pause"):
+                            rate_limiter.trigger_global_pause(wait_sec)
                     key_exhausted_or_invalid = False
                     break
 
                 elif category == "TRANSIENT_SERVER_ERROR":
-                    pool.mark_temporary_backoff(api_key, wait_sec, err)
+                    pool.mark_temporary_backoff(api_key, wait_sec, err, model=model)
                     time.sleep(wait_sec)
                     continue
 

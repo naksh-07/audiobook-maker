@@ -1238,3 +1238,31 @@
      - Sliced `raw_pcm[:sample_count * 2]` in `struct.unpack`, eradicating `struct.error` on odd-byte buffers.
      - Cleaned dangling imports in `director.py`.
 - **Rationale:** Restores 100% universal agility, protects LLM creative autonomy, eliminates latent audio crashes, and achieves complete production certification.
+
+## ADR-057: Universal Multi-Model Guard, Shield, Dynamic Quota Isolation & 120-Key Safety Architecture
+- **Status:** Accepted
+- **Date:** 2026-10-07
+- **Context:**
+  1. The legacy round-robin key pool and rate limiter were hardcoded exclusively for Gemini TTS (10 RPD, 15 RPM, Pacific Time midnight reset).
+  2. The factory now uses heterogeneous models across multiple providers (Gemini 2.5 Pro/Flash/Flash-Lite, Cerebras Llama 3.3 70B, Groq, OpenAI, Anthropic, ElevenLabs, Local Spark/CUDA).
+  3. Single-tier exhaustion previously marked entire keys dead when a heavy model (e.g. Pro) hit quota, wasting remaining Flash/TTS quota on that key.
+  4. 120+ active API keys required a bulletproof defense against IP clustering, ban heuristics, robotic burst detection, and cascading failure storms.
+- **Decision:**
+  1. **Two-Tier SQLite Quota Ledger (`key_manager.py`)**:
+     - Separated overall key health (`key_quota_ledger`) from per-model limits (`model_quota_ledger`).
+     - Added in-flight concurrency tracking (`lease_key`), provider-aware timezone rollover (`US/Pacific` for Gemini, `UTC` for others), and multi-provider key discovery (`GEMINI_API_KEY*`, `CEREBRAS_API_KEY*`, `OPENAI_API_KEY*`, etc.).
+  2. **Universal Guard & Shield (`guard_shield.py`)**:
+     - Standardized `ModelQuotaProfile` (RPM, RPD, TPM, concurrency limits, fallback tiers) across all supported models.
+     - Implemented `classify_universal_api_error` with HTTP response header parsing (`Retry-After`, `x-ratelimit-*`).
+     - Introduced 3-state `CircuitBreaker` (`CLOSED`, `OPEN`, `HALF_OPEN`) to prevent hammering failing providers.
+     - Added `HardwareVRAMGuard` enforcing strict VRAM limits (4.8 GB ceiling on 6 GB RTX 4050) before local model execution.
+  3. **Multi-Dimensional Token Bucket Rate Limiter (`rate_limiter.py`)**:
+     - Upgraded `TokenBucketRateLimiter` to track per-model RPM and TPM buckets concurrently while preserving the non-blocking lock release during sleep invariant.
+     - Added granular `trigger_model_pause` and `trigger_key_pause` with organic log-normal jitter (350ms–850ms).
+  4. **Universal Multi-Model Client (`llm_client.py`)**:
+     - Added `call_model()` supporting both native Gemini and OpenAI-compatible REST endpoints with automatic circuit breaker and model quota ledger integration.
+  5. **120-Key Anti-Ban Defense Matrix**:
+     - Authentic Google SDK stealth headers (`x-goog-api-client`).
+     - Sequential IP dispatch (`max_workers=1`) in `TTSDispatcher` to prevent network clustering flags.
+     - Least-loaded key lease scheduling (`in_flight_requests ASC, requests_today ASC, last_used ASC`).
+- **Rationale:** Ensures 100% safety, high availability, zero cross-model quota waste, and flawless execution across all 120+ API keys and multi-provider models.

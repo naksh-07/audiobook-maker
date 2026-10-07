@@ -492,5 +492,36 @@ my_audiobook_project/
 ```
 
 ### 3. Fail-Closed Zero-Voice-Drift Guarantee
-1. **Multi-Script Alias Normalization**: When a script segment arrives with `"speaker": "विचर"` or `"speaker": "White_Wolf"`, `TTSDispatcher` automatically normalizes it to `"Geralt"`, extracting the canonical `Algenib` voice.
+1. **Multi-Script Alias Normalization**: When a script segment arrives with a character alias (e.g. Devanagari or epithet), `TTSDispatcher` automatically normalizes it to the canonical character name, extracting the locked voice ID.
 2. **Zero-Tolerance Pre-Flight Sweep**: Before a single API request is dispatched, `TTSDispatcher.synthesize_chapter_script()` sweeps all segments. If an unmapped character name is discovered, execution immediately halts with `UnregisteredSpeakerError`, shielding Gemini quotas from broken partial chapters.
+
+---
+
+## 🎭 7. Dynamic Regional Dialects & Youth / Child Voice Solutions (v4.0)
+
+### 7.1 Dynamic Regional Indian Dialect Engine
+With the integration of the full 2,089 voice catalog ([`VoiceCatalog`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/voice_catalog.py)), casting decisions are dynamically informed by LLM narrative analysis:
+- **Awadhi Hindi (UP)**: Lyrical, courteous, warm narrative cadence (`hi-in-assistant-11`, `hi-in-tutor-3`).
+- **Bhojpuri Hindi (Bihar)**: Earthy, rhythmic, punchy cadence (`hi-in-podcaster-2`, `hi-in-advisor-9`).
+- **Haryanvi Hindi (Haryana)**: Direct, robust, assertive cadence (`hi-in-podcaster-12`, `hi-in-commercial-8`).
+- **Bundeli Hindi (MP)**: Grounded, traditional, textured cadence (`hi-in-concierge-11`, `hi-in-csagent-3`).
+- **Urdu / Delhi Hindi**: Sophisticated, crisp, formal poetic cadence (`hi-in-techagent-12`, `hi-in-training-4`).
+
+### 7.2 The Child Voice Dilemma & Solutions
+Because Gemini Flash TTS lacks dedicated child voice models, standard TTS workflows either sound artificially distorted or mismatched. v4.0 introduces two battle-tested acoustic strategies:
+
+1. **The Anime Seiyū Technique (Young Boys & Girls <14yo)**:
+   - **Methodology**: Following the Japanese voice acting convention where adult female voice artists portray young male and female characters.
+   - **Casting**: High-pitched female base voice (e.g. `hi-in-commercial-5`, `hi-in-commercial-7`, `Kore`).
+   - **Formants**: $+10\text{--}15\%$ pitch shift (`asetrate=24000*1.12,aresample=24000`) paired with a high-frequency resonance boost (+2.5dB at 3.2kHz) and low-cut chest body attenuation (-4dB at 200Hz).
+   - **Result**: Crisp, expressive youthful voice without mechanical warble.
+
+2. **The Young Rustic Fighter Profile (Adolescent Boys 14–17yo)**:
+   - **Methodology**: For teenage boys whose voices have cracked, pitch-shifting sounds unnatural and female voices sound overly feminine.
+   - **Casting**: Young 22–23yo rustic male base voices (`hi-in-podcaster-12` Haryanvi or `hi-in-podcaster-2` Bhojpuri).
+   - **Formants**: Natural $F_0$ without artificial pitch transposition; tuned with physical presence EQ to convey lean, agile youth.
+
+### 7.3 Narrator Voice Alignment: First-Person vs. Third-Person
+- **Third-Person Omniscient**: `Aoede` remains the immutable studio benchmark for standard narrative prose.
+- **First-Person Protagonist POV**: If the story is told through the eyes of a specific male protagonist (e.g. a detective, warrior, or adventurer), `CharacterCaster` dynamically pairs the Narrator with the protagonist's vocal archetype to ensure narrative immersion.
+

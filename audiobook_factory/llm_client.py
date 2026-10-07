@@ -22,6 +22,11 @@ from audiobook_factory.logger import logger
 from audiobook_factory.key_manager import get_persistent_key_pool, classify_gemini_error
 from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
 from audiobook_factory.cadence import get_stealth_sdk_headers
+from audiobook_factory.guard_shield import (
+    get_circuit_breaker,
+    classify_universal_api_error,
+    HardwareVRAMGuard,
+)
 
 
 class GeminiPayloadError(RuntimeError):
@@ -186,18 +191,22 @@ def call_gemini(
         if not available_candidates:
             available_candidates = candidate_models
 
-        if attempt > 0 and len(available_candidates) > 1:
+        breaker = get_circuit_breaker()
+        healthy_candidates = [m for m in available_candidates if breaker.is_available("gemini", m)]
+        effective_candidates = healthy_candidates if healthy_candidates else available_candidates
+
+        if attempt > 0 and len(effective_candidates) > 1:
             # Automatic candidate rotation on retries/errors (never hammer a single model)
-            curr_model = available_candidates[attempt % len(available_candidates)]
-        elif model and model not in _models_safety_blocked:
+            curr_model = effective_candidates[attempt % len(effective_candidates)]
+        elif model and model not in _models_safety_blocked and breaker.is_available("gemini", model):
             curr_model = model
         else:
             try:
                 curr_model = model_mgr.resolve_active_model(task_type, api_key=curr_key)
-                if curr_model in _models_safety_blocked:
-                    curr_model = available_candidates[0]
+                if curr_model in _models_safety_blocked or not breaker.is_available("gemini", curr_model):
+                    curr_model = effective_candidates[0]
             except Exception:
-                curr_model = available_candidates[0]
+                curr_model = effective_candidates[0]
 
         # Determine whether current candidate model supports thinkingConfig
         use_thinking = (
@@ -219,7 +228,8 @@ def call_gemini(
                 raw_bytes = resp.read()
                 latency_sec = time.perf_counter() - t_req_start
                 data = json.loads(raw_bytes.decode("utf-8"))
-                pool.record_success(curr_key)
+                pool.record_success(curr_key, model=curr_model, provider="gemini", tokens_used=data.get("usageMetadata", {}).get("promptTokenCount", 0) + data.get("usageMetadata", {}).get("candidatesTokenCount", 0))
+                get_circuit_breaker().record_success("gemini", curr_model)
 
                 # Record Telemetry API Call
                 usage_meta = data.get("usageMetadata", {})
@@ -339,7 +349,18 @@ def call_gemini(
                 _thinking_disabled = True
                 continue
 
-            error_type, wait_sec, msg = classify_gemini_error(e.code, err_body)
+            err_headers = dict(e.headers) if hasattr(e, "headers") and e.headers else {}
+            classification = classify_universal_api_error(
+                status_code=e.code,
+                error_body=err_body,
+                headers=err_headers,
+                provider="gemini",
+                model=curr_model,
+            )
+            error_type = classification.category
+            wait_sec = classification.wait_sec
+            msg = classification.message
+
             preview = f"{curr_key[:6]}...{curr_key[-4:]}"
             logger.warning(
                 f"  [!] LLM HTTP {e.code} ({error_type}) on key {preview} (attempt {attempt + 1}/{max_retries}): {msg}"
@@ -371,13 +392,17 @@ def call_gemini(
                 logger.debug(f"[telemetry] Notice recording error telemetry: {t_err}")
 
             if error_type == "DAILY_QUOTA_EXHAUSTED":
-                pool.mark_daily_quota_exhausted(curr_key, msg)
-            elif error_type == "RPM_RATE_LIMIT":
-                pool.mark_temporary_backoff(curr_key, wait_sec, msg)
+                pool.mark_daily_quota_exhausted(curr_key, msg, model=curr_model, provider="gemini")
+                get_circuit_breaker().record_failure("gemini", curr_model, msg)
+            elif error_type in ("RPM_RATE_LIMIT", "TPM_RATE_LIMIT", "CONCURRENCY_LIMIT"):
+                pool.mark_temporary_backoff(curr_key, wait_sec, msg, model=curr_model, provider="gemini")
             elif error_type == "INVALID_KEY":
-                pool.mark_invalid(curr_key, msg)
+                pool.mark_invalid(curr_key, msg, provider="gemini")
+            elif error_type == "TRANSIENT_SERVER_ERROR":
+                pool.mark_temporary_backoff(curr_key, wait_sec, msg, model=curr_model, provider="gemini")
+                get_circuit_breaker().record_failure("gemini", curr_model, msg)
             else:
-                pool.mark_temporary_backoff(curr_key, 6.0, msg)
+                pool.mark_temporary_backoff(curr_key, 6.0, msg, model=curr_model, provider="gemini")
 
             # Jittered backoff before trying next round-robin key
             backoff_sleep = min(10.0, (1.5 * (attempt + 1)) + random.uniform(0.2, 0.8))
@@ -394,3 +419,128 @@ def call_gemini(
     raise LLMUnavailableError(
         f"STRICT HALT: Gemini LLM call failed for task '{task_type.value}' after {max_retries} retries: {last_error}"
     )
+
+
+def call_model(
+    prompt: str,
+    system_instruction: Optional[str] = None,
+    provider: str = "gemini",
+    model: Optional[str] = None,
+    task_type: TaskType = TaskType.UTILITY,
+    response_mime_type: str = "application/json",
+    temperature: Optional[float] = None,
+    max_output_tokens: int = 8192,
+    max_retries: int = 6,
+    timeout_sec: float = 45.0,
+    return_raw_text: bool = False,
+    **kwargs: Any,
+) -> Any:
+    """
+    Universal Multi-Provider LLM Caller with Round-Robin Rotation and Resilient Shield.
+    Routes seamlessly across Google Gemini, Cerebras, Groq, OpenRouter, OpenAI, and Local CUDA.
+    """
+    if provider == "gemini":
+        return call_gemini(
+            prompt=prompt,
+            system_instruction=system_instruction,
+            task_type=task_type,
+            response_mime_type=response_mime_type,
+            temperature=temperature,
+            max_output_tokens=max_output_tokens,
+            max_retries=max_retries,
+            timeout_sec=timeout_sec,
+            model=model,
+            return_raw_text=return_raw_text,
+            **kwargs,
+        )
+
+    # For OpenAI-compatible providers (Cerebras, Groq, OpenRouter, OpenAI, Local)
+    pool = get_persistent_key_pool()
+    breaker = get_circuit_breaker()
+
+    endpoint_map = {
+        "cerebras": "https://api.cerebras.ai/v1/chat/completions",
+        "groq": "https://api.groq.com/openai/v1/chat/completions",
+        "openrouter": "https://openrouter.ai/api/v1/chat/completions",
+        "openai": "https://api.openai.com/v1/chat/completions",
+        "local": os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:11435/v1") + "/chat/completions",
+    }
+    url = endpoint_map.get(provider, endpoint_map.get("openrouter", "https://api.cerebras.ai/v1/chat/completions"))
+    eff_model = model or ("llama3.3-70b" if provider == "cerebras" else "llama-3.3-70b-versatile")
+    is_gpu = (provider == "local")
+
+    last_err: Optional[Exception] = None
+    for attempt in range(max_retries):
+        if not breaker.is_available(provider, eff_model):
+            logger.warning(f"  [CIRCUIT BREAKER] {provider}/{eff_model} is OPEN. Waiting on cooldown...")
+            time.sleep(1.0)
+
+        try:
+            curr_key = pool.get_key(service="text", provider=provider, model=eff_model)
+        except Exception:
+            curr_key = "local-key" if provider == "local" else ""
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {curr_key}",
+            "User-Agent": "AudiobookFactory/2.0",
+        }
+
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        payload: Dict[str, Any] = {
+            "model": eff_model,
+            "messages": messages,
+            "temperature": temperature if temperature is not None else 0.7,
+            "max_tokens": max_output_tokens,
+        }
+        if response_mime_type == "application/json":
+            payload["response_format"] = {"type": "json_object"}
+
+        data_bytes = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
+
+        if is_gpu:
+            HardwareVRAMGuard.acquire(f"local_llm_{eff_model}")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+                resp_data = json.loads(resp.read().decode("utf-8"))
+                pool.record_success(curr_key, model=eff_model, provider=provider)
+                breaker.record_success(provider, eff_model)
+                content = resp_data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                if return_raw_text or response_mime_type != "application/json":
+                    return content
+                try:
+                    return json.loads(content)
+                except Exception:
+                    return json_repair.loads(content)
+        except urllib.error.HTTPError as e:
+            last_err = e
+            err_b = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
+            if hasattr(e, "close"):
+                e.close()
+            cls = classify_universal_api_error(e.code, err_b, headers=dict(e.headers), provider=provider, model=eff_model)
+            if cls.category == "DAILY_QUOTA_EXHAUSTED":
+                pool.mark_daily_quota_exhausted(curr_key, cls.message, model=eff_model, provider=provider)
+                breaker.record_failure(provider, eff_model, cls.message)
+            elif cls.category in ("RPM_RATE_LIMIT", "TPM_RATE_LIMIT", "CONCURRENCY_LIMIT"):
+                pool.mark_temporary_backoff(curr_key, cls.wait_sec, cls.message, model=eff_model, provider=provider)
+            elif cls.category == "TRANSIENT_SERVER_ERROR":
+                pool.mark_temporary_backoff(curr_key, cls.wait_sec, cls.message, model=eff_model, provider=provider)
+                breaker.record_failure(provider, eff_model, cls.message)
+            elif cls.category == "INVALID_KEY":
+                pool.mark_invalid(curr_key, cls.message, provider=provider)
+            time.sleep(cls.wait_sec if cls.wait_sec > 0 else 1.0)
+            continue
+        except Exception as ex:
+            last_err = ex
+            time.sleep(1.0)
+            continue
+        finally:
+            if is_gpu:
+                HardwareVRAMGuard.release(f"local_llm_{eff_model}")
+
+    raise LLMUnavailableError(f"STRICT HALT: {provider}/{eff_model} failed after {max_retries} attempts: {last_err}")
