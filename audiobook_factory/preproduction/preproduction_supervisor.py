@@ -277,12 +277,23 @@ class PreProductionSupervisor:
                 )
                 bible.characters[eng_name] = entity
 
+        if dossier and hasattr(dossier, "world_lore_entities") and dossier.world_lore_entities:
+            bible.locations.update(dossier.world_lore_entities.get("locations", {}))
+            bible.organizations.update(dossier.world_lore_entities.get("organizations", {}))
+            bible.creatures.update(dossier.world_lore_entities.get("creatures", {}))
+            bible.titles.update(dossier.world_lore_entities.get("titles", {}))
+            bible.terminology.update(dossier.world_lore_entities.get("terminology", {}))
+
         bible.locations.update(lexicon_data.get("locations", {}))
         bible.organizations.update(lexicon_data.get("organizations", {}))
         bible.creatures.update(lexicon_data.get("creatures", {}))
         bible.objects.update(lexicon_data.get("objects", {}))
         bible.terminology.update(lexicon_data.get("terminology", {}))
         bible.save(p_dir)
+        try:
+            bible.sync_pronunciation_lexicon(p_dir)
+        except Exception as e:
+            logger.warning(f"  [!] Lexicon sync notice: {e}")
 
         # 5. Lock Cast using CharacterCaster
         logger.info("  [Room 1 Finalize] Locking cast registry via CharacterCaster...")

@@ -145,7 +145,7 @@ class TranslationQualityCritic:
             "Requirements:\n"
             "1. REPAIR OMISSIONS: Ensure all dialogue turns, narrative beats, and descriptive details from the English source are fully translated.\n"
             "2. CANON TERMINOLOGY: Enforce exact Devanagari spellings for all character and place names from the glossary.\n"
-            "3. DIALOGUE FLOW: Maintain spoken Hindustani cadence, actor breath pauses (—, ..., ,), and earthy realism.\n"
+            "3. SPOKEN REGISTER & CADENCE: Eliminate stiff, textbook Sanskritized words ('नितंब' -> 'कमर/कूल्हे', 'वीरांगना' -> 'लड़ाकू औरतें', 'प्रस्ताव' -> 'सौदा/बात'). Maintain spoken Hindustani cadence, actor breath pauses (—, ..., ,), and earthy realism.\n"
             "4. ZERO CHATTER: Output ONLY the complete, repaired Devanagari Markdown text with zero meta-commentary."
         )
 

@@ -25,6 +25,10 @@ class HindustaniRegisterSpec(BaseModel):
     scholastic_and_courtly: List[str] = [
         "अदब", "तहज़ीब", "वजूद", "इल्म", "हुज़ूर", "सलाम", "हकीकत"
     ]
+    universal_idioms: List[str] = [
+        "लिख के ले लो", "मौत को दावत", "मौत के मुँह", "हाथ साफ़", "खाल उधेड़ना",
+        "टांग अड़ाना", "पीठ में छुरा", "पत्थर की लकीर", "सूरज का ढलना", "जुबान देना"
+    ]
 
 
 class HindustaniAuditResult(BaseModel):
@@ -41,7 +45,8 @@ class HindustaniRegisterEngine:
             self.spec.atmosphere_words +
             self.spec.passion_and_somatics +
             self.spec.combat_and_grit +
-            self.spec.scholastic_and_courtly
+            self.spec.scholastic_and_courtly +
+            self.spec.universal_idioms
         )
 
     @classmethod

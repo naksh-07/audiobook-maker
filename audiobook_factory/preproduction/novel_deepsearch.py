@@ -99,6 +99,15 @@ class DeepSearchNovelDossier(BaseModel):
     world_acoustics: WorldAcousticSetting = Field(default_factory=WorldAcousticSetting)
     musical_tradition: MusicalTradition = Field(default_factory=MusicalTradition)
     linguistic_dialect: LinguisticDialectProfile = Field(default_factory=LinguisticDialectProfile)
+    world_lore_entities: Dict[str, Dict[str, str]] = Field(
+        default_factory=lambda: {
+            "locations": {},
+            "creatures": {},
+            "organizations": {},
+            "titles": {},
+            "terminology": {},
+        }
+    )
     research_summary: str = Field(default="")
     search_citations: List[str] = Field(default_factory=list)
 
@@ -168,7 +177,9 @@ class NovelDeepSearchEngine:
             "4. Musical & Sonic Traditions: Authentic cultural and period instruments (e.g. Sitar/Sarangi/Bansuri for rural India, "
             "Jazz brass for 1940s noir, Lute/Bodhran for Celtic/medieval, Synthesizer/Industrial for cyberpunk).\n"
             "5. Linguistic Dialect & Register: Recommended Hindustani translation register, regional cadence (Awadhi, Bhojpuri, "
-            "Punjabi, Courtly Lucknowi, Modern Urban), and acceptable code-switching loanwords.\n\n"
+            "Punjabi, Courtly Lucknowi, Modern Urban), and acceptable code-switching loanwords.\n"
+            "6. World Lore Entities: Major universe locations, factions, creatures, monsters, weapons, titles, and lore terms "
+            "along with authentic Devanagari Hindi transliterations (e.g. locations: {Wyzima: विज़िमा}, creatures: {Basilisk: बेसिलिस्क}, titles: {Alderman: नगर प्रमुख / एल्डरमैन}).\n\n"
             "Return ONLY raw valid JSON matching the requested schema."
         )
 
@@ -222,6 +233,13 @@ Output JSON Schema:
     "regional_cadence": "string",
     "acceptable_loanwords": ["string"],
     "proverb_transposition_style": "string"
+  }},
+  "world_lore_entities": {{
+    "locations": {{"EnglishLocation": "DevanagariHindi"}},
+    "creatures": {{"EnglishCreature": "DevanagariHindi"}},
+    "organizations": {{"EnglishFaction": "DevanagariHindi"}},
+    "titles": {{"EnglishTitle": "DevanagariHindi"}},
+    "terminology": {{"EnglishTerm": "DevanagariHindi"}}
   }},
   "research_summary": "string (3-4 sentences synthesizing the novel's essence)",
   "search_citations": ["string"]

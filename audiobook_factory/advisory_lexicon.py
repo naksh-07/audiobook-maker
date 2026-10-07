@@ -55,9 +55,6 @@ class LiteraryAdvisoryDB:
     def seed_default_guidelines(self):
         """Populates the database with universal dark-fantasy Hindustani literary guidelines."""
         with self._connection() as conn:
-            count = conn.execute("SELECT COUNT(*) AS cnt FROM literary_advisory_rules;").fetchone()["cnt"]
-            if count > 0:
-                return
 
             default_rules = [
                 (
@@ -109,6 +106,30 @@ class LiteraryAdvisoryDB:
                     "dialogue",
                 ),
                 (
+                    "anatomy_somatics",
+                    "hips / bottom / waist / buttocks / thighs",
+                    "Translate descriptive anatomical references and posture with natural living spoken somatic terms: 'कमर', 'कूल्हे', 'पुट्ठे', 'जांघें'. Strictly ban archaic Sanskrit dictionary roots ('नितंब', 'कटि', 'उरु').",
+                    json.dumps(["कमर", "कूल्हे", "पुट्ठे", "जांघें"], ensure_ascii=False),
+                    json.dumps(["नितंब", "कटि", "उरु"], ensure_ascii=False),
+                    "global",
+                ),
+                (
+                    "social_transactions",
+                    "deal / proposal / agreement / bargain",
+                    "Translate character negotiations and deals with living spoken conversational terms: 'सौदा', 'बात', 'तय होना', 'जुबान'. Strictly ban corporate or bureaucratic terms like 'प्रस्ताव' or 'समझौता-पत्र'.",
+                    json.dumps(["सौदा", "बात", "तय होना", "जुबान"], ensure_ascii=False),
+                    json.dumps(["प्रस्ताव", "समझौता-पत्र"], ensure_ascii=False),
+                    "dialogue",
+                ),
+                (
+                    "warfare_archetypes",
+                    "warrior women / sellsword / cutthroat / insignia",
+                    "Translate combat archetypes and insignia with grounded dramatic descriptions: 'लड़ाकू औरतें / लड़ाकू महिलाएं', 'किराए के लड़ाके', 'कातिल', 'शाही मुहर / निशान'. Strictly ban textbook poetry cliches like 'वीरांगनाएं' or 'राजचिह्न'.",
+                    json.dumps(["लड़ाकू औरतें", "महिला योद्धा", "किराए के लड़ाके", "कातिल", "शाही मुहर"], ensure_ascii=False),
+                    json.dumps(["वीरांगनाएं", "राजचिह्न"], ensure_ascii=False),
+                    "global",
+                ),
+                (
                     "intimacy_somatics",
                     "somatic passion & dirty talk",
                     "Depict physical intimacy through somatic friction and breathing ('तपती कमर', 'भीगी प्यास', 'बेकाबू सांसें', 'कांपती उंगलियां', 'सीने पर नाखूनों का धंसना'). Strictly ban sterile clinical biology-textbook jargon.",
@@ -116,13 +137,35 @@ class LiteraryAdvisoryDB:
                     json.dumps(["योनि", "लिंग का संभोग"], ensure_ascii=False),
                     "intimacy",
                 ),
+                (
+                    "universal_idioms",
+                    "figurative tropes / certainty / mortality / conflict (Category A)",
+                    "Never translate figurative English expressions literally. Transpose them sense-for-sense into Universal Spoken Hindustani Idioms (Category A: 'लिख के ले लो', 'मौत को दावत देना', 'हाथ साफ़ करना', 'खाल उधेड़ना', 'टांग अड़ाना'). Strictly ban culturally bound Indian village/panchayat tropes (Category B: 'गंगा नहाना', 'पंचों का फैसला', 'अशर्फी', 'नाच न जाने आँगन टेढ़ा').",
+                    json.dumps(["लिख के ले लो", "मौत को दावत देना", "मौत के मुँह में कूदना", "हाथ साफ़ करना", "खाल उधेड़ना", "टांग अड़ाना", "पीठ में छुरा घोंपना"], ensure_ascii=False),
+                    json.dumps(["गंगा नहाना", "पंचों का फैसला", "नाच न जाने आँगन टेढ़ा", "दूध का दूध पानी का पानी"], ensure_ascii=False),
+                    "dialogue",
+                ),
+                (
+                    "anti_calque_defense",
+                    "English idioms (as sure as eggs is eggs / kick the bucket / keep your nose out)",
+                    "Robotic literal calques destroy dramatic immersion. If an English speaker uses a colloquial idiom, map the underlying emotional meaning directly to organic spoken Hindustani dialogue punchlines rather than translating words literally.",
+                    json.dumps(["सूरज का ढलना तय है", "पत्थर की लकीर", "जान गंवाना", "दखलंदाजी मत कर"], ensure_ascii=False),
+                    json.dumps(["अंडे अंडे हैं", "बाल्टी को लात मारना", "अपनी नाक बाहर रखो"], ensure_ascii=False),
+                    "global",
+                ),
             ]
 
-            conn.executemany("""
-                INSERT INTO literary_advisory_rules 
-                (category, source_concept, guidance_rule, recommended_vocabulary, banned_antipatterns, context_scope)
-                VALUES (?, ?, ?, ?, ?, ?);
-            """, default_rules)
+            for r in default_rules:
+                exists = conn.execute(
+                    "SELECT id FROM literary_advisory_rules WHERE category = ? AND source_concept = ?;",
+                    (r[0], r[1])
+                ).fetchone()
+                if not exists:
+                    conn.execute("""
+                        INSERT INTO literary_advisory_rules 
+                        (category, source_concept, guidance_rule, recommended_vocabulary, banned_antipatterns, context_scope)
+                        VALUES (?, ?, ?, ?, ?, ?);
+                    """, r)
             conn.commit()
 
     def get_formatted_prompt_guidelines(self) -> str:

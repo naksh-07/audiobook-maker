@@ -64,11 +64,12 @@ def evaluate_literary_naturalness(
 
         call_llm_fn = _default_llm
 
-    prompt = f"""You are an independent, highly critical literary editor for premier Hindi literature.
-Evaluate this TARGET HINDI TRANSLATION for Spoken Literary Naturalness:
-1. Does it sound like translated English ('translatese')? (e.g. awkward passive voice, literal English clauses)
-2. Are idioms natural to Hindustani or stiff literal translations?
-3. Would an educated Hindi reader find the cadence smooth and compelling?
+    prompt = f"""You are a Senior Audio Drama Dialogue Director auditing a Hindi adaptation for professional studio voice actors.
+Evaluate this TARGET HINDI TRANSLATION for Spoken Naturalness & Cinema Cadence:
+1. Does it sound like living, spoken dramatic Hindustani suitable for top-tier Netflix / HBO / Audible productions?
+2. Does it contain stiff textbook Sanskrit roots or academic Doordarshan terms (e.g. 'नितंब', 'प्रस्ताव', 'वीरांगना', 'दृष्टिगोचर') instead of natural spoken equivalents ('कमर/कूल्हे', 'सौदा/बात', 'लड़ाकू औरतें', 'दिखना')?
+3. Does it sound like awkward translated English ('translatese')?
+4. When characters are raw or in conflict, does the text preserve authentic visceral punch without moral sanitization?
 
 ### TARGET HINDI TEXT:
 \"\"\"

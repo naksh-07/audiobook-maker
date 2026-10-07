@@ -17,10 +17,11 @@
   - **Permissive Safety**: Verified `BLOCK_NONE` safety threshold configured across all generative LLM & TTS pipelines.
 - **CLI Commands**:
   `audiobook_cli.py [extract|translate|script|synthesize|master|package|produce|auto|audit|audit-book]`
-- **Active Sprint - Chapter 2 Forensic Audit (Marked Unstable)**:
-  - `Sword of Destiny` Ch 2 Pilot produced: 81 segments synthesized via Gemini Flash TTS.
-  - Forensic audit identified 3 core pipeline defects:
-    1. Translation instability, Tat-sama Sanskritization, & Conan Doyle/modern seed lexicon pollution.
-    2. Screenplay dialogue mixing & $A \leftrightarrow B$ swaps due to naive pronoun fallback & split narrative tags.
-    3. Voice convergence due to `AUDIBLE_CLEAN_DSP` bypassing 4D acoustic formants and baritone clustering.
-  - Codebase status: UNSTABLE pending iterative remediation across Rooms 1-5.
+- **Active Sprint - Chapter 2 Pilot Remediation**:
+  - **Issue 1 (Translation & Lexicon Hygiene) [RESOLVED & VERIFIED]**:
+    - Purged seed lexicon contamination; 100% dynamic novel-agnostic lexicon.
+    - Fixed BookBible category routing (locations, creatures, titles partitioned).
+    - Shifted persona to Netflix/HBO Dialogue Adapter with 4-Tier Cognitive Semantic Register Ladder (zero hardcoded word replacements).
+    - **Universal Idiomatic Transposition ('Pinch of Salt') Framework**: Category A (Universal Spoken Idioms) vs Category B (Banned Village Parody) implemented across `DraftTranslator`, `CadenceSpecialist`, `IdiomDramaturge`, and `AdvisoryLexiconDB`. Live verified on Gemini Flash (*"लिख के ले लो"*, *"मौत के मुँह में कूदना"*, *"टांग अड़ाना"*, *"खाल उधेड़ना"*). 16 unit tests passing.
+  - **Issue 2 (Screenplay Attribution & $A \leftrightarrow B$ Swaps)**: Pending next.
+  - **Issue 3 (Voice Convergence & 4D Acoustic Formants Restore)**: Pending.

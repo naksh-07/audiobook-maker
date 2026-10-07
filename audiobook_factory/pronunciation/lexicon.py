@@ -10,7 +10,7 @@ import os
 import json
 import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set, ClassVar
 from pydantic import BaseModel, Field
 
 from audiobook_factory.audio_utils import _atomic_replace
@@ -222,8 +222,11 @@ class PronunciationLexicon(BaseModel):
                 with open(target, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 lex = cls.model_validate(data)
+                pruned = lex.prune_polluted_entries()
                 if book_bible:
                     lex.sync_from_book_bible(book_bible)
+                if pruned > 0:
+                    lex.save(project_dir)
                 return lex
             except Exception:
                 pass
@@ -236,117 +239,25 @@ class PronunciationLexicon(BaseModel):
             lex.save(project_dir)
         return lex
 
+    POLLUTED_LEGACY_IDS: ClassVar[Set[str]] = {
+        "fbi", "cbi", "who", "vip", "sherlock_holmes", "sherlock", "holmes", 
+        "dr_watson", "watson", "moriarty", "baker_street"
+    }
+
+    def prune_polluted_entries(self) -> int:
+        """Removes legacy hardcoded seed entries from an existing lexicon."""
+        removed = 0
+        for pid in list(self.entries.keys()):
+            if pid in self.POLLUTED_LEGACY_IDS:
+                del self.entries[pid]
+                removed += 1
+        return removed
+
     def seed_default_lexicon(self) -> None:
-        """Pre-seeds standard high-frequency difficult names and terms."""
-        defaults = [
-            # Acronyms & Organizations
-            PronunciationEntry(
-                canonical_id="fbi",
-                canonical_text="FBI",
-                spoken_form="एफ़.बी.आई.",
-                pronunciation_hint="एफ़.बी.आई.",
-                category="acronym",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="cbi",
-                canonical_text="CBI",
-                spoken_form="सी.बी.आई.",
-                pronunciation_hint="सी.बी.आई.",
-                category="acronym",
-                expected_language=SpokenLanguage.HINDI,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="who",
-                canonical_text="WHO",
-                spoken_form="डब्ल्यू.एच.ओ.",
-                pronunciation_hint="डब्ल्यू.एच.ओ.",
-                category="acronym",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="vip",
-                canonical_text="VIP",
-                spoken_form="वी.आई.पी.",
-                pronunciation_hint="वी.आई.पी.",
-                category="acronym",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            # Benchmark foreign / English proper nouns in Hindi context (Option 1A Hybrid)
-            PronunciationEntry(
-                canonical_id="sherlock_holmes",
-                canonical_text="Sherlock Holmes",
-                aliases=["शरलॉक होम्स"],
-                spoken_form="शरलॉक होम्स",
-                pronunciation_hint="शरलॉक होम्स",
-                category="character",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="sherlock",
-                canonical_text="Sherlock",
-                aliases=["शरलॉक"],
-                spoken_form="शरलॉक",
-                pronunciation_hint="शरलॉक",
-                category="character",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="holmes",
-                canonical_text="Holmes",
-                aliases=["होम्स"],
-                spoken_form="होम्स",
-                pronunciation_hint="होम्स",
-                category="character",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="dr_watson",
-                canonical_text="Dr. Watson",
-                aliases=["डॉक्टर वॉटसन"],
-                spoken_form="डॉक्टर वॉटसन",
-                pronunciation_hint="डॉक्टर वॉटसन",
-                category="character",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="watson",
-                canonical_text="Watson",
-                aliases=["वॉटसन"],
-                spoken_form="वॉटसन",
-                pronunciation_hint="वॉटसन",
-                category="character",
-                expected_language=SpokenLanguage.ENGLISH,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-            PronunciationEntry(
-                canonical_id="baker_street",
-                canonical_text="Baker Street",
-                aliases=["बेकर स्ट्रीट"],
-                spoken_form="बेकर स्ट्रीट",
-                pronunciation_hint="बेकर स्ट्रीट",
-                category="location",
-                expected_language=SpokenLanguage.FOREIGN,
-                status=PronunciationStatus.VERIFIED,
-                source=PronunciationSource.CANONICAL_LEXICON,
-            ),
-        ]
-        for d in defaults:
-            self.add_entry(d)
+        """Pre-seeds standard phonetic patterns (100% universal and novel-agnostic).
+        Fictional characters and universe-specific lore MUST be dynamically synced
+        from BookBible and source novel text, never hardcoded.
+        """
+        # Kept strictly novel-agnostic: relies on sync_from_book_bible()
+        pass
+

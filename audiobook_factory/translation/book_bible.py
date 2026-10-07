@@ -409,31 +409,78 @@ class BookBible(BaseModel):
 
     def propose_new_entity(self, entity: BookEntity, chapter_num: int) -> bool:
         """
-        Auto-commits high-confidence non-conflicting new entities.
+        Auto-commits high-confidence non-conflicting new entities into their respective category.
         If ambiguity or contradiction is detected, logs a flagged conflict.
         """
-        # Check for existing canonical entity with same name
-        existing = self.characters.get(entity.english_name)
-        if existing:
-            # Check for conflict in Hindi spelling or gender
-            if existing.hindi_name != entity.hindi_name:
+        cat = (entity.category or "character").lower().strip()
+
+        # 1. Characters
+        if cat in ("character", "person"):
+            existing = self.characters.get(entity.english_name)
+            if existing:
+                if existing.hindi_name != entity.hindi_name:
+                    self.flagged_conflicts.append(
+                        FlaggedConflict(
+                            entity_or_concept=entity.english_name,
+                            source_chapter=chapter_num,
+                            conflict_type="name_spelling",
+                            description=f"Candidate spelling '{entity.hindi_name}' contradicts canonical '{existing.hindi_name}'",
+                            candidate_data=entity.model_dump(),
+                        )
+                    )
+                    return False
+                return True
+
+            if entity.confidence >= 0.8:
+                entity.is_canonical = True
+                self.characters[entity.english_name] = entity
+                return True
+            else:
+                self.candidate_entities.append(entity)
+                return False
+
+        # 2. Locations, Creatures, Organizations, Objects, Titles, Terminology
+        cat_map = {
+            "location": self.locations,
+            "place": self.locations,
+            "creature": self.creatures,
+            "monster": self.creatures,
+            "beast": self.creatures,
+            "organization": self.organizations,
+            "faction": self.organizations,
+            "guild": self.organizations,
+            "object": self.objects,
+            "artifact": self.objects,
+            "weapon": self.objects,
+            "item": self.objects,
+            "title": self.titles,
+            "rank": self.titles,
+            "terminology": self.terminology,
+            "lore": self.terminology,
+            "term": self.terminology,
+        }
+        target_dict = cat_map.get(cat, self.terminology)
+        existing_val = target_dict.get(entity.english_name)
+        new_val = entity.hindi_name or entity.english_name
+
+        if existing_val:
+            if existing_val != new_val:
                 self.flagged_conflicts.append(
                     FlaggedConflict(
                         entity_or_concept=entity.english_name,
                         source_chapter=chapter_num,
                         conflict_type="name_spelling",
-                        description=f"Candidate spelling '{entity.hindi_name}' contradicts canonical '{existing.hindi_name}'",
+                        description=f"Candidate {cat} '{new_val}' contradicts canonical '{existing_val}'",
                         candidate_data=entity.model_dump(),
                     )
                 )
                 return False
             return True
 
-        # Non-conflicting: auto-commit if confidence is high
         if entity.confidence >= 0.8:
-            entity.is_canonical = True
-            self.characters[entity.english_name] = entity
+            target_dict[entity.english_name] = new_val
             return True
         else:
             self.candidate_entities.append(entity)
             return False
+
