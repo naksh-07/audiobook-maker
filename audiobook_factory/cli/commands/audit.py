@@ -60,6 +60,9 @@ def cmd_audit(args):
         print(f"  Gate 3 (Scenes Source): {report['gate_3']['status']} ({acts_label})")
         if "gate_4_ledger" in report:
             print(f"  Gate 4.5 (Timeline):   {report['gate_4_ledger']['status']} ({report['gate_4_ledger']['total_segments']} segments, {report['gate_4_ledger']['total_timeline_sec']}s, pause silence: {report['gate_4_ledger']['silence_percentage']}%)")
+        if "gate_5_master" in report:
+            g5 = report["gate_5_master"]
+            print(f"  Gate 5 (Broadcast EBU R128): {g5['status']} ({g5['integrated_lufs']:.1f} LUFS, Peak: {g5['true_peak_dbtp']:.1f} dBTP, {g5['duration_sec']}s)")
         print("=" * 60)
     except GateAuditError as e:
         print(f"\n[FAIL] Gate Audit Error: {e}", file=sys.stderr)

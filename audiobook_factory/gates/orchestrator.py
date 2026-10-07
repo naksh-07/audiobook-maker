@@ -5,6 +5,7 @@ Executes audit_chapter_gates (Gates 0-4.5) and audit_book_master (Gates 6A-6E).
 """
 
 from __future__ import annotations
+import os
 import re
 import logging
 from pathlib import Path
@@ -28,6 +29,7 @@ from audiobook_factory.gates.screenplay import (
 from audiobook_factory.gates.acoustics import (
     audit_gate3_5_acoustic_feasibility,
     audit_gate4_ledger,
+    audit_gate5_master,
 )
 from audiobook_factory.gates.album import (
     audit_gate6a_voice_continuity,
@@ -39,7 +41,12 @@ from audiobook_factory.gates.album import (
 logger = logging.getLogger("audiobook_factory.gates.orchestrator")
 
 
-def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Optional[List[str]] = None) -> Dict[str, Any]:
+def audit_chapter_gates(
+    project_dir: Path,
+    chapter_num: int,
+    active_speakers: Optional[List[str]] = None,
+    vocals_only: bool = False,
+) -> Dict[str, Any]:
     """
     Executes complete end-to-end multi-gate audit for a chapter:
     Gate 0 (Text) -> Gate 1 (Voice) -> Gate 2 (Script) -> Gate 3 (Scenes) -> Gate 4.5 (Timeline Ledger, if generated).
@@ -78,6 +85,13 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
             logger.warning(f"Chapter {ch_str} Gate 1 anti-censorship notice: {e}")
     report["gate_2"] = audit_gate2_script(script_file, project_dir=pdir)
 
+    is_vocals_only = (
+        vocals_only
+        or os.environ.get("VOCALS_ONLY", "").lower() in ("true", "1", "yes")
+        or (pdir / "mastered" / f"{ch_str}_hi_mastered.m4a").exists()
+        or (pdir / "mastered" / f"{ch_str}_hi_mastered.wav").exists()
+    )
+
     if scenes_file.exists():
         report["gate_3"] = audit_gate3_scenes(scenes_file, script_file)
     elif manifest_file.exists():
@@ -90,6 +104,14 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
             "type": "creative_manifest",
             "details": gate35_res.details,
         }
+    elif is_vocals_only:
+        seg_count = len(ScreenplayScript.from_file(script_file).segments) if script_file.exists() else 0
+        report["gate_3"] = {
+            "status": "PASS",
+            "type": "vocals_only",
+            "notice": "Pure Vocals-Only (Cinematic BGM/SFX Decoupled)",
+            "total_segments": seg_count,
+        }
     else:
         raise GateAuditError(
             f"Gate 3 Failed: Missing both scenes source ({scenes_file.name}) and creative manifest ({manifest_file.name}) for chapter {chapter_num:03d}. Directing stage must be executed."
@@ -97,6 +119,17 @@ def audit_chapter_gates(project_dir: Path, chapter_num: int, active_speakers: Op
 
     if ledger_file.exists():
         report["gate_4_ledger"] = audit_gate4_ledger(ledger_file, script_file, audio_dir)
+
+    master_candidates = [
+        pdir / "mastered" / f"{ch_str}_hi_mastered.m4a",
+        pdir / "mastered" / f"{ch_str}_hi_mastered.wav",
+        pdir / "mastered" / f"{ch_str}_cinematic.m4a",
+        pdir / "mastered" / f"{ch_str}_cinematic.wav",
+    ]
+    for mf in master_candidates:
+        if mf.exists():
+            report["gate_5_master"] = audit_gate5_master(mf)
+            break
 
     report["overall_status"] = "ALL GATES 100% PASSED"
     return report

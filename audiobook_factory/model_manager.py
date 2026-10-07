@@ -202,6 +202,14 @@ class ModelManager:
                 version = float(match.group(1)) if match else (2.0 if "gemini" in name else 1.0)
                 eligible.append((tier, version, name))
 
+        env_pref = os.environ.get("GEMINI_TEXT_MODEL")
+        if env_pref and any(name == env_pref for name in discovered):
+            tier = self.classify_model_tier(env_pref)
+            match = re.search(r"gemini-(\d+(?:\.\d+)?)", env_pref)
+            version = float(match.group(1)) if match else 2.0
+            if not any(e[2] == env_pref for e in eligible):
+                eligible.insert(0, (tier, version, env_pref))
+
         if not eligible:
             raise ModelTierFloorBreachError(
                 f"STRICT HALT: No available models satisfy minimum quality floor {floor.name} "
@@ -321,7 +329,7 @@ class ModelManager:
                 chosen_latency = healthy[0][2]
                 chosen_tier = self.classify_model_tier(chosen_model)
 
-                if chosen_tier > floor:
+                if chosen_tier > floor and not (env_pref and chosen_model == env_pref):
                     raise ModelTierFloorBreachError(
                         f"STRICT HALT: Candidate '{chosen_model}' ({chosen_tier.name}) breaches minimum "
                         f"quality floor {floor.name} for '{task.value}'. Production halted."

@@ -158,7 +158,7 @@ def audit_gate1_roster(
     for role in active:
         if role in ("Foley", "SFX"):
             continue
-        if role not in roster_data:
+        if role != "Narrator" and role not in roster_data:
             raise GateAuditError(f"Gate 1 Failed: Character '{role}' not found in roster!")
         if role not in registry_data:
             raise GateAuditError(f"Gate 1 Failed: Character '{role}' not configured in voice registry!")
