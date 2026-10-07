@@ -80,6 +80,8 @@ def main():
     p_script.add_argument("book", help="Project book slug")
     p_script.add_argument("--hindi", action="store_true", help="Use translated Hindi chapters")
     p_script.add_argument("--dramatized", action="store_true", help="Multi-voice character attribution mode")
+    p_script.add_argument("--flow", action="store_true", default=True, help="Enable Audible Flow mode (preserves prose and tags, eliminates Foley)")
+    p_script.add_argument("--cast-mode", choices=["ensemble", "solo"], default="ensemble", help="Cast mode: ensemble (multi-voice cast) or solo (master narrator)")
     p_script.add_argument("--chapter", type=int, default=None, help="Specific chapter number to script")
     p_script.add_argument("--chapters", type=str, default=None, help="Comma-separated or range of chapters (e.g. 1-2 or 1,2)")
     p_script.add_argument("--overwrite", action="store_true", help="Overwrite existing script files")
@@ -111,6 +113,8 @@ def main():
     p_auto.add_argument("--backend", default="gemini_tts", choices=["gemini_tts"], help="TTS engine (default: gemini_tts)")
     p_auto.add_argument("--voice", default="Aoede", help="Voice persona")
     p_auto.add_argument("--dramatized", action="store_true", help="Multi-voice dramatization")
+    p_auto.add_argument("--flow", action="store_true", default=True, help="Enable Audible Flow mode (preserves prose and tags)")
+    p_auto.add_argument("--cast-mode", choices=["ensemble", "solo"], default="ensemble", help="Cast mode: ensemble or solo")
     p_auto.add_argument("--cover", default=None, help="Cover art image path")
     p_auto.add_argument("--workers", default=3, type=int, help="Number of concurrent TTS synthesis workers (default: 3)")
     p_auto.add_argument("--force-gate", action="store_true", help="Bypass Extraction Quality Gate REVIEW failure and force production")
@@ -124,6 +128,7 @@ def main():
     p_produce.add_argument("--all", action="store_true", help="Produce all chapters in sequence")
     p_produce.add_argument("--voice", default="Aoede", help="Lead voice persona")
     p_produce.add_argument("--workers", default=3, type=int, help="TTS synthesis workers")
+    p_produce.add_argument("--clean-dsp", action="store_true", default=True, help="Clean studio vocal DSP without pitch shifting")
 
     # audit
     p_audit = subparsers.add_parser("audit", help="Run multi-gate verification audit on a chapter")

@@ -280,7 +280,7 @@ class PronunciationLexicon(BaseModel):
                 status=PronunciationStatus.VERIFIED,
                 source=PronunciationSource.CANONICAL_LEXICON,
             ),
-            # Classic foreign / English proper nouns in Hindi context
+            # Benchmark foreign / English proper nouns in Hindi context (Option 1A Hybrid)
             PronunciationEntry(
                 canonical_id="sherlock_holmes",
                 canonical_text="Sherlock Holmes",

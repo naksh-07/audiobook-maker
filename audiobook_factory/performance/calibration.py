@@ -279,7 +279,7 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="whisper_intimate",
                 title="Intimate Confession",
-                speaker="Yennefer",
+                speaker="Sorceress",
                 text="Listen to me. If we don't move now, neither of us survives the dawn.",
                 direction={
                     "surface_emotion": "whisper_intimate",
@@ -309,7 +309,7 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="restrained_grief",
                 title="Restrained Grief",
-                speaker="Geralt",
+                speaker="Veteran_Warrior",
                 text="I couldn't reach her in time. The fire was already inside the tower.",
                 direction={
                     "surface_emotion": "grief",
@@ -340,8 +340,8 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="explosive_rage",
                 title="Explosive Battle Rage",
-                speaker="Dijkstra",
-                text="Treason! Every man on the ramparts—draw steel and butcher them all!",
+                speaker="Commander",
+                text="Treason! Every man on the ramparts—draw steel and defend the wall!",
                 direction={
                     "surface_emotion": "bellowing_rage",
                     "intensity": "explosive",
@@ -369,7 +369,7 @@ class PerformanceCalibrationCorpus:
                 mode_id="calm_exposition",
                 title="Epic Worldbuilding Exposition",
                 speaker="Narrator",
-                text="The pass of Kaer Morhen lay blanketed in three feet of bitter November snow.",
+                text="The northern mountain pass lay blanketed in three feet of bitter November snow.",
                 direction={
                     "surface_emotion": "neutral",
                     "intensity": "medium",
@@ -396,7 +396,7 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="intimate_dialogue",
                 title="Tender Romantic Dialogue",
-                speaker="Yennefer",
+                speaker="Sorceress",
                 text="You always look at me as though I might vanish into the mist.",
                 direction={
                     "surface_emotion": "tender_affection",
@@ -425,7 +425,7 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="fast_rally",
                 title="Rapid Combat Sparring Dialogue",
-                speaker="Jaskier",
+                speaker="Companion",
                 text="Quick! The window or the stairs? Decide before the guard breaks the latch!",
                 direction={
                     "surface_emotion": "frantic_urgency",
@@ -452,7 +452,7 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="cold_sarcasm",
                 title="Cold Venomous Sarcasm",
-                speaker="Philippa",
+                speaker="Noblewoman",
                 text="How marvelous of you to arrive precisely when all the danger has passed.",
                 direction={
                     "surface_emotion": "cold_condescension",
@@ -481,7 +481,7 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="breathless_panic",
                 title="Wounded Combat Strain",
-                speaker="Cahir",
+                speaker="Wounded_Knight",
                 text="The... the blade was poisoned. Bind it tight, before it reaches the vein.",
                 direction={
                     "surface_emotion": "pain_panic",
@@ -510,8 +510,8 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="authoritative_command",
                 title="Royal Imperial Command",
-                speaker="Emhyr",
-                text="Bow, Witcher. Or leave your head upon my carpet.",
+                speaker="Emperor",
+                text="Bow, traveler. Or leave your head upon my carpet.",
                 direction={
                     "surface_emotion": "stone_authority",
                     "intensity": "high",
@@ -540,7 +540,7 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="submissive_plea",
                 title="Desperate Submissive Plea",
-                speaker="Dudu",
+                speaker="Fugitive",
                 text="Please, don't turn me over to them. I have nowhere left to run.",
                 direction={
                     "surface_emotion": "desperate_fear",
@@ -569,8 +569,8 @@ class PerformanceCalibrationCorpus:
             CalibrationCorpusEntry(
                 mode_id="hesitant_confession",
                 title="Hesitant Reluctant Truth",
-                speaker="Triss",
-                text="I... I knew about the lodge's plan all along. I should have told you.",
+                speaker="Sorceress_Friend",
+                text="I... I knew about the secret plot all along. I should have told you.",
                 direction={
                     "surface_emotion": "shame_hesitation",
                     "intensity": "low",
@@ -599,7 +599,7 @@ class PerformanceCalibrationCorpus:
                 mode_id="formal_exposition",
                 title="Grand Court Announcement",
                 speaker="Herald",
-                text="Hear ye all! By royal decree of King Foltest, the tournament of arms begins.",
+                text="Hear ye all! By royal decree of the King, the tournament of arms begins.",
                 direction={
                     "surface_emotion": "formal_grandeur",
                     "intensity": "high",

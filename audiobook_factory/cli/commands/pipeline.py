@@ -55,14 +55,22 @@ def cmd_translate(args):
 def cmd_script(args):
     project_dir = get_projects_dir() / args.book
     chapters = _parse_chapters_arg(args)
+    if getattr(args, "flow", True):
+        os.environ["AUDIBLE_FLOW_MODE"] = "true"
+        os.environ["AUDIBLE_CLEAN_DSP"] = "true"
+        os.environ["AUDIBLE_ROOM_TONE"] = "true"
+
+    cast_mode = getattr(args, "cast_mode", "ensemble")
+    dramatized = (cast_mode != "solo") if hasattr(args, "cast_mode") else args.dramatized
+
     scripts_dir = generate_project_scripts(
         project_dir,
         use_hindi=args.hindi,
-        dramatized=args.dramatized,
+        dramatized=dramatized,
         overwrite=getattr(args, "overwrite", False),
         chapters=chapters,
     )
-    print(f"\n[OK] Scripts ready at: {scripts_dir}")
+    print(f"\n[OK] Scripts ready at: {scripts_dir} (Mode: {cast_mode.upper()})")
 
 
 
@@ -78,9 +86,19 @@ def cmd_synthesize(args):
         default_voice=args.voice,
     )
 
-    script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
-    if not script_files:
+    raw_script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
+    if not raw_script_files:
         raise FileNotFoundError(f"No script files found in {scripts_dir}")
+
+    # Deduplicate script files per chapter number (prefer _hi_script.json if both exist)
+    scripts_by_ch: dict[int, Path] = {}
+    for sf in raw_script_files:
+        m = re.search(r"chapter_(\d+)", sf.stem)
+        ch_num = int(m.group(1)) if m else 1
+        if ch_num not in scripts_by_ch or "_hi_script" in sf.stem:
+            scripts_by_ch[ch_num] = sf
+
+    script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys())]
 
     for sf in script_files:
         m = re.search(r"chapter_(\d+)", sf.stem)
@@ -98,7 +116,20 @@ def cmd_master(args):
     mastered_dir.mkdir(parents=True, exist_ok=True)
 
     scripts_dir = project_dir / "scripts"
-    script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
+    raw_script_files = sorted(scripts_dir.glob("chapter_*_script.json"))
+
+    scripts_by_ch: dict[int, Path] = {}
+    for sf in raw_script_files:
+        m = re.search(r"chapter_(\d+)", sf.stem)
+        ch_num = int(m.group(1)) if m else 1
+        if ch_num not in scripts_by_ch or "_hi_script" in sf.stem:
+            scripts_by_ch[ch_num] = sf
+
+    script_files = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys())]
+
+    from audiobook_factory.orchestration.dialogue_runner import process_and_master_dialogue_stem
+    from audiobook_factory.tts.constants import get_ffmpeg
+    import subprocess
 
     for sf in script_files:
         chap_stem = sf.stem.replace("_script", "")
@@ -119,15 +150,43 @@ def cmd_master(args):
                     seg_dict[s_idx] = p
         segments = [seg_dict[k] for k in sorted(seg_dict.keys())] if seg_dict else raw_segments
 
+        with open(sf, "r", encoding="utf-8") as f:
+            script_data = json.load(f)
+
+        vocal_wav, vocal_dur, seg_durations, _ = process_and_master_dialogue_stem(
+            project_dir=project_dir,
+            chapter_num=ch_num,
+            chap_stem=chap_stem,
+            script_data=script_data,
+            audio_dir=audio_dir,
+            mastered_dir=mastered_dir,
+            spatial_staging=getattr(args, "spatial_staging", False),
+            segment_files=segments,
+        )
+
         out_file = mastered_dir / f"{chap_stem}_mastered.m4a"
-        concatenate_and_master_chapter(segments, out_file)
+        ff = get_ffmpeg()
+        cmd_enc = [
+            ff, "-y",
+            "-i", str(vocal_wav),
+            "-c:a", "aac", "-b:a", "192k",
+            str(out_file),
+        ]
+        subprocess.run(cmd_enc, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=300.0)
 
     print(f"\n[OK] All chapters mastered at: {mastered_dir}")
 
 
 
 def cmd_produce(args):
-    """Single-command cinematic chapter or full-book production using 5-track standard."""
+    """Single-command chapter or full-book production (Vocals-Only Audible Standard)."""
+    if getattr(args, "flow", True):
+        os.environ["AUDIBLE_FLOW_MODE"] = "true"
+        os.environ["AUDIBLE_CLEAN_DSP"] = "true"
+        os.environ["AUDIBLE_ROOM_TONE"] = "true"
+    if getattr(args, "clean_dsp", False):
+        os.environ["AUDIBLE_CLEAN_DSP"] = "true"
+
     project_dir = get_projects_dir() / args.book
     orchestrator = PipelineOrchestrator(get_projects_dir())
 
@@ -145,7 +204,14 @@ def cmd_produce(args):
         print(f"     Duration    : {res['duration_min']} minutes ({res['total_segments']} segments)")
     elif args.all:
         scripts_dir = project_dir / "scripts"
-        scripts = sorted(scripts_dir.glob("chapter_*_script.json"))
+        raw_scripts = sorted(scripts_dir.glob("chapter_*_script.json"))
+        scripts_by_ch: dict[int, Path] = {}
+        for sf in raw_scripts:
+            m = re.search(r"chapter_(\d+)", sf.stem)
+            ch_num = int(m.group(1)) if m else 1
+            if ch_num not in scripts_by_ch or "_hi_script" in sf.stem:
+                scripts_by_ch[ch_num] = sf
+        scripts = [scripts_by_ch[k] for k in sorted(scripts_by_ch.keys())]
         print(f"[*] Producing all {len(scripts)} chapters for '{args.book}' (Vocals-Only)...")
         for s_file in scripts:
             m = re.search(r"chapter_(\d+)", s_file.stem, re.IGNORECASE)
@@ -170,11 +236,19 @@ def cmd_auto(args):
     force_gate = getattr(args, "force_gate", False)
     chapters = _parse_chapters_arg(args)
 
+    if getattr(args, "flow", True):
+        os.environ["AUDIBLE_FLOW_MODE"] = "true"
+        os.environ["AUDIBLE_CLEAN_DSP"] = "true"
+        os.environ["AUDIBLE_ROOM_TONE"] = "true"
+
+    cast_mode = getattr(args, "cast_mode", "ensemble")
+    dramatized = (cast_mode != "solo") if hasattr(args, "cast_mode") else args.dramatized
+
     orchestrator = PipelineOrchestrator(get_projects_dir())
     orchestrator.run_autonomous_pipeline(
         input_file=input_file,
         hindi=args.hindi,
-        dramatized=args.dramatized,
+        dramatized=dramatized,
         voice=args.voice,
         cover_image=cover,
         workers=workers,

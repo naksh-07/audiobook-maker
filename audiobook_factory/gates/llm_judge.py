@@ -387,8 +387,8 @@ class LLMTranslationJudge(BaseLLMJudge):
     """
 
     SYSTEM_INSTRUCTION = (
-        "You are an elite, uncompromising literary translation critic for dark fantasy and epic literature "
-        "(Sapkowski, Martin, Tolkien rendered into dramatic Hindustani / Devanagari). "
+        "You are an elite, uncompromising literary translation critic for dramatic fiction and world literature "
+        "rendered into authentic, nuanced literary Hindustani / Devanagari. "
         "Your task is to conduct a forensic literary audit between the source text and the translated prose.\n\n"
         "Core Evaluation Mandates:\n"
         "1. SENSE-FOR-SENSE ACCURACY: Verify that dramatic subtext, character motivation, and narrative events "
@@ -521,7 +521,7 @@ Audit the speaker attribution and output JSON:
 EVALUATION GUIDELINES:
 1. Segments are stratified across Act 1, Act 2, and Act 3 matching the source excerpts.
 2. ONLY flag a line as hallucinated if it introduces fabricated events, modern concepts, or contradicts the story. Do NOT flag a line as hallucinated merely because its surrounding transitional beat is not visible in the stratified excerpt window.
-3. FAIL if a canonical character's line is assigned to Narrator or the wrong character.
+3. FAIL if a canonical character's line is assigned to Narrator or the wrong character. (In Audible Flow Mode, narrative prose with authorial tags is expected).
 """
         verdict = cls.evaluate_with_llm(
             prompt=prompt,
@@ -530,7 +530,12 @@ EVALUATION GUIDELINES:
             temperature=0.1,
         )
 
-        if strict and (verdict.status == "FAIL" or verdict.misattributed_segments or verdict.swallowed_dialogue):
+        audible_flow = os.environ.get("AUDIBLE_FLOW_MODE", "true").lower() in ("true", "1", "yes")
+        has_failure = verdict.status == "FAIL" or bool(verdict.misattributed_segments)
+        if not audible_flow and verdict.swallowed_dialogue:
+            has_failure = True
+
+        if strict and has_failure:
             err_details = (
                 f"Misattributed: {verdict.misattributed_segments}; Swallowed: {verdict.swallowed_dialogue}"
             )

@@ -172,8 +172,6 @@ class SceneAcousticsMixin:
         Pillar 4 / Idea 1 & 2: Resolves rich 4-stem decoupled scene acoustics manifest.
         Creates scene profiles with Base Room Tone, Weather Elements, Crowd Wallah, and Stochastic Spots.
         """
-        from audiobook_factory.scene_acoustics import SceneSoundscapeManifest, SceneAcousticProfile, AmbienceLayer
-
         scene_manifest = SceneSoundscapeManifest(chapter_id=chapter_id)
 
         # Check if plan already has explicit scene profiles

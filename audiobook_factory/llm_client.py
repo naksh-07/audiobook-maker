@@ -209,7 +209,7 @@ def call_gemini(
         attempt_payload = _build_payload(curr_budget)
         data_bytes = json.dumps(attempt_payload).encode("utf-8")
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent?key={curr_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{curr_model}:generateContent"
         headers = get_stealth_sdk_headers(curr_key)
         req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
 

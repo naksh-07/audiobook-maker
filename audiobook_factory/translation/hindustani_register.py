@@ -55,7 +55,7 @@ class HindustaniRegisterEngine:
 
         if "rural" in trad or "awadh" in trad or "bhojpuri" in trad or "village" in era:
             return cls.from_genre("rural_historical")
-        elif "fantasy" in trad or "medieval" in era or "witcher" in trad or "sword" in trad:
+        elif "fantasy" in trad or "medieval" in era or "sword" in trad:
             return cls.from_genre("fantasy")
         elif "sci" in trad or "cyber" in trad or "space" in era:
             return cls.from_genre("scifi")

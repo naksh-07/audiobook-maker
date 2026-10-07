@@ -10,8 +10,6 @@ from audiobook_factory.gate_auditor import audit_book_master, audit_chapter_gate
 
 def cmd_audit_book(args):
     """Executes Macro-Tier Gate 6 (6A, 6B, 6C, 6D) audit for an entire book project."""
-    from audiobook_factory.gate_auditor import audit_book_master
-
     target = Path(args.project_dir)
     project_dir = target if (target.exists() and target.is_dir()) else (get_projects_dir() / args.project_dir)
 

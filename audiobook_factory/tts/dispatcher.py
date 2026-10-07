@@ -550,7 +550,8 @@ class TTSDispatcher:
             if v_type == "standard" and len(candidate_variants) == 1:
                 take_target = out_file
             else:
-                take_target = self.take_bank.takes_dir / f"c{chapter_num:03d}_s{seg_num:04d}_{v_type}.wav"
+                take_hash = hashlib.md5(f"{tts_text}|{voice}|{emotion}|{acting}|{v_type}".encode("utf-8")).hexdigest()[:8]
+                take_target = self.take_bank.takes_dir / f"c{chapter_num:03d}_s{seg_num:04d}_{v_type}_{take_hash}.wav"
 
             if not (take_target.exists() and take_target.stat().st_size > 1000):
                 _call_gemini_tts(
@@ -678,62 +679,71 @@ class TTSDispatcher:
         dur = winning_take.duration_sec
 
         # Apply speaker DSP calibration filters
+        audible_clean_dsp = os.environ.get("AUDIBLE_CLEAN_DSP", "true").lower() in ("true", "1", "yes")
         post_filters = []
-        if highpass_hz > 20:
-            post_filters.append(f"highpass=f={highpass_hz}")
 
-        if denoise:
-            post_filters.append("afftdn=nr=10:nf=-38")
+        if audible_clean_dsp:
+            # Audible Clean Neural DSP:
+            # 1. Zero digital pitch-shifting (asetrate) or WSOLA time-stretching (atempo): pure neural vocal texture
+            # 2. Zero telephone lowpass cuts or harsh parametric EQs
+            # 3. Transparent studio chain: 60Hz subsonic rumble highpass + transparent limiter
+            post_filters.append("highpass=f=60:poles=2")
+            if softclip_tanh:
+                post_filters.append("asoftclip=type=tanh:param=1.2")
+            if abs(volume_gain_db) > 0.1:
+                post_filters.append(f"volume={volume_gain_db:+.1f}dB")
+            if abs(speed - 1.0) > 0.02 and speed > 0.01:
+                post_filters.append(f"atempo={speed:.3f}")
+        else:
+            if highpass_hz > 20:
+                post_filters.append(f"highpass=f={highpass_hz}")
 
-        if ("[shouting]" in text.lower()) or (isinstance(acting, dict) and acting.get("delivery_style") == "bellowing_rage"):
-            softclip_tanh = True
-            if presence_boost_db <= 0.1:
-                presence_boost_db = 1.5
-            elif presence_boost_db > 2.0:
-                presence_boost_db = 2.0
+            if denoise:
+                post_filters.append("afftdn=nr=10:nf=-38")
 
-        if softclip_tanh:
-            post_filters.append("asoftclip=type=tanh:param=1.2")
+            if softclip_tanh:
+                post_filters.append("asoftclip=type=tanh:param=1.2")
 
-        if abs(pitch - 1.0) > 0.005:
-            new_rate = int(24000 * pitch)
-            post_filters.append(f"asetrate={new_rate},aresample=24000")
-            eff_tempo = speed / pitch
-            if abs(eff_tempo - 1.0) > 0.01:
-                post_filters.append(f"atempo={eff_tempo:.3f}")
-        elif abs(speed - 1.0) > 0.01:
-            post_filters.append(f"atempo={speed:.3f}")
+            if abs(pitch - 1.0) > 0.005:
+                new_rate = int(24000 * pitch)
+                post_filters.append(f"asetrate={new_rate},aresample=24000")
+                eff_tempo = speed / pitch
+                if abs(eff_tempo - 1.0) > 0.01:
+                    post_filters.append(f"atempo={eff_tempo:.3f}")
+            elif abs(speed - 1.0) > 0.01:
+                post_filters.append(f"atempo={speed:.3f}")
 
-        if bass_boost_db > 0.1:
-            post_filters.append(f"equalizer=f=100:t=q:w=1.2:g={bass_boost_db:.1f}")
-            post_filters.append("equalizer=f=200:t=q:w=1.4:g=3.0")
-        elif bass_boost_db < -0.1:
-            post_filters.append(f"equalizer=f=200:t=q:w=1.2:g={bass_boost_db:.1f}")
+            if bass_boost_db > 0.1:
+                post_filters.append(f"equalizer=f=100:t=q:w=1.2:g={bass_boost_db:.1f}")
+                post_filters.append("equalizer=f=200:t=q:w=1.4:g=3.0")
+            elif bass_boost_db < -0.1:
+                post_filters.append(f"equalizer=f=200:t=q:w=1.2:g={bass_boost_db:.1f}")
 
-        if presence_boost_db > 0.1:
-            post_filters.append(f"equalizer=f=3200:t=q:w=1.4:g={presence_boost_db:.1f}")
+            if presence_boost_db > 0.1:
+                post_filters.append(f"equalizer=f=3200:t=q:w=1.4:g={presence_boost_db:.1f}")
 
-        if abs(volume_gain_db) > 0.1:
-            post_filters.append(f"volume={volume_gain_db:+.1f}dB")
+            if abs(volume_gain_db) > 0.1:
+                post_filters.append(f"volume={volume_gain_db:+.1f}dB")
 
-        if clarity_cut_db > 0.1:
-            post_filters.append(f"equalizer=f=3000:t=q:w=1.8:g=-{clarity_cut_db:.1f}")
+            if clarity_cut_db > 0.1:
+                post_filters.append(f"equalizer=f=3000:t=q:w=1.8:g=-{clarity_cut_db:.1f}")
 
-        if lowpass_hz > 1000:
-            post_filters.append(f"lowpass=f={lowpass_hz}")
+            if lowpass_hz > 1000:
+                post_filters.append(f"lowpass=f={lowpass_hz}")
 
-        # 4D Acoustic Formant Equalization Profile
-        if eq_formant_profile:
-            for eq_filter in eq_formant_profile.split(","):
-                eq_clean = eq_filter.strip()
-                if eq_clean and eq_clean not in post_filters:
-                    post_filters.append(eq_clean)
+            # 4D Acoustic Formant Equalization Profile
+            if eq_formant_profile:
+                for eq_filter in eq_formant_profile.split(","):
+                    eq_clean = eq_filter.strip()
+                    if eq_clean and eq_clean not in post_filters:
+                        post_filters.append(eq_clean)
 
         if post_filters:
             post_filters.append("alimiter=limit=-1.2dB:attack=5:release=50:asc=true")
             fade_dur_ms = 15.0
             f_sec = fade_dur_ms / 1000.0
-            f_out_st = max(0.0, dur - f_sec)
+            eff_dur = dur / speed if (abs(speed - 1.0) > 0.005 and speed > 0.01) else dur
+            f_out_st = max(0.0, eff_dur - f_sec)
             post_filters.append(f"afade=t=in:ss=0:d={f_sec:.3f}:curve=qsin")
             post_filters.append(f"afade=t=out:st={f_out_st:.3f}:d={f_sec:.3f}:curve=qsin")
 

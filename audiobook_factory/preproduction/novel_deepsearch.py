@@ -9,6 +9,7 @@ Novel-agnostic, factual, and hallucination-resistant.
 from __future__ import annotations
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Callable
 from pydantic import BaseModel, Field, ConfigDict
@@ -275,6 +276,45 @@ Output JSON Schema:
         )
         return dossier
 
+    @staticmethod
+    def _extract_fallback_characters(sample_text: str) -> List[Dict[str, Any]]:
+        """Dynamically extracts prominent character names from sample prose without hardcoded rosters."""
+        if not sample_text:
+            return [
+                {"english_name": "Protagonist", "hindi_name": "मुख्य पात्र", "role_prominence": "lead", "gender": "neutral", "age_group": "adult", "vocal_weight": "balanced"}
+            ]
+
+        # Look for English dialogue attributions: "Name said", "said Name", "Name asked", etc.
+        patterns = [
+            r'\b([A-Z][a-z]{2,15})\s+(?:said|asked|replied|shouted|whispered|murmured|cried|exclaimed)\b',
+            r'\b(?:said|asked|replied|whispered)\s+([A-Z][a-z]{2,15})\b',
+        ]
+        from collections import Counter
+        counts: Counter[str] = Counter()
+        for pat in patterns:
+            for match in re.finditer(pat, sample_text):
+                name = match.group(1)
+                if name.lower() not in {"he", "she", "it", "they", "then", "there", "what", "who", "when", "how", "but", "and"}:
+                    counts[name] += 1
+
+        top_names = [n for n, c in counts.most_common(3)]
+        if not top_names:
+            return [
+                {"english_name": "Protagonist", "hindi_name": "मुख्य पात्र", "role_prominence": "lead", "gender": "neutral", "age_group": "adult", "vocal_weight": "balanced"}
+            ]
+
+        chars = []
+        for i, name in enumerate(top_names):
+            chars.append({
+                "english_name": name,
+                "hindi_name": name,
+                "role_prominence": "lead" if i == 0 else "major",
+                "gender": "neutral",
+                "age_group": "adult",
+                "vocal_weight": "balanced" if i == 0 else "light_agile",
+            })
+        return chars
+
     @classmethod
     def _build_robust_fallback_dossier(
         cls,
@@ -283,25 +323,31 @@ Output JSON Schema:
         project_slug: str,
         sample_text: str = "",
     ) -> Dict[str, Any]:
-        """Provides a robust, author-aware and text-aware fallback dossier when network/LLM is offline."""
-        comb = f"{title} {author} {sample_text[:1000]}".lower()
+        """Provides a robust, theme-aware and text-aware fallback dossier when network/LLM is offline."""
+        comb = f"{title} {author} {sample_text[:2000]}".lower()
 
-        # Check literary archetypes
-        if any(w in comb for w in ("premchand", "godaan", "nirmala", "gaban", "hory", "dhaniya", "gobari")):
+        # Dynamic character extraction from sample prose
+        chars = cls._extract_fallback_characters(sample_text)
+
+        # Keyword heuristics for literary tradition & acoustic era
+        if any(w in comb for w in ("premchand", "godaan", "awadh", "hory", "dhaniya", "gobari", "village", "farmer", "peasant", "harvest", "bullock", "plow", "rural", "गांव", "किसान", "खेत", "होरी", "धनिया")):
             tradition = "RURAL_REALISM_PATHOS"
-            genre = "Social Realism / Rural Tragedy"
+            genre = "Social Realism / Rural Drama"
             era = "early_20th_century_rural"
-            geo = "Awadh / Eastern Uttar Pradesh, India"
+            geo = "Awadh / Eastern Uttar Pradesh, India" if any(w in comb for w in ("awadh", "premchand", "godaan", "होरी", "धनिया")) else "Rural Pastoral Setting"
             inst = ["bansuri (bamboo flute)", "dholak", "shehnai", "harmonium", "sarangi"]
             banned = ["car", "automobile", "telephone", "mobile", "plastic", "computer", "train_horn", "traffic", "gunshot"]
             reg = "rustic Awadhi-grounded Hindustani with poignant pathos"
             loanwords = ["daroga", "patwari", "kachahri", "rail"]
-            chars = [
-                {"english_name": "Hori", "hindi_name": "होरी", "role_prominence": "lead", "gender": "male", "age_group": "adult", "vocal_weight": "rustic_weathered"},
-                {"english_name": "Dhaniya", "hindi_name": "धनिया", "role_prominence": "lead", "gender": "female", "age_group": "adult", "vocal_weight": "authoritative"},
-                {"english_name": "Gobar", "hindi_name": "गोबर", "role_prominence": "major", "gender": "male", "age_group": "youth", "vocal_weight": "light_agile"},
-            ]
-        elif any(w in comb for w in ("manto", "toba tek singh", "thanda gosht", "khol do", "babu gopinath")):
+            if any(w in comb for w in ("godaan", "होरी", "धनिया")):
+                chars = [
+                    {"english_name": "Hori", "hindi_name": "होरी", "role_prominence": "lead", "gender": "male", "age_group": "adult", "vocal_weight": "rustic_weathered"},
+                    {"english_name": "Dhaniya", "hindi_name": "धनिया", "role_prominence": "lead", "gender": "female", "age_group": "adult", "vocal_weight": "authoritative"},
+                    {"english_name": "Gobar", "hindi_name": "गोबर", "role_prominence": "major", "gender": "male", "age_group": "youth", "vocal_weight": "light_agile"},
+                ]
+            else:
+                chars = cls._extract_fallback_characters(sample_text)
+        elif any(w in comb for w in ("manto", "toba tek singh", "thanda gosht", "khol do", "babu gopinath", "partition", "बंटवारे", "लाहौर", "somatic", "flesh", "जिस्म", "ठंडी हथेली")):
             tradition = "SOMATIC_PSYCHOLOGICAL_REALISM"
             genre = "Progressive Realism / Gritty Drama"
             era = "1940s_partition_era"
@@ -310,10 +356,8 @@ Output JSON Schema:
             banned = ["smartphone", "computer", "internet", "laser"]
             reg = "raw, visceral, uninhibited urban Hindustani with sharp cynical cadence"
             loanwords = ["police", "report", "whiskey", "room", "station"]
-            chars = [
-                {"english_name": "Protagonist", "hindi_name": "मुख्य पात्र", "role_prominence": "lead", "gender": "male", "age_group": "adult", "vocal_weight": "balanced"},
-            ]
-        elif any(w in comb for w in ("christie", "poirot", "marple", "holmes", "watson", "doyle", "detective", "murder")):
+            chars = cls._extract_fallback_characters(sample_text)
+        elif any(w in comb for w in ("christie", "poirot", "marple", "detective", "murder", "investigation", "clue", "alibi", "inspector", "crime", "mystery")):
             tradition = "CLASSIC_DETECTIVE_MYSTERY"
             genre = "Whodunit / Murder Mystery"
             era = "1930s_golden_age_mystery"
@@ -321,22 +365,28 @@ Output JSON Schema:
             inst = ["solo cello", "pizzicato strings", "muted brass", "clockwork piano", "tension drone"]
             banned = ["smartphone", "computer", "internet", "cyborg", "laser"]
             reg = "refined, observant, dignified literary Hindustani"
-            loanwords = ["detective", "doctor", "inspector", "police", "train", "ticket", "hotel", "case"]
-            chars = [
-                {"english_name": "Lead Detective", "hindi_name": "डिटेक्टिव", "role_prominence": "lead", "gender": "male", "age_group": "adult", "vocal_weight": "authoritative"},
-            ]
-        elif any(w in comb for w in ("asimov", "cyberpunk", "spaceship", "galaxy", "robot", "sci-fi", "dune")):
+            loanwords = ["detective", "doctor", "inspector", "police", "hotel", "case"]
+            chars = cls._extract_fallback_characters(sample_text)
+        elif any(w in comb for w in ("asimov", "spaceship", "galaxy", "orbit", "robot", "starship", "laser", "plasma", "cyborg", "futuristic", "sci-fi")):
             tradition = "SPECULATIVE_SCI_FI"
             genre = "Science Fiction"
             era = "future_space_age"
-            geo = "Interplanetary / Futuristic Space Station"
+            geo = "Interplanetary / Futuristic Station"
             inst = ["analog synthesizer", "sub-bass drone", "industrial percussion", "ambient ethereal pads"]
             banned = ["horse_carriage", "sword", "shield", "bow_and_arrow", "torch"]
             reg = "precise, analytical, speculative Hindustani with technological clarity"
             loanwords = ["console", "system", "terminal", "reactor", "pilot", "commander", "sector"]
-            chars = [
-                {"english_name": "Commander", "hindi_name": "कमांडर", "role_prominence": "lead", "gender": "male", "age_group": "adult", "vocal_weight": "authoritative"},
-            ]
+            chars = cls._extract_fallback_characters(sample_text)
+        elif any(w in comb for w in ("sword", "blade", "sorcerer", "wizard", "magic", "dragon", "tavern", "castle", "kingdom")):
+            tradition = "MEDIEVAL_HIGH_FANTASY"
+            genre = "Fantasy Drama"
+            era = "medieval_mythic"
+            geo = "Mythic Medieval Realm"
+            inst = ["lute", "wooden flute", "taiko drums", "strings"]
+            banned = ["car", "phone", "electricity", "computer", "firearms", "plastic"]
+            reg = "epic, mythic, archaic literary Hindustani"
+            loanwords = ["rajkumari", "samrajya", "talwar"]
+            chars = cls._extract_fallback_characters(sample_text)
         else:
             tradition = "UNIVERSAL_CONTEMPORARY"
             genre = "Literary Fiction"
@@ -346,9 +396,7 @@ Output JSON Schema:
             banned = ["laser", "plasma_cannon", "spacesuit"]
             reg = "contemporary spoken dramatic Hindustani"
             loanwords = ["doctor", "police", "office", "phone", "car", "file", "time"]
-            chars = [
-                {"english_name": "Protagonist", "hindi_name": "मुख्य पात्र", "role_prominence": "lead", "gender": "male", "age_group": "adult", "vocal_weight": "balanced"},
-            ]
+            chars = cls._extract_fallback_characters(sample_text)
 
         return {
             "book_title": title,

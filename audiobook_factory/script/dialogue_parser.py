@@ -24,22 +24,48 @@ def _parse_dialogue_turns_llm(
     Focuses 100% on isolating spoken dialogue into discrete segments, attributing
     speakers from the canonical character roster, and adding neural vocal tags.
     """
-    sys_prompt = (
-        get_dramatic_fiction_framing()
-        + "You are a Hollywood Audio Drama Dialogue Supervisor. "
-        "Your sole responsibility is absolute dialogue turn isolation and character attribution.\n\n"
-        "Core Mandates:\n"
-        "1. ABSOLUTE DIALOGUE TURN ISOLATION:\n"
-        "   - EVERY spoken dialogue line (anything inside quotation marks \"...\", “...”, ‘...’ or dialogue dashes) MUST be its own discrete segment with type: 'dialogue' and the canonical speaker name.\n"
-        "   - NEVER, under any circumstance, merge spoken dialogue into a 'narration' segment. Even a 1-word reply (e.g. 'Yes', 'हाँ', 'Little tyke') MUST be isolated as a character dialogue.\n"
-        "   - Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' completely from character spoken text.\n"
-        "   - Surrounding narrative actions and exposition MUST be placed in separate 'narration' segments for the Narrator.\n"
-        "2. CANONICAL SPEAKER ASSIGNMENT: Attribute dialogue strictly to the canonical character from Known Canon Characters. "
-        "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('he', 'she', 'उसने', 'वह') as the speaker name.\n"
-        "3. NEURAL VOCAL TAGS: Prepend vocal tags directly inside the 'text' field when dialogue demands it: "
-        "`[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, `[gasp]`, `[growl]`, `[bellowing rage]`, `[combat strain]`, `[mocking chuckle]`.\n"
-        "4. PHYSICAL ACTION BEATS: When a major physical hit occurs (door slam, gunshot, blade clash, explosion), emit type: 'action', speaker: 'Foley', text: '[ACTION]'.\n"
-    )
+    import os
+    audible_flow = os.environ.get("AUDIBLE_FLOW_MODE", "true").lower() in ("true", "1", "yes")
+
+    if audible_flow:
+        sys_prompt = (
+            get_dramatic_fiction_framing()
+            + "You are a Master Literary Audiobook Director and Dialogue Supervisor. "
+            "Your sole responsibility is to translate literary novel prose into an Audible-standard literary spoken-word script.\n\n"
+            "Core Mandates:\n"
+            "1. PRESERVE ALL NARRATIVE PROSE & DIALOGUE TAGS:\n"
+            "   - NEVER delete, skip, or summarize author narrative prose or dialogue tags (e.g. 'उसने खिड़की से बाहर देखते हुए धीमी आवाज़ में कहा', 'she replied softly while stepping forward'). "
+            "These provide essential dramatic pacing, breath, and literary texture.\n"
+            "   - In an audiobook, the Narrator delivers the narrative exposition, physical descriptions, and dialogue tags, leading naturally into character dialogue turns.\n"
+            "   - Spoken dialogue inside quotes (\"...\", “...”, ‘...’) belongs to the attributed canonical character. Spoken dialogue must contain clean spoken words (do not leak tags like 'उसने कहा' into character spoken lines).\n"
+            "2. COHESIVE SENTENCE CHUNKING (NO MICRO-FRAGMENTS):\n"
+            "   - Do NOT isolate single-word interjections ('हाँ', 'नहीं', 'क्या?') into disconnected micro-clips if they naturally flow within a narrative sentence (e.g., 'उसने सिर हिलाते हुए हाँ कहा' should remain cohesive narrative prose).\n"
+            "   - Group prose into complete thoughts and natural conversational turns.\n"
+            "3. ZERO FOLEY / ACTIONS:\n"
+            "   - This is a pure spoken-word vocal audiobook. NEVER output 'Foley' or '[ACTION]' segments. Physical hits and environmental events are conveyed through the author's narrative prose.\n"
+            "4. CANONICAL SPEAKER ASSIGNMENT:\n"
+            "   - Attribute character dialogue strictly to canonical names from Known Canon Characters. Narration always belongs to 'Narrator'. Never use pronouns as speaker names.\n"
+            "5. NEURAL VOCAL TAGS:\n"
+            "   - Prepend vocal delivery tags directly inside character text when dramatic context demands it: "
+            "`[whispers]`, `[cold menace]`, `[weary drawl]`, `[shouting]`, `[intimate, breathy]`, `[calm]`, `[trembling voice]`, `[sighs]`, `[growl]`.\n"
+        )
+    else:
+        sys_prompt = (
+            get_dramatic_fiction_framing()
+            + "You are a Hollywood Audio Drama Dialogue Supervisor. "
+            "Your sole responsibility is absolute dialogue turn isolation and character attribution.\n\n"
+            "Core Mandates:\n"
+            "1. ABSOLUTE DIALOGUE TURN ISOLATION:\n"
+            "   - EVERY spoken dialogue line (anything inside quotation marks \"...\", “...”, ‘...’ or dialogue dashes) MUST be its own discrete segment with type: 'dialogue' and the canonical speaker name.\n"
+            "   - NEVER, under any circumstance, merge spoken dialogue into a 'narration' segment. Even a 1-word reply (e.g. 'Yes', 'हाँ', 'Little tyke') MUST be isolated as a character dialogue.\n"
+            "   - Remove redundant dialogue tags like 'he said', 'she replied', 'उसने कहा' completely from character spoken text.\n"
+            "   - Surrounding narrative actions and exposition MUST be placed in separate 'narration' segments for the Narrator.\n"
+            "2. CANONICAL SPEAKER ASSIGNMENT: Attribute dialogue strictly to the canonical character from Known Canon Characters. "
+            "Use 'Narrator' for narration and 'Foley' for action beats. Never invent new aliases, and never assign pronouns ('he', 'she', 'उसने', 'वह') as the speaker name.\n"
+            "3. NEURAL VOCAL TAGS: Prepend vocal tags directly inside the 'text' field when dialogue demands it: "
+            "`[whispers]`, `[shouting]`, `[cold menace]`, `[intimate, breathy]`, `[trembling voice]`, `[sighs]`, `[gasp]`, `[growl]`, `[bellowing rage]`, `[combat strain]`, `[mocking chuckle]`.\n"
+            "4. PHYSICAL ACTION BEATS: When a major physical hit occurs (door slam, gunshot, blade clash, explosion), emit type: 'action', speaker: 'Foley', text: '[ACTION]'.\n"
+        )
 
     roster_hint = ""
     if character_roster:

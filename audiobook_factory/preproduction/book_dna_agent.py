@@ -147,15 +147,15 @@ Output JSON: An authoritative literary profile object:
 
         is_rural_classic = any(
             w in sample_lower or w in author_lower
-            for w in ("premchand", "godaan", "nirmala", "kisan", "zamindar", "patwari", "village", "farmer", "peasant", "panchayat", "खेत", "गांव", "किसान", "बैल", "चौपाल", "होरी", "गोदान", "धनिया")
+            for w in ("kisan", "zamindar", "patwari", "village", "farmer", "peasant", "panchayat", "खेत", "गांव", "किसान", "बैल", "चौपाल", "झोपड़ी", "लगान")
         )
         is_somatic_realism = any(
             w in sample_lower or w in author_lower
-            for w in ("manto", "thanda gosht", "khol do", "dhuan", "boo", "जिस्म", "ठंडी हथेली", "ठंडा गोश्त", "हवस", "गुनाह", "somatic", "flesh", "desire", "sensual", "naked", "shame")
+            for w in ("जिस्म", "हवस", "गुनाह", "somatic", "flesh", "desire", "sensual", "naked", "shame", "lust", "obsession")
         )
         is_dark_fantasy = any(
             w in sample_lower or w in title_lower
-            for w in ("sword", "blade", "monster", "crypt", "mutant", "dragon", "spell", "basilisk", "beast", "sorcerer", "clash", "witcher")
+            for w in ("sword", "blade", "monster", "crypt", "mutant", "dragon", "spell", "basilisk", "beast", "sorcerer", "clash", "dungeon", "talwar")
         )
 
         if is_rural_classic:

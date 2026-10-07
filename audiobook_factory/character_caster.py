@@ -9,15 +9,28 @@ from __future__ import annotations
 import os
 import json
 import time
+import threading
 import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
 
 from audiobook_factory.logger import logger
+from audiobook_factory.audio_utils import _atomic_replace
 from audiobook_factory.key_manager import get_persistent_key_pool
 from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
 from audiobook_factory.llm_client import call_gemini
+
+_CAST_LOCK = threading.RLock()
+
+
+def _atomic_write_json(file_path: Path, data: Any) -> None:
+    file_path = Path(file_path).resolve()
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = file_path.with_suffix(f".tmp_{time.time_ns()}.json")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    _atomic_replace(tmp_path, file_path)
 
 # Studio Voice Persona Catalogs (Verified Gemini TTS API Voices)
 MALE_VOICE_PERSONAS = [
@@ -460,6 +473,22 @@ Return a JSON array of objects with:
         Persists to voice_registry.json, character_roster.json, and cast_lock.json.
         Guarantees zero voice drift and zero signature collision.
         """
+        with _CAST_LOCK:
+            return cls._cast_single_speaker_unlocked(
+                speaker_name=speaker_name,
+                project_dir=project_dir,
+                gender=gender,
+                default_backend=default_backend,
+            )
+
+    @classmethod
+    def _cast_single_speaker_unlocked(
+        cls,
+        speaker_name: str,
+        project_dir: Optional[Path] = None,
+        gender: Optional[str] = None,
+        default_backend: str = "gemini_tts",
+    ) -> Dict[str, Any]:
         sp_clean = speaker_name.strip()
         if not sp_clean:
             return {"backend": default_backend, "voice": "Aoede", "pitch": 1.0, "speed": 1.0}
@@ -477,18 +506,18 @@ Return a JSON array of objects with:
         if roster_path.exists():
             try:
                 roster = json.loads(roster_path.read_text(encoding="utf-8"))
-            except Exception:
-                pass
+            except (json.JSONDecodeError, OSError) as e:
+                logger.debug(f"Notice reading roster_path ({roster_path}): {e}")
         if registry_path.exists():
             try:
                 registry = json.loads(registry_path.read_text(encoding="utf-8"))
-            except Exception:
-                pass
+            except (json.JSONDecodeError, OSError) as e:
+                logger.debug(f"Notice reading registry_path ({registry_path}): {e}")
         if lock_path.exists():
             try:
                 locks = json.loads(lock_path.read_text(encoding="utf-8"))
-            except Exception:
-                pass
+            except (json.JSONDecodeError, OSError) as e:
+                logger.debug(f"Notice reading lock_path ({lock_path}): {e}")
 
         # If already present in registry, return it
         if sp_clean in registry:
@@ -581,9 +610,9 @@ Return a JSON array of objects with:
         }
 
         try:
-            roster_path.write_text(json.dumps(roster, ensure_ascii=False, indent=2), encoding="utf-8")
-            registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8")
-            lock_path.write_text(json.dumps(locks, ensure_ascii=False, indent=2), encoding="utf-8")
+            _atomic_write_json(roster_path, roster)
+            _atomic_write_json(registry_path, registry)
+            _atomic_write_json(lock_path, locks)
             logger.info(f"[+] CharacterCaster: Dynamically cast '{sp_clean}' -> {persona} (pitch: {pitch}, speed: {speed}). Registry updated.")
         except Exception as e:
             logger.warning(f"  [!] Notice saving dynamic cast for {sp_clean}: {e}")

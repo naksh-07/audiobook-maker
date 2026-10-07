@@ -69,6 +69,9 @@ class HumanCadenceController:
         Calculates content-aware human delay for the next segment:
         T_delay = T_reading(text) + T_listening(prev_audio) + T_lognormal_jitter
         """
+        if os.environ.get("STUDIO_CADENCE_FAST", "").lower() in ("true", "1", "yes"):
+            return random.uniform(0.6, 1.4)
+
         # 1. Reading Time Simulation:
         # A human takes time to read the text before triggering synthesis.
         word_count = max(len(upcoming_text.split()), 1)
@@ -106,7 +109,8 @@ class HumanCadenceController:
             self.segment_counter += 1
 
             # Check for Scene Review Break (every 4-6 segments)
-            if self.segment_counter > 1 and (self.segment_counter % self.scene_break_interval == 0):
+            is_fast = os.environ.get("STUDIO_CADENCE_FAST", "").lower() in ("true", "1", "yes")
+            if not is_fast and self.segment_counter > 1 and (self.segment_counter % self.scene_break_interval == 0):
                 break_sec = random.uniform(*self.scene_break_duration_range)
                 logger.info(
                     f"  [STUDIO CADENCE] Scene batch complete ({self.segment_counter}/{total_segs}). "

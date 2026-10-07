@@ -6,6 +6,7 @@ and dramatic plan metadata attachment.
 """
 
 from __future__ import annotations
+import os
 import re
 from typing import List, Dict, Any, Optional, Tuple
 
@@ -141,9 +142,10 @@ def clean_screenplay_pass2(
         if not cleaned_text:
             continue
 
-        # Double-Safety Invariant: Auto-split any direct dialogue mistakenly retained in narration
+        # Double-Safety Invariant: Auto-split direct dialogue only in legacy drama mode, NEVER in Audible Flow Mode
+        audible_flow = os.environ.get("AUDIBLE_FLOW_MODE", "true").lower() in ("true", "1", "yes")
         quote_matches = list(re.finditer(r'["“]([^"”]+)["”]', cleaned_text))
-        if quote_matches and speaker == "Narrator":
+        if quote_matches and speaker == "Narrator" and not audible_flow:
             last_end = 0
             for qm in quote_matches:
                 q_start, q_end = qm.span()

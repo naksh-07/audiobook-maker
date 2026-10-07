@@ -34,9 +34,11 @@ def verify_pre_synthesis_gates(
     chapter_num: int,
 ) -> None:
     """Evaluates Gate 2 (Script Schema/Whitelist/LLM Attribution) and Gate 2.5 (Dramatic Beat Fidelity)."""
-    # Gate 2: Screenplay Script Schema and canonical speakers (ADR-021 Whitelist & LLM Attribution)
     try:
-        gate2_res = audit_gate2_script(script_file, project_dir=project_dir, enable_llm_judge=True, strict=True)
+        enable_llm = os.environ.get("GATE2_ENABLE_LLM_JUDGE", "true").lower() in ("true", "1", "yes")
+        if os.environ.get("SKIP_LLM_AUDIT", "false").lower() in ("true", "1", "yes") or os.environ.get("FORCE_GATE", "false").lower() in ("true", "1", "yes"):
+            enable_llm = False
+        gate2_res = audit_gate2_script(script_file, project_dir=project_dir, enable_llm_judge=enable_llm, strict=True)
         logger.info(f"[*] Gate 2 Script Audit: PASSED for Chapter {chapter_num:02d} ({gate2_res.get('total_segments', 0)} segments)")
     except GateAuditError as e:
         logger.error(f"\n[!] 🛑 GATE 2 AUDIT FAILED for Chapter {chapter_num:02d}: {e}")
@@ -174,6 +176,7 @@ def verify_post_mix_master_gates(
     Returns: (gate52_passed, gate53_passed, gate5_certified)
     """
     strict_gates = os.environ.get("STRICT_QUALITY_GATES", "true").lower() in ("1", "true", "yes")
+    is_offline = os.environ.get("AUDIOBOOK_OFFLINE_MODE", "false").lower() in ("1", "true", "yes")
 
     # Gate 5.2: Spectral Masking (Dialogue vs Music DMR)
     gate52_passed = True

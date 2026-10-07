@@ -213,10 +213,11 @@ class GoldenPerformanceSuite:
             title="Iron-Restraint Grief Monologue",
             category="performance",
             language="en",
-            speaker="Geralt",
+            speaker="Veteran_Protagonist",
             text="She is gone. There is nothing more to be said.",
             expected_emotional_state="grief",
             direction={
+                "gender": "male",
                 "surface_emotion": "grief",
                 "intensity": "low",
                 "intimacy_level": "intimate",
@@ -300,10 +301,11 @@ class GoldenPerformanceSuite:
             title="Tender Whisper Close-Mic",
             category="performance",
             language="en",
-            speaker="Yennefer",
+            speaker="Companion_Sorceress",
             text="Sleep now. No shadows will reach you while I watch.",
             expected_emotional_state="tenderness",
             direction={
+                "gender": "female",
                 "surface_emotion": "tenderness",
                 "intensity": "low",
                 "intimacy_level": "intimate",
@@ -344,10 +346,11 @@ class GoldenPerformanceSuite:
             title="Solitary Moral Calculation",
             category="dialogue",
             language="en",
-            speaker="Geralt",
+            speaker="Veteran_Protagonist",
             text="Lesser evil, greater evil... if I am to choose, I prefer not to choose at all.",
             expected_emotional_state="cynical_contemplation",
             direction={
+                "gender": "male",
                 "surface_emotion": "contemplative",
                 "intensity": "medium",
                 "narrative_mode": "interior_soliloquy",
@@ -359,7 +362,7 @@ class GoldenPerformanceSuite:
             },
             expected_timing={"pause_after_ms": 900, "min_pause_ms": 750},
             expected_acoustic={"rms_range": (-28.0, -18.0), "f0_variance_min": 6.0, "max_clipping_pinned": 0},
-            human_baseline={"approval_status": "APPROVED", "rubric": {"performance": 5.0, "naturalness": 4.9, "voice_consistency": 5.0, "pronunciation": 5.0, "dialogue": 4.9, "overall": 5.0}, "reviewer_notes": "Iconic Witcher subtextual cynicism"},
+            human_baseline={"approval_status": "APPROVED", "rubric": {"performance": 5.0, "naturalness": 4.9, "voice_consistency": 5.0, "pronunciation": 5.0, "dialogue": 4.9, "overall": 5.0}, "reviewer_notes": "Iconic moral calculus subtextual cynicism"},
         ),
         # 10. Two-Speaker Power Dialogue
         GoldenSceneDefinition(
@@ -368,10 +371,11 @@ class GoldenPerformanceSuite:
             category="dialogue",
             language="en",
             speaker="Servant",
-            target_character="Baron",
+            target_character="Feudal_Lord",
             text="Spare my family, my lord. We only took what was discarded.",
             expected_emotional_state="pleading",
             direction={
+                "gender": "male",
                 "surface_emotion": "pleading",
                 "intensity": "low",
                 "power_position": "submissive",
@@ -380,7 +384,7 @@ class GoldenPerformanceSuite:
                 "energy": 0.42,
                 "actioning": "beg_for_mercy",
             },
-            dialogue_context={"prev_speaker": "Baron", "prev_power": "dominant", "prev_energy": 0.88},
+            dialogue_context={"prev_speaker": "Feudal_Lord", "prev_power": "dominant", "prev_energy": 0.88},
             expected_timing={"pause_after_ms": 500, "max_turn_gap_ms": 800},
             expected_acoustic={"rms_range": (-32.0, -20.0), "f0_variance_min": 8.0, "max_clipping_pinned": 0},
             human_baseline={"approval_status": "APPROVED", "rubric": {"performance": 4.7, "naturalness": 4.6, "voice_consistency": 4.7, "pronunciation": 5.0, "dialogue": 4.9, "overall": 4.7}, "reviewer_notes": "Strong conversational power asymmetry"},
@@ -435,10 +439,11 @@ class GoldenPerformanceSuite:
             title="Mid-Sentence Interruption Cutoff",
             category="dialogue",
             language="hi",
-            speaker="Dandelion",
+            speaker="Companion_Bard",
             text="लेकिन मुझे लगा था कि तुम—",
             expected_emotional_state="surprise",
             direction={
+                "gender": "male",
                 "surface_emotion": "surprise",
                 "intensity": "medium",
                 "interruption_behavior": "abrupt_cut",
@@ -499,12 +504,12 @@ class GoldenPerformanceSuite:
         # 16. Proper Fantasy Name Pronunciation
         GoldenSceneDefinition(
             scene_id="GS-16",
-            title="Complex Fantasy Proper Names",
+            title="Complex Proper Names",
             category="pronunciation",
             language="hi",
             speaker="Narrator",
-            text="Geralt of Rivia ने Kaer Morhen की सुरक्षा का वचन दिया था।",
-            expected_spoken_contains=["गेराल्ट", "केर मॉरहेन"],
+            text="Aethelgard of Valen ने Caer Dun की सुरक्षा का वचन दिया था।",
+            expected_spoken_contains=["एथलगार्ड", "केर डुन"],
             expected_emotional_state="neutral",
             direction={
                 "surface_emotion": "neutral",
@@ -544,10 +549,11 @@ class GoldenPerformanceSuite:
             title="Narration to Dialogue Spatial Transition",
             category="transition",
             language="hi",
-            speaker="Geralt",
+            speaker="Veteran_Protagonist",
             text="खामोश रहो! कोई आ रहा है।",
             expected_emotional_state="warning",
             direction={
+                "gender": "male",
                 "surface_emotion": "warning",
                 "intensity": "high",
                 "pause_before_ms": 150,
@@ -576,23 +582,23 @@ class GoldenPerformanceSuite:
         # Pronunciation Lexicon and Resolver
         self.lexicon = PronunciationLexicon()
         self.lexicon.seed_default_lexicon()
-        # Seed fantasy proper names for golden scenes
+        # Seed proper names for golden scenes
         self.lexicon.add_entry(PronunciationEntry(
-            canonical_id="geralt_of_rivia",
-            canonical_text="Geralt of Rivia",
-            aliases=["Geralt of Rivia", "Geralt"],
-            spoken_form="गेराल्ट",
-            pronunciation_hint="गेराल्ट",
+            canonical_id="aethelgard",
+            canonical_text="Aethelgard of Valen",
+            aliases=["Aethelgard of Valen", "Aethelgard"],
+            spoken_form="एथलगार्ड",
+            pronunciation_hint="एथलगार्ड",
             category="character",
             status=PronunciationStatus.VERIFIED,
             source=PronunciationSource.CANONICAL_LEXICON,
         ))
         self.lexicon.add_entry(PronunciationEntry(
-            canonical_id="kaer_morhen",
-            canonical_text="Kaer Morhen",
-            aliases=["Kaer Morhen"],
-            spoken_form="केर मॉरहेन",
-            pronunciation_hint="केर मॉरहेन",
+            canonical_id="caer_dun",
+            canonical_text="Caer Dun",
+            aliases=["Caer Dun"],
+            spoken_form="केर डुन",
+            pronunciation_hint="केर डुन",
             category="location",
             status=PronunciationStatus.VERIFIED,
             source=PronunciationSource.CANONICAL_LEXICON,
@@ -881,9 +887,16 @@ class GoldenPerformanceSuite:
         for scene in target_scenes:
             # Generate deterministic synthetic golden take WAV
             wav_path = audio_dir / f"golden_{scene.scene_id}.wav"
-            f0_base = 120.0 if "Geralt" in scene.speaker or "Baron" in scene.speaker else (
-                210.0 if "Yennefer" in scene.speaker else 170.0
-            )
+            # Derive f0_base from expected acoustic profile, gender, or vocal parameters
+            target_f0 = scene.expected_acoustic.get("f0_target")
+            if target_f0:
+                f0_base = float(target_f0)
+            elif scene.direction.get("gender") == "female" or any(ind in scene.speaker.lower() for ind in ("female", "woman", "girl", "sorceress", "lady")):
+                f0_base = 210.0
+            elif scene.direction.get("gender") == "male" or scene.direction.get("power_position") == "dominant" or any(ind in scene.speaker.lower() for ind in ("male", "man", "protagonist", "lord", "commander", "general", "scout", "servant", "rival", "accuser", "merchant", "bard")):
+                f0_base = 120.0
+            else:
+                f0_base = 170.0
             # Calibrate RMS directly to center of expected acoustic band
             min_rms, max_rms = scene.expected_acoustic.get("rms_range", (-26.0, -16.0))
             target_rms_db = (min_rms + max_rms) / 2.0

@@ -136,7 +136,6 @@ Output STRICT JSON schema:
   ]
 }}"""
 
-        from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
         model_mgr = get_model_manager()
         try:
             active_model = self.model or model_mgr.resolve_active_model(TaskType.DIRECTING)

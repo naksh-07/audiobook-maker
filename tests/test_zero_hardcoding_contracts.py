@@ -335,14 +335,7 @@ class TestZeroHardcodingContracts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         all_files = sorted(list(FACTORY_DIR.glob("**/*.py")))
-        exclude_dirs = {"performance", "pronunciation"}
-        exclude_files = {"enrich_witcher3_game_library.py", "upgrade_ip_affinity.py"}
-        
-        cls.py_files = [
-            f for f in all_files 
-            if not any(part in exclude_dirs for part in f.parts) 
-            and f.name not in exclude_files
-        ]
+        cls.py_files = [f for f in all_files if f.is_file()]
         assert len(cls.py_files) > 10, "Expected core Python files in audiobook_factory/"
 
     def test_01_assert_zero_hardcoded_character_names(self):

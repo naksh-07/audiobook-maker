@@ -164,6 +164,8 @@ class PersistentKeyPool:
                 conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN success_calls_today INTEGER DEFAULT 0;")
             if "failed_calls_today" not in columns:
                 conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN failed_calls_today INTEGER DEFAULT 0;")
+            if "last_reset_date" not in columns:
+                conn.execute("ALTER TABLE key_quota_ledger ADD COLUMN last_reset_date TEXT;")
             conn.commit()
 
     @staticmethod
@@ -200,19 +202,21 @@ class PersistentKeyPool:
             conn.commit()
 
     def _check_date_rollover(self, conn: sqlite3.Connection):
-        """Automatically re-activates keys whose exhausted_date is prior to today (Google PT date)."""
+        """Automatically re-activates keys whose exhausted_date is prior to today (Google PT date) and resets daily counters."""
         today = self._today_str()
         cursor = conn.execute("""
             UPDATE key_quota_ledger
-            SET status = 'ACTIVE',
+            SET status = CASE WHEN status = 'EXHAUSTED_TODAY' THEN 'ACTIVE' ELSE status END,
                 exhausted_date = NULL,
                 total_calls_today = 0,
                 success_calls_today = 0,
                 failed_calls_today = 0,
                 backoff_until = NULL,
-                last_error = NULL
-            WHERE exhausted_date IS NOT NULL AND exhausted_date != ?;
-        """, (today,))
+                last_error = NULL,
+                last_reset_date = ?
+            WHERE (exhausted_date IS NOT NULL AND exhausted_date != ?)
+               OR (last_reset_date IS NULL OR last_reset_date != ?);
+        """, (today, today, today))
         if cursor.rowcount > 0:
             from audiobook_factory.logger import logger
             logger.info(f"  [DATE ROLLOVER] Google midnight passed! Reset {cursor.rowcount} API keys to ACTIVE for {today}.")
@@ -317,7 +321,7 @@ class PersistentKeyPool:
         with self.lock, self._connection() as conn:
             conn.execute("""
                 UPDATE key_quota_ledger
-                SET status = 'ACTIVE',
+                SET status = CASE WHEN status = 'EXHAUSTED_TODAY' THEN status ELSE 'ACTIVE' END,
                     success_calls_today = success_calls_today + 1,
                     backoff_until = NULL,
                     last_error = NULL
@@ -368,7 +372,7 @@ class PersistentKeyPool:
         with self.lock, self._connection() as conn:
             conn.execute("""
                 UPDATE key_quota_ledger
-                SET status = 'TEMP_BACKOFF',
+                SET status = CASE WHEN status = 'EXHAUSTED_TODAY' THEN status ELSE 'TEMP_BACKOFF' END,
                     backoff_until = ?,
                     failed_calls_today = failed_calls_today + 1,
                     last_error = ?

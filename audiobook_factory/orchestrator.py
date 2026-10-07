@@ -6,6 +6,7 @@ Provides single-command autonomous execution with transaction-safe state managem
 """
 
 import os
+import re
 import uuid
 import time
 import json
@@ -84,7 +85,7 @@ class PipelineOrchestrator:
         cover_image: Optional[Path] = None,
         workers: int = 3,
         duck_db: float = -16.0,
-        spatial_staging: bool = True,
+        spatial_staging: bool = False,
         adult_literary_mode: bool = True,
         force_gate: bool = False,
         chapters: Optional[List[int]] = None,
@@ -151,7 +152,7 @@ class PipelineOrchestrator:
                     logger.info("\n[Stage 2/6] Literary Hindi translation with honorific glossary...")
                     translate_book_project(project_dir, force_gate=force_gate, chapters=chapters)
                     # Inline Gate 0: Translation Coverage Verification
-                    verify_translation_coverage_gates(project_dir, chapters=chapters)
+                    verify_translation_coverage_gates(project_dir, strict=not force_gate, chapters=chapters)
             else:
                 telemetry.record_stage(run_id, "Literary Translation", 2, duration_sec=0.0, status="SKIPPED")
                 logger.info("\n[Stage 2/6] Translation skipped (English/Native language selected).")
@@ -195,6 +196,8 @@ class PipelineOrchestrator:
                 for s_file in script_files:
                     m = re.search(r"chapter_(\d+)", s_file.stem, re.IGNORECASE)
                     ch_num = int(m.group(1)) if m else 1
+                    if chapters and ch_num not in chapters:
+                        continue
                     logger.info(f"\n--- Producing Chapter {ch_num} (Vocals-Only) ---")
                     self.produce_chapter(
                         project_dir=project_dir,
@@ -244,7 +247,7 @@ class PipelineOrchestrator:
         voice: str = "Aoede",
         workers: int = 3,
         duck_db: float = -16.0,
-        spatial_staging: bool = True,
+        spatial_staging: bool = False,
     ) -> Dict[str, Any]:
         """
         Produces a single cinematic chapter using the deterministic agentic standard:
@@ -320,6 +323,7 @@ class PipelineOrchestrator:
         logger.info(f"[*] Synthesizing Chapter {chapter_num:02d} speech segments (Workers: {workers})...")
         from audiobook_factory.key_manager import AllKeysExhaustedTodayError
         import sys
+        synth_segments: List[Path] = []
         try:
             dispatcher = TTSDispatcher(
                 project_dir=project_dir,
@@ -331,6 +335,14 @@ class PipelineOrchestrator:
         except AllKeysExhaustedTodayError as e:
             if os.environ.get("ENABLE_EMERGENCY_FALLBACK", "").lower() in ("true", "1", "yes"):
                 logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted; emergency local WinRT fallback was applied.")
+                fallback_dispatcher = TTSDispatcher(
+                    project_dir=project_dir,
+                    default_voice=voice,
+                    default_backend="winrt",
+                    max_workers=workers,
+                    allow_dynamic_cast=True,
+                )
+                synth_segments = fallback_dispatcher.synthesize_chapter_script(script_file, chapter_num)
             else:
                 logger.error("\n[!] 🛑 SUPERVISOR AGENT HALT: ALL TTS API KEYS EXHAUSTED FOR TODAY.")
                 logger.error(f"[!] 🛑 {e}")
@@ -404,7 +416,7 @@ class PipelineOrchestrator:
             pass
 
         # 5. Auto-Janitor: Clean up intermediate uncompressed WAV chunks
-        all_gates_certified = mastered_out.exists() and mastered_out.stat().st_size > 1000
+        all_gates_certified = bool(mastered_out.exists() and mastered_out.stat().st_size > 1000 and gate5_certified and gate53_passed)
         cleanup_chapter_chunks(audio_dir, chapter_num, mastered_out, all_gates_certified)
 
         logger.info(f"[+] Chapter {chapter_num:02d} complete -> {mastered_out} ({round(vocal_dur / 60.0, 2)} min)")

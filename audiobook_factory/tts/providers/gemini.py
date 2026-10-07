@@ -214,9 +214,10 @@ def synthesize_gemini_tts(
                 logger.warning(f"  [EMERGENCY FALLBACK] Gemini key pool exhausted. Falling back to local WinRT speech synthesis for: {output_file.name}")
                 return _synthesize_local_winrt_fallback(text, output_file, voice=voice)
             raise
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         key_exhausted_or_invalid = False
 
+        logger.info(f"  🎙️ [TTS GEMINI 3.8 FLASH] Synthesizing '{output_file.name}' via '{model}' (Voice: {voice})...")
         # Inner Loop: Network retries on the currently selected key (max 3 attempts)
         for network_attempt in range(3):
             if rate_limiter:
@@ -293,7 +294,9 @@ def synthesize_gemini_tts(
                             else:
                                 consec = 0
                         is_clipped = (max_consec >= 6)
-                        faint_limit = 8.0 if ("whisper" in text.lower() or "whisper" in emotion.lower() or "tender" in emotion.lower() or "intimate" in emotion.lower() or "breathy" in emotion.lower()) else 20.0
+                        safe_emotion = (emotion or "").lower()
+                        is_whisper = ("whisper" in text.lower() or "whisper" in safe_emotion or "tender" in safe_emotion or "intimate" in safe_emotion or "breathy" in safe_emotion)
+                        faint_limit = 8.0 if is_whisper else 20.0
                         is_silent_faint = (peak_amp > 0 and word_count >= 3 and rms < faint_limit)
                         is_dc_corrupted = (peak_amp > 0 and dur_sec >= 2.0 and dc_offset > 1500.0)
                         is_stutter = (word_count > 3 and ratio > 3.2 and dur_sec >= 15.0)
@@ -577,7 +580,7 @@ def synthesize_gemini_multispeaker_batch(
             raise
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         key_exhausted_or_invalid = False
-
+        logger.info(f"  🎙️ [TTS GEMINI 3.8 FLASH] Synthesizing multi-speaker batch '{batch.batch_id}' via '{model}'...")
         for network_attempt in range(3):
             if rate_limiter:
                 rate_limiter.acquire()

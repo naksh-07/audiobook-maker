@@ -119,6 +119,10 @@ Output JSON: A list of objects where each object corresponds by "index" to the i
             if isinstance(e.get("acting"), dict):
                 seg["acting"] = e["acting"]
             if isinstance(e.get("spatial"), dict):
+                import os
+                if os.environ.get("AUDIBLE_FLOW_MODE", "true").lower() in ("true", "1", "yes"):
+                    e["spatial"]["azimuth_pan"] = 0.0
+                    e["spatial"]["pan"] = 0.0
                 seg["spatial"] = e["spatial"]
             if e.get("acoustic_env"):
                 seg["acoustic_env"] = e["acoustic_env"]

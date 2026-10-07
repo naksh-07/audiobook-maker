@@ -174,8 +174,8 @@ class ModelManager:
         Classifies an arbitrary model string into its semantic capability tier.
         """
         m = model_name.lower()
-        # Tier 3 Utility: explicitly lightweight nano models or small gemma weights
-        if any(x in m for x in ("nano", "gemma", "1.5-flash-8b")):
+        # Tier 3 Utility: explicitly lightweight nano models, flash-lite variants, or small gemma weights
+        if any(x in m for x in ("nano", "gemma", "1.5-flash-8b", "flash-lite", "-lite", "lite")):
             return ModelTier.TIER_3_UTILITY
 
         # Tier 1 Flagship: High reasoning models and pro previews
@@ -327,7 +327,7 @@ class ModelManager:
                         f"quality floor {floor.name} for '{task.value}'. Production halted."
                     )
 
-                logger.info(f"[+] Model Manager: Selected active model '{chosen_model}' for {task.value} (Latency: {chosen_latency:.0f}ms).")
+                logger.info(f"[+] Model Manager: Selected active LLM '{chosen_model}' for text task '{task.value}' (Latency: {chosen_latency:.0f}ms). [NOTE: Voice TTS strictly uses Gemini 3.8 Flash TTS]")
                 with self._lock:
                     self._active_task_models[task] = (chosen_model, now)
                 return chosen_model

@@ -31,7 +31,7 @@ def concatenate_and_master_chapter(
     loudness_range: float = 11.0,
     target_sample_rate: int = 48000,
     script_segments: Optional[List[Dict[str, Any]]] = None,
-    spatial_staging: bool = True,
+    spatial_staging: bool = False,
     edit_plans: Optional[List[Any]] = None,
 ) -> Path:
     """
@@ -74,7 +74,14 @@ def concatenate_and_master_chapter(
         s_file = output_chapter_file.parent / f".silence_{sample_rate}_{channels}_{dur_ms}ms.wav"
         if not s_file.exists():
             num_frames = int(sample_rate * (dur_ms / 1000.0))
-            silence_bytes = b"\x00" * (num_frames * channels * 2)
+            if os.environ.get("AUDIBLE_ROOM_TONE", "true").lower() in ("true", "1", "yes"):
+                # Imperceptible TPDF room-tone dither floor (~ -72 dBFS, +-1.5 LSBs)
+                # Prevents DAC sleep/gate-snapping in headphones and eliminates digital dead-air
+                dither = (np.random.rand(num_frames * channels) - np.random.rand(num_frames * channels)) * 1.5
+                silence_pcm = np.clip(dither, -32768, 32767).astype(np.int16)
+                silence_bytes = silence_pcm.tobytes()
+            else:
+                silence_bytes = b"\x00" * (num_frames * channels * 2)
             with wave.open(str(s_file), "wb") as wf:
                 wf.setnchannels(channels)
                 wf.setsampwidth(2)
@@ -84,6 +91,8 @@ def concatenate_and_master_chapter(
         return s_file
 
     def _get_panned_segment(seg_path: Path, pan: float, s_idx: int) -> Path:
+        if not spatial_staging or abs(pan) < 0.01:
+            return seg_path
         clamped_pan = max(-1.0, min(1.0, float(pan)))
         # Constant-power panning rule: theta in [0, pi/2], center at pi/4
         theta = (math.pi / 4.0) * (1.0 + clamped_pan)
@@ -102,7 +111,16 @@ def concatenate_and_master_chapter(
             ]
             res = subprocess.run(p_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60.0)
             if res.returncode != 0 or not panned_file.exists():
-                return seg_path
+                fallback_cmd = [
+                    ffmpeg, "-y",
+                    "-i", str(seg_path.resolve()),
+                    "-af", f"aresample={sample_rate},aformat=channel_layouts=stereo",
+                    "-c:a", "pcm_s16le",
+                    str(panned_file),
+                ]
+                subprocess.run(fallback_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60.0)
+                if not panned_file.exists():
+                    return seg_path
         spatial_cache[str(panned_file)] = panned_file
         return panned_file
 
@@ -195,16 +213,17 @@ def concatenate_and_master_chapter(
 
                     # Pre-roll breath / pause if specified
                     pre_breath_ms = 0
-                    if plan_for_seg is not None and getattr(plan_for_seg, "pause_before_ms", 0) > 0:
-                        pre_breath_ms = int(plan_for_seg.pause_before_ms)
-                    elif int(seg_info.get("pre_roll_breath_ms", 0) or 0) > 0:
-                        pre_breath_ms = int(seg_info.get("pre_roll_breath_ms", 0))
+                    if os.environ.get("AUDIBLE_CLEAN_DSP", "true").lower() not in ("true", "1", "yes"):
+                        if plan_for_seg is not None and getattr(plan_for_seg, "pause_before_ms", 0) > 0:
+                            pre_breath_ms = int(plan_for_seg.pause_before_ms)
+                        elif int(seg_info.get("pre_roll_breath_ms", 0) or 0) > 0:
+                            pre_breath_ms = int(seg_info.get("pre_roll_breath_ms", 0))
 
-                    if pre_breath_ms > 0:
-                        breath_silence = _get_silence_file(pre_breath_ms)
-                        if breath_silence:
-                            safe_breath = str(breath_silence.resolve()).replace("\\", "/").replace("'", "'\\''")
-                            f.write(f"file '{safe_breath}'\n")
+                        if pre_breath_ms > 0:
+                            breath_silence = _get_silence_file(pre_breath_ms)
+                            if breath_silence:
+                                safe_breath = str(breath_silence.resolve()).replace("\\", "/").replace("'", "'\\''")
+                                f.write(f"file '{safe_breath}'\n")
 
                     if spatial_staging:
                         speaker = str(seg_info.get("speaker", "Narrator"))
@@ -240,19 +259,42 @@ def concatenate_and_master_chapter(
                     if i < len(audio_segments) - 1:
                         if plan_for_seg is not None and getattr(plan_for_seg, "pause_after_ms", None) is not None:
                             cur_pause_ms = int(plan_for_seg.pause_after_ms)
-                        elif seg_info.get("pause_after_ms") is not None:
-                            cur_pause_ms = int(seg_info.get("pause_after_ms"))
                         else:
-                            if seg_info.get("is_chapter_header"):
-                                cur_pause_ms = 1400
-                            elif seg_info.get("is_scene_break"):
-                                cur_pause_ms = 900
-                            elif seg_info.get("intensity_level") == "explosive":
-                                cur_pause_ms = 280
-                            elif seg_info.get("intensity_level") == "low":
-                                cur_pause_ms = 600
+                            seg_text = str(seg_info.get("text", "")).strip()
+                            configured_pause = seg_info.get("pause_after_ms")
+                            if configured_pause is not None:
+                                cur_pause_ms = int(configured_pause)
+                            elif os.environ.get("AUDIBLE_CLEAN_DSP", "true").lower() in ("true", "1", "yes"):
+                                # Syntax-aware pause calibration
+                                next_s_idx = (i + 2)
+                                next_seg_file = audio_segments[i + 1]
+                                for part in next_seg_file.stem.split("_"):
+                                    if part.startswith("s") and part[1:].isdigit():
+                                        next_s_idx = int(part[1:])
+                                        break
+                                next_info = seg_meta_by_idx.get(next_s_idx, {})
+                                cur_speaker = str(seg_info.get("speaker", ""))
+                                next_speaker = str(next_info.get("speaker", ""))
+
+                                if cur_speaker != next_speaker and cur_speaker and next_speaker:
+                                    cur_pause_ms = 600
+                                elif seg_text.endswith((",", ";", "—", "-")):
+                                    cur_pause_ms = 180
+                                elif seg_text.endswith((".", "!", "?", "।")):
+                                    cur_pause_ms = 380
+                                else:
+                                    cur_pause_ms = pause_ms
                             else:
-                                cur_pause_ms = pause_ms
+                                if seg_info.get("is_chapter_header"):
+                                    cur_pause_ms = 1400
+                                elif seg_info.get("is_scene_break"):
+                                    cur_pause_ms = 900
+                                elif seg_info.get("intensity_level") == "explosive":
+                                    cur_pause_ms = 280
+                                elif seg_info.get("intensity_level") == "low":
+                                    cur_pause_ms = 600
+                                else:
+                                    cur_pause_ms = pause_ms
                         if cur_pause_ms > 0:
                             s_file = _get_silence_file(cur_pause_ms)
                             if s_file:
@@ -310,16 +352,17 @@ def concatenate_and_master_chapter(
                     # Pre-roll breath / pause if specified (only if starting fresh take)
                     if current_data is None:
                         pre_breath_ms = 0
-                        if plan_for_seg is not None and getattr(plan_for_seg, "pause_before_ms", 0) > 0:
-                            pre_breath_ms = int(plan_for_seg.pause_before_ms)
-                        elif int(seg_info.get("pre_roll_breath_ms", 0) or 0) > 0:
-                            pre_breath_ms = int(seg_info.get("pre_roll_breath_ms", 0))
+                        if os.environ.get("AUDIBLE_CLEAN_DSP", "true").lower() not in ("true", "1", "yes"):
+                            if plan_for_seg is not None and getattr(plan_for_seg, "pause_before_ms", 0) > 0:
+                                pre_breath_ms = int(plan_for_seg.pause_before_ms)
+                            elif int(seg_info.get("pre_roll_breath_ms", 0) or 0) > 0:
+                                pre_breath_ms = int(seg_info.get("pre_roll_breath_ms", 0))
 
-                        if pre_breath_ms > 0:
-                            breath_silence = _get_silence_file(pre_breath_ms)
-                            if breath_silence:
-                                safe_breath = str(breath_silence.resolve()).replace("\\", "/").replace("'", "'\\''")
-                                f.write(f"file '{safe_breath}'\n")
+                            if pre_breath_ms > 0:
+                                breath_silence = _get_silence_file(pre_breath_ms)
+                                if breath_silence:
+                                    safe_breath = str(breath_silence.resolve()).replace("\\", "/").replace("'", "'\\''")
+                                    f.write(f"file '{safe_breath}'\n")
 
                         current_data, cur_sr, cur_ch = _read_wav_pcm(resolved_segs[i])
                     else:
@@ -341,10 +384,19 @@ def concatenate_and_master_chapter(
                             remainder_next = next_raw_data[n_ov:]
 
                             # Equal-power mixing for overlap window
-                            mix_data = np.clip(tail_i + head_next, -32768.0, 32767.0)
+                            fade_out = np.cos(np.linspace(0.0, np.pi / 2.0, n_ov))
+                            fade_in = np.sin(np.linspace(0.0, np.pi / 2.0, n_ov))
+                            if tail_i.ndim == 2:
+                                fade_out = fade_out[:, np.newaxis]
+                                fade_in = fade_in[:, np.newaxis]
+                            mix_data = np.clip(tail_i * fade_out + head_next * fade_in, -32768.0, 32767.0)
                             if len(mix_data) > 2:
-                                mix_data[0] = 0
-                                mix_data[-1] = 0
+                                if mix_data.ndim == 2:
+                                    mix_data[0, :] = 0
+                                    mix_data[-1, :] = 0
+                                else:
+                                    mix_data[0] = 0
+                                    mix_data[-1] = 0
 
                             if len(body_i) > 20:
                                 b_path = output_chapter_file.parent / f".overlap_body_s{s_idx}.wav"
@@ -377,7 +429,30 @@ def concatenate_and_master_chapter(
                         if plan_for_seg is not None and getattr(plan_for_seg, "pause_after_ms", None) is not None:
                             cur_pause_ms = int(plan_for_seg.pause_after_ms)
                         else:
-                            cur_pause_ms = int(seg_info.get("pause_after_ms", pause_ms) or pause_ms)
+                            seg_text = str(seg_info.get("text", "")).strip()
+                            configured_pause = seg_info.get("pause_after_ms")
+                            if configured_pause is not None:
+                                cur_pause_ms = int(configured_pause)
+                            elif os.environ.get("AUDIBLE_CLEAN_DSP", "true").lower() in ("true", "1", "yes"):
+                                next_s_idx = seg_indices[i + 1] if i + 1 < len(seg_indices) else 0
+                                next_info = seg_meta_by_idx.get(next_s_idx, {})
+                                cur_speaker = str(seg_info.get("speaker", ""))
+                                next_speaker = str(next_info.get("speaker", ""))
+
+                                if cur_speaker != next_speaker and cur_speaker and next_speaker:
+                                    # Speaker change / dialogue turn: natural dramatic pause
+                                    cur_pause_ms = 600
+                                elif seg_text.endswith((",", ";", "—", "-")):
+                                    # Comma or dash clause boundary
+                                    cur_pause_ms = 180
+                                elif seg_text.endswith((".", "!", "?", "।")):
+                                    # Full sentence completion
+                                    cur_pause_ms = 380
+                                else:
+                                    cur_pause_ms = pause_ms
+                            else:
+                                cur_pause_ms = int(seg_info.get("pause_after_ms", pause_ms) or pause_ms)
+
                         if cur_pause_ms > 0:
                             s_file = _get_silence_file(cur_pause_ms)
                             if s_file:
@@ -404,7 +479,8 @@ def concatenate_and_master_chapter(
         filter_chain = (
             f"aresample=osr={target_sample_rate},"
             f"highpass=f=50,"
-            f"deesser=i=0.10:m=0.5:f=0.15"
+            f"deesser=i=0.10:m=0.5:f=0.15,"
+            f"alimiter=limit={limiter_limit}:attack={limiter_attack}:release=50:asc=true"
         )
         if loudnorm:
             filter_chain += (

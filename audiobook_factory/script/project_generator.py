@@ -6,11 +6,12 @@ and outputs chapter screenplay JSON files.
 """
 
 from __future__ import annotations
+import re
 import json
 import hashlib
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from audiobook_factory.script.normalizer import build_narrator_script
 from audiobook_factory.script.dramatized_builder import build_dramatized_script_llm
@@ -95,6 +96,8 @@ def generate_project_scripts(
     print(f"[*] Building audiobook scripts for {len(target_files)} chapters (Mode: {'Dramatized' if dramatized else 'Narrator'})...")
 
     for seq_idx, chap_file in enumerate(target_files, 1):
+        m_ch = re.search(r"chapter_(\d+)", chap_file.stem, re.IGNORECASE)
+        real_ch = int(m_ch.group(1)) if m_ch else seq_idx
         script_file = scripts_dir / f"{chap_file.stem}_script.json"
         if not overwrite and script_file.exists() and script_file.stat().st_size > 50:
             print(f"[-] Script already exists: {script_file.name} (Skipping)")
@@ -110,7 +113,7 @@ def generate_project_scripts(
                 mem_ctx = MemoryRetriever.retrieve_for_scene(
                     store=memory_store,
                     book_bible=bible,
-                    chapter=seq_idx,
+                    chapter=real_ch,
                     scene_id=chap_file.stem,
                     scene_text=content,
                 )
@@ -123,7 +126,7 @@ def generate_project_scripts(
                 is_hindi=use_hindi,
                 character_roster=roster,
                 memory_context=mem_ctx,
-                chapter_num=seq_idx,
+                chapter_num=real_ch,
                 chapter_id=chap_file.stem,
                 return_dramatic_plan=True,
             )
@@ -166,7 +169,7 @@ def generate_project_scripts(
                     )
                     events, _ = EventExtractor.extract_scene_events(
                         scene_text=content,
-                        chapter=seq_idx,
+                        chapter=real_ch,
                         scene_id=chap_file.stem,
                         known_characters=known_chars,
                         location=mem_ctx.location_name if mem_ctx else "Unspecified",
@@ -174,7 +177,7 @@ def generate_project_scripts(
                     )
                     memory_store.commit_scene_memory(
                         scene_id=chap_file.stem,
-                        chapter=seq_idx,
+                        chapter=real_ch,
                         events=events,
                         source_text=content,
                         book_bible=bible,

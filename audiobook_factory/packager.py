@@ -289,10 +289,21 @@ def package_m4b_audiobook(
             safe_path = str(cf.resolve()).replace("\\", "/").replace("'", "'\\''")
             f.write(f"file '{safe_path}'\n")
 
-            # Match title from metadata if available
-            chap_title = f"Chapter {idx}"
-            if "chapters" in metadata and idx - 1 < len(metadata["chapters"]):
-                chap_title = metadata["chapters"][idx - 1].get("title", chap_title)
+            # Match title from metadata if available using real chapter number
+            m_ch = re.search(r"chapter_(\d+)", cf.stem, re.IGNORECASE)
+            real_ch = int(m_ch.group(1)) if m_ch else idx
+            chap_title = f"Chapter {real_ch}"
+            if "chapters" in metadata and isinstance(metadata["chapters"], list):
+                matched_meta = next(
+                    (c for c in metadata["chapters"] if c.get("number") == real_ch or c.get("chapter_num") == real_ch),
+                    None
+                )
+                if matched_meta and matched_meta.get("title"):
+                    chap_title = matched_meta["title"]
+                elif real_ch - 1 < len(metadata["chapters"]):
+                    chap_title = metadata["chapters"][real_ch - 1].get("title", chap_title)
+                elif idx - 1 < len(metadata["chapters"]):
+                    chap_title = metadata["chapters"][idx - 1].get("title", chap_title)
 
             chapter_durations.append({
                 "number": idx,
@@ -361,6 +372,11 @@ def package_m4b_audiobook(
                 pass
         if concat_list.exists():
             concat_list.unlink()
+        if meta_txt.exists():
+            try:
+                meta_txt.unlink()
+            except OSError:
+                pass
         if staging_dir.exists():
             shutil.rmtree(staging_dir, ignore_errors=True)
 

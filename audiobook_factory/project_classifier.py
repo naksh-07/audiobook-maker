@@ -26,54 +26,40 @@ class ProjectClassification:
     confidence: float
 
 
-# Recognizable Literary Franchises & Lore Indicators
-FRANCHISE_SIGNATURES: Dict[str, Dict[str, Any]] = {
-    "the_witcher": {
-        "authors": ["andrzej sapkowski", "sapkowski"],
-        "titles": ["sword of destiny", "the last wish", "blood of elves", "time of contempt", "baptism of fire", "tower of the swallow", "lady of the lake", "season of storms"],
-        "keywords": ["rivia", "vengerberg", "cintra", "witcher", "zerrikanian", "oxenfurt", "jaskier", "kaer morhen", "novigrad", "skellige", "temeria", "redania", "nilfgaard", "basilisk", "aelirenn"],
-        "era": "MEDIEVAL_FANTASY",
+# Universal Literary Era & Genre Categories
+UNIVERSAL_ERA_ACOUSTICS: Dict[str, Dict[str, str]] = {
+    "MEDIEVAL_FANTASY": {
         "genre": "fantasy",
-        "primary_acoustic_env": "stone_ruins_exterior",
-        "theme": "Dark Slavic Witcher Fantasy",
+        "primary_acoustic_env": "tavern_interior",
+        "theme": "Historical & Epic Fantasy Drama",
     },
-    "dune": {
-        "authors": ["frank herbert"],
-        "titles": ["dune", "dune messiah", "children of dune", "god emperor of dune"],
-        "keywords": ["paul atreides", "arrakis", "harkonnen", "fremen", "shai-hulud", "bene gesserit", "caladan", "melange", "spice"],
-        "era": "SPACE_OPERA_SCIFI",
+    "SPACE_OPERA_SCIFI": {
         "genre": "sci_fi",
-        "primary_acoustic_env": "desert_dunes_wind",
-        "theme": "Epic Desert Space Opera",
+        "primary_acoustic_env": "spaceship_bridge",
+        "theme": "Cinematic Speculative Sci-Fi",
     },
-    "tolkien_middle_earth": {
-        "authors": ["j.r.r. tolkien", "tolkien"],
-        "titles": ["the hobbit", "the fellowship of the ring", "the two towers", "the return of the king", "the silmarillion"],
-        "keywords": ["frodo", "bilbo", "gandalf", "mordor", "shire", "aragorn", "legolas", "gimli", "rivendell", "sauron", "orc", "hobbit"],
-        "era": "MEDIEVAL_FANTASY",
-        "genre": "fantasy",
-        "primary_acoustic_env": "deep_forest_night",
-        "theme": "High Epic Fantasy",
+    "RETRO_FUTURE_CYBERPUNK": {
+        "genre": "cyberpunk",
+        "primary_acoustic_env": "cyberpunk_alley_rain",
+        "theme": "Gritty Cyberpunk Noir",
     },
-    "sherlock_holmes": {
-        "authors": ["arthur conan doyle", "conan doyle"],
-        "titles": ["a study in scarlet", "the sign of the four", "the hound of the baskervilles", "the valley of fear"],
-        "keywords": ["sherlock", "holmes", "dr. watson", "baker street", "moriarty", "lestrade", "scotland yard"],
-        "era": "VICTORIAN_EDWARDIAN",
+    "PULP_NOIR_1940S": {
         "genre": "detective_noir",
-        "primary_acoustic_env": "victorian_parlor_fire",
-        "theme": "Victorian Gaslight Detective Mystery",
+        "primary_acoustic_env": "detective_office",
+        "theme": "Hardboiled Detective Noir",
     },
-    "lovecraft_cthulhu": {
-        "authors": ["h.p. lovecraft", "lovecraft"],
-        "titles": ["the call of cthulhu", "at the mountains of madness", "the shadow over innsmouth"],
-        "keywords": ["cthulhu", "arkham", "necronomicon", "miskatonic", "innsmouth", "shoggoth", "yog-sothoth", "elder god"],
-        "era": "PULP_NOIR_1940S",
-        "genre": "horror_thriller",
-        "primary_acoustic_env": "crypt_catacomb",
-        "theme": "Cosmic Horror & Eldritch Dread",
+    "VICTORIAN_EDWARDIAN": {
+        "genre": "historical",
+        "primary_acoustic_env": "victorian_parlor_fire",
+        "theme": "Period Historical Drama",
+    },
+    "MODERN_CONTEMPORARY": {
+        "genre": "literary_fiction",
+        "primary_acoustic_env": "room_tone",
+        "theme": "Modern Literary Audio Drama",
     },
 }
+
 
 
 class ProjectClassifier:
@@ -135,44 +121,7 @@ class ProjectClassifier:
 
         combined_search = f"{title} {author} {narrative_voice} {text_corpus[:10000]}".lower()
 
-        # 2. Check Franchise Signatures first (highest fidelity)
-        for franchise_key, sig in FRANCHISE_SIGNATURES.items():
-            if any(a in author for a in sig["authors"]):
-                logger.info(f"[+] ProjectClassifier: Match author '{author}' -> Franchise '{franchise_key}'")
-                return ProjectClassification(
-                    era=sig["era"],
-                    genre=sig["genre"],
-                    franchise_affinity=franchise_key,
-                    primary_acoustic_env=sig["primary_acoustic_env"],
-                    dramatic_theme=sig["theme"],
-                    confidence=0.98,
-                )
-
-            if any(t in title for t in sig["titles"]):
-                logger.info(f"[+] ProjectClassifier: Match title '{title}' -> Franchise '{franchise_key}'")
-                return ProjectClassification(
-                    era=sig["era"],
-                    genre=sig["genre"],
-                    franchise_affinity=franchise_key,
-                    primary_acoustic_env=sig["primary_acoustic_env"],
-                    dramatic_theme=sig["theme"],
-                    confidence=0.95,
-                )
-
-            # Keyword density check
-            kw_hits = sum(1 for kw in sig["keywords"] if re.search(r"\b" + re.escape(kw) + r"\b", combined_search))
-            if kw_hits >= 2:
-                logger.info(f"[+] ProjectClassifier: Keyword signature hits ({kw_hits}) -> Franchise '{franchise_key}'")
-                return ProjectClassification(
-                    era=sig["era"],
-                    genre=sig["genre"],
-                    franchise_affinity=franchise_key,
-                    primary_acoustic_env=sig["primary_acoustic_env"],
-                    dramatic_theme=sig["theme"],
-                    confidence=0.90,
-                )
-
-        # 3. Universal Era & Genre Heuristic Analysis (for standalone novels)
+        # 2. Universal Era & Genre Heuristic Analysis (for any novel)
         fantasy_keywords = [
             "sword", "blade", "sorcerer", "wizard", "magic", "dragon", "tavern", "castle",
             "shield", "scabbard", "king", "queen", "dungeon", "crypt", "monster", "beast",

@@ -266,8 +266,8 @@ def validate_and_sanitize_translation(text: str, is_hindi: bool = True) -> Tuple
         if dev_count < 20 and len(cleaned.split()) > 15:
             return False, "", f"Devanagari character density too low ({dev_count} devanagari characters for {len(cleaned.split())} words)."
 
-        # Reject if heavy English text without proportional Devanagari
-        if latin_words > 30 and dev_count < (latin_words * 2):
+        # Reject if heavy English text without proportional Devanagari (relaxed for sci-fi/modern loanwords)
+        if latin_words > 60 and dev_count < latin_words:
             return False, "", f"Excessive English vocabulary detected ({latin_words} words vs {dev_count} Devanagari characters)."
 
     return True, cleaned, ""

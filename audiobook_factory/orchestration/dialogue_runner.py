@@ -20,7 +20,7 @@ def process_and_master_dialogue_stem(
     script_data: List[Dict[str, Any]],
     audio_dir: Path,
     mastered_dir: Path,
-    spatial_staging: bool = True,
+    spatial_staging: bool = False,
     segment_files: Optional[List[Path]] = None,
 ) -> Tuple[Path, float, Dict[int, float], List[Path]]:
     """
@@ -109,4 +109,5 @@ def process_and_master_dialogue_stem(
             else:
                 seg_durations[s_idx] = 4.0
 
-    return vocal_wav, vocal_dur, seg_durations, segments
+    final_segments = edited_segments if edited_segments else segments
+    return vocal_wav, vocal_dur, seg_durations, final_segments
