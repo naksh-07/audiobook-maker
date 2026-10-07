@@ -316,7 +316,7 @@ def synthesize_gemini_tts(
                         # Audio Quality & SNR Gatekeeper (Mathematical PCM Probe)
                         sample_count = len(raw_pcm) // 2
                         if sample_count > 0:
-                            samples = struct.unpack(f"<{sample_count}h", raw_pcm)
+                            samples = struct.unpack(f"<{sample_count}h", raw_pcm[: sample_count * 2])
                             peak_amp = max(abs(s) for s in samples)
                             sum_sq = sum(s * s for s in samples)
                             rms = math.sqrt(sum_sq / sample_count)
@@ -686,7 +686,7 @@ def synthesize_gemini_multispeaker_batch(
                         # Mathematical PCM Probe for Audio Defects
                         sample_count = len(raw_pcm) // 2
                         if sample_count > 0:
-                            samples = struct.unpack(f"<{sample_count}h", raw_pcm)
+                            samples = struct.unpack(f"<{sample_count}h", raw_pcm[: sample_count * 2])
                             peak_amp = max(abs(s) for s in samples)
                             sum_sq = sum(s * s for s in samples)
                             rms = math.sqrt(sum_sq / sample_count)

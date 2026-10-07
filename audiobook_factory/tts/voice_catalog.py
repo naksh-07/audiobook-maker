@@ -233,8 +233,8 @@ class VoiceCatalog:
         if not candidates:
             candidates = self._voices_by_lang.get("hi-IN" if "hi" in language_code else "en-US", [])
 
-        gender_clean = gender.lower()
-        arch_tokens = set(archetype.lower().replace("-", " ").replace("_", " ").split())
+        gender_clean = (gender or "male").lower()
+        arch_tokens = set((archetype or "").lower().replace("-", " ").replace("_", " ").split())
 
         # Determine effective child vs adolescent teen state
         teen_keywords = {"teen", "teenager", "adolescent", "youth", "किशोर", "किशोरी", "तरुण", "youngster"}
@@ -347,7 +347,10 @@ class VoiceCatalog:
             scored.sort(key=lambda x: -x[0])
             return scored[0][1]
 
-        # Fallback if all candidates are exhausted: pick first candidate not in exclude_set
+        # Fallback if all scored candidates filtered out: pick first candidate with matching gender
+        for v in candidates:
+            if v["id"] not in exclude_set and v.get("gender") == gender_clean:
+                return v["id"]
         for v in candidates:
             if v["id"] not in exclude_set:
                 return v["id"]

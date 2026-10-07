@@ -102,11 +102,12 @@ class TieredRepairEngine:
         cls,
         text: str,
         terminology_variants: Optional[Dict[str, str]] = None,
+        apply_calque_substitutions: bool = True,
     ) -> Tuple[str, List[RepairAction]]:
         """
         Level 1 Repair: Applies deterministic substitutions for forbidden
-        terminology variants and unambiguous robotic literalisms.
-        Never alters legitimate literary or rustic expressions (नमस्ते, राम-राम, दारू).
+        terminology variants. Calque replacements are advisory-only by default
+        to protect LLM creative autonomy and literary context.
         """
         actions: List[RepairAction] = []
         repaired = text
@@ -127,9 +128,11 @@ class TieredRepairEngine:
                     details=f"Substituted with canonical '{canonical}'",
                 ))
 
-        # Register unambiguous calques (apply_substitutions=True applies ONLY unambiguous calques)
-        is_clean, cleaned_reg, warnings = audit_literary_register(repaired, apply_substitutions=True)
-        if cleaned_reg != repaired:
+        # Register unambiguous calques (advisory by default; substitutions only if explicitly enabled)
+        is_clean, cleaned_reg, warnings = audit_literary_register(
+            repaired, apply_substitutions=apply_calque_substitutions
+        )
+        if apply_calque_substitutions and cleaned_reg != repaired:
             repaired = cleaned_reg
             for w in warnings:
                 if "Antipattern detected" in w:

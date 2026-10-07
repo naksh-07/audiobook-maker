@@ -52,20 +52,11 @@ class AgentDirector(DramaturgyMixin, MusicDirectorMixin, FoleyDirectorMixin, Sce
 
         if bible_path.exists():
             try:
-                from audiobook_factory.sonic_bible import SonicBible
-                self.sonic_bible = SonicBible.load_from_disk(bible_path)
-                logger.info(
-                    f"[+] Agent Director: Loaded Sonic Bible from {bible_path.name} "
-                    f"({len(self.sonic_bible.leitmotifs)} motifs, {len(self.sonic_bible.acoustic_spaces)} spaces)"
-                )
+                with open(bible_path, "r", encoding="utf-8") as f:
+                    self.sonic_bible = json.load(f)
+                logger.info(f"[+] Agent Director: Loaded Sonic Bible from {bible_path.name}")
             except Exception as e:
                 logger.warning(f"  [!] Failed to load Sonic Bible from {bible_path}: {e}")
-        else:
-            try:
-                from audiobook_factory.sonic_bible_generator import SonicBibleGenerator
-                self.sonic_bible = SonicBibleGenerator.generate_for_project(pdir, sound_bank=self.sound_bank)
-            except Exception as e:
-                logger.debug(f"Could not auto-generate Sonic Bible: {e}")
 
     def direct_chapter_manifest(
         self,

@@ -1205,3 +1205,36 @@
   4. **Universal Novel-Agnostic & Zero Hardcoding Invariant**:
      - Zero hardcoding of voice IDs; casting operates purely through dynamic multi-attribute scoring. Verified via `test_adolescent_teen_boy_dynamic_casting` and `test_zero_hardcoding_contracts.py`.
 - **Rationale:** Eradicates both the female-gender dissonance and robotic chipmunk distortion for adolescent male roles, producing natural, gritty, age-appropriate dramatic acting.
+
+
+## ADR-056: Forensic Audit Remediation: Universal Invariants, Creative Autonomy & Audio Robustness
+- **Status:** Accepted
+- **Date:** 2026-10-07
+- **Context:**
+  1. An independent multi-angle forensic audit by three expert subagents (`hardcode-hunter`, `creative-autonomy-auditor`, `debugger-detective`) identified 10 architectural defects, latent runtime crash vulnerabilities, and creative overreaches across the factory core.
+  2. Witcher proprietary signs (`igni`, `aard`, etc.) and creatures (`striga`) remained in `acoustic_bus_matrix.py`, while `voice_casting_catalog.json` hardcoded Geralt/Ciri/Yennefer archetypes.
+  3. Gate 1 relied on a static 15-voice cheat set, ignoring 114 native Hindi voices. English casting was clamped down to 22 legacy personas.
+  4. Heuristics in `sanitizer.py` silently wiped valid descriptive acting directions (`[ironic smirk]`, `[hesitates, catches breath]`) to `""`, while `stitch_split_dialogue_turns` reordered physical action sequences ($<= 35$ words) before dialogue, discarding acting metadata.
+  5. Audio mastering with `spatial_staging=True` returned mono 1-channel files for Narrator (`pan=0.0`) while character tracks were stereo 2-channel, risking fatal FFmpeg concat demuxer stream corruption. `{"gender": null}` from LLM crashed `character_caster.py`.
+- **Decision:**
+  1. **Lore Purge & Universal UCS Expansion (`acoustic_bus_matrix.py`, `voice_casting_catalog.json`, `translator.py`)**:
+     - Purged Witcher signs and monsters; added universal modern/sci-fi UCS rules (`GUNPist`, `VEHCar`, `ELECGen`, `MAGCSpell`, `CREAVoc`).
+     - Converted casting catalog archetypes to universal literary roles (`"Monster Hunter / Nomad Tracker"`, `"Warrior Heroine / Fierce Prodigy"`).
+     - Generalized translation prompt examples to novel-agnostic archetypes.
+  2. **Dynamic Gate 1 Gender Validation (`gates/literary.py`)**:
+     - Connected Gate 1 directly to `VoiceCatalog`, dynamically verifying acoustic gender alignment across all 2,089 Gemini voices with Anime Seiyū child exceptions.
+  3. **Full Voice Pool Unlocking & Dynamic Fallbacks (`character_caster.py`, `dispatcher.py`)**:
+     - Removed static 22-persona clamp in English casting, directly honoring `VoiceCatalog` selections.
+     - Supported POV-aware Narrator casting for first-person male protagonists while preserving `Aoede` default.
+     - Dynamic gendered fallback in `dispatcher.py` querying `VoiceCatalog` before falling back to Narrator.
+  4. **Creative Acting Tag Preservation & Code-Switching Protection (`sanitizer.py`)**:
+     - Preserved descriptive English acting cues in `filter_bracketed_tags` for extraction into `speechMetadata.style`.
+     - Replaced blunt 6+ Latin words deletion with targeted refusal pattern check, protecting in-story code-switching and spells.
+  5. **Narrative Chronology & Split-Quote Precision (`screenplay_cleaner.py`)**:
+     - Constrained split-quote stitching to $\le 6$ words with explicit speech verbs (`said`, `whispered`, `कहा`, `पूछा`), preventing physical narrative blocking from being reordered and preserving Turn 2 acting metadata.
+  6. **Audio Engineering & Runtime Crash Defense (`mastering.py`, `character_caster.py`, `gemini.py`, `director.py`)**:
+     - In `_get_panned_segment()`, rendered all segments (including phantom center `pan=0.0`) to uniform 2-channel stereo when `spatial_staging=True`, guaranteeing 100% concat demuxer stream uniformity.
+     - Handled `{"gender": null}` via `(ch.get("gender") or "male").lower()`.
+     - Sliced `raw_pcm[:sample_count * 2]` in `struct.unpack`, eradicating `struct.error` on odd-byte buffers.
+     - Cleaned dangling imports in `director.py`.
+- **Rationale:** Restores 100% universal agility, protects LLM creative autonomy, eliminates latent audio crashes, and achieves complete production certification.

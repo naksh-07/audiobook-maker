@@ -407,8 +407,15 @@ def stitch_split_dialogue_turns(segments: List[Dict[str, Any]]) -> List[Dict[str
         ):
             narr_text = segments[i + 1].get("text", "").strip()
             narr_words = len(narr_text.split())
+            speech_verbs = (
+                "said", "asked", "replied", "whispered", "muttered", "shouted", "yelled",
+                "cried", "growled", "hissed", "murmured", "breathed", "snapped",
+                "कहा", "बोला", "पूछा", "बोली", "फुसफुसाया", "फुसफुसाई", "चिल्लाया",
+                "दहाड़ा", "बुदबुदाया", "जवाब दिया", "कहा उसने", "उसने कहा",
+            )
+            is_speech_tag = narr_words <= 6 and any(v in narr_text.lower() for v in speech_verbs)
 
-            if narr_words <= 35:
+            if is_speech_tag:
                 d1 = segments[i].get("text", "").strip()
                 d2 = segments[i + 2].get("text", "").strip().lstrip(",। ")
 
@@ -422,9 +429,17 @@ def stitch_split_dialogue_turns(segments: List[Dict[str, Any]]) -> List[Dict[str
                 narr_item["text"] = narr_lead
                 stitched.append(narr_item)
 
-                # Add Unified Dialogue
+                # Add Unified Dialogue (preserving acting metadata and style)
                 unified_item = dict(segments[i])
                 unified_item["text"] = f"{d1} {d2}"
+                acting1 = segments[i].get("acting", {})
+                acting2 = segments[i + 2].get("acting", {})
+                if acting2 and acting2 != acting1:
+                    style1 = acting1.get("delivery_style", "")
+                    style2 = acting2.get("delivery_style", "")
+                    if style2 and style2 != style1:
+                        unified_item["acting"] = dict(acting1)
+                        unified_item["acting"]["delivery_style"] = f"{style1}; {style2}".strip("; ")
                 stitched.append(unified_item)
 
                 i += 3

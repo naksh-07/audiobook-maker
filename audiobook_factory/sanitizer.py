@@ -130,7 +130,7 @@ DEVANAGARI_TTS_TAG_MAP: Dict[str, str] = {
 
 
 def filter_bracketed_tags(match: re.Match) -> str:
-    """Preserve valid Gemini TTS expressive tags, translate Devanagari acting cues, and preserve SFX/ACTION cues."""
+    """Preserve valid Gemini TTS expressive tags, translate Devanagari acting cues, and preserve SFX/ACTION/acting cues."""
     tag_str = match.group(0).strip()
     if COMPILED_TTS_TAG_RE.match(tag_str) or "SFX" in tag_str.upper() or "ACTION" in tag_str.upper():
         return tag_str
@@ -139,6 +139,16 @@ def filter_bracketed_tags(match: re.Match) -> str:
     for dev_pattern, eng_tag in DEVANAGARI_TTS_TAG_MAP.items():
         if re.search(dev_pattern, inner, re.IGNORECASE):
             return f"[{eng_tag}]"
+
+    # Foley / physical sound effect cues must be stripped from spoken dialogue
+    foley_tokens = ("clash", "thud", "footstep", "door", "explosion", "bang", "crash", "blade", "gunshot")
+    if any(ft in inner.lower() for ft in foley_tokens):
+        return ""
+
+    # ADR-056: Preserve descriptive English vocal acting directions (e.g. [hesitates, catches breath], [ironic smirk])
+    # for downstream speechMetadata.style extraction. Devanagari non-vocal action tags are stripped.
+    if re.match(r"^[a-zA-Z\s,.'\"-]+$", inner) and len(inner) <= 80:
+        return tag_str
 
     return ""
 
@@ -318,13 +328,17 @@ def sanitize_screenplay_segment(segment: Dict[str, Any], is_hindi: bool = True) 
     if not text_no_tags:
         return None
 
-    # If Hindi screenplay, drop pure English conversational sentences
+    # If Hindi screenplay, drop confirmed system refusal chatter / preambles
     if is_hindi:
-        eng_words = count_latin_words(text_no_tags)
-        dev_chars = count_devanagari_chars(text_no_tags)
-
-        # Drop segments that are pure English paragraphs
-        if eng_words >= 6 and dev_chars < 5:
+        refusal_patterns = (
+            r"here\s+is\s+the\s+translation",
+            r"as\s+an\s+ai\s+language\s+model",
+            r"i\s+cannot\s+translate",
+            r"i\s+am\s+unable\s+to\s+fulfill",
+            r"translation\s+note\s*:",
+        )
+        text_lower = text_no_tags.lower()
+        if any(re.search(pat, text_lower) for pat in refusal_patterns):
             return None
 
     cleaned_seg = dict(segment)

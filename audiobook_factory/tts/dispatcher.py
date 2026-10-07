@@ -377,11 +377,23 @@ class TTSDispatcher:
             f"  [UNREGISTERED SPEAKER] '{sp_clean}' not in registry.{close_hint} Fallback initiated."
         )
         gender = self.gender_map.get(sp_clean, "neutral")
-        if gender == "male":
-            for male_fallback in ("Charon", "Fenrir", "Puck"):
-                for k, cfg in self.voice_map.items():
-                    if cfg.get("voice") == male_fallback:
-                        return dict(cfg)
+        if gender in ("male", "female"):
+            for k, cfg in self.voice_map.items():
+                if k.lower() != "narrator" and self.gender_map.get(k) == gender:
+                    return dict(cfg)
+            try:
+                from audiobook_factory.tts.voice_catalog import get_voice_catalog
+                catalog = get_voice_catalog()
+                lang_code = "hi-IN" if getattr(self, "use_hindi", False) else "en-US"
+                v_dyn = catalog.get_best_matching_voice(gender=gender, language_code=lang_code)
+                if v_dyn:
+                    return {
+                        "backend": self.default_backend,
+                        "voice": v_dyn,
+                        "speed": 1.0,
+                    }
+            except Exception:
+                pass
         narr_cfg = self.voice_map.get("Narrator", {})
         return {
             "backend": narr_cfg.get("backend", self.default_backend),

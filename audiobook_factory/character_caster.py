@@ -373,8 +373,23 @@ Return a JSON array of objects with:
         catalog = get_voice_catalog()
         lang_code = "hi-IN" if use_hindi else "en-US"
 
-        # Supreme Narrator Lock: Aoede is the permanent supreme narrator across both Hindi and English
-        narrator_voice = default_narrator_voice or "Aoede"
+        # Supreme Narrator Lock / POV Awareness:
+        # Default is Aoede (pitch 1.0, speed 1.0) as permanent supreme narrator.
+        # If project metadata or raw_characters explicitly declares a custom voice or first-person male POV narrator, honor it.
+        narrator_entry = next(
+            (c for c in raw_characters if (c.get("canonical_name") or c.get("name") or "").strip().lower() == "narrator"),
+            None,
+        )
+        if narrator_entry and narrator_entry.get("voice"):
+            narrator_voice = narrator_entry["voice"]
+        elif narrator_entry and (narrator_entry.get("gender") or "").lower() == "male" and default_narrator_voice == "Aoede":
+            narrator_voice = catalog.get_best_matching_voice(
+                gender="male",
+                language_code=lang_code,
+                archetype=narrator_entry.get("archetype") or "first-person male narrator protagonist",
+            )
+        else:
+            narrator_voice = default_narrator_voice or "Aoede"
 
         narrator_meta = catalog.get_voice(narrator_voice)
         if narrator_meta and narrator_meta.get("gender"):
@@ -436,7 +451,7 @@ Return a JSON array of objects with:
             if not name or name.lower() in ("narrator", "foley", "sfx"):
                 continue
 
-            gender = ch.get("gender", "male").lower()
+            gender = (ch.get("gender") or "male").lower()
             aliases = list(ch.get("aliases", []))
             hin_name = ch.get("hindi_name", "").strip()
             if hin_name and hin_name not in aliases:
@@ -505,13 +520,11 @@ Return a JSON array of objects with:
                     is_child=is_child_flag,
                     exclude_voice_ids=used_voices,
                 )
-                if gender == "female" and persona not in FEMALE_VOICE_PERSONAS:
-                    avail_females = [p for p in FEMALE_VOICE_PERSONAS if p not in used_voices]
-                    persona = avail_females[0] if avail_females else FEMALE_VOICE_PERSONAS[female_idx % len(FEMALE_VOICE_PERSONAS)]
-                elif gender == "male":
-                    if is_child_flag and persona in FEMALE_VOICE_PERSONAS:
-                        pass  # Anime Seiyū: Boy child allowed youthful female persona
-                    elif persona not in MALE_VOICE_PERSONAS:
+                if not persona:
+                    if gender == "female":
+                        avail_females = [p for p in FEMALE_VOICE_PERSONAS if p not in used_voices]
+                        persona = avail_females[0] if avail_females else FEMALE_VOICE_PERSONAS[female_idx % len(FEMALE_VOICE_PERSONAS)]
+                    elif gender == "male":
                         avail_males = [p for p in MALE_VOICE_PERSONAS if p not in used_voices]
                         persona = avail_males[0] if avail_males else MALE_VOICE_PERSONAS[male_idx % len(MALE_VOICE_PERSONAS)]
 
@@ -718,8 +731,8 @@ Return a JSON array of objects with:
                 is_child=is_child_speaker,
                 exclude_voice_ids=used_voices,
             )
-            pool = FEMALE_VOICE_PERSONAS if (g == "female" or is_child_speaker) else MALE_VOICE_PERSONAS
-            if persona not in pool and persona not in MALE_VOICE_PERSONAS and persona not in FEMALE_VOICE_PERSONAS:
+            if not persona:
+                pool = FEMALE_VOICE_PERSONAS if (g == "female" or is_child_speaker) else MALE_VOICE_PERSONAS
                 avail = [p for p in pool if p not in used_voices]
                 persona = avail[0] if avail else pool[len(registry) % len(pool)]
 

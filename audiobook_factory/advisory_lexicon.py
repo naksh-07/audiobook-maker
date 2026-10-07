@@ -53,7 +53,7 @@ class LiteraryAdvisoryDB:
         self.seed_default_guidelines()
 
     def seed_default_guidelines(self):
-        """Populates the database with universal dark-fantasy Hindustani literary guidelines."""
+        """Populates the database with universal literary Hindustani guidelines across genres."""
         with self._connection() as conn:
 
             default_rules = [

@@ -91,7 +91,7 @@ def concatenate_and_master_chapter(
         return s_file
 
     def _get_panned_segment(seg_path: Path, pan: float, s_idx: int) -> Path:
-        if not spatial_staging or abs(pan) < 0.01:
+        if not spatial_staging:
             return seg_path
         clamped_pan = max(-1.0, min(1.0, float(pan)))
         # Constant-power panning rule: theta in [0, pi/2], center at pi/4

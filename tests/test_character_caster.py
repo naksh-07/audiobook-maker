@@ -71,7 +71,12 @@ def test_build_cast_allocation_no_collision():
 
     # 3. Check female character got female voice persona
     mrs_dursley_v = registry["Mrs. Dursley"]["voice"]
-    assert mrs_dursley_v in FEMALE_VOICE_PERSONAS
+    from audiobook_factory.tts.voice_catalog import get_voice_catalog
+    v_info = get_voice_catalog().get_voice(mrs_dursley_v)
+    if v_info:
+        assert v_info["gender"] == "female"
+    else:
+        assert mrs_dursley_v in FEMALE_VOICE_PERSONAS
 
     # 4. Check male characters got distinct male voice personas (no collisions)
     assigned_male_voices = [

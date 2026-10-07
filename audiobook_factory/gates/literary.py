@@ -155,10 +155,6 @@ def audit_gate1_roster(
     voice_signatures: Dict[str, str] = {}
     collisions = []
 
-    # Known persona gender profiles for Gemini TTS / standard acoustic personas (including Extended Voice Library)
-    FEMALE_PERSONAS = {"aoede", "kore", "leda", "zephyr", "achernar"}
-    MALE_PERSONAS = {"charon", "fenrir", "puck", "zeus", "orpheus", "achilles", "algenib", "algieba", "alnilam", "achird"}
-
     for role in active:
         if role in ("Foley", "SFX"):
             continue
@@ -178,19 +174,42 @@ def audit_gate1_roster(
             speed = cfg.get("speed", 1.0)
         sig = f"{voice}_p{pitch:.2f}_s{speed:.2f}"
 
-        # ADR-021: Acoustic Gender Alignment Check
+        # ADR-021 & ADR-053: Dynamic Acoustic Gender Alignment Check
         r_entry = roster_data.get(role, {})
         if isinstance(r_entry, dict):
-            gender = r_entry.get("gender", "neutral").lower()
-            v_lower = voice.lower()
-            if gender == "male" and v_lower in FEMALE_PERSONAS:
-                logger.warning(
-                    f"  [ACOUSTIC GENDER WARNING] Male character '{role}' assigned female voice persona '{voice}'."
-                )
-            elif gender == "female" and v_lower in MALE_PERSONAS:
-                logger.warning(
-                    f"  [ACOUSTIC GENDER WARNING] Female character '{role}' assigned male voice persona '{voice}'."
-                )
+            gender = (r_entry.get("gender") or "neutral").lower()
+            is_child = bool(r_entry.get("is_child", False)) or any(
+                w in (r_entry.get("archetype") or "").lower()
+                for w in ("child", "kid", "boy", "girl", "balak", "balika", "bacha", "bachi")
+            )
+
+            # Dynamically resolve voice gender from VoiceCatalog
+            v_gender = None
+            try:
+                from audiobook_factory.tts.voice_catalog import get_voice_catalog
+                v_meta = get_voice_catalog().get_voice(voice)
+                if v_meta and v_meta.get("gender"):
+                    v_gender = v_meta["gender"].lower()
+            except Exception:
+                pass
+
+            if not v_gender:
+                v_lower = voice.lower()
+                if v_lower in ("aoede", "kore", "leda", "zephyr", "achernar"):
+                    v_gender = "female"
+                elif v_lower in ("charon", "fenrir", "puck", "algenib", "algieba", "alnilam", "achird"):
+                    v_gender = "male"
+
+            if v_gender:
+                if gender == "male" and v_gender == "female":
+                    if not is_child:  # Anime Seiyū exception for child roles
+                        logger.warning(
+                            f"  [ACOUSTIC GENDER WARNING] Male character '{role}' assigned female voice persona '{voice}'."
+                        )
+                elif gender == "female" and v_gender == "male":
+                    logger.warning(
+                        f"  [ACOUSTIC GENDER WARNING] Female character '{role}' assigned male voice persona '{voice}'."
+                    )
 
         if sig in voice_signatures:
             collisions.append((role, voice_signatures[sig], sig))
