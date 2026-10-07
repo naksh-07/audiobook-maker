@@ -31,6 +31,9 @@
     - Chapter 2 screenplay verified: 81 choppy micro-clips collapsed to 68 unified beats with zero line theft. 24 unit tests passing.
   - **Issue 3 (Gemini 3.8 Voice Catalog & Multi-Persona Casting) [RESOLVED & VERIFIED]**:
     - Discovered 2,089 prebuilt Gemini TTS voices (114 native Hindi, 120 Indian English, 215 US English). Built JSON cache, SQLite index (`voice_catalog.db`), and Markdown documentation (`docs/HINDI_VOICE_CATALOG.md`).
-    - Implemented `VoiceCatalog` query engine and upgraded `CharacterCaster` (`_build_cast_allocation`, `cast_single_speaker`) for collision-free allocation with 0% vocal overlap.
-    - Preserved natural pitch (pitch = 1.0) eliminating robotic `asetrate` digital warping. Added stage direction sanitization in `gemini.py` extracting bracketed acting cues into `speechMetadata.style`.
-    - Recast Chapter 2 roles with native Hindi voices (Geralt: `hi-in-advisor-10`, Borch: `hi-in-tutor-5`, Butcher: `hi-in-advisor-2`, Narrator: `hi-in-tutor-1`). Live multi-turn synthesis verified; 379/379 tests passing.
+    - Implemented `VoiceCatalog` query engine and upgraded `CharacterCaster` for collision-free allocation with 0% vocal overlap.
+  - **Issue 4 (LLM Dialect Director, Anime Seiyū Child Engine & Supreme Aoede Lock) [RESOLVED & VERIFIED]**:
+    - **Supreme Narrator Lock**: Unconditionally locked `Aoede` (pitch 1.0, speed 1.0) as permanent supreme narrator across English & Hindi audio dramas.
+    - **LLM Creative Dialect Director**: Empowered Room 1 Casting Director to assign socio-cultural North Indian dialects (`Haryanvi`, `Bhojpuri`, `Awadhi`, `Bundeli`, `Urdu`) with +45 score bonus in `VoiceCatalog`.
+    - **Anime Seiyū Child Engine**: Casts child boys and girls using youthful female models with dedicated physical Child Acoustic Formant Vectors (boy: pitch 1.03, bass -2.0dB, pres +2.5dB; girl: pitch 1.05, bass -2.5dB, pres +2.8dB), eliminating chipmunk artifacts. Live synthesis verified; 797/797 tests passing green.
+

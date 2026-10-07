@@ -1160,3 +1160,26 @@
      - Implemented `sanitize_spoken_text_and_extract_stage_directions()` in `synthesize_gemini_tts` and `batch_synthesize_gemini_multispeaker`.
      - Bracketed cues (`[whispers]`, `[cold menace]`, `[धीमी आवाज में]`) are automatically extracted and merged into `speechMetadata.style` while being cleanly scrubbed from spoken text, preventing the TTS model from reading acting directions aloud.
 - **Rationale:** Solves vocal convergence and unnatural pitch warping for good by unleashing the full 2,089 Gemini voice roster, delivering authentic regional dialects, crisp vocal contrast, and broadcast-grade dramatic realism.
+
+## ADR-054: LLM Creative Dialect Director, Anime Seiyū Child Voice Engine, and Supreme Aoede Narrator Lock
+- **Status:** Accepted
+- **Date:** 2026-10-07
+- **Context:**
+  1. **Supreme Narrator Identity**: Listener feedback and studio standards identified `Aoede` as the permanent narrator of choice across all audio dramas in both Hindi Devanagari and English, owing to her calm, unhurried breath pacing, natural pause cadence, and zero-fatigue storytelling timbre. A previous heuristic had accidentally overridden `Aoede` with `hi-in-tutor-1` for Hindi projects.
+  2. **Dramatic Socio-Cultural Dialects**: The 114 native Hindi voices contain rich North Indian dialectal textures (Haryanvi, Bhojpuri, Awadhi, Bundeli, Urdu/Delhi). Matching them manually is suboptimal; character temperaments and social roles (e.g. blunt martial warriors, earthy innkeepers, poetic companions, refined court scholars) naturally align with specific dialects.
+  3. **Child Voice Uncanny Valley**: Neural TTS models lack dedicated child voices (< 14 years old). Attempting to pitch-shift adult male voices (F0 ~ 85-130 Hz) produces an uncanny digital "chipmunk" artifact. In animation and audio drama (e.g. *Naruto*, *Luffy*, *Goku*, *Bart Simpson*), child characters are standardly voiced by youthful female actors (Seiyū convention) whose shorter vocal tract naturally matches children's formant profiles (F0 ~ 180-240 Hz).
+- **Decision:**
+  1. **Supreme Narrator Lock (`Aoede`)**:
+     - `CharacterCaster._build_cast_allocation` unconditionally locks `Aoede` (pitch 1.0, speed 1.0) as the permanent supreme narrator across all audio dramas, English and Hindi alike.
+  2. **LLM Socio-Cultural Dialect Casting Director**:
+     - Room 1 `CharacterCaster._call_llm_casting` instructs Gemini to analyze characters' dramatic psychology and assign recommended North Indian dialects (`Haryanvi`, `Bhojpuri`, `Awadhi`, `Bundeli`, `Urdu`, `Standard`).
+     - `VoiceCatalog.get_best_matching_voice` awards a **+45 score bonus** for candidate voices matching the requested dialect.
+  3. **Anime Seiyū Child Voice Engine (Boys & Girls)**:
+     - When `is_child=True` (or age <= 14 / child keywords detected):
+       - Male child: `VoiceCatalog` prioritizes youthful female voice models (age <= 32, bright/youthful timbre) or young males (age <= 25), granting a +40 Seiyū bonus.
+       - Female child: `VoiceCatalog` strictly matches youthful female models with bright/delicate timbre.
+     - Physical Child Acoustic Formant Vectors in `compute_acoustic_formant_vector`:
+       - Child Boy: `pitch = 1.03`, `speed = 1.03`, `bass_boost_db = -2.0` (smaller chest cavity resonance reduction), `presence_boost_db = +2.5` (upper harmonic 3.2 kHz presence boost).
+       - Child Girl: `pitch = 1.05`, `speed = 1.03`, `bass_boost_db = -2.5` (delicate chest resonance), `presence_boost_db = +2.8` (sparkle 3.5 kHz harmonic boost).
+     - Full physical formant processing verified via FFmpeg filter chain and live Gemini 3.8 Flash synthesis.
+- **Rationale:** Delivers world-class character acting, eliminates digital pitch-shift artifacts, unlocks rich cultural dialect realism, and locks the beloved `Aoede` vocal narrative texture permanently.

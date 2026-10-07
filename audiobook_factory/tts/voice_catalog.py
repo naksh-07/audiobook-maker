@@ -216,11 +216,17 @@ class VoiceCatalog:
         archetype: str = "",
         age_hint: Optional[int] = None,
         pitch_hint: Optional[str] = None,
+        dialect_hint: Optional[str] = None,
+        is_child: bool = False,
         exclude_voice_ids: Optional[Set[str]] = None,
     ) -> str:
         """
         Selects the best available non-colliding voice for a character profile.
-        Guarantees 0% voice collision by excluding already-assigned IDs.
+        Supports:
+        - Dialect matching (+45 score bonus for regional match e.g. Haryanvi, Bhojpuri, Awadhi, Bundeli, Urdu).
+        - Anime Seiyū Pattern for children (both boys and girls): casts youthful female voices for children
+          with bright, breezy upper harmonics instead of pitch-warped adult baritones.
+        - Guarantees 0% voice collision by excluding already-assigned IDs.
         """
         exclude_set = exclude_voice_ids or set()
         candidates = self._voices_by_lang.get(language_code, [])
@@ -228,25 +234,71 @@ class VoiceCatalog:
             candidates = self._voices_by_lang.get("hi-IN" if "hi" in language_code else "en-US", [])
 
         gender_clean = gender.lower()
-        scored: List[Tuple[int, str]] = []
-
         arch_tokens = set(archetype.lower().replace("-", " ").replace("_", " ").split())
+
+        # Determine effective child state
+        child_keywords = {"child", "kid", "little", "boy", "girl", "toddler", "youngster", "बच्चा", "लड़का", "लड़की", "बालक"}
+        effective_child = is_child or (age_hint is not None and age_hint <= 14) or bool(arch_tokens & child_keywords)
+
+        scored: List[Tuple[int, str]] = []
 
         for v in candidates:
             vid = v["id"]
             if vid in exclude_set:
                 continue
-            if v.get("gender", "").lower() != gender_clean and gender_clean in ("male", "female"):
-                continue
+
+            v_gender = v.get("gender", "").lower()
+            v_age = v.get("age")
+            v_timbre = v.get("timbre", "").lower()
+
+            # --- Gender & Anime Seiyū Filter ---
+            if effective_child:
+                # In animation / audio drama (e.g. Naruto, Luffy, Goku, Bart Simpson, Conan),
+                # young boys and young girls are cast using youthful female voice actors
+                # to guarantee natural upper harmonics without digital pitch distortion.
+                if gender_clean == "male":
+                    # Boy: Accept youthful female voice or youthful male
+                    if v_gender == "female":
+                        if v_age and v_age > 32 and not any(w in v_timbre for w in ("youthful", "bright", "breezy", "young")):
+                            continue
+                    elif v_gender == "male":
+                        # Only allow young males (age <= 25)
+                        if v_age and v_age > 25:
+                            continue
+                else:
+                    # Girl: Strict female
+                    if v_gender != "female":
+                        continue
+            else:
+                # Adult role: strict gender matching
+                if v_gender != gender_clean and gender_clean in ("male", "female"):
+                    continue
 
             score = 0
 
-            # Pitch alignment
+            # 1. Anime Seiyū Child Bonus
+            if effective_child:
+                if v_gender == "female":
+                    score += 40
+                if v_age and v_age <= 28:
+                    score += 25
+                if any(w in v_timbre for w in ("youthful", "bright", "breezy", "energetic", "quick-witted")):
+                    score += 20
+
+            # 2. Dialect Alignment (+45 bonus)
+            if dialect_hint and dialect_hint.strip():
+                d_token = dialect_hint.strip().lower()
+                cand_dialect = v.get("dialect", "").lower()
+                if d_token in cand_dialect or (d_token == "delhi" and "urdu" in cand_dialect):
+                    score += 45
+
+            # 3. Pitch alignment
             if pitch_hint and v.get("pitch", "").lower() == pitch_hint.lower():
                 score += 30
+            elif effective_child and v.get("pitch", "").lower() in ("high", "medium"):
+                score += 15
 
-            # Age alignment
-            v_age = v.get("age")
+            # 4. Age alignment (for non-children or general proximity)
             if age_hint and v_age:
                 diff = abs(v_age - age_hint)
                 if diff <= 5:
@@ -256,9 +308,9 @@ class VoiceCatalog:
                 elif diff <= 20:
                     score += 5
 
-            # Archetype alignment
+            # 5. Archetype and timbre keyword alignment
             v_archs = set([a.lower() for a in v.get("archetypes", [])])
-            v_timbre_words = set(v.get("timbre", "").lower().split())
+            v_timbre_words = set(v_timbre.split())
             v_desc_words = set(v.get("description", "").lower().split())
 
             matched_arch = arch_tokens & (v_archs | v_timbre_words | v_desc_words)
@@ -270,15 +322,17 @@ class VoiceCatalog:
             scored.sort(key=lambda x: -x[0])
             return scored[0][1]
 
-        # Fallback if all candidates are exhausted: pick first candidate not in exclude_set or fallback
+        # Fallback if all candidates are exhausted: pick first candidate not in exclude_set
         for v in candidates:
             if v["id"] not in exclude_set:
                 return v["id"]
 
         # Ultimate safety fallback
+        if effective_child:
+            return "hi-in-tutor-7" if "hi" in language_code else "Leda"
         if gender_clean == "female":
             return "hi-in-advisor-1" if "hi" in language_code else "Kore"
-        return "hi-in-tutor-1" if "hi" in language_code else "Charon"
+        return "hi-in-advisor-10" if "hi" in language_code else "Charon"
 
     def get_catalog_summary_for_llm(
         self,

@@ -168,7 +168,8 @@ class CharacterCaster:
             "You are the Lead Casting Director for a Hollywood & BBC Radio Audio Drama studio. "
             "Analyze these book chapter samples and extract ALL speaking characters who have dialogue or direct presence. "
             "For each character, identify their canonical English name, Hindi name (if in Hindi translation), "
-            "gender ('male' or 'female'), approximate age/archetype, and all known aliases/titles."
+            "gender ('male' or 'female'), approximate age/archetype, whether they are a child/minor, "
+            "and their dramatic socio-cultural dialect matching (e.g. Haryanvi, Bhojpuri, Awadhi, Bundeli, Urdu/Delhi, Standard)."
         )
 
         prompt = f"""Language: {"Hindi (Devanagari)" if is_hindi else "English"}
@@ -181,7 +182,10 @@ Return a JSON array of objects with:
 - "canonical_name": string (e.g. "Protagonist Name", "Village Elder", "Lead Detective")
 - "hindi_name": string (Devanagari spelling if applicable, e.g. "मुख्य पात्र")
 - "gender": "male" | "female" | "neutral"
+- "is_child": boolean (true if character is a child, kid, or minor <= 14 years old, else false)
 - "archetype": string (e.g. "stoic rural farmer", "shrewd urban detective", "wise elderly mentor", "rebellious youth")
+- "recommended_dialect": "Haryanvi" | "Bhojpuri" | "Awadhi" | "Bundeli" | "Urdu" | "Standard"
+  (Guideline: Haryanvi=martial/warrior/blunt/brawler; Bhojpuri=earthy/rustic/innkeeper/companion; Awadhi=poetic/gentle/maternal; Bundeli=rugged/rebel/forester; Urdu=scholarly/aristocratic/courtly/philosophical; Standard=urban/neutral)
 - "aliases": list of strings (e.g. ["मुख्य पात्र", "Character Full Name", "Nickname"])
 """
 
@@ -215,19 +219,32 @@ Return a JSON array of objects with:
         archetype: str = "",
         prominence: str = "standard",
         index: int = 0,
+        is_child: bool = False,
     ) -> Dict[str, Any]:
         """
         Calculates a 4D acoustic vector (pitch, speed, EQ resonance, clarity reduction)
         to physically morph the vocal tract via FFmpeg asetrate/aresample/equalizer.
         Guarantees that even if two characters share the same base Gemini voice,
         they sound like completely distinct human beings with zero timbre overlap.
+        Includes Anime Seiyū child calibration for boy and girl children.
         """
         g = (gender or "male").lower()
         arch = (archetype or "").lower()
 
+        child_tokens = ("child", "kid", "little boy", "little girl", "toddler", "boyish", "girlish", "balak", "balika", "bacha", "bachi", "bachha")
+        effective_child = is_child or any(w in arch for w in child_tokens)
+
         # Male Vocal Acoustic Profiling
         if g == "male":
-            if any(w in arch for w in ("heavy", "deep", "imposing", "rough", "rugged", "warrior", "soldier", "brute", "guard", "thug", "bodyguard", "laborer")):
+            if effective_child:
+                # Anime Seiyū Child Boy Vector (calibrated for youthful female or young male base voice)
+                pitch = round(1.03 + (index % 2) * 0.01, 2)
+                speed = 1.03
+                bass_boost = -2.0       # Smaller chest cavity resonance reduction
+                presence_boost = 2.5    # Upper harmonic clarity (3.2 kHz presence)
+                clarity_cut = 0.0
+                lowpass = 0
+            elif any(w in arch for w in ("heavy", "deep", "imposing", "rough", "rugged", "warrior", "soldier", "brute", "guard", "thug", "bodyguard", "laborer")):
                 pitch = round(0.88 + (index % 3) * 0.02, 2)  # 0.88 - 0.92
                 speed = 0.96
                 bass_boost = 3.0
@@ -279,7 +296,15 @@ Return a JSON array of objects with:
                 lowpass = 0
         else:
             # Female Vocal Acoustic Profiling
-            if any(w in arch for w in ("commanding", "leader", "mature", "mother", "matriarch", "queen", "sorceress", "director", "officer")):
+            if effective_child:
+                # Anime Child Girl Vector (delicate, high presence, youthful upper harmonics)
+                pitch = round(1.05 + (index % 2) * 0.01, 2)
+                speed = 1.03
+                bass_boost = -2.5       # Delicate chest resonance
+                presence_boost = 2.8    # Upper harmonic sparkle (3.5 kHz)
+                clarity_cut = 0.0
+                lowpass = 0
+            elif any(w in arch for w in ("commanding", "leader", "mature", "mother", "matriarch", "queen", "sorceress", "director", "officer")):
                 pitch = round(0.94 + (index % 2) * 0.02, 2)  # 0.94 - 0.96
                 speed = 0.98
                 bass_boost = 1.5
@@ -335,16 +360,13 @@ Return a JSON array of objects with:
         catalog = get_voice_catalog()
         lang_code = "hi-IN" if use_hindi else "en-US"
 
-        # Determine Narrator voice
-        if use_hindi and default_narrator_voice == "Aoede":
-            narrator_voice = "hi-in-tutor-1"
-        else:
-            narrator_voice = default_narrator_voice
+        # Supreme Narrator Lock: Aoede is the permanent supreme narrator across both Hindi and English
+        narrator_voice = default_narrator_voice or "Aoede"
 
         narrator_meta = catalog.get_voice(narrator_voice)
         if narrator_meta and narrator_meta.get("gender"):
             narrator_gender = narrator_meta["gender"]
-        elif narrator_voice in FEMALE_VOICE_PERSONAS:
+        elif narrator_voice in FEMALE_VOICE_PERSONAS or narrator_voice == "Aoede":
             narrator_gender = "female"
         else:
             narrator_gender = "male"
@@ -409,6 +431,8 @@ Return a JSON array of objects with:
 
             arch = ch.get("archetype") or ch.get("vocal_archetype", "")
             prom = ch.get("prominence", "standard")
+            is_child_flag = bool(ch.get("is_child", False))
+            rec_dialect = ch.get("recommended_dialect") or ch.get("dialect")
             age_raw = ch.get("age")
             age_hint = None
             if isinstance(age_raw, int):
@@ -418,16 +442,22 @@ Return a JSON array of objects with:
             elif isinstance(age_raw, str):
                 age_str = age_raw.lower()
                 if any(w in age_str for w in ("child", "boy", "girl", "kid")):
-                    age_hint = 12
+                    age_hint = 10
+                    is_child_flag = True
                 elif any(w in age_str for w in ("youth", "young", "teen")):
-                    age_hint = 22
+                    age_hint = 20
                 elif any(w in age_str for w in ("middle", "adult")):
                     age_hint = 40
                 elif any(w in age_str for w in ("elder", "old", "aged")):
                     age_hint = 58
 
-            pitch_hint = None
             arch_lower = arch.lower()
+            if any(w in arch_lower for w in ("child", "kid", "little boy", "little girl", "toddler", "balak", "balika", "bacha", "bachi")):
+                is_child_flag = True
+                if age_hint is None:
+                    age_hint = 10
+
+            pitch_hint = None
             if any(w in arch_lower for w in ("deep", "heavy", "grave", "low", "baritone", "gruff")):
                 pitch_hint = "low"
             elif any(w in arch_lower for w in ("high", "bright", "youth", "shrill", "sharp")):
@@ -441,6 +471,8 @@ Return a JSON array of objects with:
                     archetype=arch,
                     age_hint=age_hint,
                     pitch_hint=pitch_hint,
+                    dialect_hint=rec_dialect,
+                    is_child=is_child_flag,
                     exclude_voice_ids=used_voices,
                 )
             else:
@@ -450,14 +482,19 @@ Return a JSON array of objects with:
                     archetype=arch,
                     age_hint=age_hint,
                     pitch_hint=pitch_hint,
+                    dialect_hint=rec_dialect,
+                    is_child=is_child_flag,
                     exclude_voice_ids=used_voices,
                 )
                 if gender == "female" and persona not in FEMALE_VOICE_PERSONAS:
                     avail_females = [p for p in FEMALE_VOICE_PERSONAS if p not in used_voices]
                     persona = avail_females[0] if avail_females else FEMALE_VOICE_PERSONAS[female_idx % len(FEMALE_VOICE_PERSONAS)]
-                elif gender == "male" and persona not in MALE_VOICE_PERSONAS:
-                    avail_males = [p for p in MALE_VOICE_PERSONAS if p not in used_voices]
-                    persona = avail_males[0] if avail_males else MALE_VOICE_PERSONAS[male_idx % len(MALE_VOICE_PERSONAS)]
+                elif gender == "male":
+                    if is_child_flag and persona in FEMALE_VOICE_PERSONAS:
+                        pass  # Anime Seiyū: Boy child allowed youthful female persona
+                    elif persona not in MALE_VOICE_PERSONAS:
+                        avail_males = [p for p in MALE_VOICE_PERSONAS if p not in used_voices]
+                        persona = avail_males[0] if avail_males else MALE_VOICE_PERSONAS[male_idx % len(MALE_VOICE_PERSONAS)]
 
             used_voices.add(persona)
 
@@ -466,21 +503,24 @@ Return a JSON array of objects with:
                 archetype=arch,
                 prominence=prom,
                 index=female_idx if gender == "female" else male_idx,
+                is_child=is_child_flag,
             )
             if gender == "female":
                 female_idx += 1
             else:
                 male_idx += 1
 
-            # In natural neural synthesis, default pitch is 1.0 (zero robotic asetrate distortion).
+            # In natural neural synthesis, default pitch is 1.0 (or calibrated child pitch).
             # Subtle micro-offsets (<= 0.02) are only applied if needed to resolve signature collision.
-            pitch = 1.0
-            speed = 1.0
+            base_pitch = acoustic_vec.get("pitch", 1.03) if is_child_flag else 1.0
+            base_speed = acoustic_vec.get("speed", 1.03) if is_child_flag else 1.0
+            pitch = base_pitch
+            speed = base_speed
             sig = (persona, pitch, speed)
             sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
             counter = 1
             while sig in used_signatures or sig_str in used_signatures:
-                pitch = round(1.0 + 0.01 * counter, 2)
+                pitch = round(base_pitch + 0.01 * counter, 2)
                 sig = (persona, pitch, speed)
                 sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
                 counter += 1
@@ -495,6 +535,8 @@ Return a JSON array of objects with:
                 "english_name": name,
                 "display_name": name,
                 "gender": gender,
+                "is_child": is_child_flag,
+                "dialect": rec_dialect or "Standard",
                 "assigned_voice_id": persona,
                 "aliases": aliases,
                 "archetype": arch,
@@ -612,7 +654,7 @@ Return a JSON array of objects with:
                 used_signatures.add(f"{vox}_p{p:.2f}_s{s:.2f}")
                 used_signatures.add((vox, p, s))
 
-        # Determine gender heuristic if not provided
+        # Determine gender and child status heuristic if not provided
         g = (gender or "neutral").lower()
         if g not in ("male", "female"):
             female_indicators = (
@@ -623,6 +665,12 @@ Return a JSON array of objects with:
                 g = "female"
             else:
                 g = "male"
+
+        child_indicators = (
+            "child", "kid", "boy", "girl", "little", "toddler", "youngster",
+            "बच्चा", "लड़का", "लड़की", "बालक", "बालिका"
+        )
+        is_child_speaker = any(ind in sp_clean.lower() for ind in child_indicators)
 
         is_hi = use_hindi if use_hindi is not None else (
             (p_dir / "translation").exists() or
@@ -638,6 +686,7 @@ Return a JSON array of objects with:
                 gender=g,
                 language_code="hi-IN",
                 archetype="dynamically_cast_character",
+                is_child=is_child_speaker,
                 exclude_voice_ids=used_voices,
             )
         else:
@@ -645,10 +694,11 @@ Return a JSON array of objects with:
                 gender=g,
                 language_code="en-US",
                 archetype="dynamically_cast_character",
+                is_child=is_child_speaker,
                 exclude_voice_ids=used_voices,
             )
-            pool = FEMALE_VOICE_PERSONAS if g == "female" else MALE_VOICE_PERSONAS
-            if persona not in pool:
+            pool = FEMALE_VOICE_PERSONAS if (g == "female" or is_child_speaker) else MALE_VOICE_PERSONAS
+            if persona not in pool and persona not in MALE_VOICE_PERSONAS and persona not in FEMALE_VOICE_PERSONAS:
                 avail = [p for p in pool if p not in used_voices]
                 persona = avail[0] if avail else pool[len(registry) % len(pool)]
 
@@ -658,15 +708,18 @@ Return a JSON array of objects with:
             archetype="dynamically_cast_character",
             prominence="incidental",
             index=existing_count,
+            is_child=is_child_speaker,
         )
-        pitch = 1.0
-        speed = 1.0
+        base_pitch = acoustic_vec.get("pitch", 1.03) if is_child_speaker else 1.0
+        base_speed = acoustic_vec.get("speed", 1.03) if is_child_speaker else 1.0
+        pitch = base_pitch
+        speed = base_speed
         sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
         sig_tuple = (persona, pitch, speed)
 
         counter = 1
         while sig_str in used_signatures or sig_tuple in used_signatures:
-            pitch = round(1.0 + 0.01 * counter, 2)
+            pitch = round(base_pitch + 0.01 * counter, 2)
             sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
             sig_tuple = (persona, pitch, speed)
             counter += 1
