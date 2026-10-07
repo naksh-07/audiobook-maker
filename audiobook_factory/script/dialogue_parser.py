@@ -44,7 +44,7 @@ def _parse_dialogue_turns_llm(
             "   - In rapid back-and-forth dialogue exchanges without explicit speech tags, track conversational polarity strictly: the answer to a question belongs to the interlocutor, NEVER to the person who asked the question!\n"
             "   - Attribute dialogue to canonical character names based on narrative descriptions and epithets matching the Canonical Character Roster provided below.\n"
             "   - Never use generic pronouns ('he', 'she', 'उसने', 'वह') as speaker names. Always resolve to the canonical character.\n"
-            "3. PRESERVE ALL NARRATIVE PROSE:\n"
+            "3. PRESERVE ALL NARRATIVE PROSE & DIALOGUE TAGS:\n"
             "   - NEVER delete, skip, or summarize author narrative prose or descriptions. The Narrator delivers atmospheric exposition, setting up character dialogue.\n"
             "4. ZERO FOLEY / ACTIONS:\n"
             "   - This is a pure spoken-word vocal audiobook. NEVER output 'Foley' or '[ACTION]' segments. Physical hits and environmental events are conveyed through the author's narrative prose.\n"

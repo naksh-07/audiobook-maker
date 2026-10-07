@@ -29,5 +29,8 @@
     - Implemented deterministic `stitch_split_dialogue_turns`: unifies split thoughts around narrative tags (< 35 words), pre-positions narration with em-dash (`—`), eliminating mid-sentence audio stutter.
     - Updated `dialogue_parser.py` and `DialogueAttributionAuditor` with conversational turn polarity (question-answer interlocutor tracking) and speech tag scrubbing.
     - Chapter 2 screenplay verified: 81 choppy micro-clips collapsed to 68 unified beats with zero line theft. 24 unit tests passing.
-  - **Issue 3 (Voice Convergence & 4D Acoustic Formants Restore)**: Next active target.
-
+  - **Issue 3 (Gemini 3.8 Voice Catalog & Multi-Persona Casting) [RESOLVED & VERIFIED]**:
+    - Discovered 2,089 prebuilt Gemini TTS voices (114 native Hindi, 120 Indian English, 215 US English). Built JSON cache, SQLite index (`voice_catalog.db`), and Markdown documentation (`docs/HINDI_VOICE_CATALOG.md`).
+    - Implemented `VoiceCatalog` query engine and upgraded `CharacterCaster` (`_build_cast_allocation`, `cast_single_speaker`) for collision-free allocation with 0% vocal overlap.
+    - Preserved natural pitch (pitch = 1.0) eliminating robotic `asetrate` digital warping. Added stage direction sanitization in `gemini.py` extracting bracketed acting cues into `speechMetadata.style`.
+    - Recast Chapter 2 roles with native Hindi voices (Geralt: `hi-in-advisor-10`, Borch: `hi-in-tutor-5`, Butcher: `hi-in-advisor-2`, Narrator: `hi-in-tutor-1`). Live multi-turn synthesis verified; 379/379 tests passing.

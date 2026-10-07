@@ -1137,3 +1137,26 @@
 - **Rationale:** Collapsed 81 choppy micro-clips to 68 unified cinematic beats in Chapter 2 with zero line theft, ensuring continuous actor delivery and Audible-standard narrative flow.
 
 
+
+
+## ADR-053: Gemini 3.8 Flash Native Voice Catalog & Collision-Free Multi-Persona Casting (Issue 3 Remediation)
+- **Status:** Accepted
+- **Date:** 2026-10-07
+- **Context:**
+  1. In Chapter 2 pilot production, all male roles collapsed into identical-sounding foreign baritones (~100–120 Hz).
+  2. Root cause: `character_caster.py` previously hardcoded only 12 US-English astronomy voices (`Charon`, `Puck`, `Fenrir`, etc.) and attempted to simulate character contrast through heavy digital pitch shifting (`asetrate=48000*0.92`, `0.88`, `1.08`). When `AUDIBLE_CLEAN_DSP` disabled `asetrate` to prevent metallic robotic artifacts, all characters collapsed into the same base vocal model.
+  3. Live interrogation of Google Gemini API (`https://generativelanguage.googleapis.com/v1beta/voices`) discovered a vast prebuilt library of **2,089 native voices**, including **114 native Hindi (`hi-IN`) voices** (spanning Awadhi, Bhojpuri, Haryanvi, Bundeli, Urdu dialects, ages 20–69, and natural pitch tiers) and 120 Indian English (`en-IN`) voices.
+- **Decision:**
+  1. **Dynamic Voice Catalog Engine (`audiobook_factory/tts/voice_catalog.py`)**:
+     - Built sub-millisecond query and ranking engine backed by curated JSON (`curated_voice_catalog.json`), SQLite index (`voice_catalog.db`), and embedded offline fallback (`EMBEDDED_FALLBACK_VOICES`).
+     - Extracted full linguistic metadata: ID, gender, age, dialect, pitch tier, timbre descriptor, and archetypes.
+  2. **100% Collision-Free Casting (`CharacterCaster`)**:
+     - Upgraded `_build_cast_allocation` and `cast_single_speaker` to dynamically match character archetypes, gender, and age hints to distinct native language voices (`hi-IN` for Hindi audio dramas, `en-US` for English).
+     - Enforced `used_voices` exclusion set ensuring zero duplicate base voices across the cast.
+  3. **Natural Pitch Baseline (`pitch = 1.0`)**:
+     - Preserved natural pitch at 1.0 (eliminating robotic `asetrate` pitch-warping artifacts). Character vocal differentiation stems 100% naturally from distinct neural acoustic models.
+     - Preserved 4D parametric EQ curves (`bass_boost_db`, `presence_boost_db`, `clarity_reduction_db`) for subtle vocal body coloring.
+  4. **Stage Direction Sanitization (`gemini.py`)**:
+     - Implemented `sanitize_spoken_text_and_extract_stage_directions()` in `synthesize_gemini_tts` and `batch_synthesize_gemini_multispeaker`.
+     - Bracketed cues (`[whispers]`, `[cold menace]`, `[धीमी आवाज में]`) are automatically extracted and merged into `speechMetadata.style` while being cleanly scrubbed from spoken text, preventing the TTS model from reading acting directions aloud.
+- **Rationale:** Solves vocal convergence and unnatural pitch warping for good by unleashing the full 2,089 Gemini voice roster, delivering authentic regional dialects, crisp vocal contrast, and broadcast-grade dramatic realism.

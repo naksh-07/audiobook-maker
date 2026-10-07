@@ -20,6 +20,7 @@ from audiobook_factory.audio_utils import _atomic_replace
 from audiobook_factory.key_manager import get_persistent_key_pool
 from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
 from audiobook_factory.llm_client import call_gemini
+from audiobook_factory.tts.voice_catalog import get_voice_catalog
 
 _CAST_LOCK = threading.RLock()
 
@@ -331,21 +332,42 @@ Return a JSON array of objects with:
         use_hindi: bool = False,
     ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         """Builds non-colliding voice assignments for all characters."""
-        used_signatures: Set[str] = set()
+        catalog = get_voice_catalog()
+        lang_code = "hi-IN" if use_hindi else "en-US"
+
+        # Determine Narrator voice
+        if use_hindi and default_narrator_voice == "Aoede":
+            narrator_voice = "hi-in-tutor-1"
+        else:
+            narrator_voice = default_narrator_voice
+
+        narrator_meta = catalog.get_voice(narrator_voice)
+        if narrator_meta and narrator_meta.get("gender"):
+            narrator_gender = narrator_meta["gender"]
+        elif narrator_voice in FEMALE_VOICE_PERSONAS:
+            narrator_gender = "female"
+        else:
+            narrator_gender = "male"
+
+        used_voices: Set[str] = {narrator_voice}
+        used_signatures: Set[Any] = {
+            f"{narrator_voice}_p1.00_s1.00",
+            (narrator_voice, 1.0, 1.0),
+        }
 
         # Always register Narrator
         roster_chars = {
             "Narrator": {
                 "english_name": "Narrator",
                 "display_name": "Narrator",
-                "gender": "female" if default_narrator_voice in FEMALE_VOICE_PERSONAS else "male",
-                "assigned_voice_id": default_narrator_voice,
+                "gender": narrator_gender,
+                "assigned_voice_id": narrator_voice,
                 "aliases": ["सूत्रधार", "Narrator", "narration"],
             }
         }
         voice_registry = {
             "Narrator": {
-                "voice": default_narrator_voice,
+                "voice": narrator_voice,
                 "pitch": 1.0,
                 "speed": 1.0,
                 "bass_boost_db": 0.0,
@@ -359,7 +381,7 @@ Return a JSON array of objects with:
                 "character_id": "Narrator",
                 "character_name": "Narrator",
                 "locked": True,
-                "voice_id": default_narrator_voice,
+                "voice_id": narrator_voice,
                 "calibration_overrides": {
                     "pitch": 1.0,
                     "speed": 1.0,
@@ -370,7 +392,6 @@ Return a JSON array of objects with:
                 },
             }
         }
-        used_signatures.add(f"{default_narrator_voice}_p1.00_s1.00")
 
         male_idx = 0
         female_idx = 0
@@ -381,44 +402,91 @@ Return a JSON array of objects with:
                 continue
 
             gender = ch.get("gender", "male").lower()
-            aliases = ch.get("aliases", [])
+            aliases = list(ch.get("aliases", []))
             hin_name = ch.get("hindi_name", "").strip()
             if hin_name and hin_name not in aliases:
                 aliases.append(hin_name)
 
             arch = ch.get("archetype") or ch.get("vocal_archetype", "")
             prom = ch.get("prominence", "standard")
+            age_raw = ch.get("age")
+            age_hint = None
+            if isinstance(age_raw, int):
+                age_hint = age_raw
+            elif isinstance(age_raw, str) and age_raw.isdigit():
+                age_hint = int(age_raw)
+            elif isinstance(age_raw, str):
+                age_str = age_raw.lower()
+                if any(w in age_str for w in ("child", "boy", "girl", "kid")):
+                    age_hint = 12
+                elif any(w in age_str for w in ("youth", "young", "teen")):
+                    age_hint = 22
+                elif any(w in age_str for w in ("middle", "adult")):
+                    age_hint = 40
+                elif any(w in age_str for w in ("elder", "old", "aged")):
+                    age_hint = 58
 
-            if gender == "female":
-                persona = FEMALE_VOICE_PERSONAS[female_idx % len(FEMALE_VOICE_PERSONAS)]
-                acoustic_vec = cls.compute_acoustic_formant_vector(
-                    gender="female",
+            pitch_hint = None
+            arch_lower = arch.lower()
+            if any(w in arch_lower for w in ("deep", "heavy", "grave", "low", "baritone", "gruff")):
+                pitch_hint = "low"
+            elif any(w in arch_lower for w in ("high", "bright", "youth", "shrill", "sharp")):
+                pitch_hint = "high"
+
+            # Dynamic Voice Assignment from VoiceCatalog
+            if use_hindi:
+                persona = catalog.get_best_matching_voice(
+                    gender=gender,
+                    language_code="hi-IN",
                     archetype=arch,
-                    prominence=prom,
-                    index=female_idx,
+                    age_hint=age_hint,
+                    pitch_hint=pitch_hint,
+                    exclude_voice_ids=used_voices,
                 )
+            else:
+                persona = catalog.get_best_matching_voice(
+                    gender=gender,
+                    language_code="en-US",
+                    archetype=arch,
+                    age_hint=age_hint,
+                    pitch_hint=pitch_hint,
+                    exclude_voice_ids=used_voices,
+                )
+                if gender == "female" and persona not in FEMALE_VOICE_PERSONAS:
+                    avail_females = [p for p in FEMALE_VOICE_PERSONAS if p not in used_voices]
+                    persona = avail_females[0] if avail_females else FEMALE_VOICE_PERSONAS[female_idx % len(FEMALE_VOICE_PERSONAS)]
+                elif gender == "male" and persona not in MALE_VOICE_PERSONAS:
+                    avail_males = [p for p in MALE_VOICE_PERSONAS if p not in used_voices]
+                    persona = avail_males[0] if avail_males else MALE_VOICE_PERSONAS[male_idx % len(MALE_VOICE_PERSONAS)]
+
+            used_voices.add(persona)
+
+            acoustic_vec = cls.compute_acoustic_formant_vector(
+                gender=gender,
+                archetype=arch,
+                prominence=prom,
+                index=female_idx if gender == "female" else male_idx,
+            )
+            if gender == "female":
                 female_idx += 1
             else:
-                persona = MALE_VOICE_PERSONAS[male_idx % len(MALE_VOICE_PERSONAS)]
-                acoustic_vec = cls.compute_acoustic_formant_vector(
-                    gender="male",
-                    archetype=arch,
-                    prominence=prom,
-                    index=male_idx,
-                )
                 male_idx += 1
 
-            pitch = acoustic_vec["pitch"]
-            speed = acoustic_vec["speed"]
-            sig = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
-
-            # Ensure zero signature collision
+            # In natural neural synthesis, default pitch is 1.0 (zero robotic asetrate distortion).
+            # Subtle micro-offsets (<= 0.02) are only applied if needed to resolve signature collision.
+            pitch = 1.0
+            speed = 1.0
+            sig = (persona, pitch, speed)
+            sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
             counter = 1
-            while sig in used_signatures:
-                pitch = round(pitch + 0.02 * counter, 2)
-                sig = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
+            while sig in used_signatures or sig_str in used_signatures:
+                pitch = round(1.0 + 0.01 * counter, 2)
+                sig = (persona, pitch, speed)
+                sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
                 counter += 1
+
             used_signatures.add(sig)
+            used_signatures.add(sig_str)
 
             acoustic_vec["pitch"] = pitch
             acoustic_vec["speed"] = speed
@@ -467,6 +535,7 @@ Return a JSON array of objects with:
         project_dir: Optional[Path] = None,
         gender: Optional[str] = None,
         default_backend: str = "gemini_tts",
+        use_hindi: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         Dynamically registers and casts a single newly discovered character.
@@ -479,6 +548,7 @@ Return a JSON array of objects with:
                 project_dir=project_dir,
                 gender=gender,
                 default_backend=default_backend,
+                use_hindi=use_hindi,
             )
 
     @classmethod
@@ -488,6 +558,7 @@ Return a JSON array of objects with:
         project_dir: Optional[Path] = None,
         gender: Optional[str] = None,
         default_backend: str = "gemini_tts",
+        use_hindi: Optional[bool] = None,
     ) -> Dict[str, Any]:
         sp_clean = speaker_name.strip()
         if not sp_clean:
@@ -529,42 +600,75 @@ Return a JSON array of objects with:
                 "speed": cfg.get("speed", 1.0),
             }
 
-        # Collect existing voice signatures
+        # Collect existing voice signatures and used voices
         used_signatures = set()
+        used_voices = set()
         for k, v in registry.items():
             if isinstance(v, dict):
                 vox = v.get("voice", "Aoede")
+                used_voices.add(vox)
                 p = v.get("pitch", 1.0)
                 s = v.get("speed", 1.0)
                 used_signatures.add(f"{vox}_p{p:.2f}_s{s:.2f}")
+                used_signatures.add((vox, p, s))
 
         # Determine gender heuristic if not provided
         g = (gender or "neutral").lower()
         if g not in ("male", "female"):
-            female_indicators = ("girl", "woman", "lady", "queen", "princess", "madam", "mrs", "miss", "sister", "mother", "daughter")
+            female_indicators = (
+                "girl", "woman", "lady", "queen", "princess", "madam", "mrs", "miss",
+                "sister", "mother", "daughter", "स्त्री", "लड़की", "औरत", "रानी", "माता"
+            )
             if any(ind in sp_clean.lower() for ind in female_indicators):
                 g = "female"
             else:
                 g = "male"
 
-        pool = FEMALE_VOICE_PERSONAS if g == "female" else MALE_VOICE_PERSONAS
-        existing_count = sum(1 for v in registry.values() if isinstance(v, dict) and v.get("voice") in pool)
-        persona = pool[existing_count % len(pool)]
+        is_hi = use_hindi if use_hindi is not None else (
+            (p_dir / "translation").exists() or
+            any('\u0900' <= c <= '\u097f' for c in sp_clean) or
+            any(str(v.get("voice", "")).startswith("hi-") for v in registry.values() if isinstance(v, dict))
+        )
 
+        catalog = get_voice_catalog()
+        lang_code = "hi-IN" if is_hi else "en-US"
+
+        if is_hi:
+            persona = catalog.get_best_matching_voice(
+                gender=g,
+                language_code="hi-IN",
+                archetype="dynamically_cast_character",
+                exclude_voice_ids=used_voices,
+            )
+        else:
+            persona = catalog.get_best_matching_voice(
+                gender=g,
+                language_code="en-US",
+                archetype="dynamically_cast_character",
+                exclude_voice_ids=used_voices,
+            )
+            pool = FEMALE_VOICE_PERSONAS if g == "female" else MALE_VOICE_PERSONAS
+            if persona not in pool:
+                avail = [p for p in pool if p not in used_voices]
+                persona = avail[0] if avail else pool[len(registry) % len(pool)]
+
+        existing_count = len(registry)
         acoustic_vec = cls.compute_acoustic_formant_vector(
             gender=g,
             archetype="dynamically_cast_character",
             prominence="incidental",
             index=existing_count,
         )
-        pitch = acoustic_vec["pitch"]
-        speed = acoustic_vec["speed"]
-        sig = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
+        pitch = 1.0
+        speed = 1.0
+        sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
+        sig_tuple = (persona, pitch, speed)
 
         counter = 1
-        while sig in used_signatures:
-            pitch = round(pitch + 0.02 * counter, 2)
-            sig = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
+        while sig_str in used_signatures or sig_tuple in used_signatures:
+            pitch = round(1.0 + 0.01 * counter, 2)
+            sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
+            sig_tuple = (persona, pitch, speed)
             counter += 1
 
         acoustic_vec["pitch"] = pitch

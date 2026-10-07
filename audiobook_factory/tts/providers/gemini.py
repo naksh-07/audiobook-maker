@@ -116,6 +116,33 @@ def resolve_speech_metadata_style(
     return ", ".join(descriptors)
 
 
+def sanitize_spoken_text_and_extract_stage_directions(text: str) -> Tuple[str, List[str]]:
+    """
+    Strips bracketed stage directions (e.g. '[whispers]', '[cold menace]', '[धीमी आवाज में]')
+    from spoken text so Gemini TTS never reads acting instructions aloud.
+    Extracts the directives to be folded into speechMetadata.style.
+    Momentary non-verbal tags like '<sigh>', '<gasp>' are preserved for audio cues.
+    """
+    if not text:
+        return "", []
+
+    stage_cues = []
+    matches = re.findall(r"\[([^\]]+)\]", text)
+    for m in matches:
+        clean_cue = m.strip()
+        if clean_cue:
+            stage_cues.append(clean_cue)
+
+    cleaned = re.sub(r"\[[^\]]+\]", "", text).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+
+    # If stripping removed everything (e.g. text was purely '[sigh]'), convert to non-verbal tag
+    if not cleaned and text.strip():
+        cleaned = re.sub(r"\[([^\]]+)\]", r"<\1>", text.strip())
+
+    return cleaned, stage_cues
+
+
 def synthesize_gemini_tts(
     text: str,
     output_file: Path,
@@ -139,24 +166,40 @@ def synthesize_gemini_tts(
     if os.environ.get("TTS_PRIMARY_BACKEND", "").lower() == "local_winrt":
         return _synthesize_local_winrt_fallback(text, output_file, voice=voice)
 
-    clean_text = text.strip()
+    # Sanitize spoken text by extracting bracketed stage directions into speechMetadata
+    clean_text, extracted_cues = sanitize_spoken_text_and_extract_stage_directions(text)
+
     # Strip surrounding punctuation/quotes for numeral lookup: e.g. "८.", "'IV'", "(1)", "3,"
     stripped_token = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
     if stripped_token in NUMERAL_NORMALIZATION:
-        text = NUMERAL_NORMALIZATION[stripped_token]
+        spoken_text = NUMERAL_NORMALIZATION[stripped_token]
     elif clean_text in NUMERAL_NORMALIZATION:
-        text = NUMERAL_NORMALIZATION[clean_text]
+        spoken_text = NUMERAL_NORMALIZATION[clean_text]
+    else:
+        spoken_text = clean_text
 
-    part_payload: Dict[str, Any] = {"text": text}
+    part_payload: Dict[str, Any] = {"text": spoken_text}
     base_temp = None
     if performance_direction:
         from audiobook_factory.performance.tts_adapter import GeminiTTSPerformanceAdapter
         adapter = GeminiTTSPerformanceAdapter()
-        adapted = adapter.adapt_direction_to_payload(text, performance_direction, variant_type=variant_type)
+        adapted = adapter.adapt_direction_to_payload(spoken_text, performance_direction, variant_type=variant_type)
         part_payload = adapted["part_payload"]
         base_temp = adapted.get("temperature")
+        if extracted_cues:
+            cue_str = ", ".join(extracted_cues)
+            if "speechMetadata" in part_payload and "style" in part_payload["speechMetadata"]:
+                part_payload["speechMetadata"]["style"] += f", {cue_str}"
+            else:
+                part_payload.setdefault("speechMetadata", {})["style"] = cue_str
     else:
         style_desc = resolve_speech_metadata_style(acting, emotion, intensity, memory_vocal_constraint=memory_vocal_constraint)
+        if extracted_cues:
+            cue_str = ", ".join(extracted_cues)
+            if style_desc and style_desc.lower() not in ("neutral", "standard"):
+                style_desc = f"{style_desc}, {cue_str}"
+            else:
+                style_desc = cue_str
         if style_desc and style_desc.lower() not in ("neutral", "standard"):
             part_payload["speechMetadata"] = {"style": style_desc}
 
@@ -217,7 +260,7 @@ def synthesize_gemini_tts(
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         key_exhausted_or_invalid = False
 
-        logger.info(f"  🎙️ [TTS GEMINI 3.8 FLASH] Synthesizing '{output_file.name}' via '{model}' (Voice: {voice})...")
+        logger.info(f"  [TTS GEMINI 3.8 FLASH] Synthesizing '{output_file.name}' via '{model}' (Voice: {voice})...")
         # Inner Loop: Network retries on the currently selected key (max 3 attempts)
         for network_attempt in range(3):
             if rate_limiter:
@@ -502,16 +545,18 @@ def synthesize_gemini_multispeaker_batch(
     for seg in batch.segments:
         # Prefer resolved spoken_text, falling back to literary text
         if hasattr(seg, "spoken_text") and seg.spoken_text:
-            clean_text = seg.spoken_text.strip()
+            raw_text = seg.spoken_text.strip()
         elif isinstance(seg, dict) and seg.get("spoken_text"):
-            clean_text = seg["spoken_text"].strip()
+            raw_text = seg["spoken_text"].strip()
         else:
-            clean_text = seg.text.strip() if hasattr(seg, "text") else seg.get("text", "").strip()
-            stripped = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
-            if stripped in NUMERAL_NORMALIZATION:
-                clean_text = NUMERAL_NORMALIZATION[stripped]
-            elif clean_text in NUMERAL_NORMALIZATION:
-                clean_text = NUMERAL_NORMALIZATION[clean_text]
+            raw_text = seg.text.strip() if hasattr(seg, "text") else seg.get("text", "").strip()
+
+        clean_text, extracted_cues = sanitize_spoken_text_and_extract_stage_directions(raw_text)
+        stripped = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
+        if stripped in NUMERAL_NORMALIZATION:
+            clean_text = NUMERAL_NORMALIZATION[stripped]
+        elif clean_text in NUMERAL_NORMALIZATION:
+            clean_text = NUMERAL_NORMALIZATION[clean_text]
 
         spk = seg.speaker if hasattr(seg, "speaker") else seg.get("speaker", "Narrator")
         acting = getattr(seg, "acting", None) if hasattr(seg, "acting") else seg.get("acting")
@@ -520,13 +565,22 @@ def synthesize_gemini_multispeaker_batch(
         mem_vc = getattr(seg, "memory_vocal_constraint", None) if hasattr(seg, "memory_vocal_constraint") else seg.get("memory_vocal_constraint")
 
         style_desc = resolve_speech_metadata_style(acting, emotion, intensity, memory_vocal_constraint=mem_vc)
-        parts.append({
+        if extracted_cues:
+            cue_str = ", ".join(extracted_cues)
+            if style_desc and style_desc.lower() not in ("neutral", "standard"):
+                style_desc = f"{style_desc}, {cue_str}"
+            else:
+                style_desc = cue_str
+
+        part_item: Dict[str, Any] = {
             "text": clean_text,
             "speechMetadata": {
                 "speaker": spk,
-                "style": style_desc
             }
-        })
+        }
+        if style_desc and style_desc.lower() not in ("neutral", "standard"):
+            part_item["speechMetadata"]["style"] = style_desc
+        parts.append(part_item)
 
     # Expressive acting temperature for multi-speaker drama (Phase 3 Fix)
     if temperature is not None:
@@ -580,7 +634,7 @@ def synthesize_gemini_multispeaker_batch(
             raise
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         key_exhausted_or_invalid = False
-        logger.info(f"  🎙️ [TTS GEMINI 3.8 FLASH] Synthesizing multi-speaker batch '{batch.batch_id}' via '{model}'...")
+        logger.info(f"  [TTS GEMINI 3.8 FLASH] Synthesizing multi-speaker batch '{batch.batch_id}' via '{model}'...")
         for network_attempt in range(3):
             if rate_limiter:
                 rate_limiter.acquire()
