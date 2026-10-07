@@ -285,3 +285,64 @@ def test_supreme_narrator_lock_aoede():
     assert reg_en["Narrator"]["pitch"] == 1.0
     assert reg_en["Narrator"]["speed"] == 1.0
 
+
+def test_adolescent_teen_boy_dynamic_casting():
+    """
+    Verify that an adolescent teen boy (13-18yo) is dynamically allocated:
+    1. A naturally young male voice model (age <= 28) matching character dialect.
+    2. Zero digital pitch warping (pitch = 1.0, speed = 1.0) preventing robotic smurf/chipmunk artifacts.
+    3. Clean adolescent EQ: bass_boost_db <= -2.5 (chest resonance cut), presence_boost_db >= 2.0.
+    """
+    catalog = get_voice_catalog()
+
+    # 1. 15yo Haryanvi Teen Boy
+    v_haryanvi = catalog.get_best_matching_voice(
+        gender="male",
+        language_code="hi-IN",
+        archetype="15 year old teen fighter apprentice",
+        age_hint=15,
+        dialect_hint="Haryanvi",
+    )
+    meta_h = catalog.get_voice(v_haryanvi)
+    assert meta_h is not None
+    assert meta_h["gender"] == "male", "Teen boy must be allocated a male voice"
+    assert meta_h.get("age", 99) <= 28, f"Voice {v_haryanvi} age {meta_h.get('age')} must be <= 28"
+    assert "haryanvi" in meta_h.get("dialect", "").lower()
+
+    # 2. 15yo Bundeli Teen Boy
+    v_bundeli = catalog.get_best_matching_voice(
+        gender="male",
+        language_code="hi-IN",
+        archetype="15 year old teen rebel scout",
+        age_hint=15,
+        dialect_hint="Bundeli",
+    )
+    meta_b = catalog.get_voice(v_bundeli)
+    assert meta_b is not None
+    assert meta_b["gender"] == "male"
+    assert meta_b.get("age", 99) <= 28
+    assert "bundeli" in meta_b.get("dialect", "").lower()
+
+    # 3. Dynamic Roster Allocation
+    raw_characters = [
+        {
+            "canonical_name": "Teen Hero",
+            "gender": "male",
+            "age": 15,
+            "archetype": "determined 15 year old teen apprentice",
+            "recommended_dialect": "Haryanvi",
+        }
+    ]
+    _, registry, _ = CharacterCaster._build_cast_allocation(
+        project_id="proj-teen-test",
+        raw_characters=raw_characters,
+        use_hindi=True,
+    )
+    cfg = registry["Teen Hero"]
+    assert cfg["voice"].startswith("hi-in-")
+    assert cfg["pitch"] == 1.0, "Adolescent teen boy must have pitch = 1.0 (zero digital warping)"
+    assert cfg["speed"] == 1.0
+    assert cfg["bass_boost_db"] <= -2.5, "Teen boy must have chest resonance cut"
+    assert cfg["presence_boost_db"] >= 2.0, "Teen boy must have adolescent upper presence boost"
+
+

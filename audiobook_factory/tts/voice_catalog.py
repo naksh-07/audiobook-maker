@@ -236,9 +236,14 @@ class VoiceCatalog:
         gender_clean = gender.lower()
         arch_tokens = set(archetype.lower().replace("-", " ").replace("_", " ").split())
 
-        # Determine effective child state
-        child_keywords = {"child", "kid", "little", "boy", "girl", "toddler", "youngster", "बच्चा", "लड़का", "लड़की", "बालक"}
-        effective_child = is_child or (age_hint is not None and age_hint <= 14) or bool(arch_tokens & child_keywords)
+        # Determine effective child vs adolescent teen state
+        teen_keywords = {"teen", "teenager", "adolescent", "youth", "किशोर", "किशोरी", "तरुण", "youngster"}
+        young_child_keywords = {"child", "kid", "little", "toddler", "बच्चा", "बालक", "chhota"}
+        child_keywords = young_child_keywords | teen_keywords | {"boy", "girl", "लड़का", "लड़की"}
+
+        is_teen = (age_hint is not None and 13 <= age_hint <= 18) or bool(arch_tokens & teen_keywords)
+        is_young_child = (age_hint is not None and age_hint < 13) or bool(arch_tokens & young_child_keywords) or (is_child and not is_teen)
+        effective_child = is_young_child or is_teen or is_child or bool(arch_tokens & child_keywords)
 
         scored: List[Tuple[int, str]] = []
 
@@ -251,24 +256,30 @@ class VoiceCatalog:
             v_age = v.get("age")
             v_timbre = v.get("timbre", "").lower()
 
-            # --- Gender & Anime Seiyū Filter ---
-            if effective_child:
-                # In animation / audio drama (e.g. Naruto, Luffy, Goku, Bart Simpson, Conan),
-                # young boys and young girls are cast using youthful female voice actors
-                # to guarantee natural upper harmonics without digital pitch distortion.
-                if gender_clean == "male":
-                    # Boy: Accept youthful female voice or youthful male
-                    if v_gender == "female":
-                        if v_age and v_age > 32 and not any(w in v_timbre for w in ("youthful", "bright", "breezy", "young")):
-                            continue
-                    elif v_gender == "male":
-                        # Only allow young males (age <= 25)
-                        if v_age and v_age > 25:
-                            continue
-                else:
-                    # Girl: Strict female
-                    if v_gender != "female":
+            # --- Gender, Teen, & Anime Seiyū Filter ---
+            if is_teen and gender_clean == "male":
+                # Adolescent Teen Boy (13-18yo):
+                # Prefers naturally young male models (age <= 28) to avoid adult deep baritones,
+                # or youthful female model as secondary fallback if male exhausted.
+                if v_gender == "male":
+                    if v_age and v_age > 28:
                         continue
+                elif v_gender == "female":
+                    if v_age and v_age > 25:
+                        continue
+            elif is_young_child and gender_clean == "male":
+                # Pre-pubescent Child Boy (< 13yo):
+                # Anime Seiyū rule: accept youthful female or very young male (<= 25)
+                if v_gender == "female":
+                    if v_age and v_age > 32 and not any(w in v_timbre for w in ("youthful", "bright", "breezy", "young")):
+                        continue
+                elif v_gender == "male":
+                    if v_age and v_age > 25:
+                        continue
+            elif effective_child and gender_clean == "female":
+                # Girl role: Strict female
+                if v_gender != "female":
+                    continue
             else:
                 # Adult role: strict gender matching
                 if v_gender != gender_clean and gender_clean in ("male", "female"):
@@ -276,8 +287,22 @@ class VoiceCatalog:
 
             score = 0
 
-            # 1. Anime Seiyū Child Bonus
-            if effective_child:
+            # 1. Age-appropriate vocal scoring
+            if is_teen and gender_clean == "male":
+                # Teen Boy preference: Young male models (<= 26yo) win strongly over females
+                if v_gender == "male":
+                    score += 55
+                    if v_age and v_age <= 24:
+                        score += 25
+                    if v.get("pitch", "").lower() in ("high", "medium"):
+                        score += 25
+                    if any(w in v_timbre for w in ("friendly", "clear", "light", "airy", "warm", "engaging", "approachable", "eager", "upbeat")):
+                        score += 20
+                else:
+                    # Female tomboy fallback
+                    score += 15
+            elif is_young_child:
+                # Young child (< 13yo): Anime Seiyū bonus for female/youthful
                 if v_gender == "female":
                     score += 40
                 if v_age and v_age <= 28:

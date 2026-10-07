@@ -1183,3 +1183,25 @@
        - Child Girl: `pitch = 1.05`, `speed = 1.03`, `bass_boost_db = -2.5` (delicate chest resonance), `presence_boost_db = +2.8` (sparkle 3.5 kHz harmonic boost).
      - Full physical formant processing verified via FFmpeg filter chain and live Gemini 3.8 Flash synthesis.
 - **Rationale:** Delivers world-class character acting, eliminates digital pitch-shift artifacts, unlocks rich cultural dialect realism, and locks the beloved `Aoede` vocal narrative texture permanently.
+
+
+## ADR-055: Adolescent Teen Boy Dynamic Casting & Clean Physical EQ (Zero Hardcoding & Zero Pitch Warping)
+- **Status:** Accepted
+- **Date:** 2026-10-07
+- **Context:**
+  1. Live synthesis listening tests for adolescent male characters (ages 13–18, e.g. 15yo teen boy) revealed that the Japanese anime female Seiyū convention does not translate cleanly to Hindi audio drama. In Hindi, Devanagari verb morphology is explicitly gendered (*"सकता हूँ"*, *"चुका हूँ"*), causing an adult female voice acting a 15yo boy to immediately register as an adult woman or older sister rather than a young male fighter/apprentice.
+  2. Conversely, applying digital pitch shifting (`asetrate`) to adult male baritones shifts all vocal tract formants indiscriminately, creating an artificial, metallic "chipmunk" or "smurf" distortion.
+  3. Acoustic shootout of 6 alternative techniques confirmed that the most compelling and natural vocal delivery is produced by pairing naturally youthful male models ($\le 24$yo) at natural pitch (`pitch = 1.0`, zero `asetrate` warping) with an adolescent physical EQ profile that carves out deep adult chest resonance (150 Hz cut -3.0 dB) while projecting youthful vocal energy (2.8 kHz boost +2.2 dB).
+  4. User mandated this solution with an immutable constraint: zero hardcoded voice IDs; the solution must be 100% dynamically allocated by `VoiceCatalog` based on archetype, age hint, and dialect.
+- **Decision:**
+  1. **Adolescent vs Pre-Pubescent Age Partitioning (`voice_catalog.py`)**:
+     - Separated `is_teen` ($13 \le \text{age} \le 18$, or keywords `teen`, `adolescent`, `किशोर`, `tarun`) from pre-pubescent `is_young_child` ($< 13$yo).
+     - For teen boys, strictly filters candidate models to young males (age $\le 28$).
+     - Dynamic scoring grants a **+55 base bonus** for young males, **+25** for age $\le 24$, **+25** for natural high/medium pitch, **+20** for youthful/energetic timbre, and **+45** for character dialect match.
+  2. **Adolescent Physical Formant EQ (`character_caster.py`)**:
+     - In `compute_acoustic_formant_vector`, teen boys receive `pitch = 1.0` (zero digital warping), `speed = 1.0`, `bass_boost_db = -3.0` (150 Hz adult chest resonance cut), and `presence_boost_db = +2.2` (2.8 kHz vocal projection).
+  3. **Zero Digital Warping Invariant**:
+     - Enforced `base_pitch = 1.0` and `base_speed = 1.0` across all adults and adolescent teen boys in `_build_cast_allocation` and `_cast_single_speaker_unlocked`, strictly reserving pitch micro-offsets for pre-pubescent children ($< 13$yo).
+  4. **Universal Novel-Agnostic & Zero Hardcoding Invariant**:
+     - Zero hardcoding of voice IDs; casting operates purely through dynamic multi-attribute scoring. Verified via `test_adolescent_teen_boy_dynamic_casting` and `test_zero_hardcoding_contracts.py`.
+- **Rationale:** Eradicates both the female-gender dissonance and robotic chipmunk distortion for adolescent male roles, producing natural, gritty, age-appropriate dramatic acting.

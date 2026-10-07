@@ -231,12 +231,25 @@ Return a JSON array of objects with:
         g = (gender or "male").lower()
         arch = (archetype or "").lower()
 
-        child_tokens = ("child", "kid", "little boy", "little girl", "toddler", "boyish", "girlish", "balak", "balika", "bacha", "bachi", "bachha")
+        child_tokens = ("child", "kid", "little boy", "little girl", "toddler", "balak", "balika", "bacha", "bachi", "bachha")
+        teen_tokens = ("teen", "teenager", "adolescent", "teen boy", "teen girl", "15 year", "16 year", "14 year", "13 year", "किशोर", "किशोरी", "तरुण")
+
+        is_teen = any(w in arch for w in teen_tokens)
         effective_child = is_child or any(w in arch for w in child_tokens)
 
         # Male Vocal Acoustic Profiling
         if g == "male":
-            if effective_child:
+            if is_teen:
+                # Adolescent Teen Boy (13-18yo): ZERO digital pitch warping (pitch=1.0),
+                # tames 150Hz adult chest resonance (-3.0dB) to avoid deep adult baritone body,
+                # boosts adolescent presence (+2.2dB)
+                pitch = 1.0
+                speed = 1.0
+                bass_boost = -3.0       # Tame heavy adult chest resonance (150 Hz cut)
+                presence_boost = 2.2    # Adolescent vocal projection (2.8 kHz presence)
+                clarity_cut = 0.0
+                lowpass = 0
+            elif effective_child:
                 # Anime Seiyū Child Boy Vector (calibrated for youthful female or young male base voice)
                 pitch = round(1.03 + (index % 2) * 0.01, 2)
                 speed = 1.03
@@ -441,10 +454,12 @@ Return a JSON array of objects with:
                 age_hint = int(age_raw)
             elif isinstance(age_raw, str):
                 age_str = age_raw.lower()
-                if any(w in age_str for w in ("child", "boy", "girl", "kid")):
+                if any(w in age_str for w in ("teen", "teenager", "adolescent", "किशोर")):
+                    age_hint = 15
+                elif any(w in age_str for w in ("child", "toddler", "kid", "little")):
                     age_hint = 10
                     is_child_flag = True
-                elif any(w in age_str for w in ("youth", "young", "teen")):
+                elif any(w in age_str for w in ("youth", "young")):
                     age_hint = 20
                 elif any(w in age_str for w in ("middle", "adult")):
                     age_hint = 40
@@ -452,7 +467,11 @@ Return a JSON array of objects with:
                     age_hint = 58
 
             arch_lower = arch.lower()
-            if any(w in arch_lower for w in ("child", "kid", "little boy", "little girl", "toddler", "balak", "balika", "bacha", "bachi")):
+            is_teen_flag = (age_hint is not None and 13 <= age_hint <= 18) or any(w in arch_lower for w in ("teen", "teenager", "adolescent", "किशोर", "tarun"))
+            if is_teen_flag:
+                if age_hint is None:
+                    age_hint = 15
+            elif any(w in arch_lower for w in ("child", "kid", "little boy", "little girl", "toddler", "balak", "balika", "bacha", "bachi")):
                 is_child_flag = True
                 if age_hint is None:
                     age_hint = 10
@@ -510,10 +529,11 @@ Return a JSON array of objects with:
             else:
                 male_idx += 1
 
-            # In natural neural synthesis, default pitch is 1.0 (or calibrated child pitch).
+            # In natural neural synthesis, default pitch is 1.0 (zero robotic asetrate distortion).
             # Subtle micro-offsets (<= 0.02) are only applied if needed to resolve signature collision.
-            base_pitch = acoustic_vec.get("pitch", 1.03) if is_child_flag else 1.0
-            base_speed = acoustic_vec.get("speed", 1.03) if is_child_flag else 1.0
+            # Only young children (< 13yo) receive child formant pitch (1.03-1.05); teen boys & adults stay at 1.0!
+            base_pitch = acoustic_vec.get("pitch", 1.03) if (is_child_flag and not is_teen_flag) else 1.0
+            base_speed = acoustic_vec.get("speed", 1.03) if (is_child_flag and not is_teen_flag) else 1.0
             pitch = base_pitch
             speed = base_speed
             sig = (persona, pitch, speed)
@@ -666,11 +686,12 @@ Return a JSON array of objects with:
             else:
                 g = "male"
 
+        teen_indicators = ("teen", "teenager", "adolescent", "youth", "किशोर", "किशोरी", "तरुण", "youngster")
+        is_teen_speaker = any(ind in sp_clean.lower() for ind in teen_indicators)
         child_indicators = (
-            "child", "kid", "boy", "girl", "little", "toddler", "youngster",
-            "बच्चा", "लड़का", "लड़की", "बालक", "बालिका"
+            "child", "kid", "little", "toddler", "बच्चा", "बालक", "बालिका"
         )
-        is_child_speaker = any(ind in sp_clean.lower() for ind in child_indicators)
+        is_child_speaker = any(ind in sp_clean.lower() for ind in child_indicators) or is_teen_speaker
 
         is_hi = use_hindi if use_hindi is not None else (
             (p_dir / "translation").exists() or
@@ -710,8 +731,8 @@ Return a JSON array of objects with:
             index=existing_count,
             is_child=is_child_speaker,
         )
-        base_pitch = acoustic_vec.get("pitch", 1.03) if is_child_speaker else 1.0
-        base_speed = acoustic_vec.get("speed", 1.03) if is_child_speaker else 1.0
+        base_pitch = acoustic_vec.get("pitch", 1.03) if (is_child_speaker and not is_teen_speaker) else 1.0
+        base_speed = acoustic_vec.get("speed", 1.03) if (is_child_speaker and not is_teen_speaker) else 1.0
         pitch = base_pitch
         speed = base_speed
         sig_str = f"{persona}_p{pitch:.2f}_s{speed:.2f}"
