@@ -79,8 +79,15 @@ class TestPronunciationResolver(unittest.TestCase):
         self.assertEqual(res.source, PronunciationSource.PREVIOUS_VERIFIED)
 
     def test_05_tier_4_canonical_lexicon(self):
+        self.lexicon.add_entry(PronunciationEntry(
+            canonical_id="sherlock_holmes",
+            canonical_text="Sherlock Holmes",
+            spoken_form="शरलॉक होम्स",
+            aliases=["Sherlock Holmes"],
+            status=PronunciationStatus.VERIFIED,
+            source=PronunciationSource.CANONICAL_LEXICON,
+        ))
         resolver = PronunciationResolver(self.lexicon)
-        # "Sherlock Holmes" is seeded in default lexicon
         res = resolver.resolve_token("Sherlock Holmes")
         self.assertEqual(res.resolved_spoken, "शरलॉक होम्स")
         self.assertEqual(res.source, PronunciationSource.CANONICAL_LEXICON)

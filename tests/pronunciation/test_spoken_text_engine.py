@@ -16,6 +16,15 @@ class TestSpokenTextEngine(unittest.TestCase):
     def setUp(self):
         self.lexicon = PronunciationLexicon()
         self.lexicon.seed_default_lexicon()
+        from audiobook_factory.pronunciation.contracts import PronunciationEntry, PronunciationStatus, PronunciationSource
+        self.lexicon.add_entry(PronunciationEntry(
+            canonical_id="sherlock_holmes",
+            canonical_text="Sherlock Holmes",
+            spoken_form="शरलॉक होम्स",
+            aliases=["Sherlock Holmes"],
+            status=PronunciationStatus.VERIFIED,
+            source=PronunciationSource.CANONICAL_LEXICON,
+        ))
         self.resolver = PronunciationResolver(self.lexicon)
         self.engine = SpokenTextEngine(self.resolver)
 

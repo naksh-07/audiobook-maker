@@ -122,6 +122,15 @@ def test_names_retain_pronunciation_metadata(tmp_path):
     """Verify that pronunciation metadata attaches to ScreenplaySegment and PerformanceDirection."""
     lexicon = PronunciationLexicon()
     lexicon.seed_default_lexicon()
+    from audiobook_factory.pronunciation.contracts import PronunciationEntry, PronunciationStatus, PronunciationSource
+    lexicon.add_entry(PronunciationEntry(
+        canonical_id="sherlock_holmes",
+        canonical_text="Sherlock Holmes",
+        spoken_form="शरलॉक होम्स",
+        aliases=["Sherlock Holmes"],
+        status=PronunciationStatus.VERIFIED,
+        source=PronunciationSource.CANONICAL_LEXICON,
+    ))
     resolver = PronunciationResolver(lexicon)
     engine = SpokenTextEngine(resolver)
 
@@ -398,6 +407,12 @@ def test_language_dialogue_calibration_corpus_execution():
     """Verify all 20 segments in LanguageDialogueCalibrationCorpus resolve correctly."""
     lexicon = PronunciationLexicon()
     lexicon.seed_default_lexicon()
+    from audiobook_factory.pronunciation.contracts import PronunciationEntry, PronunciationStatus, PronunciationSource
+    for e in [
+        PronunciationEntry(canonical_id="sherlock_holmes", canonical_text="Sherlock Holmes", spoken_form="शरलॉक होम्स", aliases=["Sherlock Holmes"], status=PronunciationStatus.VERIFIED, source=PronunciationSource.CANONICAL_LEXICON),
+        PronunciationEntry(canonical_id="baker_street", canonical_text="Baker Street", spoken_form="बेकर स्ट्रीट", aliases=["Baker Street"], status=PronunciationStatus.VERIFIED, source=PronunciationSource.CANONICAL_LEXICON),
+    ]:
+        lexicon.add_entry(e)
     resolver = PronunciationResolver(lexicon)
     engine = SpokenTextEngine(resolver)
 
