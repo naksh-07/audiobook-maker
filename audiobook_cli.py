@@ -56,6 +56,12 @@ __all__ = [
 
 
 def main():
+    # Delegate v6 subcommands to v6-ENTERPRISE-DAG CLI engine
+    v6_commands = {"ingest", "translate", "screenplay", "synth", "master", "package", "doctor"}
+    if len(sys.argv) > 1 and sys.argv[1] in v6_commands:
+        from audiobook_factory.cli.main import main as v6_main
+        sys.exit(v6_main(sys.argv[1:]))
+
     parser = argparse.ArgumentParser(
         prog="audiobook-factory",
         description="Vocals-Only Production Audiobook Factory (Extraction, Translation, Multi-Voice TTS, Mastering & M4B Packaging)",
