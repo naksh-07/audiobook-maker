@@ -168,6 +168,8 @@ class TwoPassLoudnormEngine:
         )
         resample_filter = f"aresample={self.spec.target_sample_rate}"
         filter_chain = f"{loudnorm_filter},{resample_filter}"
+        is_wav = out_p.suffix.lower() == ".wav"
+        codec_args = ["-c:a", "pcm_s16le"] if is_wav else ["-c:a", "aac", "-b:a", self.spec.audio_bitrate]
 
         cmd = [
             self.ffmpeg_bin,
@@ -175,8 +177,7 @@ class TwoPassLoudnormEngine:
             "-y",
             "-i", str(input_p),
             "-af", filter_chain,
-            "-c:a", "aac",
-            "-b:a", self.spec.audio_bitrate,
+            *codec_args,
             str(out_p),
         ]
 

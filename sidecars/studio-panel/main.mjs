@@ -101,8 +101,9 @@ app.api('/api/audio', (data) => {
   // Resolve safe path inside ENGINE_DIR
   const safeBase = resolve(ENGINE_DIR);
   const targetPath = resolve(safeBase, relPath.replace(/^[\/\\]+/, ''));
+  const relFromBase = relative(safeBase, targetPath);
 
-  if (!targetPath.startsWith(safeBase)) {
+  if (relFromBase.startsWith('..') || relFromBase === '' && !existsSync(targetPath)) {
     return new Response(JSON.stringify({ error: 'Access denied outside engine dir' }), { status: 403, contentType: 'application/json' });
   }
 

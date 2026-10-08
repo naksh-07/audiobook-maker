@@ -280,9 +280,8 @@ class BatchDispatchManifest(BaseModel):
 class ScreenplayScript(ContractBaseModel):
     """Manifest emitted by Room 3 Screenplay & Dramaturgy for synthesis."""
     model_config = ConfigDict(
-        frozen=False,
+        frozen=True,
         extra="ignore",
-        validate_assignment=True,
         populate_by_name=True
     )
 

@@ -53,6 +53,7 @@ class TakeBank:
             pitch_val = round(float(segment.pitch_shift), 3)
             speed_val = round(float(segment.speed_multiplier), 3)
             temp_val = round(float(segment.temperature), 3)
+            acting_val = str(segment.acting_instruction or "").strip()
         elif isinstance(segment, dict):
             text_val = str(segment.get("text", "")).strip()
             speaker_val = str(segment.get("speaker", "")).strip()
@@ -61,6 +62,7 @@ class TakeBank:
             pitch_val = round(float(segment.get("pitch_shift", 0.0)), 3)
             speed_val = round(float(segment.get("speed_multiplier", 1.0)), 3)
             temp_val = round(float(segment.get("temperature", 0.35)), 3)
+            acting_val = str(segment.get("acting_instruction", segment.get("acting_directive", ""))).strip()
         else:
             raise ValueError(f"Unsupported segment type: {type(segment)}")
 
@@ -72,6 +74,7 @@ class TakeBank:
             "pitch_shift": pitch_val,
             "speed_multiplier": speed_val,
             "temperature": temp_val,
+            "acting_instruction": acting_val,
         }
         serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()

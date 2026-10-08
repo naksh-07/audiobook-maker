@@ -138,8 +138,9 @@ class DiffReconciler:
             r2_uid = f"ch{chap_id:03d}_room2_translate"
             r2_file = self.project_dir / f"chapter_{chap_id:03d}_translation.json"
             r2_stage = self.ledger.get_stage(r2_uid)
+            r2_valid = r2_file.exists() and r2_file.stat().st_size > 10 and r2_stage and r2_stage.status == "COMPLETED"
 
-            if chapter_is_dirty or not r2_file.exists() or not r2_stage or r2_stage.status != "COMPLETED":
+            if chapter_is_dirty or not r2_valid:
                 dirty_stages.append(
                     StageDiffItem(
                         chapter_id=chap_id,
@@ -168,8 +169,9 @@ class DiffReconciler:
             r3_uid = f"ch{chap_id:03d}_room3_screenplay"
             r3_file = self.project_dir / f"chapter_{chap_id:03d}_screenplay.json"
             r3_stage = self.ledger.get_stage(r3_uid)
+            r3_valid = r3_file.exists() and r3_file.stat().st_size > 10 and r3_stage and r3_stage.status == "COMPLETED"
 
-            if chapter_is_dirty or not r3_file.exists() or not r3_stage or r3_stage.status != "COMPLETED":
+            if chapter_is_dirty or not r3_valid:
                 dirty_stages.append(
                     StageDiffItem(
                         chapter_id=chap_id,
@@ -197,8 +199,9 @@ class DiffReconciler:
             r4_uid = f"ch{chap_id:03d}_room4_synth"
             r4_file = self.project_dir / f"chapter_{chap_id:03d}_dialogue.wav"
             r4_stage = self.ledger.get_stage(r4_uid)
+            r4_valid = r4_file.exists() and r4_file.stat().st_size > 1024 and r4_stage and r4_stage.status == "COMPLETED"
 
-            if chapter_is_dirty or not r4_file.exists() or not r4_stage or r4_stage.status != "COMPLETED":
+            if chapter_is_dirty or not r4_valid:
                 dirty_stages.append(
                     StageDiffItem(
                         chapter_id=chap_id,
@@ -226,8 +229,9 @@ class DiffReconciler:
             r5_uid = f"ch{chap_id:03d}_room5_master"
             r5_file = self.project_dir / f"chapter_{chap_id:03d}_mastered.m4a"
             r5_stage = self.ledger.get_stage(r5_uid)
+            r5_valid = r5_file.exists() and r5_file.stat().st_size > 1024 and r5_stage and r5_stage.status == "COMPLETED"
 
-            if chapter_is_dirty or not r5_file.exists() or not r5_stage or r5_stage.status != "COMPLETED":
+            if chapter_is_dirty or not r5_valid:
                 dirty_stages.append(
                     StageDiffItem(
                         chapter_id=chap_id,
