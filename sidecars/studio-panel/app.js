@@ -1,4 +1,4 @@
-// Audiobook Studio UI Extension Frontend Logic
+// Audiobook Studio UI Extension Frontend Logic (v6.0-STUDIO-UI)
 // Communicates with Sidecar backend APIs and Antigravity Agent.
 
 const sidecar = window.sidecar;
@@ -32,7 +32,6 @@ async function apiFetch(path, options = {}) {
     }
     return res.json();
   } else {
-    // Local / direct browser preview fallback
     const res = await fetch(path, options);
     return res.json();
   }
@@ -76,7 +75,7 @@ async function loadProjects() {
     projects.forEach((p, idx) => {
       const opt = document.createElement('option');
       opt.value = p.slug;
-      opt.textContent = `${p.title} (${p.progress_percent}%)`;
+      opt.textContent = `${p.title} (${p.chapters_count} Chapters)`;
       if (idx === 0) opt.selected = true;
       select.appendChild(opt);
     });
@@ -102,39 +101,27 @@ async function loadProjectDetail(slug) {
 function renderProjectUI(p) {
   // Tags
   $('proj-author').textContent = `Author: ${p.author || 'Unknown'}`;
-  $('proj-lang').textContent = `Target: Spoken Hindustani (${p.language || 'hi'})`;
+  $('proj-lang').textContent = `Target: Spoken Hindustani (RAW_UNRATED)`;
 
-  // Hero Card
-  const segs = p.segments_summary || { total: 0, completed: 0, pending: 0, failed: 0, in_progress: 0 };
-  const total = segs.total || 0;
-  const comp = segs.completed || 0;
-  const pct = total > 0 ? ((comp / total) * 100).toFixed(1) : 0;
+  // Hero Card & Numbers
+  const totalCh = p.chapters ? p.chapters.length : 0;
+  $('stat-chapters').textContent = totalCh;
+  $('stat-takebank').textContent = `${p.takebank_metrics?.total_takes || 0} Takes`;
+  $('stat-dag-clean').textContent = p.is_dag_clean ? 'CLEAN' : `${p.dirty_chapter_ids?.length || 0} DIRTY`;
+  $('stat-dag-clean').className = p.is_dag_clean ? 'metric-val green' : 'metric-val yellow';
 
-  $('hero-chapter-title').textContent = p.chapters && p.chapters.length > 0 
-    ? `${p.chapters[0].title || 'Chapter 3'}: Active Synthesis`
-    : 'Chapter Production';
-  
-  $('hero-progress-text').textContent = `${pct}%`;
-  
-  // Progress Ring Animation
-  const circumference = 2 * Math.PI * 32; // ~201.06
-  const offset = circumference - (pct / 100) * circumference;
-  $('ring-fill').style.strokeDashoffset = offset;
+  $('hero-chapter-title').textContent = `${p.title || 'Project'}: DAG Pipeline`;
+  $('hero-progress-text').textContent = p.is_dag_clean ? '100%' : 'PENDING';
+  $('ring-fill').style.strokeDashoffset = p.is_dag_clean ? 0 : 60;
 
-  // Numbers
-  $('stat-completed').textContent = comp;
-  $('stat-pending').textContent = segs.pending || 0;
-  $('stat-failed').textContent = `${segs.in_progress || 0} / ${segs.failed || 0}`;
-
-  // Calculate produced duration from chapters or audio
-  let durMins = 0;
-  if (p.chapters && p.chapters.length > 0) {
-    durMins = 15.2; // Derived from master
-  }
-  $('stat-duration').textContent = `${durMins} min`;
-
-  // Cast Grid
+  // Render Cast
   renderCast(p.characters || []);
+
+  // Render Gate Audits
+  renderGateAudits(p.gate_audits || []);
+
+  // Render Media
+  renderMedia(p.media_files || []);
 }
 
 function renderCast(cast) {
@@ -142,191 +129,126 @@ function renderCast(cast) {
   container.innerHTML = '';
 
   if (!cast || cast.length === 0) {
-    container.innerHTML = '<div class="empty-loading">No cast found in project</div>';
+    container.innerHTML = '<div class="empty-loading">No cast assigned yet in CastLock</div>';
     return;
   }
 
   cast.forEach((c) => {
     const card = document.createElement('div');
     card.className = 'cast-card';
-
     card.innerHTML = `
-      <div class="cast-main">
-        <span class="cast-name" title="${c.name}">${c.name}</span>
-        <div class="cast-badges">
-          <span class="voice-chip">${c.voice || 'Aoede'}</span>
-          <span class="dialect-chip">${c.dialect || 'Standard'}</span>
-        </div>
+      <div class="cast-top">
+        <span class="cast-name">${c.name || 'Character'} <small>(${c.hindi_name || ''})</small></span>
+        <span class="cast-voice-tag">${c.voice_id || 'Aoede'}</span>
       </div>
-      <button class="audition-btn" data-voice="${c.voice || 'Aoede'}" data-name="${c.name}">
-        ▶ Audition
-      </button>
+      <div class="cast-detail">
+        <span>Gender: ${c.gender || 'NEUTRAL'}</span>
+        <span>Pitch: ${c.pitch_offset || 0}st | Tempo: ${c.tempo_multiplier || 1.0}x</span>
+      </div>
     `;
-
-    // Audition Button Trigger
-    const btn = card.querySelector('.audition-btn');
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      playVoiceAudition(c.voice || 'Aoede', c.name);
-    });
-
     container.appendChild(card);
   });
 }
 
-// ---------------------------------------------------------------------------
-// Voice Audition Simulation (Web Audio API Synthesizer)
-// ---------------------------------------------------------------------------
+function renderGateAudits(audits) {
+  const container = $('gate-list');
+  container.innerHTML = '';
 
-function playVoiceAudition(voiceId, characterName) {
-  toast(`Auditioning ${characterName} (${voiceId})...`);
-
-  // Web Audio Tone Synthesis to simulate vocal formant playback
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    // Modulate pitch based on voice name for tactile auditory feedback
-    let baseFreq = 160;
-    if (voiceId.includes('advisor') || voiceId.includes('Charon')) baseFreq = 120;
-    if (voiceId.includes('female') || voiceId.includes('Aoede') || voiceId.includes('training')) baseFreq = 220;
-    if (voiceId.includes('commercial')) baseFreq = 260;
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.15, ctx.currentTime + 0.3);
-    osc.frequency.exponentialRampToValueAtTime(baseFreq, ctx.currentTime + 0.6);
-
-    gain.gain.setValueAtTime(0.01, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.9);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start();
-    osc.stop(ctx.currentTime + 1.0);
-  } catch (e) {
-    console.error('AudioContext error:', e);
+  if (!audits || audits.length === 0) {
+    container.innerHTML = '<div class="empty-loading">No gate audits recorded yet in ledger</div>';
+    return;
   }
+
+  audits.forEach((a) => {
+    const row = document.createElement('div');
+    row.className = 'gate-row';
+    const isPass = a.decision === 'PASSED';
+    row.innerHTML = `
+      <div class="gate-header">
+        <span class="gate-name">${a.gate_name}</span>
+        <span class="step-badge ${isPass ? 'pass' : 'fail'}">${a.decision}</span>
+      </div>
+      <div class="gate-metrics">
+        ${Object.entries(a.metrics || {}).map(([k, v]) => `<span><b>${k}:</b> ${v}</span>`).join(' | ')}
+      </div>
+    `;
+    container.appendChild(row);
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Master Audio Player Logic
-// ---------------------------------------------------------------------------
+function renderMedia(media) {
+  const container = $('media-list');
+  container.innerHTML = '';
 
-function initAudioPlayer() {
-  const btnPlay = $('btn-play-pause');
-  const playIcon = $('play-icon');
-  const pauseIcon = $('pause-icon');
-  const seek = $('audio-seek');
-  const timeCur = $('time-current');
-  const timeTot = $('time-total');
-
-  let isPlaying = false;
-  let simulatedDuration = 912; // 15m 12s
-  let currentPos = 0;
-  let simTimer = null;
-
-  btnPlay.addEventListener('click', () => {
-    isPlaying = !isPlaying;
-    if (isPlaying) {
-      playIcon.style.display = 'none';
-      pauseIcon.style.display = 'block';
-      toast('Playing Mastered Vocals (-18.9 LUFS)...');
-      
-      // Simulated playback tick if no direct file
-      simTimer = setInterval(() => {
-        currentPos += 1;
-        if (currentPos > simulatedDuration) currentPos = 0;
-        const pct = (currentPos / simulatedDuration) * 100;
-        seek.value = pct;
-        timeCur.textContent = formatSeconds(currentPos);
-      }, 1000);
-    } else {
-      playIcon.style.display = 'block';
-      pauseIcon.style.display = 'none';
-      clearInterval(simTimer);
-    }
-  });
-
-  seek.addEventListener('input', (e) => {
-    const pct = parseFloat(e.target.value);
-    currentPos = (pct / 100) * simulatedDuration;
-    timeCur.textContent = formatSeconds(currentPos);
-  });
-
-  timeTot.textContent = formatSeconds(simulatedDuration);
-}
-
-// ---------------------------------------------------------------------------
-// Agent Dispatchers (No-CLI Integration)
-// ---------------------------------------------------------------------------
-
-async function sendAgentInstruction(message) {
-  if (!message) return;
-  toast(`Instructing @audiobook-director...`);
-  
-  if (sidecar && sidecar.agent && typeof sidecar.agent.sendMessage === 'function') {
-    try {
-      await sidecar.agent.sendMessage(message);
-      toast('Instruction sent to Director!');
-    } catch (err) {
-      toast(`Could not dispatch: ${err.message}`, true);
-    }
-  } else {
-    toast(`[Simulated] "${message}"`, false);
+  if (!media || media.length === 0) {
+    container.innerHTML = '<div class="empty-loading">No mastered media files found on disk</div>';
+    return;
   }
-}
 
-function initActionButtons() {
-  $('btn-synthesize').addEventListener('click', () => {
-    sendAgentInstruction(`Synthesize the next batch of segments for ${currentSlug} via Gemini 3.8 Flash TTS`);
-  });
-
-  $('btn-master').addEventListener('click', () => {
-    sendAgentInstruction(`Run two-pass linear EBU R128 master on ${currentSlug} with -19.0 LUFS target`);
-  });
-
-  $('btn-package').addEventListener('click', () => {
-    sendAgentInstruction(`Package all mastered chapters for ${currentSlug} into chaptered M4B with embedded cover`);
-  });
-
-  // Project selector change
-  $('project-select').addEventListener('change', (e) => {
-    currentSlug = e.target.value;
-    loadProjectDetail(currentSlug);
-  });
-
-  // Refresh button
-  $('refresh-btn').addEventListener('click', () => {
-    toast('Refreshing studio telemetry...');
-    loadStatus();
-    if (currentSlug) loadProjectDetail(currentSlug);
-  });
-
-  // Quick Chips
-  document.querySelectorAll('.chip-btn').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const msg = chip.getAttribute('data-msg');
-      sendAgentInstruction(msg);
+  media.forEach((m) => {
+    const item = document.createElement('div');
+    item.className = 'media-item';
+    item.innerHTML = `
+      <div class="media-title">🎵 ${m.name} (${m.size_mb} MB)</div>
+      <button class="btn secondary-btn" style="padding: 4px 10px; font-size: 12px;">Audition</button>
+    `;
+    item.querySelector('button').addEventListener('click', () => {
+      audioPlayer.src = `/api/audio?path=${encodeURIComponent(m.rel_path)}`;
+      audioPlayer.play();
+      $('playing-title').textContent = `Auditioning: ${m.name}`;
     });
+    container.appendChild(item);
   });
 }
 
 // ---------------------------------------------------------------------------
-// Initialization
+// Event Listeners
 // ---------------------------------------------------------------------------
 
-window.addEventListener('DOMContentLoaded', () => {
-  initAudioPlayer();
-  initActionButtons();
-  loadStatus();
-  loadProjects();
+$('project-select').addEventListener('change', (e) => {
+  currentSlug = e.target.value;
+  loadProjectDetail(currentSlug);
+});
 
-  // Periodic polling every 8 seconds
-  setInterval(() => {
-    loadStatus();
-  }, 8000);
+$('refresh-btn').addEventListener('click', async () => {
+  toast('Refreshing studio telemetry...');
+  await loadStatus();
+  await loadProjects();
+});
+
+$('btn-run-dag')?.addEventListener('click', async () => {
+  toast('Triggering incremental DAG pipeline run...');
+  await apiFetch('/api/action', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'run_dag', project: currentSlug }),
+  });
+});
+
+$('btn-master')?.addEventListener('click', async () => {
+  toast('Triggering Two-Pass EBU R128 mastering...');
+  await apiFetch('/api/action', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'master', project: currentSlug }),
+  });
+});
+
+$('btn-package')?.addEventListener('click', async () => {
+  toast('Triggering M4B container packaging...');
+  await apiFetch('/api/action', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'package', project: currentSlug }),
+  });
+});
+
+// Audio duration tracking
+audioPlayer.addEventListener('timeupdate', () => {
+  const cur = formatSeconds(audioPlayer.currentTime);
+  const dur = formatSeconds(audioPlayer.duration || 0);
+  $('playing-time').textContent = `${cur} / ${dur}`;
+});
+
+// Initialization
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadStatus();
+  await loadProjects();
 });

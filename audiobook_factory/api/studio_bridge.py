@@ -1,144 +1,114 @@
 #!/usr/bin/env python3
 """
 Audiobook Studio Engine Bridge.
-Provides programmatic JSON APIs for the Antigravity Plugin and UI Extension.
-Exposes project discovery, SQLite state introspection, voice catalog queries,
-and pipeline dispatch without requiring shell CLI flags.
+Standard: v6.0-ENTERPRISE-DAG
+Provides programmatic JSON APIs for the Antigravity Plugin and UI Extension Sidecar.
+Exposes project discovery, SQLite DAG state introspection, TakeBank cache metrics,
+voice catalog queries, surgical beat patching, and diagnostic health checks.
 """
 
 from __future__ import annotations
-
-import os
-import sys
-import json
-import sqlite3
 import argparse
+import json
+import os
+import sqlite3
+import sys
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
+from audiobook_factory.cli.doctor import run_doctor_diagnostics
+from audiobook_factory.contracts.ingestion import RawBookManifest
+from audiobook_factory.contracts.lore import BookBible, CastLock
+from audiobook_factory.core.cache.ledger import PipelineLedger
+from audiobook_factory.dag.diff_reconciler import DiffReconciler
+from audiobook_factory.rooms.room2_translate.collective import TranslationCollective
 
 WORKSPACE_DIR = Path(__file__).resolve().parent.parent.parent
-PROJECTS_DIR = WORKSPACE_DIR / "audiobooks" / "projects"
-KEY_POOL_DB = WORKSPACE_DIR / "audiobooks" / "key_pool_state.db"
+PROJECTS_DIR = WORKSPACE_DIR / "projects"
+LEGACY_PROJECTS_DIR = WORKSPACE_DIR / "audiobooks" / "projects"
+KEY_POOL_DB = WORKSPACE_DIR / "keys_pool.db"
 VOICE_CATALOG_JSON = WORKSPACE_DIR / "audiobook_factory" / "tts" / "data" / "curated_voice_catalog.json"
 
 
 def get_engine_status() -> Dict[str, Any]:
-    """Returns engine health, active keys count, and basic metadata."""
-    active_keys = 0
-    total_keys = 0
-    if KEY_POOL_DB.exists():
-        try:
-            conn = sqlite3.connect(str(KEY_POOL_DB), timeout=5.0)
-            cur = conn.cursor()
-            cur.execute("SELECT status, COUNT(*) FROM key_quota_ledger GROUP BY status")
-            rows = dict(cur.fetchall())
-            active_keys = rows.get("ACTIVE", 0)
-            total_keys = sum(rows.values())
-            conn.close()
-        except Exception:
-            pass
-
-    projects = []
-    if PROJECTS_DIR.exists():
-        projects = [p.name for p in PROJECTS_DIR.iterdir() if p.is_dir() and (p / "project_state.db").exists()]
+    """Returns engine health, active keys count, doctor report, and basic metadata."""
+    doctor_report = run_doctor_diagnostics(WORKSPACE_DIR)
+    
+    projects_list = list_projects()
 
     return {
         "status": "ready",
-        "engine_version": "5.1.0",
+        "engine_version": "6.0.0",
+        "architecture_standard": "v6.0-ENTERPRISE-DAG",
         "python_version": sys.version.split()[0],
         "workspace_dir": str(WORKSPACE_DIR),
-        "projects_dir": str(PROJECTS_DIR),
-        "active_gemini_keys": active_keys,
-        "total_gemini_keys": total_keys,
-        "active_projects_count": len(projects),
+        "active_gemini_keys": doctor_report["keypool"]["total_active_keys"],
+        "active_projects_count": len(projects_list),
+        "doctor": doctor_report,
     }
 
 
+def _find_all_project_dirs() -> List[Path]:
+    """Discovers all valid project directories across v6 and legacy project roots."""
+    dirs = []
+    if PROJECTS_DIR.exists():
+        dirs.extend([p for p in PROJECTS_DIR.iterdir() if p.is_dir()])
+    if LEGACY_PROJECTS_DIR.exists():
+        dirs.extend([p for p in LEGACY_PROJECTS_DIR.iterdir() if p.is_dir() and p not in dirs])
+    return dirs
+
+
 def list_projects() -> List[Dict[str, Any]]:
-    """Scans projects directory and returns summary of each project."""
-    if not PROJECTS_DIR.exists():
-        return []
-
+    """Scans project directories and returns structured summaries."""
     results = []
-    for pdir in sorted(PROJECTS_DIR.iterdir()):
-        if not pdir.is_dir():
-            continue
+    pdirs = _find_all_project_dirs()
 
-        state_db = pdir / "project_state.db"
-        meta_file = pdir / "metadata.json"
+    for pdir in sorted(pdirs, key=lambda p: p.name):
+        slug = pdir.name
+        manifest_file = pdir / "raw_book_manifest.json"
+        ledger_file = pdir / "pipeline_ledger.db"
 
-        # Basic metadata
-        title = pdir.name
-        author = "Unknown"
-        if meta_file.exists():
-            try:
-                with open(meta_file, "r", encoding="utf-8") as f:
-                    meta_data = json.load(f)
-                    title = meta_data.get("title", title)
-                    author = meta_data.get("author", author)
-            except Exception:
-                pass
-
-        total_segments = 0
-        completed_segments = 0
-        failed_segments = 0
-        in_progress_segments = 0
-        total_duration_min = 0.0
-        chapters_count = 0
+        title = slug.replace("_", " ").title()
+        author = "Unknown Author"
+        total_chapters = 0
+        progress_pct = 0.0
         has_master = False
 
-        if state_db.exists():
+        if manifest_file.exists():
             try:
-                conn = sqlite3.connect(str(state_db), timeout=5.0)
-                conn.row_factory = sqlite3.Row
-                c_cur = conn.cursor()
-                c_cur.execute("SELECT COUNT(*) FROM chapters")
-                chapters_count = c_cur.fetchone()[0]
-
-                s_cur = conn.cursor()
-                s_cur.execute("""
-                    SELECT 
-                        COUNT(*) as total,
-                        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completed,
-                        SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) as failed,
-                        SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) as in_progress,
-                        COALESCE(SUM(duration_sec), 0.0) / 60.0 as dur_min
-                    FROM segments
-                """)
-                row = s_cur.fetchone()
-                if row:
-                    total_segments = row["total"] or 0
-                    completed_segments = row["completed"] or 0
-                    failed_segments = row["failed"] or 0
-                    in_progress_segments = row["in_progress"] or 0
-                    total_duration_min = round(float(row["dur_min"] or 0.0), 1)
-
-                m_cur = conn.cursor()
-                m_cur.execute("SELECT COUNT(*) FROM chapters WHERE mastered_status = 'COMPLETED' OR m4a_path IS NOT NULL")
-                if m_cur.fetchone()[0] > 0:
-                    has_master = True
-                conn.close()
+                m = RawBookManifest.model_validate_json(manifest_file.read_text(encoding="utf-8"))
+                title = m.title
+                author = m.author
+                total_chapters = m.total_chapters
             except Exception:
                 pass
 
-        # Check for final m4b / m4a files on disk
+        if ledger_file.exists():
+            try:
+                ledger = PipelineLedger(db_path=ledger_file)
+                dirty = ledger.get_dirty_stages(slug)
+                # Count mastered stages
+                with ledger._get_connection() as conn:
+                    row = conn.execute(
+                        "SELECT COUNT(*) FROM chapter_stage_ledger WHERE project_id = ? AND room_name = 'ROOM5_MASTER' AND status = 'COMPLETED';",
+                        (slug,)
+                    ).fetchone()
+                    mastered_count = row[0] if row else 0
+                    if total_chapters > 0:
+                        progress_pct = round((mastered_count / total_chapters) * 100.0, 1)
+            except Exception:
+                pass
+
         mastered_files = list(pdir.glob("*.m4b")) + list(pdir.glob("*_mastered.m4a"))
         if mastered_files:
             has_master = True
 
-        progress_pct = round((completed_segments / total_segments * 100), 1) if total_segments > 0 else 0.0
-
         results.append({
-            "slug": pdir.name,
+            "slug": slug,
             "title": title,
             "author": author,
-            "chapters_count": chapters_count,
-            "total_segments": total_segments,
-            "completed_segments": completed_segments,
-            "failed_segments": failed_segments,
-            "in_progress_segments": in_progress_segments,
+            "chapters_count": total_chapters,
             "progress_percent": progress_pct,
-            "total_duration_min": total_duration_min,
             "has_master": has_master,
             "path": str(pdir),
         })
@@ -147,161 +117,165 @@ def list_projects() -> List[Dict[str, Any]]:
 
 
 def get_project_detail(slug: str) -> Dict[str, Any]:
-    """Returns deep details for a single project: chapters, characters, recent files."""
-    pdir = PROJECTS_DIR / slug
-    if not pdir.exists() or not pdir.is_dir():
+    """Returns comprehensive v6.0-ENTERPRISE-DAG project state, 5-room DAG timeline, lore, and TakeBank metrics."""
+    # Locate project directory
+    target_dir = PROJECTS_DIR / slug
+    if not target_dir.exists():
+        target_dir = LEGACY_PROJECTS_DIR / slug
+    if not target_dir.exists() or not target_dir.is_dir():
         raise FileNotFoundError(f"Project not found: {slug}")
 
-    state_db = pdir / "project_state.db"
-    meta_file = pdir / "metadata.json"
-    cast_file = pdir / "character_roster.json"
-    bible_file = pdir / "book_bible.json"
+    manifest_file = target_dir / "raw_book_manifest.json"
+    bible_file = target_dir / "book_bible.json"
+    cast_file = target_dir / "cast_lock.json"
+    ledger_file = target_dir / "pipeline_ledger.db"
 
-    meta_data = {}
-    if meta_file.exists():
+    title = slug.replace("_", " ").title()
+    author = "Unknown Author"
+    chapters = []
+    characters = []
+
+    if manifest_file.exists():
         try:
-            with open(meta_file, "r", encoding="utf-8") as f:
-                meta_data = json.load(f)
+            m = RawBookManifest.model_validate_json(manifest_file.read_text(encoding="utf-8"))
+            title = m.title
+            author = m.author
+            for ch in m.chapters:
+                chapters.append({
+                    "chapter_id": ch.chapter_id,
+                    "title": ch.title,
+                    "sentence_count": len(ch.sentences),
+                    "source_hash": ch.source_hash,
+                })
         except Exception:
             pass
 
-    # Cast list
-    characters = []
     if cast_file.exists():
         try:
-            with open(cast_file, "r", encoding="utf-8") as f:
-                raw_data = json.load(f)
-                raw_cast = raw_data.get("characters", raw_data) if isinstance(raw_data, dict) else raw_data
-                if isinstance(raw_cast, dict):
-                    for name, details in raw_cast.items():
-                        if isinstance(details, dict):
-                            voice = (
-                                details.get("assigned_voice_id")
-                                or details.get("voice_id")
-                                or details.get("voice", "Aoede")
-                            )
-                            characters.append({
-                                "name": details.get("display_name") or name,
-                                "voice": voice,
-                                "gender": details.get("gender", "unknown"),
-                                "dialect": details.get("dialect", "Standard"),
-                                "pitch_shift": details.get("pitch_shift", 0),
-                                "notes": details.get("notes", ""),
-                            })
-                        elif isinstance(details, str):
-                            characters.append({"name": name, "voice": details})
-                elif isinstance(raw_cast, list):
-                    characters = raw_cast
-        except Exception:
-            pass
-    elif bible_file.exists():
-        try:
-            with open(bible_file, "r", encoding="utf-8") as f:
-                bible_data = json.load(f)
-                cast_dict = bible_data.get("characters") or bible_data.get("dramatis_personae") or {}
-                for name, details in cast_dict.items():
-                    if isinstance(details, dict):
-                        characters.append({
-                            "name": name,
-                            "voice": details.get("voice_persona", "Aoede"),
-                            "archetype": details.get("archetype", ""),
-                        })
-        except Exception:
-            pass
-
-    # Chapters & Segment detail
-    chapters = []
-    segments_summary = {"total": 0, "completed": 0, "failed": 0, "in_progress": 0, "pending": 0}
-    if state_db.exists():
-        try:
-            conn = sqlite3.connect(str(state_db), timeout=5.0)
-            conn.row_factory = sqlite3.Row
-            c_cur = conn.cursor()
-            c_cur.execute("SELECT chapter_num, title, word_count, scripted_status, mastered_status, m4a_path FROM chapters ORDER BY chapter_num")
-            for row in c_cur.fetchall():
-                m4a_exists = bool(row["m4a_path"] and Path(row["m4a_path"]).exists())
-                chapters.append({
-                    "chapter_num": row["chapter_num"],
-                    "title": row["title"],
-                    "word_count": row["word_count"],
-                    "scripted_status": row["scripted_status"],
-                    "mastered_status": row["mastered_status"],
-                    "m4a_path": row["m4a_path"],
-                    "m4a_exists": m4a_exists,
+            cast = CastLock.model_validate_json(cast_file.read_text(encoding="utf-8"))
+            for name, dossier in cast.cast_assignments.items():
+                characters.append({
+                    "name": dossier.character_name,
+                    "hindi_name": dossier.canonical_hindi_name,
+                    "gender": dossier.gender,
+                    "voice_id": dossier.suggested_voice_id,
+                    "pitch_offset": dossier.pitch_offset,
+                    "tempo_multiplier": dossier.tempo_multiplier,
                 })
-
-            s_cur = conn.cursor()
-            s_cur.execute("SELECT status, COUNT(*) FROM segments GROUP BY status")
-            for st, cnt in s_cur.fetchall():
-                key = str(st).lower()
-                if key in segments_summary:
-                    segments_summary[key] = cnt
-                segments_summary["total"] += cnt
-            conn.close()
         except Exception:
             pass
 
-    # Media / Audio exports
+    # Query DAG Stages & Gate Audits
+    dag_stages = []
+    gate_audits = []
+    takebank_metrics = {"total_takes": 0, "cache_hits": 0, "cache_size_bytes": 0}
+
+    if ledger_file.exists():
+        try:
+            ledger = PipelineLedger(db_path=ledger_file)
+            with ledger._get_connection() as conn:
+                s_rows = conn.execute("SELECT * FROM chapter_stage_ledger WHERE project_id = ? ORDER BY chapter_id, chapter_stage_uid;", (slug,)).fetchall()
+                for r in s_rows:
+                    dag_stages.append({
+                        "stage_uid": r["chapter_stage_uid"],
+                        "chapter_id": r["chapter_id"],
+                        "room_name": r["room_name"],
+                        "status": r["status"],
+                        "error_message": r["error_message"],
+                    })
+
+                g_rows = conn.execute("SELECT * FROM gate_audit_records ORDER BY evaluated_at DESC LIMIT 20;").fetchall()
+                for r in g_rows:
+                    gate_audits.append({
+                        "audit_uid": r["audit_uid"],
+                        "gate_name": r["gate_name"],
+                        "decision": r["decision"],
+                        "metrics": json.loads(r["metrics_json"]) if r["metrics_json"] else {},
+                    })
+
+                t_row = conn.execute("SELECT COUNT(*) FROM segment_take_cache WHERE project_id = ?;", (slug,)).fetchone()
+                takebank_metrics["total_takes"] = t_row[0] if t_row else 0
+        except Exception:
+            pass
+
+    # Media / Audio deliverables
     media_files = []
-    for ext in ("*.m4b", "*.m4a"):
-        for f in pdir.glob(ext):
+    for ext in ("*.m4b", "*.m4a", "*.wav"):
+        for f in target_dir.glob(ext):
             media_files.append({
                 "name": f.name,
-                "rel_path": str(f.relative_to(PROJECTS_DIR)).replace("\\", "/"),
+                "rel_path": str(f.relative_to(WORKSPACE_DIR)).replace("\\", "/") if f.is_relative_to(WORKSPACE_DIR) else f.name,
                 "size_mb": round(f.stat().st_size / (1024 * 1024), 2),
                 "modified": f.stat().st_mtime,
             })
 
+    # Diff reconciliation report
+    diff_reconciler = DiffReconciler(project_dir=target_dir)
+    diff_report = diff_reconciler.reconcile_project(project_id=slug)
+
     return {
         "slug": slug,
-        "title": meta_data.get("title", slug),
-        "author": meta_data.get("author", "Unknown"),
-        "language": meta_data.get("target_language", "hi"),
+        "title": title,
+        "author": author,
         "chapters": chapters,
         "characters": characters,
-        "segments_summary": segments_summary,
+        "dag_stages": dag_stages,
+        "gate_audits": gate_audits,
+        "takebank_metrics": takebank_metrics,
+        "dirty_chapter_ids": list(diff_report.dirty_chapter_ids),
+        "is_dag_clean": diff_report.is_clean,
         "media_files": media_files,
     }
 
 
 def list_curated_voices() -> List[Dict[str, Any]]:
-    """Returns curated voices catalog for voice auditions and casting."""
-    if VOICE_CATALOG_JSON.exists():
-        try:
-            with open(VOICE_CATALOG_JSON, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, list):
-                    return data
-                elif isinstance(data, dict):
-                    voices_list = []
-                    langs = data.get("languages", {})
-                    for lang, details in langs.items():
-                        vlist = details.get("voices", []) if isinstance(details, dict) else details
-                        if isinstance(vlist, list):
-                            for v in vlist:
-                                if isinstance(v, dict):
-                                    v.setdefault("language", lang)
-                                    voices_list.append(v)
-                    if voices_list:
-                        return voices_list
-        except Exception:
-            pass
-    # Fallback minimal roster
+    """Returns curated Gemini voices catalog for voice auditions and casting."""
     return [
-        {"voice_id": "Aoede", "language": "en", "gender": "female", "style": "Warm Third-Person Narrative"},
-        {"voice_id": "Charon", "language": "en", "gender": "male", "style": "Deep Resonant First-Person Male"},
-        {"voice_id": "hi-in-podcaster-12", "language": "hi-IN", "gender": "male", "style": "Rustic Fighter / Energetic Young Adult"},
-        {"voice_id": "hi-in-advisor-9", "language": "hi-IN", "gender": "male", "style": "Grounded Veteran / Gravelly Commander"},
-        {"voice_id": "hi-in-training-2", "language": "hi-IN", "gender": "female", "style": "Dignified Matriarch / Sorceress"},
-        {"voice_id": "hi-in-tutor-3", "language": "hi-IN", "gender": "female", "style": "Gentle Companion / Melodious Healer"},
-        {"voice_id": "hi-in-commercial-5", "language": "hi-IN", "gender": "female", "style": "Agile Youth / Bright Resonance"},
+        {"voice_id": "Aoede", "language": "hi-IN", "gender": "female", "style": "Calm, Steady, Articulate Lead Narrator"},
+        {"voice_id": "Charon", "language": "hi-IN", "gender": "male", "style": "Deep, Resonant, Earthy Protagonist"},
+        {"voice_id": "Puck", "language": "hi-IN", "gender": "male", "style": "Agile, Quick, Witty Rogue"},
+        {"voice_id": "Fenrir", "language": "hi-IN", "gender": "male", "style": "Gruff, Gravelly, Veteran Warrior"},
+        {"voice_id": "Kore", "language": "hi-IN", "gender": "female", "style": "Ethereal, Regal, Sorceress / Queen"},
+        {"voice_id": "Leda", "language": "hi-IN", "gender": "female", "style": "Warm, Compassionate, Companion"},
+        {"voice_id": "Orus", "language": "hi-IN", "gender": "male", "style": "Authoritative, Commanding Monarch"},
+        {"voice_id": "Zephyr", "language": "hi-IN", "gender": "male", "style": "Gentle, Scholarly, Melodious Narrator"},
     ]
 
 
+def patch_translation_beat(slug: str, chapter_id: int, beat_uid: str, patch_json: str) -> Dict[str, Any]:
+    """Surgically patches a beat and returns updated manifest summary."""
+    target_dir = PROJECTS_DIR / slug
+    if not target_dir.exists():
+        target_dir = LEGACY_PROJECTS_DIR / slug
+    if not target_dir.exists():
+        raise FileNotFoundError(f"Project not found: {slug}")
+
+    ledger = PipelineLedger(db_path=target_dir / "pipeline_ledger.db")
+    collective = TranslationCollective(project_dir=target_dir, ledger=ledger)
+    patch_data = json.loads(patch_json)
+
+    manifest = collective.patch_beat(
+        chapter_id=chapter_id,
+        beat_uid=beat_uid,
+        patched_sentences=patch_data,
+        project_id=slug,
+    )
+
+    return {
+        "status": "success",
+        "chapter_id": chapter_id,
+        "beat_uid": beat_uid,
+        "manifest_hash": manifest.compute_sha256_hash(),
+    }
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Audiobook Studio Bridge JSON API")
-    parser.add_argument("command", choices=["status", "list-projects", "project-detail", "list-voices"])
-    parser.add_argument("--slug", help="Project slug for project-detail")
+    parser = argparse.ArgumentParser(description="Audiobook Studio Bridge JSON API (v6.0-ENTERPRISE-DAG)")
+    parser.add_argument("command", choices=["status", "list-projects", "project-detail", "list-voices", "patch-beat", "doctor"])
+    parser.add_argument("--slug", help="Project slug")
+    parser.add_argument("--chapter", type=int, default=1, help="Chapter ID")
+    parser.add_argument("--beat-uid", help="Beat UID for patch-beat")
+    parser.add_argument("--patch-json", help="JSON string for patch-beat")
 
     args = parser.parse_args()
 
@@ -316,6 +290,12 @@ def main():
             out = get_project_detail(args.slug)
         elif args.command == "list-voices":
             out = list_curated_voices()
+        elif args.command == "patch-beat":
+            if not args.slug or not args.beat_uid or not args.patch_json:
+                parser.error("--slug, --beat-uid, and --patch-json are required for patch-beat")
+            out = patch_translation_beat(args.slug, args.chapter, args.beat_uid, args.patch_json)
+        elif args.command == "doctor":
+            out = run_doctor_diagnostics(WORKSPACE_DIR)
         else:
             out = {"error": f"Unknown command {args.command}"}
 
