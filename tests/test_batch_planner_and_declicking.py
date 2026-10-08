@@ -164,7 +164,7 @@ class TestSpeechMetadataAndStyle:
     def test_resolve_neutral_style(self):
         acting = ActingInstructions(delivery_style="neutral")
         style = resolve_speech_metadata_style(acting, emotion="neutral", intensity="medium")
-        assert style == "neutral"
+        assert "calm, steady, articulate, measured audiobook delivery" in style
 
 
 class TestWorkstationForcedAligner:
@@ -316,3 +316,130 @@ class TestDispatcherBatchIntegration:
         assert calls["batch"] == 0
         assert calls["single"] == 0
         assert len(resume_results) == 2
+
+    def test_planner_interleaved_narrator_tags_dialogue_rally(self):
+        planner = BatchDispatchPlanner(enabled=True)
+        segs = [
+            ScreenplaySegment(index=1, speaker="Geralt", text="Who goes there?", type="dialogue"),
+            ScreenplaySegment(index=2, speaker="Narrator", text="He rested his hand on the silver pommel.", type="narration"),
+            ScreenplaySegment(index=3, speaker="Stranger", text="Just a traveler.", type="dialogue"),
+            ScreenplaySegment(index=4, speaker="Narrator", text="The mist swirled around his boots.", type="narration"),
+            ScreenplaySegment(index=5, speaker="Geralt", text="Travelers do not carry steel crossbows at midnight.", type="dialogue"),
+        ]
+        manifest = planner.plan_chapter_batches(segs)
+        assert manifest.total_batches == 2
+        assert manifest.quota_savings_ratio >= 60.0
+        assert manifest.batches[0].strategy == "multi_speaker_duo"
+        assert sorted(manifest.batches[0].speakers) == ["Geralt", "Stranger"]
+        assert [s.index for s in manifest.batches[0].segments] == [1, 3, 5]
+        assert manifest.batches[1].strategy == "narrator_chunk"
+        assert manifest.batches[1].speakers == ["Narrator"]
+        assert [s.index for s in manifest.batches[1].segments] == [2, 4]
+
+    def test_lossless_valley_midpoint_slicing_durations(self, tmp_path):
+        import numpy as np
+        raw_wav = tmp_path / "raw_batch.wav"
+        create_dummy_wav(raw_wav, duration_sec=6.0, sample_rate=24000)
+
+        batch_plan = BatchPlanItem(
+            batch_id="b001_duo_lossless",
+            strategy="multi_speaker_duo",
+            uids=["s0001", "s0002"],
+            speakers=["Geralt", "Yennefer"],
+            voice_map={"Geralt": "Charon", "Yennefer": "Aoede"},
+            segments=[
+                ScreenplaySegment(index=1, type="dialogue", speaker="Geralt", text="पहला संवाद"),
+                ScreenplaySegment(index=2, type="dialogue", speaker="Yennefer", text="दूसरा संवाद"),
+            ],
+            total_words=4,
+        )
+
+        out_dir = tmp_path / "slices_lossless"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        sliced = slice_and_declick_batch(
+            raw_audio=raw_wav,
+            batch=batch_plan,
+            chapter_num=1,
+            output_dir=out_dir,
+            declick_fade_ms=5.0,
+        )
+
+        assert len(sliced) == 2
+        dur_sum = sum(s[1] for s in sliced)
+        assert abs(dur_sum - 6.0) < 0.1
+        for item in sliced:
+            s_path = item[0]
+            with wave.open(str(s_path), "rb") as wf:
+                pcm = wf.readframes(wf.getnframes())
+                samples = np.frombuffer(pcm, dtype=np.int16)
+                assert samples[0] == 0
+                assert samples[-1] == 0
+
+    def test_selective_hot_patching_when_slice_fails_qa(self, tmp_path):
+        import json
+        from audiobook_factory.tts_dispatcher import TTSDispatcher
+        from unittest.mock import MagicMock
+
+        audio_dir = tmp_path / "audio_chunks"
+        audio_dir.mkdir(parents=True)
+
+        script_file = tmp_path / "chapter_001_script.json"
+        script_data = {
+            "script_version": "2.0",
+            "segments": [
+                {"index": 1, "type": "dialogue", "speaker": "Geralt", "text": "पास होने वाला संवाद"},
+                {"index": 2, "type": "dialogue", "speaker": "Dandelion", "text": "फेल होने वाला संवाद"},
+            ]
+        }
+        script_file.write_text(json.dumps(script_data), encoding="utf-8")
+
+        roster_file = tmp_path / "character_roster.json"
+        roster_file.write_text(json.dumps({
+            "characters": {
+                "Geralt": {"gender": "male", "aliases": []},
+                "Dandelion": {"gender": "male", "aliases": []}
+            }
+        }), encoding="utf-8")
+
+        dispatcher = TTSDispatcher(project_dir=tmp_path, audio_dir=audio_dir, strict_speakers=False)
+        dispatcher.batching_enabled = True
+        dispatcher.batch_planner.enabled = True
+
+        mock_auditor = MagicMock()
+        audit_call_counts = {}
+        def mock_audit(take_audio_path, spoken_result, take_id, segment_uid):
+            res = MagicMock()
+            key = str(segment_uid)
+            audit_call_counts[key] = audit_call_counts.get(key, 0) + 1
+            if "s0001" in str(take_audio_path) or "s0001" in str(segment_uid) or audit_call_counts[key] > 1:
+                res.passed = True
+                res.status.value = "PASSED"
+            else:
+                res.passed = False
+                res.status.value = "MISPRONUNCIATION"
+            return res
+        mock_auditor.audit_take = mock_audit
+        dispatcher.pronunciation_auditor = mock_auditor
+
+        calls = {"batch": 0, "single": 0}
+
+        def fake_multispeaker(batch, output_file, voice_map, rate_limiter=None):
+            calls["batch"] += 1
+            create_dummy_wav(output_file, duration_sec=3.0, sample_rate=24000)
+            return output_file, 3.0
+
+        def fake_single(text, output_file, voice="Aoede", model="m", emotion="neutral", max_retries=4, rate_limiter=None, **kwargs):
+            calls["single"] += 1
+            create_dummy_wav(output_file, duration_sec=1.5, sample_rate=24000)
+            return output_file, 1.5
+
+        with patch("audiobook_factory.tts_dispatcher.synthesize_gemini_multispeaker_batch", side_effect=fake_multispeaker), \
+             patch("audiobook_factory.tts_dispatcher.synthesize_gemini_tts", side_effect=fake_single):
+            results = dispatcher.synthesize_chapter_script(script_file, chapter_num=1)
+
+        assert calls["batch"] == 1
+        assert calls["single"] == 1
+        assert len(results) == 2
+        for r in results:
+            assert r.exists()

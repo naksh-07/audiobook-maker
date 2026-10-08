@@ -70,15 +70,33 @@ def slice_and_declick_batch(
     sliced_results: List[Tuple[Path, float, List[Dict[str, Any]]]] = []
     ffmpeg_bin = get_ffmpeg()
 
-    fade_sec = max(0.001, declick_fade_ms / 1000.0)
+    # 1. Probe total raw audio duration to guarantee zero-gap continuum
+    total_raw_dur_sec = 0.0
+    try:
+        with wave.open(str(raw_audio), "rb") as wf:
+            total_raw_dur_sec = wf.getnframes() / float(wf.getframerate())
+    except Exception:
+        total_raw_dur_sec = (max(a.end_ms for a in alignment_results) / 1000.0) if alignment_results else 0.0
 
-    for seg, align_res in zip(batch.segments, alignment_results):
-        start_ms = align_res.start_ms
-        end_ms = align_res.end_ms
-        dur_ms = max(200, end_ms - start_ms)
-        dur_sec = dur_ms / 1000.0
+    n_segs = len(batch.segments)
+
+    # 2. Compute silence-valley midpoint split boundaries between consecutive segments
+    # This preserves natural conversational latency, acoustic decay, and pre-roll breath
+    split_points_sec: List[float] = []
+    for k in range(n_segs - 1):
+        curr_end_sec = max(0.0, alignment_results[k].end_ms / 1000.0)
+        next_start_sec = max(0.0, alignment_results[k + 1].start_ms / 1000.0)
+        if next_start_sec >= curr_end_sec:
+            split_p = (curr_end_sec + next_start_sec) / 2.0
+        else:
+            split_p = next_start_sec
+        split_points_sec.append(split_p)
+
+    for idx, (seg, align_res) in enumerate(zip(batch.segments, alignment_results)):
+        start_sec = 0.0 if idx == 0 else split_points_sec[idx - 1]
+        end_sec = total_raw_dur_sec if idx == n_segs - 1 else split_points_sec[idx]
+        dur_sec = max(0.200, end_sec - start_sec)
         words_metadata = [w.model_dump(mode="json") for w in align_res.words]
-        start_sec = start_ms / 1000.0
 
         sp_cfg = dispatcher.get_speaker_config(seg.speaker, getattr(seg, "type", "dialogue")) if dispatcher else {}
         voice_name = sp_cfg.get("voice") or batch.voice_map.get(seg.speaker, "Aoede")

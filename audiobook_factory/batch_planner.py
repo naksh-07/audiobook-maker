@@ -198,36 +198,53 @@ class BatchDispatchPlanner:
                 i = j
                 continue
 
-            # Case 3: Dialogue Exchanges
+            # Case 3: Dialogue Exchanges & Scene-Aware Rallies
             if classification == "dialogue":
-                # Lookahead to collect contiguous dialogue segments
+                # Lookahead to collect dialogue segments, gracefully skipping intervening short narrator tags
                 dialogue_segs = [current_seg]
+                interleaved_narrator_segs = []
                 active_speakers = {current_seg.speaker}
-                current_words = len(current_seg.text.split())
+                current_dialogue_words = len(current_seg.text.split())
+                current_narrator_words = 0
                 j = i + 1
 
                 while j < n:
                     next_seg = segments[j]
                     next_class = self.classify_segment(next_seg)
 
-                    if next_class != "dialogue":
-                        # Non-dialogue interrupts the conversation
+                    if next_class in ("isolated_intimate", "isolated_combat"):
+                        # Hard boundary: intimate/combat segment halts dialogue rally
                         break
 
-                    candidate_speakers = active_speakers | {next_seg.speaker}
-                    if len(candidate_speakers) > 2:
-                        # 3rd character speaking! Break batch to preserve exact 2-speaker API constraint
-                        break
+                    if next_class == "dialogue":
+                        candidate_speakers = active_speakers | {next_seg.speaker}
+                        if len(candidate_speakers) > 2:
+                            # 3rd character speaking! Break batch to preserve exact 2-speaker API constraint
+                            break
 
-                    next_words = len(next_seg.text.split())
-                    if current_words + next_words > self.max_words_per_batch:
-                        # Exceeds word budget (avoiding voice drift)
-                        break
+                        next_words = len(next_seg.text.split())
+                        if current_dialogue_words + next_words > self.max_words_per_batch:
+                            # Exceeds word budget (avoiding voice drift)
+                            break
 
-                    dialogue_segs.append(next_seg)
-                    active_speakers = candidate_speakers
-                    current_words += next_words
-                    j += 1
+                        dialogue_segs.append(next_seg)
+                        active_speakers = candidate_speakers
+                        current_dialogue_words += next_words
+                        j += 1
+
+                    elif next_class == "narration":
+                        # Short narrator tag / descriptive beat between dialogue lines (e.g. "He rested his hand on his pommel.")
+                        next_words = len(next_seg.text.split())
+                        if next_words > 120 or (current_narrator_words + next_words > self.max_words_per_batch):
+                            # Extended narrative paragraph signals end of active dialogue rally
+                            break
+
+                        interleaved_narrator_segs.append(next_seg)
+                        current_narrator_words += next_words
+                        j += 1
+
+                    else:
+                        break
 
                 # If we collected multiple dialogue lines with exactly 2 speakers -> multi_speaker_duo
                 if len(dialogue_segs) > 1 and len(active_speakers) == 2:
@@ -243,29 +260,49 @@ class BatchDispatchPlanner:
                             speakers=spk_list,
                             voice_map={spk: v_map.get(spk, "Aoede") for spk in spk_list},
                             segments=dialogue_segs,
-                            total_words=current_words,
+                            total_words=current_dialogue_words,
                         )
                     )
                     batch_counter += 1
-                else:
-                    # Single dialogue line or monologue without a 2nd speaker -> single isolated
-                    for d_seg in dialogue_segs:
-                        spk_tok = _clean_token(d_seg.speaker)
+
+                    # If narrator tags were interspersed, cluster them into an accompanying narrator batch
+                    if interleaved_narrator_segs:
+                        n_spk = interleaved_narrator_segs[0].speaker
+                        n_tok = _clean_token(n_spk)
+                        b_narr_id = f"b{batch_counter:04d}_narrator_s{interleaved_narrator_segs[0].index:04d}_to_s{interleaved_narrator_segs[-1].index:04d}"
                         batches.append(
                             BatchPlanItem(
-                                batch_id=f"b{batch_counter:04d}_single_{spk_tok}_{d_seg.index:04d}",
-                                strategy="single_isolated",
-                                uids=[d_seg.uid],
-                                speakers=[d_seg.speaker],
-                                voice_map={d_seg.speaker: v_map.get(d_seg.speaker, "Aoede")},
-                                segments=[d_seg],
-                                total_words=len(d_seg.text.split()),
+                                batch_id=b_narr_id,
+                                strategy="narrator_chunk" if len(interleaved_narrator_segs) > 1 else "single_isolated",
+                                uids=[s.uid for s in interleaved_narrator_segs],
+                                speakers=[n_spk],
+                                voice_map={n_spk: v_map.get(n_spk, "Aoede")},
+                                segments=interleaved_narrator_segs,
+                                total_words=current_narrator_words,
                             )
                         )
                         batch_counter += 1
 
-                i = j
-                continue
+                    i = j
+                    continue
+                else:
+                    # Single dialogue line or monologue without a 2nd speaker -> single isolated
+                    # Note: We do NOT advance past interleaved_narrator_segs here so they are processed in next iteration
+                    spk_tok = _clean_token(current_seg.speaker)
+                    batches.append(
+                        BatchPlanItem(
+                            batch_id=f"b{batch_counter:04d}_single_{spk_tok}_{current_seg.index:04d}",
+                            strategy="single_isolated",
+                            uids=[current_seg.uid],
+                            speakers=[current_seg.speaker],
+                            voice_map={current_seg.speaker: v_map.get(current_seg.speaker, "Aoede")},
+                            segments=[current_seg],
+                            total_words=len(current_seg.text.split()),
+                        )
+                    )
+                    batch_counter += 1
+                    i += 1
+                    continue
 
             # Fallback catch-all
             spk_tok = _clean_token(current_seg.speaker)

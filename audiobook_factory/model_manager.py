@@ -47,9 +47,9 @@ class TaskType(str, Enum):
 
 
 TASK_MINIMUM_TIERS: Dict[TaskType, ModelTier] = {
-    TaskType.TRANSLATION: ModelTier.TIER_2_BALANCED,
-    TaskType.SCREENPLAY: ModelTier.TIER_2_BALANCED,
-    TaskType.DRAMATURGY: ModelTier.TIER_2_BALANCED,
+    TaskType.TRANSLATION: ModelTier.TIER_1_FLAGSHIP,
+    TaskType.SCREENPLAY: ModelTier.TIER_1_FLAGSHIP,
+    TaskType.DRAMATURGY: ModelTier.TIER_1_FLAGSHIP,
     TaskType.DIRECTING: ModelTier.TIER_2_BALANCED,
     TaskType.SOUND_DESIGN: ModelTier.TIER_2_BALANCED,
     TaskType.AUDITING: ModelTier.TIER_2_BALANCED,
@@ -57,10 +57,47 @@ TASK_MINIMUM_TIERS: Dict[TaskType, ModelTier] = {
     TaskType.UTILITY: ModelTier.TIER_3_UTILITY,
 }
 
+CREATIVE_TASKS = {
+    TaskType.TRANSLATION,
+    TaskType.SCREENPLAY,
+    TaskType.DRAMATURGY,
+}
+
+CREATIVE_BLACKLIST = (
+    "3.5-flash",
+    "3.6-flash",
+    "3-flash-preview",
+    "flash-latest",
+    "lite",
+    "nano",
+    "8b",
+    "gemma",
+)
+
 
 class LLMUnavailableError(RuntimeError):
     """Raised when an LLM service is unavailable, unauthenticated, or exhausted."""
     pass
+
+
+class AntigravitySessionFallbackRequired(LLMUnavailableError):
+    """
+    Raised when all external LLM keys/models are exhausted and handoff to active
+    Antigravity IDE session (Gemini 3.8 Flash High) is required.
+    """
+    def __init__(
+        self,
+        message: str,
+        handoff_file: Optional[Path] = None,
+        task_type: Optional[TaskType] = None,
+        prompt: Optional[str] = None,
+        system_instruction: Optional[str] = None,
+    ):
+        super().__init__(message)
+        self.handoff_file = handoff_file
+        self.task_type = task_type
+        self.prompt = prompt
+        self.system_instruction = system_instruction
 
 
 class ModelTierFloorBreachError(RuntimeError):
@@ -72,6 +109,7 @@ class ModelTierFloorBreachError(RuntimeError):
 OFFLINE_CATALOG_FALLBACK: List[str] = [
     "gemini-3.8-flash",
     "gemini-3.7-flash",
+    "gemini-3.1-pro-preview",
     "gemini-3.6-flash",
     "gemini-flash-latest",
     "gemini-3.1-flash-lite",
@@ -187,12 +225,15 @@ class ModelManager:
         """
         Returns all discovered models that satisfy the minimum quality floor for the task,
         sorted by capability tier (Tier 1 first, then Tier 2) and Gemini version descending.
+        Strictly excludes blacklisted models from creative tasks.
         """
         discovered = self.discover_available_models(refresh=refresh)
         floor = TASK_MINIMUM_TIERS.get(task, ModelTier.TIER_2_BALANCED)
 
         eligible: List[Tuple[ModelTier, float, str]] = []
         for name in discovered:
+            if task in CREATIVE_TASKS and any(b in name.lower() for b in CREATIVE_BLACKLIST):
+                continue
             tier = self.classify_model_tier(name)
             if tier <= floor:  # Satisfies floor (remember: lower value = higher quality)
                 # Extract numeric version for recency sorting on core gemini models
@@ -203,10 +244,17 @@ class ModelManager:
         env_pref = os.environ.get("GEMINI_TEXT_MODEL")
         if env_pref and any(name == env_pref for name in discovered):
             tier = self.classify_model_tier(env_pref)
-            match = re.search(r"gemini-(\d+(?:\.\d+)?)", env_pref)
-            version = float(match.group(1)) if match else 2.0
-            if not any(e[2] == env_pref for e in eligible):
-                eligible.insert(0, (tier, version, env_pref))
+            is_blacklisted = task in CREATIVE_TASKS and any(b in env_pref.lower() for b in CREATIVE_BLACKLIST)
+            if tier <= floor and not is_blacklisted:
+                match = re.search(r"gemini-(\d+(?:\.\d+)?)", env_pref)
+                version = float(match.group(1)) if match else 2.0
+                if not any(e[2] == env_pref for e in eligible):
+                    eligible.insert(0, (tier, version, env_pref))
+            else:
+                logger.warning(
+                    f"  [MODEL MANAGER] GEMINI_TEXT_MODEL='{env_pref}' rejected for task '{task.value}' "
+                    f"(Floor: {floor.name}, Blacklisted: {is_blacklisted}). Strictly adhering to quality gate."
+                )
 
         if not eligible:
             raise ModelTierFloorBreachError(
@@ -222,7 +270,7 @@ class ModelManager:
         self,
         candidates: List[str],
         api_key: Optional[str] = None,
-        timeout: float = 12.0,
+        timeout: float = 30.0,
     ) -> List[Tuple[str, bool, float, Optional[str]]]:
         """
         Concurrently pings 2-3 candidate models with a minimal dry-run request.
@@ -275,7 +323,7 @@ class ModelManager:
         1. Checking the dynamic minimum quality floor.
         2. Selecting top favorable candidates in batches (up to 3 at a time).
         3. Concurrently pinging candidates to evaluate real-time health and latency.
-        4. Selecting the healthiest, lowest-latency candidate meeting or exceeding the floor.
+        4. Selecting the healthiest candidate (banishing latency sorting for creative tasks).
         5. If a batch fails, probing the next batch of eligible candidates.
         6. Strictly halting (raising LLMUnavailableError) if all eligible candidates fail.
         """
@@ -306,7 +354,7 @@ class ModelManager:
         for i in range(0, min(len(candidates), 9), batch_size):
             batch = candidates[i:i + batch_size]
             logger.info(f"[*] Model Manager: Concurrently pinging favorable candidates for {task.value}: {batch}")
-            probe_results = self.ping_candidate_models(batch, api_key=api_key, timeout=12.0)
+            probe_results = self.ping_candidate_models(batch, api_key=api_key, timeout=30.0)
             all_probed_results.extend(probe_results)
 
             healthy = [r for r in probe_results if r[1] is True]
@@ -315,19 +363,24 @@ class ModelManager:
                 logger.info(f"    - {m_name}: {status_str}")
 
             if healthy:
-                # Pick preferred model first; then by tier and low latency
-                def _score(item: Tuple[str, bool, float, Optional[str]]) -> Tuple[int, int, float]:
+                # Scoring: For creative tasks, banish latency sorting completely!
+                def _score(item: Tuple[str, bool, float, Optional[str]]) -> Tuple[int, int, float, float]:
                     m_name, _, latency, _ = item
                     is_pref = 0 if (env_pref and m_name == env_pref) else 1
                     tier = self.classify_model_tier(m_name)
-                    return (is_pref, tier.value, latency)
+                    match = re.search(r"gemini-(\d+(?:\.\d+)?)", m_name)
+                    version = float(match.group(1)) if match else (2.0 if "gemini" in m_name else 1.0)
+                    if task in CREATIVE_TASKS:
+                        # Intelligence first! Preference -> Tier 1 -> Highest Version -> Latency tiebreaker
+                        return (is_pref, tier.value, -version, latency)
+                    return (is_pref, tier.value, latency, -version)
 
                 healthy.sort(key=_score)
                 chosen_model = healthy[0][0]
                 chosen_latency = healthy[0][2]
                 chosen_tier = self.classify_model_tier(chosen_model)
 
-                if chosen_tier > floor and not (env_pref and chosen_model == env_pref):
+                if chosen_tier > floor:
                     raise ModelTierFloorBreachError(
                         f"STRICT HALT: Candidate '{chosen_model}' ({chosen_tier.name}) breaches minimum "
                         f"quality floor {floor.name} for '{task.value}'. Production halted."

@@ -156,6 +156,7 @@ class TTSDispatcher:
             SpokenTextEngine,
             PronunciationAudioQA,
             PronunciationRepairEngine,
+            PronunciationStatus,
         )
         book_bible = None
         for cand_bb in (self.project_dir / "book_bible.json", self.project_dir / "translation" / "book_bible.json"):
@@ -725,20 +726,39 @@ class TTSDispatcher:
             )
             if repaired_take:
                 winning_take = repaired_take
-            else:
+            elif qa_res.status == PronunciationStatus.FAILED:
                 winning_take.is_selected = False
                 winning_take.selection_reason = (
                     f"[PRONUNCIATION_QA_FAILED] Audio failed pronunciation QA ({qa_res.status.value}): "
                     f"{'; '.join(qa_res.omissions or qa_res.review_reasons or qa_res.repetitions)}"
                 )
+            else:
+                # REVIEW_REQUIRED: Advisory notice, keep take selected but log advisory
+                logger.warning(
+                    f"  [QA ADVISORY] Segment {seg_num} flagged {qa_res.status.value}: "
+                    f"{'; '.join(qa_res.review_reasons)}. Preserving baseline take."
+                )
 
         if not getattr(winning_take, "is_selected", True):
             allow_degraded = os.environ.get("TTS_ALLOW_DEGRADED_TAKES", "false").lower() in ("true", "1", "yes")
             if not allow_degraded:
+                # Purge defective take files from disk so subsequent runs do not reuse corrupted audio
+                for t in takes_for_seg:
+                    try:
+                        if t.audio_path and t.audio_path.exists():
+                            t.audio_path.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+                try:
+                    if out_file.exists():
+                        out_file.unlink(missing_ok=True)
+                except Exception:
+                    pass
                 raise RuntimeError(
                     f"Take selection failed for Chapter {chapter_num:03d} Segment {seg_num:04d} "
                     f"({getattr(winning_take, 'selection_reason', 'Unacceptable take')}). "
-                    f"Halting production to prevent defective audio from entering master."
+                    f"Halting production to prevent defective audio from entering master. "
+                    f"(Defective take cache purged)."
                 )
             logger.critical(
                 f"  [DEGRADED FALLBACK PERMITTED] Segment {seg_num}: {getattr(winning_take, 'selection_reason', '')}"
@@ -989,6 +1009,37 @@ class TTSDispatcher:
                                 dispatcher=self,
                             )
                             for seg, (s_file, dur, words_metadata) in zip(batch.segments, sliced):
+                                # Pronunciation QA Verification for sliced batch take (Selective Hot-Patching)
+                                qa_passed = True
+                                if hasattr(self, "pronunciation_auditor") and self.pronunciation_auditor:
+                                    try:
+                                        from audiobook_factory.pronunciation.contracts import SpokenTextResult
+                                        spoken_res = SpokenTextResult(
+                                            literary_text=seg.text,
+                                            display_text=seg.text,
+                                            spoken_text=getattr(seg, "spoken_text", None) or seg.text,
+                                            resolutions=[],
+                                        )
+                                        qa_res = self.pronunciation_auditor.audit_take(
+                                            take_audio_path=s_file,
+                                            spoken_result=spoken_res,
+                                            take_id=s_file.stem,
+                                            segment_uid=getattr(seg, "uid", f"s_{seg.index}"),
+                                        )
+                                        if not qa_res.passed:
+                                            qa_passed = False
+                                            logger.warning(
+                                                f"  [QA HOT-PATCH] Sliced segment {seg.index} failed QA ({qa_res.status.value}). "
+                                                f"Routing to selective single-take re-recording."
+                                            )
+                                            if s_file.exists():
+                                                s_file.unlink(missing_ok=True)
+                                    except Exception as qa_err:
+                                        logger.warning(f"  [!] Pronunciation audit deliberation notice: {qa_err}")
+
+                                if not qa_passed:
+                                    continue
+
                                 results[seg.index - 1] = s_file
                                 with open(s_file.with_suffix(".words.json"), "w", encoding="utf-8") as wf:
                                     json.dump(words_metadata, wf)
@@ -999,7 +1050,7 @@ class TTSDispatcher:
                                         t_var = self.take_bank.create_take(
                                             segment_uid=seg_dir.segment_uid,
                                             segment_index=seg.index,
-                                            variant_type="batched",
+                                            variant_type="standard",
                                             audio_file=s_file,
                                             direction=seg_dir,
                                         )

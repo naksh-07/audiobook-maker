@@ -83,15 +83,55 @@ class CharacterCaster:
         registry_path = project_dir / "voice_registry.json"
         lock_path = project_dir / "cast_lock.json"
 
-        if not force_recast and roster_path.exists() and registry_path.exists():
+        if not force_recast and roster_path.exists() and registry_path.exists() and lock_path.exists():
             try:
                 with open(roster_path, "r", encoding="utf-8") as rf:
                     roster = json.load(rf)
-                if roster.get("characters") and len(roster["characters"]) > 1:
-                    logger.info(f"[*] CharacterCaster: Existing roster loaded ({len(roster['characters'])} characters).")
+                with open(registry_path, "r", encoding="utf-8") as vf:
+                    reg = json.load(vf)
+                if roster.get("characters") and len(roster["characters"]) > 1 and len(reg) > 1:
+                    logger.info(f"[*] CharacterCaster: Existing roster and voice registry loaded ({len(roster['characters'])} characters, {len(reg)} voices).")
                     return roster
             except Exception as e:
-                logger.warning(f"  [!] Failed to read existing roster, recasting: {e}")
+                logger.warning(f"  [!] Failed to read existing roster/registry, recasting: {e}")
+
+        # If roster already has characters but registry is missing or incomplete, build allocation directly without LLM re-run
+        if not force_recast and roster_path.exists():
+            try:
+                with open(roster_path, "r", encoding="utf-8") as rf:
+                    roster = json.load(rf)
+                chars_dict = roster.get("characters", {})
+                if len(chars_dict) > 1:
+                    logger.info(f"[*] CharacterCaster: Syncing voice allocations for {len(chars_dict)} existing roster characters...")
+                    raw_characters = []
+                    for k, v in chars_dict.items():
+                        if isinstance(v, dict):
+                            c_name = v.get("english_name") or k
+                            if not any(rc.get("canonical_name") == c_name for rc in raw_characters):
+                                raw_characters.append({
+                                    "canonical_name": c_name,
+                                    "english_name": c_name,
+                                    "gender": v.get("gender", "male"),
+                                    "aliases": v.get("aliases", []),
+                                    "archetype": v.get("archetype", ""),
+                                })
+                    if raw_characters:
+                        roster, registry, cast_lock = cls._build_cast_allocation(
+                            project_id=f"proj-{project_dir.name}",
+                            raw_characters=raw_characters,
+                            default_narrator_voice=default_narrator_voice,
+                            use_hindi=use_hindi,
+                        )
+                        with open(roster_path, "w", encoding="utf-8") as f:
+                            json.dump(roster, f, ensure_ascii=False, indent=2)
+                        with open(registry_path, "w", encoding="utf-8") as f:
+                            json.dump(registry, f, ensure_ascii=False, indent=2)
+                        with open(lock_path, "w", encoding="utf-8") as f:
+                            json.dump(cast_lock, f, ensure_ascii=False, indent=2)
+                        logger.info(f"[+] CharacterCaster: Voice allocation synced ({len(registry)} voices).")
+                        return roster
+            except Exception as e:
+                logger.warning(f"  [!] Failed to sync allocation from existing roster: {e}")
 
         # Collect text samples from available chapters
         trans_dir = project_dir / "translation"

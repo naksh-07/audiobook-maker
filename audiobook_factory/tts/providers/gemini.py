@@ -113,7 +113,7 @@ def resolve_speech_metadata_style(
     if not descriptors:
         return "calm, steady, articulate, measured audiobook delivery"
 
-    descriptors.append("understated, natural spoken dialogue, never theatrical")
+    descriptors.append("grounded, natural spoken dialogue")
     return ", ".join(descriptors)
 
 
@@ -169,6 +169,13 @@ def synthesize_gemini_tts(
 
     # Sanitize spoken text by extracting bracketed stage directions into speechMetadata
     clean_text, extracted_cues = sanitize_spoken_text_and_extract_stage_directions(text)
+
+    # Strip leading Roman section numerals (e.g. "II ", "III ") to prevent English numeral recitation
+    clean_text = re.sub(r"^[IVXLCDM]+\s+", "", clean_text)
+    # Convert excessive dots/ellipses to natural pause commas to prevent model dead-air loops
+    clean_text = re.sub(r"\.{2,}", ", ", clean_text)
+    clean_text = re.sub(r",\s*,+", ",", clean_text)
+    clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
     # Strip surrounding punctuation/quotes for numeral lookup: e.g. "८.", "'IV'", "(1)", "3,"
     stripped_token = re.sub(r"^[^\w\d\u0900-\u097F]+|[^\w\d\u0900-\u097F]+$", "", clean_text)
@@ -297,6 +304,13 @@ def synthesize_gemini_tts(
                         raise ValueError(f"No audio data found in Gemini response parts: {[p.get('text', '')[:40] for p in parts]}")
                     raw_bytes = base64.b64decode(b64_audio)
                     raw_pcm, sample_rate, frames = extract_clean_pcm_from_gemini_container(raw_bytes)
+
+                    # Surgically clamp trailing dead air and C2PA bursts before SNR gatekeeper (ADR-028)
+                    from audiobook_factory.audio_qc_agent import AudioQCAgent
+                    qc_agent = AudioQCAgent(sample_rate=sample_rate, safety_buffer_ms=150.0)
+                    clean_pcm, trimmed_ms, _ = qc_agent.surgical_clean_chunk(raw_pcm)
+                    frames = len(clean_pcm) // 2
+                    raw_pcm = clean_pcm
 
                     # Convert 24kHz raw PCM to temporary WAV before SNR inspection
                     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -675,6 +689,13 @@ def synthesize_gemini_multispeaker_batch(
                         raise ValueError(f"No audio data found in Gemini response parts: {[p.get('text', '')[:40] for p in cand_parts]}")
                     raw_bytes = base64.b64decode(b64_audio)
                     raw_pcm, sample_rate, frames = extract_clean_pcm_from_gemini_container(raw_bytes)
+
+                    # Surgically clamp trailing dead air and C2PA bursts before SNR gatekeeper (ADR-028)
+                    from audiobook_factory.audio_qc_agent import AudioQCAgent
+                    qc_agent = AudioQCAgent(sample_rate=sample_rate, safety_buffer_ms=150.0)
+                    clean_pcm, trimmed_ms, _ = qc_agent.surgical_clean_chunk(raw_pcm)
+                    frames = len(clean_pcm) // 2
+                    raw_pcm = clean_pcm
 
                     output_file.parent.mkdir(parents=True, exist_ok=True)
                     tmp_file = output_file.with_suffix(f".tmp_{uuid.uuid4().hex[:6]}.wav")

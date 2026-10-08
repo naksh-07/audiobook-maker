@@ -120,7 +120,7 @@ class GeminiTTSPerformanceAdapter(BaseTTSPerformanceAdapter):
                     components.append(mod)
 
         # Universal Anti-Melodrama Anchor
-        components.append("understated, natural spoken dialogue, never theatrical")
+        components.append("grounded, natural spoken dialogue")
 
         # Deduplicate while preserving order
         seen = set()

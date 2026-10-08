@@ -99,3 +99,4 @@ scratch/
 archive/
 *witcher*
 audiobook_factory/sync_witcher3_to_master_catalog.py
+pending_handoffs/

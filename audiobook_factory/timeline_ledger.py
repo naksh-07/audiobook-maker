@@ -254,13 +254,47 @@ def stitch_dialogue_track_from_ledger(
 
         all_frames.append(in_frames)
 
+        # Check for batch manifest to identify internal lossless batch boundaries
+        import re as _re
+        ch_id = getattr(ledger, "chapter_id", "")
+        ch_match = _re.search(r"\d+", str(ch_id))
+        ch_num = int(ch_match.group()) if ch_match else 1
+        manifest_file = audio_dir / f"c{ch_num:03d}_batch_manifest.json"
+        batch_uids_map: Dict[str, str] = {}
+        if manifest_file.exists():
+            try:
+                import json
+                with open(manifest_file, "r", encoding="utf-8") as mf:
+                    mdata = json.load(mf)
+                for b in mdata.get("batches", []):
+                    b_id = b.get("batch_id")
+                    for u in b.get("uids", []):
+                        batch_uids_map[u] = b_id
+            except Exception:
+                pass
+
+        # Check if current and next segment share the same batch and were sliced losslessly
+        is_same_batch_lossless = False
+        if i < len(ledger.segments) - 1:
+            next_seg = ledger.segments[i + 1]
+            b1 = batch_uids_map.get(seg.uid)
+            b2 = batch_uids_map.get(next_seg.uid)
+            if b1 and b2 and b1 == b2 and ("_duo_" in b1 or "_narrator_" in b1):
+                is_same_batch_lossless = True
+
         # Add silence padding with strict timeline synchronization (ADR-028)
         pause_after = seg.pause_after_ms if seg.pause_after_ms is not None else 400
-        total_pause_ms = pause_after + trimmed_ms
+        if is_same_batch_lossless:
+            # The natural conversational pause is already losslessly embedded in the slices
+            total_pause_ms = trimmed_ms
+        else:
+            total_pause_ms = pause_after + trimmed_ms
+
         if i < len(ledger.segments) - 1 and total_pause_ms > 0:
             silence_samples = int(sample_rate * (total_pause_ms / 1000.0))
-            silence_bytes = b"\x00\x00" * silence_samples
-            all_frames.append(silence_bytes)
+            # Organic acoustic dither (-84 dBFS) to eradicate vocoder noise-floor gating and DAC clicks
+            dither = np.random.randint(-2, 3, size=silence_samples, dtype=np.int16)
+            all_frames.append(dither.tobytes())
 
     with wave.open(str(tmp_out), "wb") as out_wf:
         out_wf.setnchannels(1)

@@ -139,6 +139,7 @@ class PipelineOrchestrator:
                 meta = process_book_file(input_file, self.projects_dir, force_gate=force_gate)
                 book_slug = meta["book_id"]
                 project_dir = self.projects_dir / book_slug
+                os.environ["CURRENT_PROJECT_DIR"] = str(project_dir.resolve())
                 ledger = ProjectStateLedger(project_dir)
                 ledger.set_meta("title", meta.get("title", book_slug))
                 ledger.set_meta("author", meta.get("author", "Unknown Author"))

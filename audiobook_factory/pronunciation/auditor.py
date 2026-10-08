@@ -96,10 +96,11 @@ class PronunciationAudioQA:
 
         # 2. Check overall duration sanity
         words_per_sec = total_words / max(dur_sec, 0.1)
-        if words_per_sec > 6.0 and total_words >= 3:
-            timing_anomalies.append(f"Excessively rushed audio: {words_per_sec:.1f} words/sec")
+        max_words_per_sec = 8.5 if any('\u0900' <= c <= '\u097f' for c in spoken_text) else 6.5
+        if words_per_sec > max_words_per_sec and total_words >= 3:
+            timing_anomalies.append(f"Excessively rushed audio: {words_per_sec:.1f} words/sec (threshold {max_words_per_sec})")
             review_reasons.append("Speech cadence is dangerously fast; pronunciation likely swallowed.")
-        elif words_per_sec < 1.0 and total_words >= 3:
+        elif words_per_sec < 0.8 and total_words >= 3:
             timing_anomalies.append(f"Excessively sluggish audio: {words_per_sec:.1f} words/sec")
             review_reasons.append("Speech cadence is unnaturally slow or dragging.")
 
@@ -158,11 +159,14 @@ class PronunciationAudioQA:
                 t_start_ms = int(span[0].start * sec_per_frame * 1000)
                 t_end_ms = int(span[-1].end * sec_per_frame * 1000)
                 t_dur_ms = max(0, t_end_ms - t_start_ms)
+                min_expected_dur = max(60, syllables * 45)
             else:
                 # Proportional energy valley approximation
+                target_words_count = max(1, len(target_token.split()))
                 t_start_ms = int((first_idx / float(total_words)) * dur_sec * 1000)
-                t_dur_ms = int(avg_word_dur_ms)
+                t_dur_ms = int(avg_word_dur_ms * target_words_count)
                 t_end_ms = t_start_ms + t_dur_ms
+                min_expected_dur = max(45, syllables * 30)
 
             token_alignments.append({
                 "token": target_token,
@@ -173,8 +177,7 @@ class PronunciationAudioQA:
                 "method": alignment_method,
             })
 
-            # Check for omission / swallowed token (e.g. multi-syllable entity with < 70ms duration)
-            min_expected_dur = max(60, syllables * 45)
+            # Check for omission / swallowed token
             if t_dur_ms < min_expected_dur:
                 omissions.append(f"Token '{target_token}' suspiciously truncated ({t_dur_ms}ms < min {min_expected_dur}ms)")
                 review_reasons.append(f"Token '{target_token}' appears swallowed or omitted.")

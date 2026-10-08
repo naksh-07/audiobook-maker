@@ -45,6 +45,7 @@ def _parse_chapters_arg(args) -> Optional[List[int]]:
 
 def cmd_translate(args):
     project_dir = get_projects_dir() / args.book
+    os.environ["CURRENT_PROJECT_DIR"] = str(project_dir.resolve())
     chapters = _parse_chapters_arg(args)
     force_gate = getattr(args, "force_gate", False)
     trans_dir = translate_book_project(project_dir, model=args.model, force_gate=force_gate, chapters=chapters)
@@ -54,6 +55,7 @@ def cmd_translate(args):
 
 def cmd_script(args):
     project_dir = get_projects_dir() / args.book
+    os.environ["CURRENT_PROJECT_DIR"] = str(project_dir.resolve())
     chapters = _parse_chapters_arg(args)
     if getattr(args, "flow", True):
         os.environ["AUDIBLE_FLOW_MODE"] = "true"

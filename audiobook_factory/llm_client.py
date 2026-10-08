@@ -20,8 +20,14 @@ import json_repair
 
 from audiobook_factory.logger import logger
 from audiobook_factory.key_manager import get_persistent_key_pool, classify_gemini_error
-from audiobook_factory.model_manager import get_model_manager, TaskType, LLMUnavailableError
 from audiobook_factory.cadence import get_stealth_sdk_headers
+from audiobook_factory.model_manager import (
+    get_model_manager,
+    TaskType,
+    LLMUnavailableError,
+    AntigravitySessionFallbackRequired,
+    CREATIVE_TASKS,
+)
 from audiobook_factory.guard_shield import (
     get_circuit_breaker,
     classify_universal_api_error,
@@ -420,10 +426,78 @@ def call_gemini(
         except Exception as ex:
             last_error = ex
             logger.warning(f"  [!] LLM call failed on attempt {attempt + 1}/{max_retries}: {ex}")
-            time.sleep(1.0 + random.uniform(0.1, 0.5))
+            is_net_err = any(kw in str(ex).lower() for kw in ("getaddrinfo", "10054", "connection", "timeout", "network"))
+            sleep_time = min(15.0, (3.0 if is_net_err else 1.5) * (attempt + 1) + random.uniform(0.5, 1.5))
+            time.sleep(sleep_time)
             continue
 
     logger.error(f"  [!] STRICT HALT: All {max_retries} Gemini API retries exhausted across key pool.")
+
+    if task_type in CREATIVE_TASKS:
+        from pathlib import Path
+        import hashlib
+        curr_proj = os.environ.get("CURRENT_PROJECT_DIR")
+        target_dir = Path(curr_proj) / "pending_handoffs" if curr_proj else Path("pending_handoffs")
+        target_dir.mkdir(parents=True, exist_ok=True)
+        p_hash = hashlib.sha256(((system_instruction or "") + prompt).encode("utf-8")).hexdigest()[:10]
+        handoff_path = target_dir / f"handoff_{task_type.value}_{p_hash}.json"
+        result_txt_path = target_dir / f"handoff_{task_type.value}_{p_hash}.result.txt"
+        result_json_path = target_dir / f"handoff_{task_type.value}_{p_hash}.result.json"
+
+        # Check if active Antigravity session agent has already provided fulfillment
+        if result_json_path.exists():
+            try:
+                with open(result_json_path, "r", encoding="utf-8") as f:
+                    fulfilled_data = json.load(f)
+                logger.info(f"[+] Loaded Antigravity In-Session fulfillment from {result_json_path}")
+                return fulfilled_data
+            except Exception:
+                pass
+        if result_txt_path.exists():
+            try:
+                with open(result_txt_path, "r", encoding="utf-8") as f:
+                    fulfilled_text = f.read().strip()
+                logger.info(f"[+] Loaded Antigravity In-Session fulfillment from {result_txt_path}")
+                if response_mime_type == "application/json":
+                    try:
+                        return json.loads(fulfilled_text)
+                    except Exception:
+                        return json_repair.loads(fulfilled_text)
+                return fulfilled_text
+            except Exception:
+                pass
+
+        # Save pending handoff file
+        handoff_data = {
+            "task_type": task_type.value,
+            "prompt": prompt,
+            "system_instruction": system_instruction,
+            "response_mime_type": response_mime_type,
+            "temperature": resolved_temperature,
+            "max_output_tokens": resolved_max_tokens,
+            "status": "pending_antigravity_agent_fulfillment",
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "last_error": str(last_error),
+            "result_file_expected": str(result_txt_path if response_mime_type != "application/json" else result_json_path),
+        }
+        with open(handoff_path, "w", encoding="utf-8") as f:
+            json.dump(handoff_data, f, ensure_ascii=False, indent=2)
+
+        logger.critical(
+            f"\n[ANTIGRAVITY IN-SESSION FALLBACK TRIGGERED]\n"
+            f"All external API keys exhausted for creative task '{task_type.value}'.\n"
+            f"Exported pending prompt to: {handoff_path.resolve()}\n"
+            f"The Antigravity agent running in the active IDE session (Gemini 3.8 Flash High) "
+            f"can fulfill this directly with zero external API dependencies.\n"
+        )
+        raise AntigravitySessionFallbackRequired(
+            message=f"STRICT HALT: All external API keys exhausted for creative task '{task_type.value}'. Exported to {handoff_path}",
+            handoff_file=handoff_path,
+            task_type=task_type,
+            prompt=prompt,
+            system_instruction=system_instruction,
+        )
+
     raise LLMUnavailableError(
         f"STRICT HALT: Gemini LLM call failed for task '{task_type.value}' after {max_retries} retries: {last_error}"
     )

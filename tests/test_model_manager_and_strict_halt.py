@@ -65,10 +65,10 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
         self.assertEqual(self.manager.classify_model_tier("gemma-2-9b-it"), ModelTier.TIER_3_UTILITY)
 
     def test_02_task_minimum_tier_contracts(self):
-        """Validates that creative tasks require at least TIER_2_BALANCED."""
-        self.assertEqual(TASK_MINIMUM_TIERS[TaskType.TRANSLATION], ModelTier.TIER_2_BALANCED)
-        self.assertEqual(TASK_MINIMUM_TIERS[TaskType.SCREENPLAY], ModelTier.TIER_2_BALANCED)
-        self.assertEqual(TASK_MINIMUM_TIERS[TaskType.DRAMATURGY], ModelTier.TIER_2_BALANCED)
+        """Validates that creative tasks require TIER_1_FLAGSHIP, and balanced tasks require TIER_2_BALANCED."""
+        self.assertEqual(TASK_MINIMUM_TIERS[TaskType.TRANSLATION], ModelTier.TIER_1_FLAGSHIP)
+        self.assertEqual(TASK_MINIMUM_TIERS[TaskType.SCREENPLAY], ModelTier.TIER_1_FLAGSHIP)
+        self.assertEqual(TASK_MINIMUM_TIERS[TaskType.DRAMATURGY], ModelTier.TIER_1_FLAGSHIP)
         self.assertEqual(TASK_MINIMUM_TIERS[TaskType.DIRECTING], ModelTier.TIER_2_BALANCED)
         self.assertEqual(TASK_MINIMUM_TIERS[TaskType.SOUND_DESIGN], ModelTier.TIER_2_BALANCED)
         self.assertEqual(TASK_MINIMUM_TIERS[TaskType.AUDITING], ModelTier.TIER_2_BALANCED)
@@ -106,7 +106,7 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
     # 2. Concurrent Multi-Model Health Pings & Active Selection
     # =========================================================================
     def test_04_concurrent_ping_selection_healthy(self):
-        """Validates that pinging concurrently selects the healthy model with lowest latency."""
+        """Validates that pinging concurrently selects the healthy model for balanced task."""
         # Simulate: gemini-3.8-flash fails (HTTP 503), gemini-3.7-flash fails (timeout), gemini-3.6-flash succeeds (120ms)
         def mock_ping(candidates, api_key=None, timeout=6.0):
             res = []
@@ -123,26 +123,26 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
 
         with patch.object(self.manager, "ping_candidate_models", side_effect=mock_ping):
             with patch.object(self.manager, "discover_available_models", return_value=["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"]):
-                chosen = self.manager.resolve_active_model(TaskType.SCREENPLAY, force_refresh=True)
+                chosen = self.manager.resolve_active_model(TaskType.DIRECTING, force_refresh=True)
                 self.assertEqual(chosen, "gemini-3.6-flash")
 
     def test_05_active_model_caching_and_invalidation(self):
         """Validates that resolved models are cached within TTL and invalidated on report_failure."""
         with patch.object(self.manager, "ping_candidate_models", return_value=[("gemini-3.6-flash", True, 50.0, None)]):
             with patch.object(self.manager, "discover_available_models", return_value=["gemini-3.6-flash"]):
-                chosen1 = self.manager.resolve_active_model(TaskType.TRANSLATION, force_refresh=True)
+                chosen1 = self.manager.resolve_active_model(TaskType.DIRECTING, force_refresh=True)
                 self.assertEqual(chosen1, "gemini-3.6-flash")
 
                 # Modify mock return to gemini-2.5-pro; without refresh or invalidation, cache returns gemini-3.6-flash
                 with patch.object(self.manager, "ping_candidate_models", return_value=[("gemini-2.5-pro", True, 40.0, None)]):
-                    chosen2 = self.manager.resolve_active_model(TaskType.TRANSLATION, force_refresh=False)
+                    chosen2 = self.manager.resolve_active_model(TaskType.DIRECTING, force_refresh=False)
                     self.assertEqual(chosen2, "gemini-3.6-flash")
 
                     # Invalidate cache
-                    self.manager.report_failure(TaskType.TRANSLATION, "gemini-3.6-flash")
+                    self.manager.report_failure(TaskType.DIRECTING, "gemini-3.6-flash")
                     # Next resolve should fetch fresh
                     with patch.object(self.manager, "discover_available_models", return_value=["gemini-2.5-pro"]):
-                        chosen3 = self.manager.resolve_active_model(TaskType.TRANSLATION, force_refresh=False)
+                        chosen3 = self.manager.resolve_active_model(TaskType.DIRECTING, force_refresh=False)
                         self.assertEqual(chosen3, "gemini-2.5-pro")
 
     # =========================================================================
@@ -337,6 +337,39 @@ class TestModelManagerAndStrictHalt(unittest.TestCase):
                                 self.assertEqual(res, {"result": "success"})
                                 # First attempt was model-primary (503), second attempt cycled to model-fallback!
                                 self.assertEqual(models_contacted, ["model-primary", "model-fallback"])
+
+    def test_15_creative_tasks_enforce_tier_1_and_blacklist(self):
+        """Validates that creative tasks exclude 3.5-flash, 3.6-flash, and -lite models."""
+        discovered = [
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-3.1-flash-lite",
+            "gemini-flash-latest",
+        ]
+        with patch.object(self.manager, "discover_available_models", return_value=discovered):
+            candidates = self.manager.get_candidate_models_for_task(TaskType.TRANSLATION)
+            self.assertIn("gemini-3.8-flash", candidates)
+            self.assertIn("gemini-3.7-flash", candidates)
+            self.assertNotIn("gemini-3.6-flash", candidates)
+            self.assertNotIn("gemini-3.5-flash", candidates)
+            self.assertNotIn("gemini-3.1-flash-lite", candidates)
+            self.assertNotIn("gemini-flash-latest", candidates)
+
+    def test_16_creative_latency_banishment(self):
+        """Validates that for creative tasks, gemini-3.8-flash is preferred over 3.7-flash even if 3.7 has lower latency."""
+        def mock_ping(candidates, api_key=None, timeout=6.0):
+            return [
+                ("gemini-3.8-flash", True, 3500.0, None),  # Higher latency
+                ("gemini-3.7-flash", True, 800.0, None),   # Lower latency
+            ]
+
+        with patch.object(self.manager, "ping_candidate_models", side_effect=mock_ping):
+            with patch.object(self.manager, "discover_available_models", return_value=["gemini-3.8-flash", "gemini-3.7-flash"]):
+                chosen = self.manager.resolve_active_model(TaskType.TRANSLATION, force_refresh=True)
+                # 3.8-flash must win due to version superiority, despite higher ping latency!
+                self.assertEqual(chosen, "gemini-3.8-flash")
 
 
 def json_bytes(obj) -> bytes:

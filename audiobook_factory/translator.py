@@ -63,7 +63,7 @@ def call_gemini(
     """
     if task_type is None:
         sys_lower = (system_instruction or "").lower()
-        if json_mode or any(k in sys_lower for k in ("audit", "evaluat", "parser", "detect", "review", "check")):
+        if any(k in sys_lower for k in ("audit", "evaluat", "parser", "review", "check")) and not any(k in sys_lower for k in ("translat", "screenplay", "dialogue", "cadence", "dramaturg")):
             resolved_task_type = TaskType.AUDITING
         else:
             resolved_task_type = TaskType.TRANSLATION

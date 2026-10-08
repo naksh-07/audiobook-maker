@@ -157,7 +157,7 @@ class PerformanceConstraintResolver:
             style_parts.extend(filtered_secondaries)
 
         # Universal Grounding Anchor: Prevents neural model from slipping into theatrical anime/melodrama
-        style_parts.append("understated natural dialogue (never theatrical)")
+        style_parts.append("grounded, natural spoken dialogue")
 
         # Clean style descriptor string
         clean_descriptor = ", ".join(style_parts)

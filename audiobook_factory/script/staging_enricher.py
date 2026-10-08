@@ -175,6 +175,8 @@ def _parse_dramatized_chunk_llm(
         if turns:
             return turns
     except Exception as e:
+        if isinstance(e, LLMUnavailableError):
+            raise
         logger.warning(f"  [!] ScreenplayDramaturgyRoom notice: {e}. Falling back to baseline two-pass parser.")
 
     # Fallback to baseline two-pass parsing
