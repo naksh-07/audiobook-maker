@@ -1,12 +1,12 @@
-# 🏛️ Architecture: The 5-Room Pure Vocals-Only Studio Audiobook Engine
+# 🏛️ Architecture: Audiobook Studio (Plugin & Pure Vocals-Only Engine v5.2)
 
 ## Executive Overview
 
-**Audiobook Maker (Vocals-Only Studio Engine v4.0)** is an autonomous, studio-grade audiobook production framework engineered specifically for **crystal-clear, multi-voice character acting and pristine vocal narration** modeled after the benchmark standards of **Audible Studios**.
+**Audiobook Studio (Vocals-Only Studio Engine v5.2)** is an autonomous, studio-grade audiobook production framework and Google Antigravity Plugin engineered specifically for **crystal-clear, multi-voice character acting and pristine vocal narration** modeled after the benchmark standards of **Audible Studios**.
 
 > [!IMPORTANT]
 > **Active Production Engine: Pure Vocals-Only**:
-> On branch `prestable-v4.0-baseline`, background music (BGM), sound effects (SFX), 5-track stem mixdowns, and Archive.org sound bank harvesting are **permanently decoupled and archived** in `archive/cinematic_audio/`.
+> Background music (BGM), sound effects (SFX), 5-track stem mixdowns, and Archive.org sound bank harvesting are **permanently decoupled and archived** in `archive/cinematic_audio/`.
 > The engine is 100% focused on Audible-standard vocal clarity, multi-character acting, dialogue nuance, and broadcast-grade vocal mastering.
 
 ---

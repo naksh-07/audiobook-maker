@@ -1,10 +1,10 @@
-# 📖 Audiobook Maker Documentation Hub (Pure Vocals-Only Engine v4.0)
+# 📖 Audiobook Studio Documentation Hub (Antigravity Plugin & Studio Engine v5.2)
 
-Welcome to the comprehensive documentation suite for **Audiobook Maker (Vocals-Only Studio Engine v4.0)** — the studio-grade multi-voice audiobook production framework.
+Welcome to the comprehensive documentation suite for **Audiobook Studio** — the studio-grade multi-voice audiobook production framework and Google Antigravity Plugin.
 
 > [!IMPORTANT]
 > **Active Production Engine: Pure Vocals-Only**:
-> On branch `Voculs`, production is 100% focused on Audible-standard vocal excellence, character acting, 4D acoustic formants, and broadcast EBU R128 (-19 LUFS) vocal mastering. Legacy 5-track BGM/SFX mixdown systems are archived in `archive/cinematic_audio/`.
+> Production is 100% focused on Audible-standard vocal excellence, character acting, 4D acoustic formants, and broadcast EBU R128 (-19 LUFS) vocal mastering. Legacy 5-track BGM/SFX mixdown systems are archived in `archive/cinematic_audio/`.
 
 ---
 

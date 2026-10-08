@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audiobook Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Container -->
+  <div class="studio-container">
+    
+    <!-- Top Header -->
+    <header class="studio-header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="22" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>AUDIOBOOK STUDIO</h1>
+          <span class="brand-sub">Pure Vocals-Only Engine v5.1</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div id="key-badge" class="status-pill ok" title="Key Pool Health">
+          <span class="pulsing-dot"></span>
+          <span id="key-count">124 Keys Active</span>
+        </div>
+        <button id="refresh-btn" class="icon-btn" title="Refresh Telemetry">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Project Selector Bar -->
+    <section class="project-bar">
+      <div class="selector-wrap">
+        <label for="project-select">CURRENT NOVEL</label>
+        <select id="project-select">
+          <option value="">Scanning projects...</option>
+        </select>
+      </div>
+      <div class="project-tags">
+        <span id="proj-author" class="tag">Author: ...</span>
+        <span id="proj-lang" class="tag gold">Target: Spoken Hindustani</span>
+      </div>
+    </section>
+
+    <!-- Main Scrollable Body -->
+    <main class="studio-body">
+
+      <!-- Active Chapter Production Hero -->
+      <section class="card hero-card">
+        <div class="hero-top">
+          <div class="hero-info">
+            <span class="badge active-badge">ACTIVE PRODUCTION</span>
+            <h2 id="hero-chapter-title">Chapter 3: Synthesis In Progress</h2>
+            <p id="hero-chapter-desc">Scene-Aware Dialogue Rally Clustering & Lossless Slicing</p>
+          </div>
+          <div class="progress-ring-wrap">
+            <svg class="progress-ring" width="76" height="76">
+              <circle class="ring-bg" cx="38" cy="38" r="32" stroke-width="6" />
+              <circle id="ring-fill" class="ring-fill" cx="38" cy="38" r="32" stroke-width="6" />
+            </svg>
+            <span id="hero-progress-text" class="ring-text">79.8%</span>
+          </div>
+        </div>
+
+        <!-- Telemetry Numbers Grid -->
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="metric-label">COMPLETED</span>
+            <span id="stat-completed" class="metric-val green">103</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">PENDING</span>
+            <span id="stat-pending" class="metric-val yellow">23</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">ACTIVE / FAILED</span>
+            <span id="stat-failed" class="metric-val red">1 / 2</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">PRODUCED VOCALS</span>
+            <span id="stat-duration" class="metric-val cyan">15.2 min</span>
+          </div>
+        </div>
+
+        <!-- Primary Action Trigger Buttons -->
+        <div class="action-btn-row">
+          <button id="btn-synthesize" class="btn primary-btn">
+            <span class="btn-icon">⚡</span> Synthesize Next Batch
+          </button>
+          <button id="btn-master" class="btn secondary-btn">
+            <span class="btn-icon">🎛️</span> Two-Pass Master (-19 LUFS)
+          </button>
+          <button id="btn-package" class="btn secondary-btn">
+            <span class="btn-icon">📦</span> Package M4B
+          </button>
+        </div>
+      </section>
+
+      <!-- 5-Room Pipeline Stepper -->
+      <section class="card">
+        <div class="card-header">
+          <h3>5-ROOM VOCAL PIPELINE</h3>
+          <span class="header-note">Audible Pure Vocals Standard</span>
+        </div>
+        <div class="room-stepper">
+          <div class="room-step done">
+            <div class="step-num">1</div>
+            <div class="step-info">
+              <span class="step-name">Extraction</span>
+              <span class="step-badge pass">PASS (0.1)</span>
+            </div>
+          </div>
+          <div class="room-step done">
+            <div class="step-num">2</div>
+            <div class="step-info">
+              <span class="step-name">Translation</span>
+              <span class="step-badge pass">Hindustani</span>
+            </div>
+          </div>
+          <div class="room-step done">
+            <div class="step-num">3</div>
+            <div class="step-info">
+              <span class="step-name">Screenplay</span>
+              <span class="step-badge pass">0% Swap</span>
+            </div>
+          </div>
+          <div class="room-step active">
+            <div class="step-num">4</div>
+            <div class="step-info">
+              <span class="step-name">Gemini TTS</span>
+              <span class="step-badge pulse">Batching</span>
+            </div>
+          </div>
+          <div class="room-step">
+            <div class="step-num">5</div>
+            <div class="step-info">
+              <span class="step-name">Mastering</span>
+              <span class="step-badge pending">EBU R128</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cast Audition Soundboard -->
+      <section class="card">
+        <div class="card-header">
+          <h3>CAST & VOICE AUDITIONS</h3>
+          <span class="header-note">114 Hindi Studio Personas</span>
+        </div>
+        <div id="cast-list" class="cast-grid">
+          <div class="empty-loading">Loading cast roster...</div>
+        </div>
+      </section>
+
+      <!-- Quick Directing Command Dispatcher -->
+      <section class="card">
+        <div class="card-header">
+          <h3>DIRECTOR QUICK CHIPS</h3>
+          <span class="header-note">Talk to @audiobook-director</span>
+        </div>
+        <div class="chips-wrap">
+          <button class="chip-btn" data-msg="Verify Chapter 3 Gate 2 attribution and synthesize remaining segments">
+            Synthesize Chapter 3
+          </button>
+          <button class="chip-btn" data-msg="Audit voice roster collisions and test Hindi pronunciation">
+            Audit Voice Collisions
+          </button>
+          <button class="chip-btn" data-msg="Apply two-pass linear EBU R128 master to Chapter 3 and check LUFS">
+            Master Chapter 3 (-19 LUFS)
+          </button>
+          <button class="chip-btn" data-msg="Package all finished chapters into chaptered M4B with embedded cover">
+            Package M4B Container
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Broadcast Master Audio Dock (Sticky Bottom) -->
+    <footer class="master-dock">
+      <div class="dock-top">
+        <div class="dock-track-info">
+          <span class="speaker-icon">🔊</span>
+          <div>
+            <span id="player-title" class="track-title">chapter_003_hi_mastered.m4a</span>
+            <span class="track-sub">Vocal Master • 48kHz Kaiser Sinc</span>
+          </div>
+        </div>
+        <div class="lufs-badge" title="Audible Broadcast Target">
+          <span class="lufs-dot"></span>
+          <span id="lufs-value">-18.9 LUFS | -1.8 dBTP</span>
+        </div>
+      </div>
+
+      <!-- Playback Controls & Progress Bar -->
+      <div class="dock-controls">
+        <button id="btn-play-pause" class="play-btn">
+          <svg id="play-icon" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <svg id="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+            <rect x="6" y="4" width="4" height="16"/>
+            <rect x="14" y="4" width="4" height="16"/>
+          </svg>
+        </button>
+
+        <span id="time-current" class="time-label">00:00</span>
+        <div class="seek-bar-wrap">
+          <input id="audio-seek" type="range" min="0" max="100" value="0" class="seek-slider">
+          <div id="seek-progress" class="seek-progress"></div>
+        </div>
+        <span id="time-total" class="time-label">15:12</span>
+      </div>
+
+      <!-- Hidden Native HTML5 Audio -->
+      <audio id="audio-player" preload="metadata"></audio>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" hidden></div>
+
+  </div>
+
+  <!-- Injected Antigravity Bridge Preload -->
+  <script src="/preload.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

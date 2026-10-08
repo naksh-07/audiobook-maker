@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded Base Background -->
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="url(#bgGrad)" stroke="#334155" stroke-width="2"/>
+  
+  <!-- Headphones / Studio Arc -->
+  <path d="M 36 64 A 28 28 0 0 1 92 64" fill="none" stroke="url(#waveGrad)" stroke-width="4.5" stroke-linecap="round"/>
+  
+  <!-- Ear Cups -->
+  <rect x="30" y="58" width="8" height="18" rx="4" fill="#38bdf8"/>
+  <rect x="90" y="58" width="8" height="18" rx="4" fill="#c084fc"/>
+  
+  <!-- Soundwave Bars (Center Vocal Spectrum) -->
+  <rect x="44" y="60" width="4" height="14" rx="2" fill="url(#waveGrad)"/>
+  <rect x="52" y="52" width="4" height="30" rx="2" fill="url(#waveGrad)"/>
+  <rect x="60" y="44" width="4" height="46" rx="2" fill="url(#goldGrad)"/>
+  <rect x="64" y="44" width="4" height="46" rx="2" fill="url(#goldGrad)"/>
+  <rect x="72" y="52" width="4" height="30" rx="2" fill="url(#waveGrad)"/>
+  <rect x="80" y="60" width="4" height="14" rx="2" fill="url(#waveGrad)"/>
+  
+  <!-- Open Book Base Curve -->
+  <path d="M 36 94 Q 64 86 64 98 Q 64 86 92 94" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 36 98 Q 64 90 64 102 Q 64 90 92 98" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+</svg>

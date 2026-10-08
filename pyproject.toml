@@ -3,13 +3,13 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "audiobook-maker"
-version = "4.0.0b1"
-description = "Studio-grade Audiobook Production Engine with Literary Hindi Translation, Multi-Voice Synthesis, Dynamic BGM Scoring & M4B Packaging."
+name = "audiobook-studio"
+version = "5.2.0"
+description = "Studio-Grade Multi-Voice Audiobook Production Engine & Antigravity Plugin with Gemini Flash TTS, 4D Formants, EBU R128 Mastering & Interactive Studio Panel."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Suraj (naksh-07)" }]
-keywords = ["audiobook", "tts", "gemini", "ffmpeg", "m4b", "speech-synthesis", "audio-mastering"]
+keywords = ["antigravity-plugin", "audiobook", "tts", "gemini-flash", "ffmpeg", "m4b", "speech-synthesis", "audio-mastering", "ebu-r128"]
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.0",
@@ -22,13 +22,14 @@ dev = [
 ]
 
 [project.scripts]
+audiobook-studio = "audiobook_cli:main"
 audiobook-maker = "audiobook_cli:main"
 audiobook-factory = "audiobook_cli:main"
 audio-master = "ffmpeg_mastering.audio_master:main"
 
 [project.urls]
-Homepage = "https://github.com/naksh-07/audiobook-maker"
-Repository = "https://github.com/naksh-07/audiobook-maker"
+Homepage = "https://github.com/naksh-07/audiobook-studio"
+Repository = "https://github.com/naksh-07/audiobook-studio"
 
 [tool.setuptools.packages.find]
 include = ["audiobook_factory*", "ffmpeg_mastering*"]

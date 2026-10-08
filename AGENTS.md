@@ -1,6 +1,7 @@
 # Local Agent Guidelines & Context
 
-- **Canonical Project ID**: proj-audiobook-maker
+- **Canonical Project ID**: proj-audiobook-studio
+- **Plugin Name**: audiobook-studio
 - **Global Config**: Inherits [Global AGENTS.md](file:///C:/Users/Suraj/.gemini/config/AGENTS.md)
 
 ## Domain Context: Studio Audiobook Production Engine (Pure Vocals-Only)

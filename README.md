@@ -1,27 +1,37 @@
-# 🎙️ Audiobook Maker (Vocals-Only Studio Engine v5.0)
+# 🎙️ Audiobook Studio (Antigravity Plugin & Studio Engine v5.2)
 
-> **Autonomous Studio-Grade Multi-Voice Audiobook Production Engine with Restrained Actor Performance, Two-Pass Linear EBU R128 Mastering, Anti-Swap Dialogue Attribution, Gemini Flash TTS & Broadcast M4B Packaging.**
+> **Autonomous Studio-Grade Multi-Voice Audiobook Production Engine & Google Antigravity Plugin with Gemini Flash TTS, 4D Formant Actor Performance, Two-Pass Linear EBU R128 Mastering, Anti-Swap Dialogue Attribution & Interactive Sidecar Studio Panel.**
 
+[![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin%20v1.0.0-blueviolet.svg)](plugin.json)
 [![Python](https://img.shields.io/badge/Python-3.10%2B%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-6.0%2B%20%7C%208.0-red.svg)](https://ffmpeg.org/)
 [![TTS Engine](https://img.shields.io/badge/TTS-Google%20Gemini%20Flash%20TTS-green.svg)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 [![Voice Casting](https://img.shields.io/badge/Voice%20Casting-4D%20Acoustic%20Formant%20Matrix-blue.svg)](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
 [![Broadcast Standard](https://img.shields.io/badge/Broadcast-Two--Pass%20Linear%20EBU%20R128%20(-19%20LUFS)-purple.svg)](docs/AUDIO_ENGINEERING.md)
-[![Verification](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
 
 ## 📖 Overview
 
-**Audiobook Maker (Vocals-Only Studio Engine v5.0)** is an enterprise-grade, autonomous audiobook production system engineered specifically for **grounded, natural multi-voice character acting and pristine vocal narration** modeled after the benchmark standards of **Audible Studios**.
+**Audiobook Studio** is an enterprise-grade, autonomous audiobook production system and a first-class **Google Antigravity Plugin**. Engineered specifically for **grounded, natural multi-voice character acting and pristine vocal narration** modeled after the benchmark standards of **Audible Studios**, it transforms raw literature (**EPUB, PDF, TXT, Markdown**) into chapterized, broadcast-compliant `.m4b` audiobooks with zero corporate fluff or tedious manual editing.
 
-It ingests raw literature (**EPUB, PDF, TXT, Markdown**) and autonomously produces chapterized `.m4b` audiobooks with rich chapter markers and cover art in one command.
+Audiobook Studio operates both as:
+1. **A Native Antigravity Plugin**: Direct with conversational directing via the `@audiobook-director` agent, interactive Webview Studio Panel sidecar, and full multi-skill workflows.
+2. **A Standalone CLI & Python Framework**: Programmatic scripting, batch processing, and headless production pipelines.
 
-### 🚫 The Pure Vocals-Only Mandate
-On this branch, background music (BGM), sound effects (SFX), 5-track stem mixdowns, and Archive.org sound bank harvesting are **permanently decoupled and archived** in `archive/cinematic_audio/`. 
+---
 
-Rather than masking spoken dialogue with noisy background beds or suffering from broken external sound downloaders, this engine channels 100% of its compute into **Google Gemini Flash TTS**, **4D acoustic formant modulation**, **Stanislavski acting direction**, and **broadcast-grade vocal mastering**.
+## 🚫 The Pure Vocals-Only Mandate
+
+Background music (BGM), sound effects (SFX), 5-track stem mixdowns, and external sound scraping are **permanently decoupled and archived** in `archive/cinematic_audio/`.
+
+Rather than masking spoken dialogue with noisy background beds or suffering from broken external sound downloaders, this engine channels 100% of its compute into:
+- **Google Gemini Flash TTS** with token-bucket rotating key pools.
+- **4D Acoustic Formant Modulation** (Pitch $\pm 4-12\%$, tempo, and 4D parametric EQ curves) eliminating vocal convergence.
+- **Stanislavski Directing Anchors** and temperature clamping (`0.30 - 0.52`) to prevent histrionic screeching.
+- **Broadcast EBU R128 Vocal Mastering** (-19.0 LUFS, -1.5 dBTP) with Hann micro-fades.
 
 ---
 
@@ -67,24 +77,123 @@ flowchart TD
 
 ---
 
-## 🧭 Command-Line Interface (`audiobook_cli.py`)
+## 🔌 Antigravity Plugin Ecosystem
+
+Audiobook Studio installs seamlessly into Google Antigravity as an all-in-one production plugin:
+
+```text
+audiobook-studio/
+├── plugin.json                 # Core Antigravity plugin manifest
+├── assets/
+│   └── logo.svg                # Studio branding icon
+├── rules/
+│   └── AGENTS.md               # Studio domain invariants & vocal engineering guardrails
+├── agents/
+│   └── audiobook-director.md   # Studio Audiobook Director persona (@audiobook-director)
+├── skills/
+│   ├── audiobook-studio/       # Operational directs, project DB inspect, zero-CLI API
+│   ├── audio-engineer-ffmpeg/  # FFmpeg DSP, 4D formants, EBU R128 mastering curves
+│   └── novel-audiobook-factory/# Autonomous novel ingestion, translation & production
+└── sidecars/
+    └── studio-panel/           # Webview Aux-Pane UI Extension & Soundboard
+        ├── sidecar.json        # Sidecar lifecycle & UI entrypoint
+        ├── main.mjs            # Express server + SSE event hub
+        ├── index.html          # Clean dark studio interface
+        ├── app.js              # State streaming, live waveform, casting board
+        └── styles.css          # Studio theme typography and layout
+```
+
+### 1. The `@audiobook-director` Agent
+Eliminate memorizing CLI flags. Speak directly to the director:
+- *"Produce next chapter with multi-cast Gemini Flash voices"*
+- *"Show active audiobook projects and progress"*
+- *"Audition character voices and verify cast roster"*
+- *"Run Gate 6 loudness and speech attribution audit on chapter 3"*
+
+### 2. The Interactive Studio Panel (Sidecar Webview)
+The embedded Webview runs in Antigravity's auxiliary side pane, providing:
+- **Live SSE Event Stream**: Real-time progress bars for translation, scripting, TTS chunking, and mastering.
+- **Character Casting Matrix**: Visual character roster, assigned acoustic formants (pitch shift, tempo, EQ contour), and 0% collision verification.
+- **Waveform Audition Soundboard**: Preview raw takes vs mastered speech segments directly inside the IDE.
+
+---
+
+## 🎛️ Studio Vocal Engineering & Mastering (EBU R128)
+
+Audiobook Studio strictly adheres to international broadcast and Audible production standards:
+
+| Parameter | Benchmark Target | Engine Implementation |
+|---|---|---|
+| **Integrated Loudness** | **-19.0 LUFS** ($\pm 0.5$ LUFS) | Two-pass measured linear loudnorm (`-f null -` pass 1, `linear=true` pass 2). |
+| **True Peak Ceiling** | $\le$ **-1.5 dBTP** | Hard limiter ceiling with Kaiser Sinc 48kHz / 24-bit post-loudnorm resampling. |
+| **Consonant Clarity** | Zero de-esser degradation | Dynamic sibilance de-essers are banned; crisp Hindi dental/aspirated consonants (स, श, छ, थ, ध) are preserved. |
+| **Phase Coherence** | Natural tempo phrasing | WSOLA time-stretching banned during playback; pacing modulated naturally via punctuation. |
+| **Micro-Fades** | Zero-crossing snapping | 12ms pre-speech fade-in and 18ms post-speech fade-out at -52 dBFS noise floor. |
+| **Output Container** | Audible-compatible `.m4b` | AAC-LC 128-192 kbps, embedded chapters (`FFMETADATA1`), and high-res cover art. |
+
+---
+
+## 🚀 Quickstart & Installation
+
+### Requirements
+- **Python**: 3.10+ (tested on Python 3.10 – 3.13)
+- **FFmpeg**: 6.0+ with SOXR support (installed and available in `PATH`)
+- **Node.js**: 18+ (for the Webview sidecar panel)
+- **Google Gemini API Key(s)**: 1 or more Gemini API keys (supports 120+ key pool)
+
+### 1. Clone & Set Up Python Environment
+```bash
+git clone https://github.com/naksh-07/audiobook-studio.git
+cd audiobook-studio
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -e .
+```
+
+### 2. Configure Credentials
+Create a `.env` file in the root directory:
+```env
+# Primary API key or comma-separated pool
+GEMINI_API_KEY=your_gemini_api_key_here
+# Optional multiple keys for rotating pool:
+# GEMINI_API_KEYS=key1,key2,key3
+```
+
+### 3. Install into Google Antigravity
+To install as a local Antigravity plugin:
+```bash
+# Link or copy to Antigravity plugin directory:
+# On Windows:
+xcopy /E /I /Y . "%USERPROFILE%\.gemini\config\plugins\audiobook-studio"
+# On Linux / macOS:
+# cp -r . ~/.gemini/config/plugins/audiobook-studio
+```
+Restart Antigravity or open Plugins Manager to see **Audiobook Studio** live!
+
+---
+
+## 💻 Command-Line Interface (`audiobook_cli.py`)
 
 Run autonomous end-to-end production with a single command or execute granular stages step-by-step:
 
 ```bash
 # 1-Click Autonomous End-to-End Production:
-python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voice Aoede --workers 3
+audiobook-studio auto "path/to/novel.epub" --hindi --dramatized --voice Aoede --workers 3
 
-# Or step-by-step modular commands:
-python audiobook_cli.py extract "C:/path/to/novel.epub"
-python audiobook_cli.py translate <book_slug>
-python audiobook_cli.py script <book_slug> --hindi --dramatized
-python audiobook_cli.py synthesize <book_slug> --voice Aoede
-python audiobook_cli.py master <book_slug>
-python audiobook_cli.py package <book_slug> --cover "cover.jpg"
+# Or step-by-step modular pipeline:
+audiobook-studio extract "path/to/novel.epub"
+audiobook-studio translate <book_slug>
+audiobook-studio script <book_slug> --hindi --dramatized
+audiobook-studio synthesize <book_slug> --voice Aoede --workers 3
+audiobook-studio master <book_slug>
+audiobook-studio package <book_slug> --cover "cover.jpg"
 ```
 
-### 🧭 Command Matrix
+### Command Matrix
 
 | Subcommand | Scope | Description |
 |---|---|---|
@@ -101,103 +210,45 @@ python audiobook_cli.py package <book_slug> --cover "cover.jpg"
 
 ---
 
-## ✨ Key Technical Highlights
+## 🧪 Verification & Quality Testing
 
-### 1. 4D Acoustic Formant Casting & Zero Voice Convergence
-*(See [`character_caster.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/character_caster.py) & [`dispatcher.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/tts/dispatcher.py))*
-- **Dynamic 2,089 Voice Catalog (`VoiceCatalog`)**: Integrates all 2,089 verified voices (including 114 native Hindi voices, 120 regional Indian English personas, and 215 English Gemini studio voices).
-- **LLM Dialect-Aware Casting**: Dynamically matches characters to regional cadences (Awadhi, Bhojpuri, Haryanvi, Bundeli, Urdu/Delhi, Mumbaiya, Dakhini) based on LLM narrative profiles without hardcoding.
-- **Child & Adolescent Voice Solutions**:
-  - *Anime Seiyū Child Engine*: Young children and girls are dynamically voiced using high-pitch female base voices modulated with $+10\text{--}15\%$ pitch shift and youthful resonance EQ curves (`equalizer=f=...`), replicating Japanese anime voice acting traditions.
-  - *Rustic Teen Fighter Profile*: Adolescent boys (14–17yo) utilize young 22yo rustic male bases (Haryanvi/Bhojpuri) with physical EQ curves rather than artificial chipmunk warping.
-- **POV-Aware Narrator Alignment**: Automatically selects matching gendered protagonist voices for first-person novels while strictly preserving `Aoede` as the supreme default for third-person literary prose.
-- **4D Acoustic Vector Modulation**: When multiple characters share base voice models, the engine modulates:
-  1. $F_0$ Pitch Delta ($\pm 4-12\%$) via `asetrate` and `aresample`.
-  2. Tempo compensation via `atempo`.
-  3. Bass/presence boost and clarity reduction.
-  4. 4D Parametric EQ formant profiles chaining distinct acoustic timbres.
-- **Formant-Sensitive Hash Caching**: Filename hashes incorporate the active EQ formant profile to guarantee deterministic cache invalidation.
+Audiobook Studio maintains strict architectural anti-tamper and regression suites:
 
-### 2. Room 3 Forensic Screenplay Engine & Anti-Swap Attribution
-*(See [`dialogue_attribution_auditor.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/script/agents/dialogue_attribution_auditor.py) & [`screenplay_cleaner.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/script/screenplay_cleaner.py))*
-- **Multi-Agent Screenplay Room**: Deconstructs script writing across 4 specialized agents:
-  - `DialogueTurnIsolator`: Extracts pristine spoken text and isolates speech turns.
-  - `StanislavskiSubtextDirector`: Injects emotional subtext, actioning verbs, and speech tags.
-  - `PhysicalBlockingDirector`: Encodes spatial proximity and stereo azimuth panning.
-  - `DramaturgyConsistencyJudge`: Evaluates dramatic continuity and emotional arcs.
-- **Forensic Anti-Swap Auditor**: Dedicated LLM QA agent that catches $A \leftrightarrow B$ speaker turn inversions, corrects quotes mistakenly assigned to Narrator, and scrubs leaked speech tags (e.g. `"उसने कहा"`).
-- **Chronological Action-Blocking Protection**: Split-quote stitching is strictly bounded to short speech tags ($\le 6$ words with explicit speech verbs), ensuring authentic physical narrative sequences (`Dialogue 1 -> Physical Action -> Dialogue 2`) are never inverted or compressed.
-
-### 3. Room 2 4-Agent Translation Collective & Tri-Partite Invariant
-*(See [`collective.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/translation/agents/collective.py) & [`translator.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/translator.py))*
-- **4-Agent Collective**:
-  - `LiteraryDraftTranslator`: Sense-for-sense dramatic prose maintaining 70% canon sacredness.
-  - `HindustaniCadenceSpecialist`: Natural actor breath pauses (`—`, `...`, `,`) and `TU <-> MAAI-BAAP` power shifts.
-  - `SubtextAndIdiomDramaturge`: Earthy Hindustani metaphors and 19-to-21 unrated amplification.
-  - `TranslationQualityCritic`: Anti-omission checks and BookBible terminology verification.
-- **Universal Novel-Agnostic Tri-Partite Taxonomy**:
-  1. *Personal Proper Names*: Phonetically transliterated into Devanagari (*Victor* $\to$ *विक्टर*, *Marcus* $\to$ *मार्कस*).
-  2. *Heraldic Monikers & Titles*: Transliterated phonetically as proper names (*Silver Falcon* $\to$ *सिल्वर फाल्कन*), strictly banning literal word-for-word calques (*चांदी का बाज़*).
-  3. *Occupational Roles*: Evocative spoken Hindustani (*अजनबी, कसाई, सरायवाला, लोहार*).
-- **Living Somatic Register (Anti-Tat-Sama Ban)**: Strictly mandates natural spoken anatomy (*कमर, कूल्हे, नंगी/खुली बाँहें*), permanently eliminating archaic textbook words (*नितंब, नग्न भुजाएँ, अनावृत*).
-
-### 4. High-Concurrency Gemini TTS Pool & Overacting Elimination
-*(See [`model_manager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/model_manager.py) & [`constraint_resolver.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/performance/constraint_resolver.py))*
-- **Actor Overacting Elimination**: Strips theatrical `"acting to..."` directives, anchors performance with physical vocal cues and universal restraint (`"understated natural dialogue (never theatrical)"`).
-- **Narrator Transparency Invariant**: Narrator locked strictly to `"calm, steady, articulate, measured audiobook delivery"` (temp 0.32, zero melodrama).
-- **Temperature Clamping (0.30 - 0.52)**: Eliminates pitch dispersion, panting, and theatrical screeching (default `0.35 - 0.42`).
-- **Persistent SQLite Round-Robin Pool**: Rotates across 120+ active Gemini API keys with token-bucket rate limiting and anti-bot jitter.
-- **Permanent Developer Permissive Threshold (`BLOCK_NONE`)**: Automatically sets `BLOCK_NONE` across all harm categories, preventing false-positive censorship of legitimate dramatic literature.
-
-### 5. Dialogue Editorial Layer (DE-01 - DE-07)
-*(See [`docs/DIALOGUE_EDITORIAL_LAYER.md`](docs/DIALOGUE_EDITORIAL_LAYER.md))*
-- **Endpoint Zero-Crossing Snapping**: Tracks speech floor down to -52 dBFS and snaps boundaries to sub-millisecond zero crossings.
-- **Hann Micro-Fades**: True 12ms pre-speech and 18ms post-speech raised-cosine micro-fades eliminate clicks and pops.
-- **Contextual Turn Latency**: Calculates realistic pauses between speakers based on dramatic tension (25ms interruption floor to 1800ms emotional freeze).
-
-### 6. Broadcast Vocal Mastering & Chaptered M4B Container
-*(See [`mastering.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/mastering.py) & [`packager.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_factory/packager.py))*
-- **Two-Pass Measured Linear EBU R128 Loudnorm**:
-  - *Pass 1*: Forensic integrated measurement (`print_format=json`) with `-f null -`.
-  - *Pass 2*: Linear loudnorm (`linear=true`) with measured stats offset. Completely eliminates pause gain pumping and room-tone breathing.
-- **Zero Sibilance Distortion & Zero Phase Flange**:
-  - Permanently removed WSOLA `atempo` time-stretching, preserving neural vocal formants and phase coherence.
-  - Eliminated destructive `deesser=i=0.10`, restoring crisp Hindi dental & aspirated consonants (*स, श, छ, थ, ध, ख*).
-- **Post-Loudnorm Kaiser Sinc Resampling**: Strict 48kHz / 24-bit studio pipeline positioned *after* loudnorm, eliminating 192kHz WAV bloat.
-- **Broadcast Standards Target**: `-19.0 LUFS` integrated loudness ($\pm 0.5$ LU) and `-1.5 dBTP` true-peak ceiling.
-- **Chaptered M4B Container**: Assembles final `.m4b` container with FFMETADATA1 chapter markers, TOC navigation, and embedded high-resolution cover artwork.
-
----
-
-## 🧪 Test Verification
-
-The entire repository is certified with **100% green test passing**:
 ```bash
-python -m pytest
-# ============ 805 passed, 8 skipped, 1 warning in 302.52s ============
+# Run complete test suite (800+ isolated tests)
+pytest tests/ -v
 ```
 
----
-
-## 📚 Documentation Hub
-
-| Document | Description |
-|---|---|
-| **[📜 Forensic Literary Ingestion (Pillar 1)](docs/FORENSIC_DOCUMENT_INGESTION.md)** | Authoritative guide to the CanonicalBook AST, sacred raw archival, and Gate 0.1 extraction audits. |
-| **[🧠 Literary Translation Intelligence (Pillar 2)](docs/LITERARY_TRANSLATION_INTELLIGENCE.md)** | Complete guide to BookBible v2.0, Contextual Hindustani Register, and the 4-Agent Collective. |
-| **[🎭 Dramatic Adaptation & Screenplay (Stage 3)](docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Authoritative guide to the Stage 3 Dramaturgy Engine and DialogueAttributionAuditor. |
-| **[🎙️ Gemini Flash TTS Engine & Directing (Stage 4)](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)** | Authoritative guide to multimodal generative speech, speech tags, and token bucket key pool. |
-| **[🎭 Voice Casting Director Manual & 4D Formants](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)** | Guide to 4D acoustic formant matrices, character dossiers, and non-colliding voice allocation. |
-| **[🇮🇳 Complete Hindi Voice Catalog](docs/HINDI_VOICE_CATALOG.md)** | Directory of 114 native Hindi voices, regional dialects, age categories, and timbres. |
-| **[✂️ Dialogue Editorial Layer (DE-01 - DE-07)](docs/DIALOGUE_EDITORIAL_LAYER.md)** | Zero-crossing snapping, Hann micro-fades, and contextual turn latencies. |
-| **[🎛️ Audio Engineering & Vocal Mastering](docs/AUDIO_ENGINEERING.md)** | Broadcast EBU R128 (-19 LUFS) vocal loudness mastering and FFmpeg filter graphs. |
-| **[🛡️ Audit Remediation & Hardening](docs/AUDIT_REMEDIATION_AND_HARDENING.md)** | Exhaustive engineering record of Phases 1 through 6 forensic audit fixes and zero-hardcoding invariants. |
-| **[💻 CLI Reference](docs/CLI_REFERENCE.md)** | Complete CLI syntax and flags for all 10 production commands. |
-| **[🛠️ Developer Guide](docs/DEVELOPER_GUIDE.md)** | Local environment setup, test suites, and contribution standards. |
+All quality gates are fail-closed:
+- **Gate 0.1**: Forensic Ingestion & Reading Order AST Validation.
+- **Gate 1**: Dramatis Personae & 0% Voice Collision Casting.
+- **Gate 2**: DialogueAttributionAuditor (0% Speaker Turn Swaps).
+- **Gate 2.5**: Stanislavski Acting Restraint (clamped temp, physical vocal anchors).
+- **Gate 5**: Dialogue Editorial Snapping & Hann Micro-fades.
+- **Gate 6**: Two-Pass Linear Loudnorm Certification (-19.0 LUFS, -1.5 dBTP).
 
 ---
 
-## 📦 Decoupled & Archived Subsystems
+## 📚 Documentation Index
 
-The legacy 5-track cinematic audio engine (dynamic BGM scoring, SQLite FTS5 sound bank harvesting, and multitrack stem mixdowns) has been safely decoupled and archived in `archive/cinematic_audio/`.
-The active production pipeline on `Voculs` is **100% focused on pure vocal excellence**.
+For exhaustive technical guides, visit the [`docs/`](docs/) directory:
+- [🏛️ Architecture Blueprint](docs/ARCHITECTURE.md)
+- [🎛️ Audio Engineering & Mastering](docs/AUDIO_ENGINEERING.md)
+- [🎙️ Gemini Flash TTS Synthesis & Directing](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
+- [🎭 Voice Casting Director Guide](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
+- [🇮🇳 Complete Hindi Voice Catalog](docs/HINDI_VOICE_CATALOG.md)
+- [🧠 Literary Translation Intelligence](docs/LITERARY_TRANSLATION_INTELLIGENCE.md)
+- [🎭 Dramatic Adaptation & Screenplay](docs/DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)
+- [✂️ Dialogue Editorial Layer](docs/DIALOGUE_EDITORIAL_LAYER.md)
+- [💻 CLI Reference Manual](docs/CLI_REFERENCE.md)
+- [🛡️ Quality Gates Specifications](docs/QUALITY_GATES.md)
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+*Built with ❤️ for Google Antigravity by Suraj ([@naksh-07](https://github.com/naksh-07))*

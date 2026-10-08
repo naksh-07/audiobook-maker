@@ -1,0 +1,12 @@
+{
+  "name": "audiobook-studio",
+  "displayName": "Audiobook Studio",
+  "version": "1.0.0",
+  "description": "Studio-grade multi-cast audiobook production engine. Turns novels into broadcast-ready Hindi/English audiobooks with Gemini Flash TTS, 4D formants, and EBU R128 mastering.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Open Audiobook Studio and show active book projects",
+    "Produce next chapter with multi-cast Gemini Flash voices",
+    "Audition character voices and verify cast roster"
+  ]
+}

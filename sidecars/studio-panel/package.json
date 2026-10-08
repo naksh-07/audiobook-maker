@@ -1,0 +1,7 @@
+{
+  "name": "audiobook-studio-panel",
+  "version": "1.0.0",
+  "description": "Sidecar backend and UI extension for Audiobook Studio.",
+  "type": "module",
+  "private": true
+}

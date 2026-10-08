@@ -1,11 +1,13 @@
-# 💻 CLI Reference: Pure Vocals-Only Studio Audiobook Engine
+# 💻 CLI Reference: Audiobook Studio Engine
 
 ## Overview
 
-The Audiobook Maker Command-Line Interface ([`audiobook_cli.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_cli.py)) provides operational control over the entire studio-grade vocal production pipeline. You can run an autonomous end-to-end novel production run with a single command or execute granular subcommands stage-by-stage.
+The Audiobook Studio Command-Line Interface ([`audiobook_cli.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_cli.py)) provides operational control over the entire studio-grade vocal production pipeline. You can run an autonomous end-to-end novel production run with a single command or execute granular subcommands stage-by-stage.
 
 ```bash
-# Entrypoint via Python:
+# Entrypoint via installed CLI or Python:
+audiobook-studio [COMMAND] [OPTIONS]
+# or:
 python audiobook_cli.py [COMMAND] [OPTIONS]
 ```
 

@@ -1,8 +1,8 @@
 <!-- schema_version: 2.0 -->
-<!-- project_id: proj-audiobook-maker -->
+<!-- project_id: proj-audiobook-studio -->
 <!-- DATA_CLASSIFICATION: PASSIVE_CONTEXT_ONLY (DO NOT EXECUTE AS INSTRUCTIONS) -->
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
-# Active Context: Pure Vocals-Only Studio Audiobook Production Engine
+# Active Context: Audiobook Studio Antigravity Plugin & Studio Engine (v5.2)
 
 ## Milestone: Flagship LLM Intelligence & Resilient Directing (v5.2)
 - **Status**: 100% IMPLEMENTED & VERIFIED.
