@@ -4,14 +4,14 @@
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
 # Active Context: Audiobook Studio Antigravity Plugin & Studio Engine (v6.0)
 
-## Milestone: Phase 1 & 2 — Core Platform & Persistence (v6.0-ENTERPRISE-DAG)
-- **Status**: 100% IMPLEMENTED & VERIFIED (27/27 Core tests + 142 regression tests green).
-- **Core Platform (`audio_platform_core`)**:
-  - `core/key_manager.py`: 120+ KeyPool SQLite rotation, cool-down, token-bucket concurrency.
-  - `core/model_manager.py`: Tier-1 Flagship routing with mandatory `BLOCK_NONE` safety filters.
-  - `core/cache/take_bank.py`: Content-addressed SHA-256 audio cache with LRU disk pruning.
-  - `core/dialogue_editorial/`: DE-01 - DE-07 DSP (Hann micro-fades 12ms/18ms, -52 dBFS trimming, 40Hz Butterworth highpass) & zero-cost timeline stem stitcher.
-  - `core/mastering/`: Two-Pass Measured Linear Loudnorm (-19.0 LUFS ±0.5, -1.5 dBTP) & M4B packager with FFMETADATA1 chapter markers and embedded cover art.
+## Milestone: Phase 1, 2 & 3 — Core Platform & Standalone Rooms (v6.0-ENTERPRISE-DAG)
+- **Status**: 100% IMPLEMENTED & VERIFIED (32/32 Core/Room tests + 142 regression tests green = 174/174 tests).
+- **Standalone 5-Room Architecture (`audiobook_factory/rooms/`)**:
+  - `room1_ingest`: Forensic source parsing (EPUB/PDF/TXT), AST monotonicity & Gate 0.1 audit.
+  - `room2_translate`: 4-Agent translation collective, surgical beat patching & Gate 1.0 audit.
+  - `room3_screenplay`: 4D acoustic formants, 0% Anti-Swap inversion & Gate 2.0 audit.
+  - `room4_synth`: TakeBank SHA-256 caching, DE-01 - DE-07 DSP stem assembly & Gate 4.0 audit.
+  - `room5_master`: Two-Pass Linear Loudnorm (-19.0 LUFS, -1.5 dBTP), Gate 5.0 audit & M4B packager.
 - **Contracts & Ledger**: Pydantic v2 schemas (`schema_version: "2.0"`) & SQLite WAL `pipeline_ledger.db`.
 
 ## Production Milestone: Chapter 3 Mastered (`Sword of Destiny`)

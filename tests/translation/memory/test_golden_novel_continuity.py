@@ -603,7 +603,7 @@ class TestGoldenNovelContinuity(unittest.TestCase):
             self.assertEqual(cleaned_script[1]["emotion"], "solemn")
 
             # Verify IntelligentTranslationPipeline loads the persisted MemoryStore and executes cleanly
-            pipeline = IntelligentTranslationPipeline(project_dir=project_dir)
+            pipeline = IntelligentTranslationPipeline(project_dir=project_dir, model="gemini-3.8-flash")
             self.assertEqual(pipeline.memory_store.memory_version, store.memory_version)
             epilogue_text = "Vikram and Meera stood atop the Iron Citadel ramparts as dawn broke."
             hindi_out, audits = pipeline.translate_chapter(
