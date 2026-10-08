@@ -1,210 +1,149 @@
 # 🎓 End-to-End Production Tutorial & Recipe Cookbook
 
+**Standard**: `v6.0-ENTERPRISE-DAG` & `v6.0-STUDIO-UI`  
+**System**: Studio Audio Production & Vocal Mastering Engine  
+**Classification**: Developer Guide & Production Recipes  
+
+---
+
 ## 📖 Introduction
 
-This tutorial walks you through every production scenario in **Audiobook Maker v4.0** — from running your first 1-click autonomous novel to surgically directing custom screenplay cues and exporting discrete multitrack stems for studio re-mixing.
+This tutorial guides you through real-world production scenarios using the **v6.0-ENTERPRISE-DAG** decoupled architecture — from running autonomous multi-room novel pipelines to performing sub-15-second surgical dialogue patches and directing character acting in the Antigravity Webview Studio Panel.
 
 ---
 
 ## 📋 Prerequisites Checklist
 
-Before beginning, ensure your workstation environment is verified:
+Verify your workstation environment before starting:
 
 ```bash
 # 1. Verify Python version (>= 3.10)
 python --version
 
-# 2. Verify FFmpeg SOXR support (Mandatory for 48kHz audio resampler)
+# 2. Verify Node.js version (>= 18 for Antigravity Sidecar Webview)
+node --version
+
+# 3. Verify FFmpeg SOXR support
 ffmpeg -filters | findstr soxr   # Windows
 # or
 ffmpeg -filters | grep soxr      # Linux / macOS
 
-# 3. Verify Gemini API key configuration
+# 4. Verify Google Gemini API credentials
 python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('API Key OK' if os.environ.get('GEMINI_API_KEY') else 'Missing API Key')"
 ```
 
 ---
 
-## 🍳 Recipe 1: 1-Click Autonomous Cinematic Hindi Audio Drama
+## 🍳 Recipe 1: Full 5-Room Hindi Novel Audiobook (`AUDIOBOOK_STUDIO`)
 
-Transform an English fantasy novel into a full-cast, dramatized Hindustani audio drama complete with orchestral score, physical Foley, and `.m4b` delivery.
+Transform an English fantasy novel into a fully cast, dramatized Hindustani audiobook with 4D formants and broadcast EBU R128 mastering.
 
 ```bash
-python audiobook_cli.py auto books/the_witcher.epub \
-  --hindi \
-  --dramatized \
-  --voice Charon \
-  --cover covers/witcher.jpg \
-  --workers 4
+python -m audiobook_factory.cli.run \
+    --preset AUDIOBOOK_STUDIO \
+    --source "books/Sword_of_Destiny.epub" \
+    --project-dir "./projects/sword_of_destiny" \
+    --workers 4 \
+    --cover "covers/sword_of_destiny.jpg" \
+    --target-lufs -19.0
 ```
 
 ### What Happens Under the Hood:
-1. **Extraction**: The EPUB is dissected into clean Markdown chapters (`audiobooks/projects/the_witcher/extracted/`).
-2. **Translation**: A two-pass dramatic Hindustani translation runs, generating a character glossary (`glossary.json`) and preserving archaic fantasy honorifics.
-3. **Screenplay Scripting**: Dialogue is attributed to distinct characters using sliding-window attribution. Pacing pauses, spatial panning, and acting directives are embedded.
-4. **Speech Synthesis**: Chunks are synthesized concurrently via Gemini 3.1 Flash TTS (`Charon`, `Aoede`, `Puck`, `Fenrir`) using a token-bucket rate limiter.
-5. **Acoustic Directing**: `AgentDirector` carves acoustic silence ($\ge 60\%$), queries the SQLite Sound Bank for musical underscore, and places Foley cues.
-6. **Mastering & Packaging**: FFmpeg normalizes audio to EBU R128 (-19 LUFS), embeds cover art and chapter seek points, and produces `audiobooks/output/the_witcher.m4b`.
+1. **Room 1 (Ingestion)**: Dissects the EPUB with XY-cut layout order, extracts character names into `book_bible.json`, and generates `cast_lock.json`.
+2. **Room 2 (Translation Collective)**: 4-Agent Collective translates prose into dramatic Hindustani (`chapter_XXX_translation.json`), enforcing the Dual-Rule invariant.
+3. **Room 3 (Screenplay & Anti-Swap)**: Attributes dialogue turns, audits for 0% speaker flips, and calculates 4D formant offsets (pitch, tempo, EQ curves).
+4. **Room 4 (Multi-Cast TTS & Editorial)**: Checks TakeBank cache (0 tokens), synthesizes uncached lines via Gemini Flash TTS, and applies DE-01-DE-07 Hann micro-fades.
+5. **Room 5 (Broadcast Mastering)**: Executes two-pass linear loudnorm (-19.0 LUFS / -1.5 dBTP) and packages `final_audiobook.m4b` with embedded cover art.
 
 ---
 
-## 🍳 Recipe 2: Original English Cinematic Audio Drama
+## 🍳 Recipe 2: English-Only Novel Audiobook (`ENGLISH_AUDIOBOOK`)
 
-If your book is already in English and you do not want translation, omit the `--hindi` flag:
+For native English literature where translation is not required, use the `ENGLISH_AUDIOBOOK` preset:
 
 ```bash
-python audiobook_cli.py auto books/dune.epub \
-  --no-hindi \
-  --dramatized \
-  --voice Charon \
-  --cover covers/dune.jpg \
-  --workers 3
+python -m audiobook_factory.cli.run \
+    --preset ENGLISH_AUDIOBOOK \
+    --source "books/Dune.epub" \
+    --project-dir "./projects/dune" \
+    --workers 4 \
+    --cover "covers/dune.jpg"
 ```
 
-- In this mode, Stage 2 (Translation) is bypassed entirely.
-- The Screenplay Builder parses English prose directly into dialogue and narration segments.
-- Full multi-voice casting, dynamic BGM scoring, and sidechain ducking remain active.
+- **Room 2 is completely bypassed**.
+- Room 3 parses the English AST from Room 1 directly into multi-cast screenplay scenes.
+- 4D formants, Stanislavski directing anchors, and EBU R128 mastering execute identically.
 
 ---
 
-## 🍳 Recipe 3: Traditional Single-Narrator Audiobook
+## 🍳 Recipe 3: Multi-Host Research-to-Podcast Engine (`MULTI_HOST_PODCAST`)
 
-For non-fiction, biographies, or classic single-narrator audiobooks without theatrical music or sound effects:
+Convert a research paper, Markdown article, or topic brief into a dual-host conversational banter podcast mastered to podcast broadcast standard (-16.0 LUFS):
 
 ```bash
-python audiobook_cli.py auto books/sapiens.epub \
-  --no-hindi \
-  --no-dramatized \
-  --voice Aoede \
-  --cover covers/sapiens.jpg
+python -m audiobook_factory.cli.run \
+    --preset MULTI_HOST_PODCAST \
+    --source "papers/quantum_computing.pdf" \
+    --project-dir "./projects/quantum_podcast" \
+    --target-lufs -16.0
 ```
 
-- Narrator reads all passages in a clean, consistent voice.
-- Background music is subdued or bypassed.
-- EBU R128 broadcast mastering ensures compliant -19 LUFS output.
+- Generates Host A vs Host B banter dialogue with dynamic conversational turn latencies (-150ms overlap).
+- Synthesizes dialogue using distinct vocal timbres (`Puck` vs `Aoede`).
+- Masters to standard podcast loudness (-16.0 LUFS, -1.0 dBTP).
 
 ---
 
-## 🍳 Recipe 4: Chapter-by-Chapter Modular Production & Creative Direction
+## 🍳 Recipe 4: Surgical Single-Beat Patching & Zero-Cost TakeBank Re-renders
 
-For high-profile projects where you want to audition characters, adjust delivery style, and fine-tune soundscapes before rendering:
+If you notice a typo in a single translated sentence or wish to tweak an actor's voice line:
 
-### Step 1: Ingest and Extract
+### Step 1: Patch the Single Beat
 ```bash
-python audiobook_cli.py extract books/chapter_one_sample.epub
-# Creates: audiobooks/projects/chapter_one_sample/
+python -m audiobook_factory.cli.translate \
+    --chapter 3 \
+    --patch-beat "ch03_beat012" \
+    --text "विचर ने तलवार म्यान से खींची और धीमी आवाज़ में बोला।" \
+    --project-dir "./projects/sword_of_destiny"
 ```
 
-### Step 2: Generate Screenplay Scripts
+### Step 2: Reconcile Dirty Stages
 ```bash
-python audiobook_cli.py script chapter_one_sample --dramatized
-# Creates: audiobooks/projects/chapter_one_sample/scripts/chapter_001_script.json
+python -m audiobook_factory.cli.run \
+    --reconcile-dirty \
+    --project-dir "./projects/sword_of_destiny"
 ```
 
-### Step 3: Inspect & Customize Screenplay
-Open `chapter_001_script.json` in your editor. You can fine-tune any segment:
-```json
-{
-  "index": 14,
-  "type": "dialogue",
-  "speaker": "Geralt",
-  "text": "People like to invent monsters and monstrosities.",
-  "emotion": "melancholic_weary",
-  "acting": {
-    "delivery_style": "low_growl_cynical",
-    "pacing": 0.95
-  },
-  "spatial": {
-    "pan": -0.15,
-    "proximity": "close_mic"
-  },
-  "acoustic_env": "stone_hall",
-  "intensity_level": "medium"
-}
-```
-
-### Step 4: Synthesize Audio
-```bash
-python audiobook_cli.py synthesize chapter_one_sample --voice Aoede --workers 3
-```
-
-### Step 5: Build Master Timeline Ledger
-```bash
-python audiobook_cli.py timeline chapter_one_sample --chapter 1 --stitch
-# Assembles sample-accurate continuous dialogue: chapter_001_dialogue.wav
-```
-
-### Step 6: Direct Soundscape
-```bash
-python audiobook_cli.py direct chapter_one_sample --chapter 1
-# Emits validated CreativeManifest: manifests/chapter_001_manifest.json
-```
-
-### Step 7: Render Master Audio
-```bash
-python audiobook_cli.py render \
-  --manifest audiobooks/projects/chapter_one_sample/manifests/chapter_001_manifest.json \
-  --vocal audiobooks/projects/chapter_one_sample/mastered/chapter_001_dialogue.wav
-```
-
-### Step 8: Package Final Container
-```bash
-python audiobook_cli.py package chapter_one_sample --cover covers/cover.jpg
-```
+### What Happens:
+- The **Diff Reconciler** detects that only `ch03_beat012` changed.
+- Out of 129 chapter segments, **128 segments hit the TakeBank cache** ($0\text{ms}$ delay, 0 API tokens).
+- Only 1 segment is synthesized via TTS.
+- Tier 2 Local Assembly stitches and masters the new chapter in $< 15$ seconds!
 
 ---
 
-## 🍳 Recipe 5: Handling Daily API Quotas & Resuming Interrupted Runs
+## 🍳 Recipe 5: Interactive Directing in Antigravity Webview Studio Panel
 
-If your Google AI Studio daily API token quota is reached during synthesis, production is never lost:
-
-1. **State Preservation**: The [`ProjectStateLedger`](file:///c:/Users/Suraj/Documents/Antigravity/Audiobook/audiobook_factory/state.py) automatically commits state to `project_state.json`. Every successfully generated `.wav` chunk remains safely on disk in `audio_chunks/`.
-2. **Quota Reset**: After the quota resets (or after updating `.env` with a fresh API key), simply rerun the same command:
-   ```bash
-   python audiobook_cli.py produce witcher1 --all
-   ```
-3. **Smart Resume**: The TTS Dispatcher probes existing chunks on disk, skips all segments already synthesized, and resumes seamlessly from the exact unrendered segment.
+1. **Launch Studio Panel**: Open Antigravity IDE and click the **Audiobook Studio** icon in the Aux Pane.
+2. **Inspect 5-Room Stepper**: Observe visual stage indicators (`PASS` in green, `DIRTY` in amber).
+3. **Dual-Pane Translation Editing**: Click **Room 2** in the stepper to open parallel English $\leftrightarrow$ Hindi text. Edit any line directly.
+4. **4D Formant Tuning**: Click **Room 3** to open the Cast Board. Adjust pitch slider to $-6\%$ or speed to $0.95\times$. Click `[🔒 Lock Segment]` to protect human casting.
+5. **1-Click Audition**: Click `[🔊 Audition Line]` on any segment to generate and hear the speech take in $< 1.5$s inside the IDE.
+6. **Sticky Audio Dock**: Click `[▶ Play]` in the bottom dock to listen to the continuous master track while observing the real-time EBU R128 (-19.0 LUFS) compliance badge.
 
 ---
 
-## 🍳 Recipe 6: Exporting Discrete 5-Track DME Stems for Professional DAWs
+## 🍳 Recipe 6: Independent Multi-Gate Verification
 
-If a sound engineer wishes to perform custom mastering or surround mixing in Pro Tools, Reaper, Logic Pro, or Audacity:
-
-```bash
-# Verify exported stems for Chapter 1
-python audiobook_cli.py stems witcher1 --chapter 1
-```
-
-The stems reside at `audiobooks/projects/witcher1/mastered/stems/`:
-- **`chapter_001_stem_DX.wav`**: Dry/Processed Voice Dialogue (Vocal Corridor Centered).
-- **`chapter_001_stem_MX.wav`**: Musical Score & Cues (with 2.2kHz notch).
-- **`chapter_001_stem_FX.wav`**: Tactile Foley & Dramatic SFX.
-- **`chapter_001_stem_AMB.wav`**: Environmental Background Bed (-32 LUFS).
-- **`chapter_001_stem_ME.wav`**: Combined Music & Effects (International Dubbing Stem).
-
-Accompanying ledger: `chapter_001_stem_ledger.json` contains exact integrated LUFS and True Peak metrics for each stem.
-
----
-
-## 🍳 Recipe 7: Quality Verification & Audit
-
-Before distributing your audiobook to platforms, verify broadcast compliance:
+Run quality gates to certify broadcast and linguistic compliance:
 
 ```bash
-# 1. Audit individual chapter (Gates 0 - 5.3)
-python audiobook_cli.py audit witcher1 --chapter 1
+# Audit Room 1 AST Ingestion Gate (Gate 0.1)
+python -m audiobook_factory.cli.audit --gate GATE_0_1_INGEST --project-dir "./projects/sword_of_destiny"
 
-# 2. Run full-book macro certification (Gates 6A - 6D)
-python audiobook_cli.py audit-book witcher1
+# Audit Room 3 Anti-Swap Attribution Gate (Gate 2.0 - 0% Speaker Flips)
+python -m audiobook_factory.cli.audit --gate GATE_2_0_SCREENPLAY --chapter 3 --project-dir "./projects/sword_of_destiny"
+
+# Audit Room 5 EBU R128 Broadcast Mastering Gate (Gate 5.0 - -19 LUFS / -1.5 dBTP)
+python -m audiobook_factory.cli.audit --gate GATE_5_0_MASTER --chapter 3 --project-dir "./projects/sword_of_destiny"
 ```
-
-### Understanding Audit Output:
-- `Gate 0 (Translation)`: Ratio of translated characters vs source characters and Devanagari purity.
-- `Gate 1 (Voice Roster)`: Asserts zero voice persona collisions and verified acoustic gender alignment across cast.
-- `Gate 2 (Screenplay)`: Confirms Pydantic v2 schema compliance and fail-closed canonical speaker whitelist (zero voice drift).
-- `Gate 3 & 3.5 (Acoustic Feasibility)`: Validates sound bank asset existence and dynamic acoustic cues prior to rendering.
-- `Gate 4.5 (Timeline)`: Confirms pre-roll breath buffers and sample-accurate continuous dialogue alignment.
-- `Gate 5 (Broadcast Master)`: Integrated loudness $-19.0 \pm 0.5$ LUFS, True Peak $\le -1.5$ dBTP.
-- `Gate 6A-6D`: Cross-chapter voice continuity, TOC monotonicity, and container packaging compliance.
-

@@ -1,165 +1,212 @@
-# 💻 CLI Reference: Audiobook Studio Engine
+# 💻 CLI Reference Manual
 
-## Overview
+**Standard**: `v6.0-ENTERPRISE-DAG` & `v6.0-STUDIO-UI`  
+**Package Namespace**: `audiobook_factory.cli` & `audiobook_factory.api`  
+**Classification**: Command-Line Operations & IPC Bridge Reference  
 
-The Audiobook Studio Command-Line Interface ([`audiobook_cli.py`](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/audiobook_cli.py)) provides operational control over the entire studio-grade vocal production pipeline. You can run an autonomous end-to-end novel production run with a single command or execute granular subcommands stage-by-stage.
+---
+
+## 1. Overview & Entrypoint Architecture
+
+The Audiobook Studio command-line suite provides two tiers of operational control:
+1. **Autonomous DAG Orchestration**: High-level execution of dynamic multi-room presets (`AUDIOBOOK_STUDIO`, `ENGLISH_AUDIOBOOK`, `MULTI_HOST_PODCAST`, `STANDALONE_TRANSLATION`).
+2. **Standalone Room Subsystems**: Independent, surgical CLI entrypoints for Rooms 1 through 5.
+3. **Studio Panel IPC Bridge**: Structured JSON-over-stdout CLI interface for the Antigravity Webview sidecar.
 
 ```bash
-# Entrypoint via installed CLI or Python:
-audiobook-studio [COMMAND] [OPTIONS]
-# or:
-python audiobook_cli.py [COMMAND] [OPTIONS]
+# Top-level autonomous DAG runner:
+python -m audiobook_factory.cli.run --preset <PRESET> [OPTIONS]
+
+# Standalone Room Subsystems:
+python -m audiobook_factory.cli.ingest [OPTIONS]
+python -m audiobook_factory.cli.translate [OPTIONS]
+python -m audiobook_factory.cli.screenplay [OPTIONS]
+python -m audiobook_factory.cli.synth [OPTIONS]
+python -m audiobook_factory.cli.master [OPTIONS]
+python -m audiobook_factory.cli.package [OPTIONS]
+
+# Studio Panel Sidecar IPC Bridge:
+python -m audiobook_factory.api.studio_bridge <COMMAND> [OPTIONS]
 ```
 
 ---
 
-## 🧭 Active Production Command Matrix
+## 2. Master Autonomous DAG Runner (`cli.run`)
 
-| Subcommand | Scope | Description |
+Executes dynamic end-to-end production pipelines, resolving dependency stages, checking SQLite ledger status, and invalidating dirty segments.
+
+```bash
+python -m audiobook_factory.cli.run --preset <PRESET> [OPTIONS]
+```
+
+### Options & Flags
+| Flag | Type | Default | Description |
+|:---|:---:|:---:|:---|
+| `--preset` | Choice | `AUDIOBOOK_STUDIO` | Pipeline Preset: `AUDIOBOOK_STUDIO`, `ENGLISH_AUDIOBOOK`, `MULTI_HOST_PODCAST`, `STANDALONE_TRANSLATION`. |
+| `--source` | Path | `None` | Path to source manuscript (`.epub`, `.pdf`, `.txt`, `.md`). |
+| `--project-dir` | Path | Required | Path to output project working directory. |
+| `--workers` | Integer | `3` | Number of concurrent Gemini Flash TTS workers. |
+| `--voice` | String | `Aoede` | Default narrator voice persona. |
+| `--target-lufs` | Float | `-19.0` | EBU R128 integrated loudness target (-19.0 for Audiobooks, -16.0 for Podcasts). |
+| `--cover` | Path | `None` | Path to cover artwork image (JPEG/PNG). |
+| `--reconcile-dirty`| Flag | `False` | Only re-run stages and takes that are marked dirty in SQLite ledger. |
+| `--fidelity-tier` | Choice | `RAW_UNRATED` | Translation mode: `RAW_UNRATED` or `CLASSIC_REVERENT`. |
+
+### Examples
+```bash
+# Full 5-Room Hindi Novel Audiobook:
+python -m audiobook_factory.cli.run \
+    --preset AUDIOBOOK_STUDIO \
+    --source "books/Sword_of_Destiny.epub" \
+    --project-dir "./projects/sword_of_destiny" \
+    --workers 4
+
+# English-Only Novel (Room 2 Bypassed):
+python -m audiobook_factory.cli.run \
+    --preset ENGLISH_AUDIOBOOK \
+    --source "books/Dune.epub" \
+    --project-dir "./projects/dune"
+
+# Reconcile Dirty Stages After Manual Script / Translation Edits:
+python -m audiobook_factory.cli.run \
+    --reconcile-dirty \
+    --project-dir "./projects/sword_of_destiny"
+```
+
+---
+
+## 3. Standalone Room Subsystem CLIs
+
+### 3.1 Room 1: Forensic Ingestion (`cli.ingest`)
+Parses source manuscripts into character-accurate AST representations, harvests entities, and initializes project bibles.
+
+```bash
+python -m audiobook_factory.cli.ingest \
+    --source "books/Sword_of_Destiny.epub" \
+    --project-dir "./projects/sword_of_destiny" \
+    --fidelity-tier RAW_UNRATED
+```
+- **Outputs**: `raw_book_manifest.json`, `book_bible.json`, `cast_lock.json`.
+
+---
+
+### 3.2 Room 2: Translation Collective (`cli.translate`)
+Translates extracted chapters into literary dramatic Hindustani with surgical single-beat patching capability.
+
+```bash
+# Full chapter translation:
+python -m audiobook_factory.cli.translate \
+    --chapter 3 \
+    --mode RAW_UNRATED \
+    --project-dir "./projects/sword_of_destiny"
+
+# Surgical single-beat patch:
+python -m audiobook_factory.cli.translate \
+    --chapter 3 \
+    --patch-beat "ch03_beat012" \
+    --text "विचर ने तलवार म्यान से खींची और धीमी आवाज़ में बोला।" \
+    --project-dir "./projects/sword_of_destiny"
+```
+- **Outputs**: `chapter_XXX_translation.json`.
+
+---
+
+### 3.3 Room 3: Screenplay & Anti-Swap Dramaturgy (`cli.screenplay`)
+Parses translated prose into screenplay dialogue turns, audits for 0% speaker swaps, and stages 4D acoustic formants.
+
+```bash
+# Build chapter screenplay:
+python -m audiobook_factory.cli.screenplay \
+    --chapter 3 \
+    --project-dir "./projects/sword_of_destiny"
+
+# Reconcile dirty segments while preserving user-locked lines:
+python -m audiobook_factory.cli.screenplay \
+    --chapter 3 \
+    --reconcile-dirty \
+    --project-dir "./projects/sword_of_destiny"
+```
+- **Outputs**: `chapter_XXX_screenplay.json`.
+
+---
+
+### 3.4 Room 4: Multi-Cast TTS & Dialogue Editorial (`cli.synth`)
+Resolves existing audio takes from TakeBank (0 tokens) and synthesizes uncached segments via Gemini Flash TTS with DE-01-DE-07 editorial assembly.
+
+```bash
+python -m audiobook_factory.cli.synth \
+    --chapter 3 \
+    --workers 4 \
+    --editorial-preset "natural" \
+    --project-dir "./projects/sword_of_destiny"
+```
+- **Outputs**: `chapter_XXX_dialogue.wav`, `timeline_ledger.json`.
+
+---
+
+### 3.5 Room 5: Broadcast Vocal Mastering & Packaging (`cli.master` & `cli.package`)
+
+```bash
+# Master individual chapter to EBU R128 (-19.0 LUFS):
+python -m audiobook_factory.cli.master \
+    --chapter 3 \
+    --target-lufs -19.0 \
+    --project-dir "./projects/sword_of_destiny"
+
+# Package complete novel into chaptered M4B container:
+python -m audiobook_factory.cli.package \
+    --cover "assets/cover.jpg" \
+    --project-dir "./projects/sword_of_destiny"
+```
+- **Outputs**: `chapter_XXX_mastered.m4a`, `final_audiobook.m4b`.
+
+---
+
+## 4. Studio Panel IPC Bridge (`api.studio_bridge`)
+
+The IPC Bridge provides structured JSON communication between the Node.js Sidecar (`main.mjs`) and the Python platform engine.
+
+```bash
+# 1. Health & KeyPool Status
+python -m audiobook_factory.api.studio_bridge status
+
+# 2. List All Active Projects
+python -m audiobook_factory.api.studio_bridge list-projects
+
+# 3. Get Chapter & Roster Details for Project
+python -m audiobook_factory.api.studio_bridge project-detail --slug "sword_of_destiny"
+
+# 4. Surgically Patch a Screenplay Segment & Invalidate Hash
+python -m audiobook_factory.api.studio_bridge patch-segment \
+    --slug "sword_of_destiny" \
+    --chapter 3 \
+    --segment-id "ch03_seg045" \
+    --voice "Puck" \
+    --pitch -0.06 \
+    --text "विचर ने आगे बढ़कर जवाब दिया।"
+
+# 5. Run Single-Sentence Scratch Audition (< 1.5s)
+python -m audiobook_factory.api.studio_bridge audition \
+    --voice "Charon" \
+    --pitch -0.04 \
+    --speed 0.95 \
+    --text "सावधान रहो! वह कोई साधारण दानव नहीं है।"
+```
+
+---
+
+## 5. Backward-Compatible CLI (`audiobook_cli.py`)
+
+For legacy scripts and existing pipelines, `audiobook_cli.py` maps traditional subcommands directly to the underlying DAG architecture:
+
+| Subcommand | Underlying Room / Engine | Description |
 |---|---|---|
-| **[`auto`](#1-autonomous-production-auto)** | Full Book | 1-Click autonomous pipeline (Extract $\rightarrow$ Translate $\rightarrow$ Script $\rightarrow$ Synth $\rightarrow$ Master $\rightarrow$ Package). |
-| **[`produce`](#2-chapter-production-produce)** | Chapter / All | Produces high-fidelity vocal chapters with EBU R128 (-19 LUFS) and timeline ledger. |
-| **[`extract`](#3-universal-document-extraction-extract)** | Ingestion | Ingests EPUB, PDF, TXT, or MD documents into clean Markdown chapters. |
-| **[`translate`](#4-literary-translation-translate)** | Translation | Translates extracted chapters into literary dramatic Hindustani with Translation Collective. |
-| **[`script`](#5-screenplay-scripting-script)** | Screenplay | Parses prose into standardized screenplay JSON with speaker attribution and acting tags. |
-| **[`synthesize`](#6-speech-synthesis-synthesize)** | Audio (TTS) | Synthesizes dialogue chunks using Google Gemini Flash Cloud TTS and 4D acoustic formants. |
-| **[`master`](#7-vocal-dsp-mastering-master)** | Mastering | Concatenates vocal chunks with 5-stage DSP chain and EBU R128 loudness normalization. |
-| **[`package`](#8-m4b-container-packaging-package)** | Delivery | Packages all mastered chapters into a chapterized `.m4b` container with cover art. |
-| **[`audit`](#9-chapter-quality-audit-audit)** | QA (Chapter) | Runs Multi-Gate Independent Verification (Gates 0, 1, 2, 2.5, 2.8) on a specific chapter. |
-| **[`audit-book`](#10-full-book-macro-audit-audit-book)** | QA (Macro) | Runs Macro-Tier Gate 6 certification (Voice Continuity, Loudness, TOC Monotonicity). |
-
----
-
-## 1. Autonomous Production (`auto`)
-
-Executes the entire pure vocals-only pipeline autonomously in a single command.
-
-```bash
-python audiobook_cli.py auto <FILE> [OPTIONS]
-```
-
-### Positional Arguments
-- `FILE`: Path to input book file (`.epub`, `.pdf`, `.txt`, `.md`).
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--hindi` | Flag | `False` | Translate English source text to literary Hindustani. |
-| `--backend` | Choice | `gemini_tts` | Speech synthesis backend (`gemini_tts`). |
-| `--voice` | String | `Aoede` | Lead voice persona (`Aoede`, `Charon`, `Puck`, `Fenrir`, `Zephyr`, `Kore`, `Leda`, `Orpheus`). |
-| `--dramatized` | Flag | `False` | Multi-voice character casting vs single narrator reading. |
-| `--cover` | Path | `None` | Path to cover artwork image (JPEG/PNG, min $1400 \times 1400$ px). |
-| `--workers` | Integer | `3` | Number of concurrent TTS synthesis worker threads. |
-| `--force-gate` | Flag | `False` | Bypass Ingestion Quality Gate REVIEW warning and force production. |
-
-### Example
-```bash
-python audiobook_cli.py auto "C:/path/to/novel.epub" --hindi --dramatized --voice Aoede --workers 3
-```
-
----
-
-## 2. Chapter Production (`produce`)
-
-Produces mastered vocal chapters with EBU R128 (-19 LUFS) and timeline ledgers.
-
-```bash
-python audiobook_cli.py produce <BOOK_SLUG> [OPTIONS]
-```
-
-### Positional Arguments
-- `BOOK_SLUG`: Project folder slug under `audiobooks/projects/`.
-
-### Options
-| Flag | Type | Default | Description |
-|---|:---:|:---:|---|
-| `--chapter` | Integer | `None` | Specific chapter number to produce (e.g. `--chapter 1`). |
-| `--all` | Flag | `False` | Produce all chapters in sequence. |
-| `--voice` | String | `Aoede` | Lead narrator voice persona. |
-| `--workers` | Integer | `3` | Number of concurrent TTS synthesis worker threads. |
-
----
-
-## 3. Universal Document Extraction (`extract`)
-
-Ingests any digital book into clean, segmented Markdown chapters.
-
-```bash
-python audiobook_cli.py extract <FILE> [--force-gate]
-```
-
----
-
-## 4. Literary Translation (`translate`)
-
-Translates extracted chapters into literary dramatic Hindustani using the 4-Agent Translation Collective.
-
-```bash
-python audiobook_cli.py translate <BOOK_SLUG> [--model <MODEL>]
-```
-
----
-
-## 5. Screenplay Scripting (`script`)
-
-Parses chapter prose into standardized screenplay JSON with speaker attribution, 4D formant metadata, and Stanislavski acting cues.
-
-```bash
-python audiobook_cli.py script <BOOK_SLUG> [--hindi] [--dramatized]
-```
-
----
-
-## 6. Speech Synthesis (`synthesize`)
-
-Synthesizes dialogue segments via Google Gemini Flash TTS with 4D acoustic formant modulation.
-
-```bash
-python audiobook_cli.py synthesize <BOOK_SLUG> [--voice <VOICE>] [--backend gemini_tts]
-```
-
----
-
-## 7. Vocal DSP Mastering (`master`)
-
-Concatenates speech segments with Hann micro-fades and normalizes to EBU R128 (-19 LUFS) at 48kHz / 24-bit.
-
-```bash
-python audiobook_cli.py master <BOOK_SLUG>
-```
-
----
-
-## 8. M4B Container Packaging (`package`)
-
-Assembles all mastered chapters into a final chapterized `.m4b` container with TOC navigation and embedded cover art.
-
-```bash
-python audiobook_cli.py package <BOOK_SLUG> [--cover <IMAGE_PATH>] [--enforce-gate6]
-```
-
----
-
-## 9. Chapter Quality Audit (`audit`)
-
-Executes Multi-Gate Independent Verification on a single chapter.
-
-```bash
-python audiobook_cli.py audit <BOOK_SLUG> --chapter <NUM>
-```
-
----
-
-## 10. Full-Book Macro Audit (`audit-book`)
-
-Executes Macro-Tier Gate 6 certification across the entire novel project.
-
-```bash
-python audiobook_cli.py audit-book <PROJECT_DIR_OR_SLUG>
-```
-
----
-
-## 📦 Archived Subsystems Notice
-
-The legacy subcommands (`direct`, `render`, `bgm`, `stems`, `bank`) belong to the decoupled 5-track cinematic audio engine and are archived in `archive/cinematic_audio/`. They are not part of the active Vocals-Only pipeline.
+| `auto` | `dag.orchestrator` | 1-Click autonomous novel pipeline. |
+| `extract` | `room1_ingest` | Document parsing and lore extraction. |
+| `translate` | `room2_translate` | Literary Hindustani Translation Collective. |
+| `script` | `room3_screenplay` | Screenplay building & anti-swap attribution. |
+| `synthesize`| `room4_synth` | Multi-voice TTS & TakeBank caching. |
+| `master` | `room5_master` | Two-pass EBU R128 linear loudness mastering. |
+| `package` | `room5_master.packager` | Chaptered `.m4b` container assembly. |
+| `audit` | `quality_gates` | Single-chapter gate verification. |
+| `audit-book`| `quality_gates.macro` | Full-novel certification. |

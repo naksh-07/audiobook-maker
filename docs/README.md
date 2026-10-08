@@ -1,46 +1,61 @@
-# 📖 Audiobook Studio Documentation Hub (Antigravity Plugin & Studio Engine v5.2)
+# 📖 Audiobook Studio Documentation Hub
 
-Welcome to the comprehensive documentation suite for **Audiobook Studio** — the studio-grade multi-voice audiobook production framework and Google Antigravity Plugin.
-
-> [!IMPORTANT]
-> **Active Production Engine: Pure Vocals-Only**:
-> Production is 100% focused on Audible-standard vocal excellence, character acting, 4D acoustic formants, and broadcast EBU R128 (-19 LUFS) vocal mastering. Legacy 5-track BGM/SFX mixdown systems are archived in `archive/cinematic_audio/`.
+**Standard**: `v6.0-ENTERPRISE-DAG` & `v6.0-STUDIO-UI`  
+**System**: Studio Audio Production & Vocal Mastering Engine  
+**Platform**: Google Antigravity Plugin & Standalone Python/Node.js Framework  
 
 ---
 
-## 🧭 Active Production Documentation Map
+## 🏛️ Authoritative Architecture & Specification Suite
+
+The table below catalogs the authoritative specification suite governing the **v6.0-ENTERPRISE-DAG** decoupled architecture:
+
+| Specification Manual | Scope & Focus | Key Subsystems & Concepts |
+|---|---|---|
+| **[🏛️ Master Architecture (MAS-001)](ARCHITECTURE.md)** | Master topology & invariants | Hexagonal topology, 2-Tier Content-Addressed TakeBank cache, SQLite WAL ledger DDL (`pipeline_ledger.db`), ADR-008. |
+| **[🎛️ Plugin UI & Studio Sidecar](STUDIO_UI_AND_SIDECAR_SPECIFICATION.md)** | Antigravity UI Extension | Aux Pane Webview Sidecar, 4 Visual Zones, Dual-Column Translation Editor, 4D Formant Cast Board, Audio Dock, IPC Bridge. |
+| **[📜 Data Contracts & Schemas](CONTRACTS_AND_SCHEMAS.md)** | Pydantic v2 strict models | `schema_version: "2.0"` contracts for all 5 rooms, deterministic canonical SHA-256 serialization. |
+| **[⚙️ Core Platform Foundation](CORE_PLATFORM_SPECIFICATION.md)** | Shared decoupled services | 120+ KeyPool rotation, Tier-1 ModelManager (`BLOCK_NONE`), TakeBank LRU cache, DE-01-DE-07 DSP, Two-Pass EBU R128 Loudnorm. |
+| **[🚪 Subsystems Specification (Rooms 1 - 5)](SUBSYSTEM_SPECIFICATIONS.md)** | Standalone room engines | Room 1 Ingestion, Room 2 Translation Collective, Room 3 Screenplay & Anti-Swap QA, Room 4 TTS & Editorial, Room 5 Broadcast Master. |
+| **[🎛️ DAG Presets & Orchestration](DAG_ORCHESTRATION_AND_PRESETS.md)** | Top-level DAG runner | Dynamic Presets (`AUDIOBOOK_STUDIO`, `ENGLISH_AUDIOBOOK`, `MULTI_HOST_PODCAST`, `STANDALONE_TRANSLATION`), Diff Reconciler. |
+| **[🗺️ Migration & Testing Blueprint](plans/v6_implementation_and_migration_blueprint.md)** | Implementation roadmap | 6-Phase migration plan, target package layout, unit/integration test matrices, Definition of Done. |
+| **[🛠️ Developer & Contributor Guide](DEVELOPER_GUIDE.md)** | Setup & workflow | Python 3.10+ / Node.js 18+ / FFmpeg setup, running tests, sidecar local debugging, Git hygiene. |
+
+---
+
+## 🧭 Deep-Dive Domain Manuals
 
 | Guide | Description | Target Audience |
 |---|---|---|
-| **[📜 Forensic Literary Ingestion (Pillar 1)](FORENSIC_DOCUMENT_INGESTION.md)** | Authoritative guide to the CanonicalBook AST, sacred raw archival, structural EPUB/PDF engines, and Gate 0.1 extraction audits. | System Architects, Engineers |
-| **[🧠 Literary Translation Intelligence (Pillar 2)](LITERARY_TRANSLATION_INTELLIGENCE.md)** | Complete guide to the 4-Agent Translation Collective, BookBible v2.0, Contextual Hindustani Register, and Dual-Rule Invariant. | Literary Translators, NLP Engineers |
-| **[🎭 Dramatic Adaptation & Screenplay (Stage 3)](DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Authoritative guide to the Stage 3 Dramaturgy Engine, DialogueAttributionAuditor, and Gate 2.5 fidelity audits. | Dramaturges, Directing Agents |
-| **[🎭 Performance Realization & Actor Direction](PERFORMANCE_REALIZATION_AND_ACTOR_DIRECTION.md)** | Manual for performance directions, timing realizer, multi-take banking, and Gate 2.8 pre-mix verification. | Directing Agents, Quality Engineers |
-| **[🎙️ Gemini Flash TTS Engine & Directing](GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)** | Guide to multimodal generative speech, speech tags, turn-level style directives, Devanagari synthesis, and token-bucket key pool. | Audio Engineers, Developers |
-| **[🎭 Voice Casting & 4D Formants](VOICE_CASTING_DIRECTOR_GUIDE.md)** | Guide to 4D acoustic formant matrices (pitch $\pm 4-12\%$, tempo, parametric EQ curves), character dossiers, and non-colliding voice allocation. | Casting Directors, Dramaturges |
-| **[🇮🇳 Complete Hindi Voice Catalog](HINDI_VOICE_CATALOG.md)** | Catalog of 114 native Hindi voices across Awadhi, Bhojpuri, Haryanvi, Bundeli, and Urdu/Delhi dialects with age and timbre classifications. | Casting Directors, Dramaturges |
-| **[✂️ Dialogue Editorial Layer (DE-01 - DE-07)](DIALOGUE_EDITORIAL_LAYER.md)** | Intelligent endpoint zero-crossing snapping, Hann micro-fades (12ms/18ms), contextual turn latencies, and fail-closed QC. | Dialogue Editors, Audio Engineers |
-| **[🏛️ Architecture Blueprint](ARCHITECTURE.md)** | Deep dive into the 5-Room Pure Vocals-Only Architecture and autonomous pipeline lifecycle. | System Architects, Developers |
-| **[🎛️ Audio Engineering & Vocal Mastering](AUDIO_ENGINEERING.md)** | EBU R128 broadcast mastering (-19 LUFS vocal target, -1.5 dBTP), SOXR 48kHz / 24-bit studio pipeline, and M4B packaging. | Audio Engineers, Mastering Specialists |
-| **[🛡️ Audit Remediation & Hardening](AUDIT_REMEDIATION_AND_HARDENING.md)** | Exhaustive engineering record of Phases 1 through 6 forensic audit fixes and zero-hardcoding invariants. | System Architects, Engineers |
-| **[💻 CLI Reference](CLI_REFERENCE.md)** | Complete syntax and flags for all 10 production commands (`auto`, `produce`, `extract`, `translate`, `script`, `synthesize`, `master`, `package`, `audit`, `audit-book`). | Developers, Operators |
-| **[🛡️ Quality Gates Manual](QUALITY_GATES.md)** | Comprehensive specifications for Gates 0.1 through 6E, Translation Gates T0 through T15, and fail-closed audit protocol. | QA Engineers, Audio Engineers |
-| **[🛠️ Developer & Contributor Guide](DEVELOPER_GUIDE.md)** | Local environment setup, virtual environment, and running the 805-test suite (100% green). | Contributors, Maintainers |
+| **[📜 Forensic Ingestion Engine](FORENSIC_DOCUMENT_INGESTION.md)** | Geometric XY-cut layout reconstructor, character-accurate `SourceProvenance`, and Gate 0.1 AST monotonicity. | System Architects, NLP Engineers |
+| **[🧠 Literary Translation Intelligence](LITERARY_TRANSLATION_INTELLIGENCE.md)** | 4-Agent Translation Collective, Dual-Rule Invariant (`CLASSIC_REVERENT` vs `RAW_UNRATED`), and Tri-Partite Entity Partition. | Literary Translators, NLP Engineers |
+| **[🎭 Dramatic Adaptation & Screenplay](DRAMATIC_ADAPTATION_AND_SCREENPLAY.md)** | Prose-to-screenplay parser, Gate 2.0 Anti-Swap attribution audit (0% $A \leftrightarrow B$ flips), and physical acting directives. | Dramaturges, Directing Agents |
+| **[🎭 Voice Casting & 4D Formants](VOICE_CASTING_DIRECTOR_GUIDE.md)** | 4D acoustic formant matrices (pitch $\pm 4-12\%$, tempo, parametric EQ curves), character dossiers, and non-colliding casting. | Casting Directors, Dramaturges |
+| **[🇮🇳 Complete Hindi Voice Catalog](HINDI_VOICE_CATALOG.md)** | Catalog of 114 native Hindi voices across Awadhi, Bhojpuri, Haryanvi, Bundeli, and Urdu/Delhi dialects with timbre classifications. | Casting Directors, Dramaturges |
+| **[🎙️ Gemini Flash TTS Directing](GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)** | Generative neural speech synthesis, speech tags, Stanislavski directives, and token-bucket concurrency. | Audio Engineers, Developers |
+| **[✂️ Dialogue Editorial Layer (DE-01 - DE-07)](DIALOGUE_EDITORIAL_LAYER.md)** | Endpoint zero-crossing snapping (-52 dBFS), Hann micro-fades (12ms/18ms), dynamic pause realization, and breath attenuation. | Dialogue Editors, Audio Engineers |
+| **[🎛️ Audio Engineering & Vocal Mastering](AUDIO_ENGINEERING.md)** | Two-pass measured linear loudnorm (EBU R128 -19.0 LUFS / -1.5 dBTP), Kaiser Sinc 48kHz / 24-bit PCM, and M4B packaging. | Audio Engineers, Mastering Specialists |
+| **[🛡️ Quality Gates Specifications](QUALITY_GATES.md)** | Comprehensive specifications for fail-closed quality verification (Gates 0.1 through 5.0). | QA Engineers, Audio Engineers |
+| **[💻 CLI Reference Manual](CLI_REFERENCE.md)** | Complete CLI syntax for autonomous DAG runs, standalone room subcommands, and Sidecar IPC bridges. | Developers, Operators |
+| **[🎓 End-to-End Production Tutorial](TUTORIAL_E2E.md)** | Step-by-step recipes for full novel production, English-only novels, podcasts, surgical beat patching, and UI directing. | Developers, Directors |
+| **[🤖 AI Agent & MCP Integration](MCP_AGENT_INTEGRATION.md)** | Directing `@audiobook-director` assistant, Antigravity skills, and MCP tool schemas. | Agent Architects, Integrators |
 
 ---
 
 ## 📦 Decoupled & Archived Subsystems
 
-The following documents describe the decoupled 5-track cinematic BGM/SFX mixdown engine, which is safely archived in `archive/cinematic_audio/` and is **NOT part of the active production pipeline**:
-- **[🎬 Cinematic Mix v2 Architecture](CINEMATIC_MIX_ARCHITECTURE.md)** *(Archived)*
+The legacy 5-track cinematic audio engine (dynamic BGM scoring, sound bank FTS5 search, and multitrack Foley mixdowns) has been permanently decoupled and archived in `archive/cinematic_audio/`:
+- **[🎬 Cinematic Mix Architecture](CINEMATIC_MIX_ARCHITECTURE.md)** *(Archived)*
 - **[🎬 Cinematic Sound Design & Adult Fidelity](CINEMATIC_SOUND_DESIGN_AND_ADULT_FIDELITY.md)** *(Archived)*
 - **[🎵 Commercial Sound Design Subsystem](CINEMATIC_SOUND_DESIGN_SUBSYSTEM.md)** *(Archived)*
 - **[🎹 Sound Bank & Asset Catalog](SOUND_BANK.md)** *(Archived)*
 
 ---
 
-## ⚡ Quick Links
+## ⚡ Quick Repository Links
 - Root Project Portal: [`README.md`](../README.md)
 - Core Python Engine: [`audiobook_factory/`](../audiobook_factory/)
+- Sidecar Webview Studio Panel: [`sidecars/studio-panel/`](../sidecars/studio-panel/)
+- Antigravity Plugin Rules: [`rules/AGENTS.md`](../rules/AGENTS.md)
+- Antigravity Director Agent: [`agents/audiobook-director.md`](../agents/audiobook-director.md)
 - Test Suite: [`tests/`](../tests/)
-- Agent Skills: [`.agents/skills/`](../.agents/skills/)

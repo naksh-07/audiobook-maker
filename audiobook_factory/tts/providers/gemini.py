@@ -354,7 +354,7 @@ def synthesize_gemini_tts(
                         safe_emotion = (emotion or "").lower()
                         is_whisper = ("whisper" in text.lower() or "whisper" in safe_emotion or "tender" in safe_emotion or "intimate" in safe_emotion or "breathy" in safe_emotion)
                         faint_limit = 8.0 if is_whisper else 20.0
-                        is_silent_faint = (peak_amp > 0 and word_count >= 3 and rms < faint_limit)
+                        is_silent_faint = (peak_amp == 0 or (word_count >= 3 and rms < faint_limit))
                         is_dc_corrupted = (peak_amp > 0 and dur_sec >= 2.0 and dc_offset > 1500.0)
                         is_stutter = (word_count > 3 and ratio > 3.2 and dur_sec >= 15.0)
                         is_empty = (dur_sec < 0.20 and word_count >= 3)

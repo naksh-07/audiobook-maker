@@ -213,11 +213,12 @@ The escape of the Brazilian boa constrictor earned Harry his longest-ever punish
     def test_09_tts_hallucination_stutter_guard(self):
         """Verify synthesize_gemini_tts detects unnatural duration-to-word stutter and retries."""
         import base64
+        import struct
         from audiobook_factory.tts_dispatcher import synthesize_gemini_tts
 
         # 4 words generated into 16.0s (ratio 4.0s/word > 3.2 threshold and dur >= 15.0s)
-        stutter_pcm = b"\x00\x00" * int(16.0 * 24000)
-        normal_pcm = b"\x00\x00" * int(1.5 * 24000)
+        stutter_pcm = (struct.pack("<h", 5000) + struct.pack("<h", -5000)) * int(16.0 * 12000)
+        normal_pcm = (struct.pack("<h", 5000) + struct.pack("<h", -5000)) * int(1.5 * 12000)
 
         mock_resp_1 = MagicMock()
         mock_resp_1.read.return_value = json.dumps({
@@ -265,8 +266,7 @@ The escape of the Brazilian boa constrictor earned Harry his longest-ever punish
         import struct
         from audiobook_factory.tts_dispatcher import synthesize_gemini_tts
 
-        clipped_sample = struct.pack("<h", 32767)
-        clipped_pcm = clipped_sample * int(2.0 * 24000)
+        clipped_pcm = (struct.pack("<h", 32767) * 50 + struct.pack("<h", -32767) * 50) * int(2.0 * 240)
 
         mock_resp = MagicMock()
         mock_resp.read.return_value = json.dumps({
@@ -358,8 +358,7 @@ The escape of the Brazilian boa constrictor earned Harry his longest-ever punish
         # Create audio samples with RMS ~ 18.0 (amplitude 18)
         # Default faint_limit is 30.0 -> rms 18.0 would be rejected as silent faint.
         # But with "[whispers]" or emotion="whispering", faint_limit is 8.0 -> passes!
-        sample = struct.pack("<h", 18)
-        whisper_pcm = sample * int(1.5 * 24000)
+        whisper_pcm = (struct.pack("<h", 18) + struct.pack("<h", -18)) * int(1.5 * 12000)
 
         mock_resp = MagicMock()
         mock_resp.read.return_value = json.dumps({
