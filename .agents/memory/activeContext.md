@@ -4,29 +4,27 @@
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
 # Active Context: Pure Vocals-Only Studio Audiobook Production Engine
 
-## Milestone: Studio Audio & Performance Architecture Upgrade (v5.0)
-- **Status**: 100% IMPLEMENTED & TEST VERIFIED.
-- **Actor Overacting Elimination**:
-  - Directing Phrasing: Stripped theatrical `"acting to..."` directives; injected physical vocal anchors and universal anti-theatrical anchor `"understated natural dialogue (never theatrical)"`.
-  - Narrator Transparency Invariant: Narrator strictly locked to `"calm, steady, articulate, measured audiobook delivery"` (temp 0.32, zero melodrama).
-  - Temperature Clamping: Clamped to `0.30 - 0.52` across `constraint_resolver.py`, `tts_adapter.py`, and `gemini.py` (preventing pitch instability, slurring, and theatrical screeching).
-  - Judicial Critic Alignment: `TakeAuditionCritic` re-aligned to prioritize grounded human realism over histrionics.
-- **Audio Post-Processing Overhaul**:
-  - Eliminated WSOLA `atempo` in `dispatcher.py`: Neural audio maintains pristine vocal formants and phase coherence.
-  - Eliminated Destructive De-Esser in `mastering.py`: Preserves crisp Hindi dental & aspirated consonants (स, श, छ, थ, ध).
-  - Two-Pass Measured Linear Loudnorm in `concatenate_and_master_chapter`: Zero dynamic breathing or pause pumping.
-- **Zero-Hardcoding Contract & Agnostic Invariant**:
-  - Replaced franchise-specific tokens in prompt instructions (`dialogue_parser.py`, `translator.py`, `entity_discovery.py`, `draft_translator.py`) with universal generic fantasy exemplars (100% PASS across 98 regression tests).
+## Milestone: Flagship LLM Intelligence & Resilient Directing (v5.2)
+- **Status**: 100% IMPLEMENTED & VERIFIED.
+- **Model Intelligence Floors**: Elevated `TRANSLATION`, `SCREENPLAY`, and `DRAMATURGY` to `ModelTier.TIER_1_FLAGSHIP` (`gemini-3.8-flash` / `3.7-flash`). Banished latency-first sorting for creative text; blacklisted flat models (`3.5-flash`, `lite`).
+- **Antigravity Fallback Handshake**: Automated prompt dump to `pending_handoffs/handoff_<task>_<hash>.json` with IDE fulfillment support.
+- **Pronunciation & QA Resiliency**:
+  - Calibrated cadence ceiling for Devanagari Hindustani (8.5 wps) accounting for short particles.
+  - Fixed proportional energy valley token duration ($N \times \text{avg\_word\_dur\_ms}$).
+  - Decoupled advisory `REVIEW_REQUIRED` from fatal `FAILED` halts in `dispatcher.py`.
+- **CharacterCaster Sync Fix**: Auto-syncs non-colliding `voice_registry.json` and `cast_lock.json` directly from existing roster.
 
-## Active Production Track: Chapter 3 (`sword_of_destiny`)
-- **Status**: IN PRODUCTION (148 segments synthesizing via Gemini 3.8 Flash TTS).
-- **Gates Verified**:
-  - Gate 2 (Script & Screenplay Attribution): PASSED (Score 1.0, 0 misattributed).
-  - Gate 2.5 (Dramatic Fidelity): PASSED (0 issues across 148 segments after smoothing Innkeeper emotional arc).
-  - Gate 1 (Voice Roster): PASSED (5 active characters, unique acoustic signatures).
-- **Gemini 3.8 Flash TTS Batching & Lossless Slicing (v5.1)**:
-  - Deployed scene-aware dialogue rally clustering (`multi_speaker_duo`) & narrator super-chunking (`narrator_chunk`), cutting API quota by 60%-75%.
-  - Lossless silence-valley midpoint slicing via GPU MMS-FA CTC forced alignment: 100% natural conversational pauses, in-breath, and acoustic decay preserved.
-  - Anti-hiss & anti-click shield: 30Hz HPF + Hann micro-fades + zero-crossing pinning + organic acoustic dither bed (-84 dBFS).
-  - Selective hot-patching: automated single-take re-recording on pronunciation QA failure. All 18 tests 100% PASS.
-- **Synthesizer Target**: `chapter_003_hi_mastered.m4a` (-19.0 LUFS EBU R128 master).
+## Production Milestone: Chapter 3 Mastered (`Sword of Destiny`)
+- **Status**: 100% MASTERED & VERIFIED.
+- **Artifacts**:
+  - Script: `scripts/chapter_003_hi_script.json` (129 segments, ensemble cast).
+  - Audio Chunks: 129 segments synthesized via `gemini-3.8-flash-tts` with 4D formants.
+  - Dialogue Master: `mastered/chapter_003_hi_dialogue.wav` (215.9 MB, 18m 44s).
+  - Broadcast M4A: `mastered/chapter_003_hi_mastered.m4a` (27.3 MB).
+- **Mastering Quality Gate**:
+  - Integrated Loudness: **-19.1 LUFS** (Target: -19.0 LUFS ±0.5 LUFS).
+  - True Peak: **-4.0 dBFS** (Hard ceiling: $\le$ -1.5 dBTP).
+  - Loudness Range: **5.8 LU** (EBU R128 dynamic compliance).
+
+## Antigravity Studio Plugin & UI Extension
+- **Live Extension**: Registered at `~/.gemini/config/plugins/audiobook-studio/` (`@audiobook-director`, `audiobook-studio` skill, Stitch-grade sidecar panel).

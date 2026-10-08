@@ -53,6 +53,7 @@ from audiobook_factory.tts.audio_slicer import (
     compute_canonical_segment_filename,
     slice_and_declick_batch,
 )
+from audiobook_factory.pronunciation.contracts import PronunciationStatus
 
 
 def _call_gemini_tts(*args, **kwargs):
@@ -602,7 +603,6 @@ class TTSDispatcher:
             p_dir.pronunciation_metadata = [r.model_dump() for r in spoken_res.resolutions]
 
         if getattr(spoken_res, "has_unresolved_critical", False) is True:
-            from audiobook_factory.pronunciation.contracts import PronunciationStatus
             unres = [
                 getattr(r, "original_token", str(r)) for r in getattr(spoken_res, "resolutions", [])
                 if getattr(r, "status", None) in (PronunciationStatus.FAILED, PronunciationStatus.UNCERTAIN)
