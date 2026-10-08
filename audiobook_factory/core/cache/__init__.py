@@ -5,5 +5,6 @@ Standard: v6.0-ENTERPRISE-DAG
 """
 
 from .ledger import PipelineLedger
+from .take_bank import TakeBank
 
-__all__ = ["PipelineLedger"]
+__all__ = ["PipelineLedger", "TakeBank"]

@@ -4,17 +4,15 @@
 <!-- LINE_BUDGET_HARD_CAP: 50 LINES -->
 # Active Context: Audiobook Studio Antigravity Plugin & Studio Engine (v6.0)
 
-## Milestone: Phase 1 — Contracts & Persistence Layer (v6.0-ENTERPRISE-DAG)
-- **Status**: 100% IMPLEMENTED & VERIFIED (18/18 Phase 1 tests + 142 regression tests green).
-- **Boundary Contracts**: Strongly-typed Pydantic v2 schemas (`schema_version: "2.0"`) with deterministic SHA-256 canonical hashing across all 5 rooms:
-  - `ingestion.py` (RawBookManifest, RawChapterRecord, RawSentenceRecord)
-  - `lore.py` (CharacterDossier, BookBible, CastLock)
-  - `translation.py` (TranslatedSentenceRecord, TranslationBeatRecord, TranslationManifest)
-  - `screenplay.py` (SegmentProvenance, ScreenplaySegment, ScreenplayScript)
-  - `editorial.py` (SegmentTakeMetadata, TimelineCueRecord, TimelineLedger, ChapterDialogueManifest)
-  - `mastering.py` (LoudnessComplianceReport, MasterArtifact, ChapterMarker, ContainerM4BManifest)
-  - `ledger.py` (ProjectMetadataRecord, ChapterStageRecord, StageArtifactRecord, SegmentTakeCacheRecord, GateAuditRecord)
-- **Persistence Layer**: `audiobook_factory/core/cache/ledger.py` with SQLite WAL mode (`pipeline_ledger.db`), cascading foreign keys, performance indexes, and full CRUD for project metadata, stage status, artifact registry, TakeBank cache, and gate audits.
+## Milestone: Phase 1 & 2 — Core Platform & Persistence (v6.0-ENTERPRISE-DAG)
+- **Status**: 100% IMPLEMENTED & VERIFIED (27/27 Core tests + 142 regression tests green).
+- **Core Platform (`audio_platform_core`)**:
+  - `core/key_manager.py`: 120+ KeyPool SQLite rotation, cool-down, token-bucket concurrency.
+  - `core/model_manager.py`: Tier-1 Flagship routing with mandatory `BLOCK_NONE` safety filters.
+  - `core/cache/take_bank.py`: Content-addressed SHA-256 audio cache with LRU disk pruning.
+  - `core/dialogue_editorial/`: DE-01 - DE-07 DSP (Hann micro-fades 12ms/18ms, -52 dBFS trimming, 40Hz Butterworth highpass) & zero-cost timeline stem stitcher.
+  - `core/mastering/`: Two-Pass Measured Linear Loudnorm (-19.0 LUFS ±0.5, -1.5 dBTP) & M4B packager with FFMETADATA1 chapter markers and embedded cover art.
+- **Contracts & Ledger**: Pydantic v2 schemas (`schema_version: "2.0"`) & SQLite WAL `pipeline_ledger.db`.
 
 ## Production Milestone: Chapter 3 Mastered (`Sword of Destiny`)
 - **Status**: 100% MASTERED & VERIFIED (-19.1 LUFS, -4.0 dBFS True Peak, 5.8 LU LRA, 129 chunks).
