@@ -1,104 +1,310 @@
-# 🏛️ Architecture: Audiobook Studio (Plugin & Pure Vocals-Only Engine v5.2)
+# 🏛️ Master System Architecture Specification (MAS-001)
 
-## Executive Overview
-
-**Audiobook Studio (Vocals-Only Studio Engine v5.2)** is an autonomous, studio-grade audiobook production framework and Google Antigravity Plugin engineered specifically for **crystal-clear, multi-voice character acting and pristine vocal narration** modeled after the benchmark standards of **Audible Studios**.
-
-> [!IMPORTANT]
-> **Active Production Engine: Pure Vocals-Only**:
-> Background music (BGM), sound effects (SFX), 5-track stem mixdowns, and Archive.org sound bank harvesting are **permanently decoupled and archived** in `archive/cinematic_audio/`.
-> The engine is 100% focused on Audible-standard vocal clarity, multi-character acting, dialogue nuance, and broadcast-grade vocal mastering.
+**System**: Studio Audio Production & Vocal Mastering Engine (Decoupled 5-Room DAG Platform)  
+**Standard**: `v6.0-ENTERPRISE-DAG`  
+**Classification**: High-Precision Autonomous Audio & Linguistic Processing Infrastructure  
 
 ---
 
-## 🏗️ High-Level 5-Room Vocals-Only Blueprint
+## 📑 Document Navigation & Overview
 
-```mermaid
-flowchart TD
-    subgraph Room1["🌍 Room 1: Pre-Production Intelligence"]
-        RawBook["Raw Book (PDF / EPUB / TXT)"] --> DeepSearch["Novel DeepSearch Engine (Factual Grounding)"]
-        DeepSearch --> BookDNA["Book DNA Agent (Literary Tradition, Era & Dialect)"]
-        BookDNA --> Personae["Dramatis Personae & Phonetic Lexicon (cast_lock.json)"]
-    end
-
-    subgraph Room2["🧠 Room 2: Sense-for-Sense Translation Collective"]
-        Personae --> Collective["4-Agent Translation Collective<br/>• LiteraryDraftTranslator (70/30 Canon Sacredness)<br/>• HindustaniCadenceSpecialist (Spoken Flow & Pauses)<br/>• SubtextAndIdiomDramaturge (Earthy Desi Grit & 19-to-21)<br/>• TranslationQualityCritic (Anti-Omission & Terminology)"]
-        Collective --> DualRule["Dual-Rule Invariant ('Nothing Above Source')<br/>Classic Reverent Pathos vs Raw Unrated Realism"]
-    end
-
-    subgraph Room3["🎭 Room 3: Screenplay & Forensic Attribution"]
-        DualRule --> Screenplay["Sliding-Window Screenplay Dramaturgy"]
-        Screenplay --> Auditor["DialogueAttributionAuditor (Anti-Swap QA)<br/>0% Speaker Flips & Quote Disentanglement"]
-        Auditor --> Blocking["Physical Blocking & Spatial Headroom"]
-    end
-
-    subgraph Room4["🎙️ Room 4: 4D Formants & Voice Performance"]
-        Blocking --> Caster["Character Caster (4D Acoustic Formants)<br/>Pitch Δ, Tempo, Bass Boost & Parametric EQ Profiles"]
-        Caster --> TTS["Gemini Flash TTS Key Pool (120+ Active Keys)<br/>Prosodic Acting, Speech Tags & Breath Marks"]
-        TTS --> Critic["TakeAuditionCritic (Climax Scene Take Selection)"]
-        Critic --> Editorial["Dialogue Editorial Layer (DE-01 - DE-07)<br/>Endpoint Snapping, Hann Micro-Fades & Turn Latency"]
-    end
-
-    subgraph Room5["🎛️ Room 5: Broadcast Vocal Mastering & Packaging"]
-        Editorial --> VocalMaster["Studio Vocal Mastering Engine<br/>SOXR 48kHz / 24-bit + Dual-Pass Loudnorm EBU R128 (-19 LUFS)"]
-        VocalMaster --> Packager["FFMETADATA1 Chapter Generator & AAC Packager"]
-        Packager --> Deliverable["Deliverable M4B Audiobook (Chapter Markers & Cover Art)"]
-    end
-
-    Room1 --> Room2
-    Room2 --> Room3
-    Room3 --> Room4
-    Room4 --> Room5
+```
+├── SECTION 1: MASTER ARCHITECTURE SPECIFICATION (MAS-001)
+│   ├── 1.1 Architectural Invariants & Guarantees
+│   ├── 1.2 Hexagonal System Topology (Mermaid)
+│   ├── 1.3 2-Tier Content-Addressed Caching Architecture
+│   ├── 1.4 Global State & Persistence Ledger Schema (SQLite WAL)
+│   └── 1.5 Official Architectural Decision Record (ADR-008)
+│
+├── SECTION 2: CORE PLATFORM FOUNDATION (audio_platform_core)
+│   ├── 2.1 KeyPool & Model Management Engine
+│   ├── 2.2 2-Tier TakeBank Cache & Ledger Engine
+│   ├── 2.3 Dialogue Editorial DSP Engine (DE-01 - DE-07)
+│   └── 2.4 Broadcast Mastering & Container Packaging Engine
+│
+├── SECTION 3: SUBSYSTEMS SPECIFICATION (Rooms 1 – 5)
+│   ├── Room 1: Forensic Ingestion & Lore (room1_ingest)
+│   ├── Room 2: Translation Collective (room2_translate)
+│   ├── Room 3: Screenplay & Anti-Swap Dramaturgy (room3_screenplay)
+│   ├── Room 4: Multi-Cast TTS & Dialogue Editorial (room4_synth)
+│   └── Room 5: Broadcast Vocal Mastering (room5_master)
+│
+├── SECTION 4: DYNAMIC PIPELINE PRESETS & ORCHESTRATION ENGINE (dag_orchestration)
+│   ├── Preset A: Full Studio Novel Audiobook (5 Rooms)
+│   ├── Preset B: English-Only Audiobook (Room 2 Bypassed)
+│   ├── Preset C: Multi-Host Research-to-Podcast Engine
+│   └── Preset D: Standalone Translation & TTS Micro-Runners
+│
+└── SECTION 5: IMPLEMENTATION, MIGRATION & TESTING BLUEPRINT
 ```
 
 ---
 
-## 🚪 Deep-Dive: The 5 Production Rooms
+## 1.1 Architectural Invariants & Guarantees
 
-### Room 1: Pre-Production World & Lore Ingestion Studio
-*Modules: `audiobook_factory/preproduction/` (`novel_deepsearch.py`, `book_dna_agent.py`, `dramatis_personae_agent.py`, `phonetic_lexicon_dramaturge.py`)*
+The `v6.0-ENTERPRISE-DAG` architecture is governed by five non-negotiable operational invariants:
 
-1. **Novel DeepSearch Grounding**: Multi-angle factual dossier compilation (`NovelDeepSearchEngine`, `DeepSearchNovelDossier`) executing grounded web analysis to build an immutable canonical dossier before production runs, eliminating hallucinations.
-2. **Universal Book DNA Profiling**: Analyzes literary tradition, source fidelity tier (`CLASSIC_REVERENT` vs `RAW_UNRATED`), regional dialect cadence, and profanity policy without hardcoded titles or era biases.
-3. **Dramatis Personae & Phonetic Lexicon**: Extracts novel characters, sociolect traits, vocal weight, and phonetic Devanagari transliterations into `book_bible.json` and `cast_lock.json`.
-
-### Room 2: Sense-for-Sense Translation Collective
-*Modules: `audiobook_factory/translation/` & `audiobook_factory/translation/agents/`*
-
-1. **4-Agent Collective Architecture**:
-   - `LiteraryDraftTranslator`: Generates sense-for-sense dramatic prose maintaining 70% canon sacredness.
-   - `HindustaniCadenceSpecialist`: Tunes spoken actor pauses (`—`, `...`, `,`) and honorific status transitions (`TU <-> MAAI-BAAP`).
-   - `SubtextAndIdiomDramaturge`: Crafts authentic Hindustani metaphors and 19-to-21 unrated amplification for gritty fiction.
-   - `TranslationQualityCritic`: Audits anti-omission parity and verifies BookBible terminology.
-2. **Dual-Rule Invariant ("Nothing Above Source")**:
-   - *Classical Literature*: Dignified authorial voice, emotional pathos, and sacred regional cadences.
-   - *Raw Unrated Fiction*: Unapologetic preservation of raw street curses, visceral combat gore, and unvarnished somatic intimacy.
-
-### Room 3: Screenplay Dramaturgy & Forensic Attribution
-*Modules: `audiobook_factory/script/` & `audiobook_factory/script/agents/`*
-
-1. **Sliding-Window Screenplay Dramaturgy**: Parses chapters into 500-word beat-aligned micro-chunks with 5-layer context stack, attributing dialogue turns, actioning verbs, and dramatic delivery styles.
-2. **Dialogue Attribution Auditor**: Dedicated QA agent preventing $A \leftrightarrow B$ speaker turn inversions, quote misattributions to Narrator, and speech tag leakage (`"उसने कहा"`).
-3. **Physical Blocking & Staging**: Encodes character blocking (`sitting`, `standing`, `leaning_close`, `retreating`) and stereo azimuth panning.
-
-### Room 4: 4D Formants & Voice Performance Realization
-*Modules: `audiobook_factory/character_caster.py`, `audiobook_factory/tts/`, `audiobook_factory/performance/take_critic.py`*
-
-1. **4D Acoustic Formant Modulation**: Pitch delta ($\pm 4-12\%$), tempo scaling, bass boost, and parametric EQ curves (`equalizer=f=...`) dynamically applied via FFmpeg DSP to prevent vocal convergence when multiple characters share base voices.
-2. **Formant-Sensitive Hash Caching**: Filename hashing incorporates the active EQ formant profile for deterministic cache invalidation.
-3. **120+ Key Gemini Flash TTS Pool**: Concurrent token-bucket rate limiting with anti-bot jitter and permanent `BLOCK_NONE` safety settings.
-4. **TakeAuditionCritic**: Judicial multi-take evaluation on climactic scenes.
-
-### Room 5: Dialogue Editorial & Broadcast Vocal Mastering
-*Modules: `audiobook_factory/dialogue_editing/`, `audiobook_factory/mastering.py`, `audiobook_factory/packager.py`*
-
-1. **Dialogue Editorial Layer (DE-01 - DE-07)**: Endpoint zero-crossing snapping (-52 dBFS speech floor), Hann micro-fades (12ms pre-speech, 18ms post-speech), and dramatic turn latency.
-2. **Broadcast EBU R128 Vocal Master**: Standardized `-19.0 LUFS` ($\pm 0.5$ LU) integrated loudness and `-1.5 dBTP` true-peak ceiling at 48kHz / 24-bit.
-3. **Chaptered M4B Container**: Streamlined packaging into `.m4b` container with FFMETADATA1 chapter markers, TOC navigation, and embedded high-resolution cover artwork.
+1. **Artifact-First Isolation**:
+   Subsystems (Rooms 1 through 5) communicate **exclusively** via immutable, validated JSON and WAV artifact files complying with `schema_version: "2.0"`. Direct in-memory state leakage across room boundaries is strictly banned. Each room can be invoked independently from the CLI or Python API with valid inbound artifacts.
+2. **Pure Vocals-Only Mandate**:
+   Vocal production focuses 100% on Audible/EBU R128 broadcast clarity, multi-character voice acting, 4D formants, and dialogue editorial transitions. Background music (BGM), sound effects (SFX), Archive.org sound scraping, and Foley mixdowns remain permanently decoupled and archived.
+3. **2-Tier Content-Addressed Caching**:
+   - **Tier 1 (Audio Take Cache)**:
+     $$\text{Take Hash} = \text{SHA-256}(\text{Text} + \text{Speaker} + \text{Voice} + \text{Formants} + \text{Speed} + \text{Temperature})$$
+     Takes matching this hash are cached in `.audiobook_cache/takes/<hash>.wav` and are 100% reusable across pipeline runs.
+   - **Tier 2 (Zero-Cost Assembly Graph)**:
+     Local DSP timeline reconstruction, Hann micro-fades (12ms pre-speech / 18ms post-speech), and monotonic timestamp synchronization execute locally in $< 2.0$ seconds with 0 API tokens consumed.
+4. **Universal Domain-Agnostic Design**:
+   Zero hardcoded novel lore, character rosters, file hashes, or era biases in core code. All entities, accents, and pronunciation rules are dynamically harvested from source texts and stored in `book_bible.json` and `cast_lock.json`.
+5. **Human Director Override Preservation**:
+   Segments marked with `provenance.user_locked: true` are immutable. Downstream reconciliation passes will never overwrite human-directed casting, formants, or audio takes.
 
 ---
 
-## 📦 Decoupled & Archived Subsystems
+## 1.2 Hexagonal System Topology
 
-The legacy 5-track cinematic audio engine (dynamic BGM scoring, SQLite FTS5 sound bank harvesting, and multitrack stem mixdowns) has been safely decoupled and archived in `archive/cinematic_audio/`.
-The active production pipeline on `prestable-v4.0-baseline` is **100% focused on pure vocal excellence**.
+```mermaid
+flowchart TD
+    subgraph CorePlatform["Core Platform Services (audio_platform_core)"]
+        KP["KeyPool & Rate Limiter<br/>(120+ Keys, SQLite Round-Robin)"]
+        MM["Model Manager<br/>(Tier-1 Flagship Routing & Fallbacks)"]
+        TB["TakeBank & Ledger Manager<br/>(Content-Addressed SQLite WAL DB)"]
+        DSP["Dialogue Editorial DSP<br/>(Hann Fades, Breaths, Overlaps)"]
+        MST["Broadcast Mastering Suite<br/>(Two-Pass Loudnorm & Kaiser 48kHz)"]
+    end
+
+    subgraph DAGPipeline["Pluggable 5-Room DAG Execution Graph"]
+        R1["Room 1: Forensic Ingestion<br/>(EPUB/PDF -> AST & Lore)"]
+        R2["Room 2: Translation Collective<br/>(Sense-for-Sense Hindustani)"]
+        R3["Room 3: Screenplay & Dramaturgy<br/>(Anti-Swap Attribution & 4D Staging)"]
+        R4["Room 4: Multi-Cast TTS & Editorial<br/>(Gemini Flash TTS + DE-01-DE-07)"]
+        R5["Room 5: Broadcast Vocal Mastering<br/>(EBU R128 -19 LUFS / -1.5 dBTP & M4B)"]
+
+        R1 -->|"Gate 0.1 Pass"| R2
+        R2 -->|"Gate 1.0 Pass"| R3
+        R3 -->|"Gate 2.0 Pass"| R4
+        R4 -->|"Gate 4.0 Pass"| R5
+    end
+
+    KP -.-> R2
+    KP -.-> R3
+    KP -.-> R4
+    MM -.-> R2
+    MM -.-> R3
+    TB -.-> R4
+    DSP -.-> R4
+    MST -.-> R5
+
+    classDef coreStyle fill:#1e1e2e,stroke:#fab387,stroke-width:2px,color:#cdd6f4;
+    classDef dagStyle fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4;
+
+    class KP,MM,TB,DSP,MST coreStyle;
+    class R1,R2,R3,R4,R5 dagStyle;
+```
+
+---
+
+## 1.3 2-Tier Content-Addressed Caching Architecture
+
+```mermaid
+flowchart LR
+    subgraph Tier1["Tier 1: Audio Take Cache (TakeBank)"]
+        InTake["Input Segment Data"] --> HashCalc["SHA-256 Hash<br/>(Text + Voice + Formants + Temp)"]
+        HashCalc --> Lookup{"TakeBank<br/>Hit?"}
+        Lookup -- Yes --> LoadWAV["Load from Cache<br/>.audiobook_cache/takes/<hash>.wav"]
+        Lookup -- No --> TTSCall["Gemini Flash TTS Network Call"]
+        TTSCall --> SaveWAV["Save to TakeBank<br/>Register in SQLite"]
+    end
+
+    subgraph Tier2["Tier 2: Zero-Cost Assembly Graph (Local DSP)"]
+        LoadWAV --> Stitch["Concatenation Engine"]
+        SaveWAV --> Stitch
+        Stitch --> Fade["Apply 12ms / 18ms Hann Micro-Fades"]
+        Fade --> Pause["Apply DE-04 Pause Timing"]
+        Pause --> Ledger["Recalculate Monotonic Timestamps<br/>(timeline_ledger.json)"]
+        Ledger --> MasterWAV["Lossless Master Dialogue Stem<br/>(chapter_XXX_dialogue.wav)"]
+    end
+
+    classDef t1Style fill:#1e1e2e,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4;
+    classDef t2Style fill:#181825,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4;
+
+    class InTake,HashCalc,Lookup,LoadWAV,TTSCall,SaveWAV t1Style;
+    class Stitch,Fade,Pause,Ledger,MasterWAV t2Style;
+```
+
+### Hash Serialization Specification
+
+The Tier 1 cache key is deterministically generated using canonical UTF-8 JSON serialization:
+
+$$\text{take\_content\_hash} = \text{SHA256}(\text{CanonicalJSON}(\{ \text{text}, \text{speaker}, \text{voice\_id}, \text{formant\_signature}, \text{pitch\_shift}, \text{speed\_multiplier}, \text{temperature} \}))$$
+
+```python
+import hashlib
+import json
+
+def compute_take_hash(segment: dict) -> str:
+    payload = {
+        "text": segment["text"].strip(),
+        "speaker": segment["speaker"].strip(),
+        "voice_id": segment["voice_id"].strip(),
+        "formant_signature": segment.get("formant_signature", "p0_t0_eq0"),
+        "pitch_shift": round(float(segment.get("pitch_shift", 0.0)), 3),
+        "speed_multiplier": round(float(segment.get("speed_multiplier", 1.0)), 3),
+        "temperature": round(float(segment.get("temperature", 0.35)), 3),
+    }
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+```
+
+---
+
+## 1.4 Global State & Persistence Ledger Schema (SQLite WAL)
+
+The system maintains a single-source-of-truth database `pipeline_ledger.db` with SQLite WAL mode enabled.
+
+```sql
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA foreign_keys = ON;
+
+-- 1. Project Global Master Record
+CREATE TABLE IF NOT EXISTS project_metadata (
+    project_id TEXT PRIMARY KEY,
+    source_file_path TEXT NOT NULL,
+    title TEXT NOT NULL,
+    author TEXT DEFAULT 'Unknown Author',
+    default_language TEXT DEFAULT 'hi',
+    book_bible_path TEXT NOT NULL,
+    cast_lock_path TEXT NOT NULL,
+    preset_name TEXT DEFAULT 'AUDIOBOOK_STUDIO',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Stage Execution DAG Ledger
+CREATE TABLE IF NOT EXISTS chapter_stage_ledger (
+    chapter_stage_uid TEXT PRIMARY KEY, -- e.g., "ch003_room3_screenplay"
+    project_id TEXT NOT NULL,
+    chapter_id INTEGER NOT NULL,
+    room_name TEXT NOT NULL CHECK(room_name IN ('ROOM1_INGEST', 'ROOM2_TRANSLATE', 'ROOM3_SCREENPLAY', 'ROOM4_SYNTH', 'ROOM5_MASTER')),
+    input_contract_hash TEXT NOT NULL,
+    output_contract_hash TEXT,
+    status TEXT NOT NULL CHECK(status IN ('IDLE', 'RUNNING', 'COMPLETED', 'FAILED', 'DIRTY', 'SKIPPED')),
+    error_message TEXT,
+    started_at DATETIME,
+    completed_at DATETIME,
+    FOREIGN KEY(project_id) REFERENCES project_metadata(project_id) ON DELETE CASCADE
+);
+
+-- 3. Stage Artifact Registry
+CREATE TABLE IF NOT EXISTS stage_artifacts (
+    artifact_uid TEXT PRIMARY KEY,
+    chapter_stage_uid TEXT NOT NULL,
+    artifact_type TEXT NOT NULL CHECK(artifact_type IN ('JSON_MANIFEST', 'SCREENPLAY_SCRIPT', 'DIALOGUE_WAV', 'TIMELINE_LEDGER', 'MASTERED_M4A', 'CONTAINER_M4B')),
+    relative_file_path TEXT NOT NULL,
+    sha256_checksum TEXT NOT NULL,
+    file_size_bytes INTEGER NOT NULL,
+    schema_version TEXT DEFAULT '2.0',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(chapter_stage_uid) REFERENCES chapter_stage_ledger(chapter_stage_uid) ON DELETE CASCADE
+);
+
+-- 4. Tier 1 TakeBank Audio Cache
+CREATE TABLE IF NOT EXISTS segment_take_cache (
+    take_content_hash TEXT PRIMARY KEY, -- sha256(text + speaker + voice + formants + speed + temp)
+    project_id TEXT NOT NULL,
+    chapter_id INTEGER NOT NULL,
+    segment_uid TEXT NOT NULL,
+    speaker TEXT NOT NULL,
+    voice_id TEXT NOT NULL,
+    formant_signature TEXT NOT NULL,
+    text_content TEXT NOT NULL,
+    take_wav_path TEXT NOT NULL,
+    duration_sec REAL NOT NULL,
+    measured_lufs REAL,
+    is_valid INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(project_id) REFERENCES project_metadata(project_id) ON DELETE CASCADE
+);
+
+-- 5. Gate Audit Records & Forensic Metrics
+CREATE TABLE IF NOT EXISTS gate_audit_records (
+    audit_uid TEXT PRIMARY KEY,
+    chapter_stage_uid TEXT NOT NULL,
+    gate_name TEXT NOT NULL,
+    decision TEXT NOT NULL CHECK(decision IN ('PASSED', 'FAILED', 'REVIEW_REQUIRED')),
+    metrics_json TEXT NOT NULL,
+    evaluated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(chapter_stage_uid) REFERENCES chapter_stage_ledger(chapter_stage_uid) ON DELETE CASCADE
+);
+
+-- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_stage_lookup ON chapter_stage_ledger(project_id, chapter_id, room_name);
+CREATE INDEX IF NOT EXISTS idx_cache_hash ON segment_take_cache(take_content_hash);
+CREATE INDEX IF NOT EXISTS idx_cache_proj_chap ON segment_take_cache(project_id, chapter_id);
+```
+
+---
+
+## 1.5 Official Architectural Decision Record (ADR-008)
+
+```markdown
+# ADR-008: Transition to Contract-Driven Decoupled 5-Room DAG Platform
+
+## Status
+ACCEPTED & RATIFIED
+
+## Context
+The previous monolithic pipeline executed Ingestion, Translation, Dramaturgy, TTS, and Mastering in 
+a single tightly bound runtime loop. Minor upstream adjustments (such as editing a single translated 
+dialogue sentence) triggered full-chapter re-runs of 120+ audio chunks, burning daily Gemini API quota 
+and preventing isolated audio engineering workflows.
+
+## Decision
+1. Deconstruct the pipeline into 5 discrete, standalone subsystems (Rooms 1 through 5).
+2. Enforce Pydantic v2 artifact boundaries (`schema_version: "2.0"`).
+3. Implement a 2-Tier Caching System (Tier 1 TakeBank Audio Cache + Tier 2 Local Assembly Graph).
+4. Extract Core Platform Services (`audio_platform_core`) to enable standalone usage in external 
+   applications (e.g. Podcasts, English-only novels, Standalone Translation).
+5. Establish a transaction-safe SQLite persistence ledger with WAL mode (`pipeline_ledger.db`).
+
+## Consequences
+- **Positive**: 0% blast radius, 90%+ API quota savings on edits, sub-15-second surgical patch re-renders, 
+  and multi-domain pipeline composability (audiobooks, podcasts, standalone micro-tools).
+- **Negative**: Strict requirement for schema validation on all boundary files; disk space management 
+  via an LRU TakeBank cache policy.
+```
+
+---
+
+## 1.6 Antigravity Plugin UI & Studio Sidecar Architecture
+
+The **Audiobook Studio Plugin** delivers a first-class visual workspace embedded directly inside the Google Antigravity IDE (Aux Pane Webview Sidecar).
+
+```mermaid
+flowchart LR
+    IDE["Antigravity Host IDE"] <-->|"IPC REST / SSE"| Sidecar["Node.js Sidecar Server<br/>(sidecars/studio-panel)"]
+    Sidecar <-->|"Subprocess JSON Bridge"| Bridge["Python Studio Bridge<br/>(audiobook_factory.api)"]
+    Bridge <-->|"WAL Transactions"| Ledger[("SQLite Ledger<br/>pipeline_ledger.db")]
+    Bridge <-->|"DAG Invalidation & Tasks"| DAG["5-Room DAG Engine"]
+```
+
+### Key UI Features:
+1. **Interactive 5-Room DAG Stepper**: Visual stage status (`PASS`, `DIRTY`, `RUNNING`, `FAILED`) with 1-click stage execution.
+2. **Dual-Column Translation Studio**: Side-by-side English vs Hindi translation editor with surgical single-beat patching.
+3. **4D Formant Cast Board**: Real-time voice assignment, pitch/tempo sliders, user-lock toggles, and instant single-sentence auditions ($< 1.5$s).
+4. **TakeBank Audio Grid**: Visual color-coded matrix showing cached takes (green), dirty takes (amber), and un-synthesized chunks (gray).
+5. **Sticky Broadcast Master Dock**: Lossless 48kHz audio streaming with real-time EBU R128 (-19.0 LUFS) and True Peak (-1.5 dBTP) compliance gauges.
+
+---
+
+## 1.7 Documentation Suite Links
+
+- [Antigravity Plugin UI & Studio Sidecar Specification](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/docs/STUDIO_UI_AND_SIDECAR_SPECIFICATION.md)
+- [Core Platform Foundation Specification](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/docs/CORE_PLATFORM_SPECIFICATION.md)
+- [Subsystem Specifications (Rooms 1 to 5)](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/docs/SUBSYSTEM_SPECIFICATIONS.md)
+- [Data Contracts & Schema Specification](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/docs/CONTRACTS_AND_SCHEMAS.md)
+- [DAG Orchestration & Dynamic Presets Specification](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/docs/DAG_ORCHESTRATION_AND_PRESETS.md)
+- [Implementation, Migration & Testing Blueprint](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/docs/plans/v6_implementation_and_migration_blueprint.md)
+- [Developer & Contributor Guide](file:///c:/Users/Suraj/Documents/antigravity/optimistic-kepler/docs/DEVELOPER_GUIDE.md)
+

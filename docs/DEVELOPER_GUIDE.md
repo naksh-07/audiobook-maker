@@ -4,6 +4,7 @@
 
 ### 1. System Prerequisites
 - **Python**: Python 3.10+ (tested on 3.10, 3.11, 3.12, 3.13).
+- **Node.js**: Version 18+ (for Antigravity Studio Panel Webview sidecar).
 - **FFmpeg**: Version 6.0+ (compiled with `soxr`, `libmp3lame`, and `aac` support).
   - Verify on Windows: `ffmpeg -version`
   - Verify SOXR support: `ffmpeg -filters | findstr soxr` (or `grep soxr` on Linux/macOS).
@@ -13,8 +14,8 @@
 ### 2. Virtual Environment & Dependencies
 ```bash
 # Clone the repository
-git clone https://github.com/naksh-07/audiobook-maker.git
-cd audiobook-maker
+git clone https://github.com/naksh-07/audiobook-studio.git
+cd audiobook-studio
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -38,8 +39,22 @@ Ensure `GEMINI_API_KEY` is provided (surrounding quotes are automatically stripp
 ```env
 GEMINI_API_KEY=AIzaSy...your_gemini_api_key...
 TTS_PRIMARY_BACKEND=gemini_tts
-GEMINI_TTS_MODEL=gemini-3.1-flash-tts-preview
+GEMINI_TTS_MODEL=gemini-3.8-flash
 GEMINI_DEFAULT_VOICE=Aoede
+```
+
+### 4. Running & Debugging the Antigravity Studio Sidecar
+To test the embedded Webview panel locally outside Antigravity:
+```bash
+cd sidecars/studio-panel
+node main.mjs
+```
+The sidecar server starts on `http://127.0.0.1:4000` (or assigned port), bridging live IPC requests to `audiobook_factory.api.studio_bridge`.
+
+To test the Python bridge directly:
+```bash
+python -m audiobook_factory.api.studio_bridge status
+python -m audiobook_factory.api.studio_bridge list-projects
 ```
 
 ---

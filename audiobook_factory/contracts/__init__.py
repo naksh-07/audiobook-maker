@@ -1,42 +1,95 @@
 #!/usr/bin/env python3
 """
-Audiobook Factory - Pillar 3: Data Contracts & Strictly Typed Schemas (Pydantic v2).
-Unified Facade exporting all domain schemas, epistemic models, and contracts.
-Guarantees 100% backward compatibility for existing callers and tests.
+Audiobook Factory - Contracts Package.
+Standard: v6.0-ENTERPRISE-DAG
+Unified Facade exporting all domain schemas, v6.0 contracts, and legacy backward-compatible models.
 """
 
 from __future__ import annotations
 from typing import Any
 
+# =============================================================================
 # 1. Base & Shared Literals
+# =============================================================================
 from .base import (
+    ContractBaseModel,
     ManifestValidationError,
     ProjectConfig,
     MusicCueType,
     ProvenanceMethod,
 )
 
-# 2. Screenplay & Casting (Gate 2)
+# =============================================================================
+# 2. v6.0-ENTERPRISE-DAG Core Subsystem Contracts
+# =============================================================================
+# Room 1: Forensic Ingestion
+from .ingestion import (
+    RawSentenceRecord,
+    RawChapterRecord,
+    RawBookManifest,
+)
+
+# Room 1/3: Lore & Cast Lock
+from .lore import (
+    CharacterDossier,
+    BookBible,
+    CastLock,
+)
+
+# Room 2: Translation Collective
+from .translation import (
+    TranslatedSentenceRecord,
+    TranslationBeatRecord,
+    TranslationManifest,
+)
+
+# Room 3: Screenplay & Anti-Swap Attribution
 from .screenplay import (
+    SegmentProvenance,
+    ScreenplaySegment,
+    ScreenplayScript,
+    # Legacy compatibility re-exports
     CharacterProfile,
     CharacterRoster,
     SceneSource,
     ActingInstructions,
     SpatialCoordinates,
     SegmentMusicParams,
-    ScreenplaySegment,
     BatchPlanItem,
     BatchDispatchManifest,
-    ScreenplayScript,
 )
 
-# 3. Timeline & Synchronized Transcripts (Gate 4.5)
+# Room 4: Multi-Cast TTS & Dialogue Editorial
+from .editorial import (
+    SegmentTakeMetadata,
+    TimelineCueRecord,
+    TimelineLedger,
+    ChapterDialogueManifest,
+)
+
+# Room 5: Broadcast Mastering & M4B Packaging
+from .mastering import (
+    LoudnessComplianceReport,
+    MasterArtifact,
+    ChapterMarker,
+    ContainerM4BManifest,
+)
+
+# DAG Ledger & Quality Gate Records
+from .ledger import (
+    ProjectMetadataRecord,
+    ChapterStageRecord,
+    StageArtifactRecord,
+    SegmentTakeCacheRecord,
+    GateAuditRecord,
+)
+
+# =============================================================================
+# 3. Legacy Models for 100% Backward Compatibility with v5.x components
+# =============================================================================
 from .timeline import (
     TimelineSegment,
-    TimelineLedger,
 )
-
-# 4. Sonic Genome & Epistemic Measurement Layers (v2.1)
 from .sonic_genome import (
     AcousticMetrics,
     SemanticAnnotations,
@@ -66,8 +119,6 @@ from .sonic_genome import (
     InferredMetadata,
     SonicGenome,
 )
-
-# 5. Creative Manifest & Audio Cues (Gates 1 & 2)
 from .manifest import (
     MusicCue,
     FoleyCue,
@@ -77,8 +128,6 @@ from .manifest import (
     CreativeManifest,
     LegacyCreativeManifestAdapter,
 )
-
-# 6. Macro-Tier Book Master & Album Packaging (Gate 6)
 from .album import (
     BookPackagingSpecs,
     BookChapterMarker,
@@ -87,8 +136,6 @@ from .album import (
     GlobalLoreBible,
     BookMasterManifest,
 )
-
-# 7. Performance Realization Re-exports
 from audiobook_factory.performance.contracts import (
     PerformanceDirection,
     PerformanceProvenanceMode,
@@ -102,7 +149,6 @@ from audiobook_factory.performance.contracts import (
     PerformanceFidelityReport,
 )
 
-# 8. Sonic Intelligence Re-exports (Optional in Vocals-Only Engine)
 try:
     from audiobook_factory.sonic_query_planner import (
         SoundIntentType,
@@ -138,7 +184,6 @@ except ImportError:
     AgentSoundCard = Any
     SoundRetrievalResult = Any
 
-# 9. Mastering V2 Re-exports
 from audiobook_factory.mastering_contracts import (
     MasteringProfile,
     MasteringAnalysisFacts,
@@ -166,26 +211,62 @@ from audiobook_factory.mastering_contracts import (
 )
 
 __all__ = [
-    # Base
+    # v6.0 Base
+    "ContractBaseModel",
     "ManifestValidationError",
     "ProjectConfig",
     "MusicCueType",
     "ProvenanceMethod",
-    # Screenplay
+
+    # v6.0 Ingestion
+    "RawSentenceRecord",
+    "RawChapterRecord",
+    "RawBookManifest",
+
+    # v6.0 Lore & Casting
+    "CharacterDossier",
+    "BookBible",
+    "CastLock",
+
+    # v6.0 Translation
+    "TranslatedSentenceRecord",
+    "TranslationBeatRecord",
+    "TranslationManifest",
+
+    # v6.0 Screenplay
+    "SegmentProvenance",
+    "ScreenplaySegment",
+    "ScreenplayScript",
     "CharacterProfile",
     "CharacterRoster",
     "SceneSource",
     "ActingInstructions",
     "SpatialCoordinates",
     "SegmentMusicParams",
-    "ScreenplaySegment",
     "BatchPlanItem",
     "BatchDispatchManifest",
-    "ScreenplayScript",
-    # Timeline
-    "TimelineSegment",
+
+    # v6.0 Editorial
+    "SegmentTakeMetadata",
+    "TimelineCueRecord",
     "TimelineLedger",
-    # Sonic Genome
+    "ChapterDialogueManifest",
+
+    # v6.0 Mastering
+    "LoudnessComplianceReport",
+    "MasterArtifact",
+    "ChapterMarker",
+    "ContainerM4BManifest",
+
+    # v6.0 DAG Ledger & Gates
+    "ProjectMetadataRecord",
+    "ChapterStageRecord",
+    "StageArtifactRecord",
+    "SegmentTakeCacheRecord",
+    "GateAuditRecord",
+
+    # Legacy compatibility
+    "TimelineSegment",
     "AcousticMetrics",
     "SemanticAnnotations",
     "PhysicalGenome",
@@ -213,7 +294,6 @@ __all__ = [
     "SemanticEmbeddingFacts",
     "InferredMetadata",
     "SonicGenome",
-    # Manifest
     "MusicCue",
     "FoleyCue",
     "AmbienceScene",
@@ -221,14 +301,12 @@ __all__ = [
     "MasteringSettings",
     "CreativeManifest",
     "LegacyCreativeManifestAdapter",
-    # Album
     "BookPackagingSpecs",
     "BookChapterMarker",
     "BookTableOfContents",
     "BookVoiceRoster",
     "GlobalLoreBible",
     "BookMasterManifest",
-    # Performance
     "PerformanceDirection",
     "PerformanceProvenanceMode",
     "PerformancePriority",
@@ -239,7 +317,6 @@ __all__ = [
     "PerformanceEvaluationResult",
     "TakeVariant",
     "PerformanceFidelityReport",
-    # Sonic Intelligence
     "SoundIntentType",
     "AtomicSoundConcept",
     "AcousticConstraints",
@@ -251,7 +328,6 @@ __all__ = [
     "ScoredCandidate",
     "AgentSoundCard",
     "SoundRetrievalResult",
-    # Mastering
     "MasteringProfile",
     "MasteringAnalysisFacts",
     "MasteringQCResult",

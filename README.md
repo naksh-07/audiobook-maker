@@ -229,10 +229,17 @@ All quality gates are fail-closed:
 
 ---
 
-## 📚 Documentation Index
+## 📚 Documentation Index (v6.0-ENTERPRISE-DAG Suite)
 
-For exhaustive technical guides, visit the [`docs/`](docs/) directory:
-- [🏛️ Architecture Blueprint](docs/ARCHITECTURE.md)
+For exhaustive technical specifications, architectural designs, and implementation blueprints:
+- [🏛️ Master Architecture Specification (MAS-001)](docs/ARCHITECTURE.md)
+- [🎛️ Antigravity Plugin UI & Studio Sidecar Specification](docs/STUDIO_UI_AND_SIDECAR_SPECIFICATION.md)
+- [📜 Data Contracts & Schema Specification](docs/CONTRACTS_AND_SCHEMAS.md)
+- [⚙️ Core Platform Foundation Specification](docs/CORE_PLATFORM_SPECIFICATION.md)
+- [🚪 Subsystems Specification Suite (Rooms 1 - 5)](docs/SUBSYSTEM_SPECIFICATIONS.md)
+- [🎛️ DAG Orchestration & Dynamic Presets Specification](docs/DAG_ORCHESTRATION_AND_PRESETS.md)
+- [🗺️ Implementation, Migration & Testing Blueprint](docs/plans/v6_implementation_and_migration_blueprint.md)
+- [🛠️ Developer & Contributor Guide](docs/DEVELOPER_GUIDE.md)
 - [🎛️ Audio Engineering & Mastering](docs/AUDIO_ENGINEERING.md)
 - [🎙️ Gemini Flash TTS Synthesis & Directing](docs/GEMINI_TTS_SYNTHESIS_AND_DIRECTING.md)
 - [🎭 Voice Casting Director Guide](docs/VOICE_CASTING_DIRECTOR_GUIDE.md)
